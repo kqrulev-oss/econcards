@@ -1,6 +1,6 @@
 /* EconCards service worker: полный оффлайн после первого открытия.
    При обновлении базы меняй номер версии — клиенты подтянут новую сами. */
-const CACHE = 'econcards-v22';
+const CACHE = 'econcards-v23';
 const ASSETS = [
   './', './index.html', './manifest.webmanifest',
   './icons/icon-192.png', './icons/icon-512.png', './icons/apple-touch-icon.png'

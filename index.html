@@ -936,7 +936,7 @@ function cardHTML(c) {
   } else if (c.content.solution) {
     bottom = `<div class="opts"><button class="btn rnd" onclick="reveal('${c.id}')">Показать разбор</button>${aiRow(c.id)}</div>`;
   } else {
-    bottom = `<div class="opts"><button class="btn ghost rnd" onclick="markSeen('${c.id}',this)">Прочитал</button></div>`;
+    bottom = `<div class="opts"><button class="btn ghost rnd" onclick="markSeen('${c.id}',this)">Прочитал</button>${aiRow(c.id)}</div>`;
   }
   const rr = rarById[c.rarity] || rarById.base;
   return `<div class="card" style="--accent:${col}" ondblclick="toggleFav('${c.id}')">
@@ -1021,9 +1021,10 @@ function finish(c, win, note, quiet) {
   if (!quiet) {
     const v = document.getElementById('v-' + id);
     const expl = c.content.explanation || note || (win ? 'Верно.' : '');
-    if (expl) {
-      v.innerHTML = `<div class="verdict ${win ? 'win' : 'lose'}"><h4 class="rnd">${win ? '✓ Верно' : '✗ Мимо'}</h4><p>${rich(expl)}</p></div>`;
-        setTimeout(() => scrollTo_(v), 60);
+    const air = aiRow(id);
+    if (expl || air) {
+      v.innerHTML = `<div class="verdict ${win ? 'win' : 'lose'}"><h4 class="rnd">${win ? '✓ Верно' : '✗ Мимо'}</h4>${expl ? `<p>${rich(expl)}</p>` : ''}${air}</div>`;
+      setTimeout(() => scrollTo_(v), 60);
     } else {
       markMore(document.getElementById('b-' + id));
     }
@@ -1939,15 +1940,29 @@ async function callAI(task, payload) {
 }
 function aiRow(cid) {
   if (!aiOn()) return '';
-  return `<div class="ai-row">
-    <button class="ai-btn" onclick="aiCheck('${cid}')">✍️ Проверить</button>
-    <button class="ai-btn" onclick="aiHint('${cid}')">💡 Подсказка</button>
-    <button class="ai-btn" onclick="aiExplain('${cid}')">🙂 Проще</button>
-    <button class="ai-btn" onclick="aiSimilar('${cid}')">🔁 Похожая</button></div>`;
+  const ct = cardById[cid].content;
+  if (!ct.solution && !ct.explanation && !(ct.options && ct.correctOptionID)) return '';
+  let h = '<div class="ai-row">';
+  if (ct.solution) h += `<button class="ai-btn" onclick="aiCheck('${cid}')">✍️ Проверить</button>`;
+  h += `<button class="ai-btn" onclick="aiHint('${cid}')">💡 Подсказка</button>
+    <button class="ai-btn" onclick="aiExplain('${cid}')">🙂 ${ct.solution ? 'Проще' : 'Разобрать'}</button>
+    <button class="ai-btn" onclick="aiSimilar('${cid}')">🔁 Похожая</button>`;
+  return h + '</div>';
 }
 const aiBusy = t => `<div class="ai-busy"><span class="ai-spin"></span>${esc(t || 'AI думает…')}</div>`;
 function aiSheet(title, inner) { sheet(`<div class="grab"></div><div class="big rnd">${esc(title)}</div><div id="aiBox">${inner}</div>`); }
-function refData(cid) { const ct = cardById[cid].content; return { problem: ct.text || '', reference: ct.solution || ct.explanation || '' }; }
+function refData(cid) {
+  const ct = cardById[cid].content;
+  let problem = ct.text || '', reference = ct.solution || ct.explanation || '';
+  if (ct.options && ct.options.length) {
+    problem += '\nВарианты:\n' + ct.options.map(o => `${o.id}) ${o.text}`).join('\n');
+    if (ct.correctOptionID) {
+      const co = ct.options.find(o => o.id === ct.correctOptionID);
+      reference = `Правильный ответ: ${ct.correctOptionID}) ${co ? co.text : ''}.` + (ct.explanation ? '\n' + ct.explanation : '');
+    }
+  }
+  return { problem, reference };
+}
 async function aiRun(task, payload, title, render) {
   aiSheet(title, aiBusy());
   try { const d = await callAI(task, payload); const b = document.getElementById('aiBox'); if (b) b.innerHTML = render(d); }
