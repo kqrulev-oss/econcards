@@ -505,6 +505,21 @@ input[type=range]::-webkit-slider-thumb{
 .mchip{flex:none;border:var(--bw) solid var(--line);background:var(--soft);color:var(--muted);border-radius:999px;padding:7px 13px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap}
 .mchip.on{background:var(--c4);border-color:var(--c4);color:#111}
 .mdl-chip sub{font-size:.75em}
+
+/* AI-тренер */
+.ai-row{display:flex;flex-wrap:wrap;gap:6px;margin-top:9px}
+.ai-btn{flex:1 1 auto;border:var(--bw) solid var(--c7);background:var(--soft);color:var(--ink);border-radius:999px;padding:8px 10px;font-size:12.5px;font-weight:700;cursor:pointer;white-space:nowrap}
+.ai-btn:active{transform:scale(.97)}
+.ai-ta{width:100%;min-height:120px;padding:12px;border-radius:var(--r);border:var(--bw) solid var(--line);background:var(--soft);color:var(--ink);font:15px/1.5 var(--fbody);resize:vertical;margin-bottom:10px;-webkit-appearance:none}
+.ai-ta:focus{outline:none;border-color:var(--c7)}
+.ai-url{width:100%;padding:11px 13px;border-radius:var(--r);border:var(--bw) solid var(--line);background:var(--soft);color:var(--ink);font:14px var(--fmono);-webkit-appearance:none}
+.ai-url:focus{outline:none;border-color:var(--c7)}
+.ai-out{background:var(--soft);border-radius:var(--r);padding:13px 14px;font-size:15px;line-height:1.55;white-space:pre-wrap;border-left:3px solid var(--c7)}
+.ai-out.ai-err{border-left-color:var(--no);color:var(--no-ink)}
+.ai-note{font-size:13px;color:var(--warn-ink);background:var(--warn-bg);border:var(--bw) solid var(--warn-line);border-radius:var(--r-sm);padding:8px 11px;margin-bottom:8px}
+.ai-busy{display:flex;align-items:center;gap:10px;color:var(--muted);padding:16px 4px;font-size:15px}
+.ai-spin{width:18px;height:18px;border-radius:50%;border:2.5px solid var(--soft3);border-top-color:var(--c7);animation:aispin .8s linear infinite;flex:none}
+@keyframes aispin{to{transform:rotate(360deg)}}
 </style>
 </head>
 <body>
@@ -632,7 +647,7 @@ const DEFAULT = {
   goalDay: null, todayLog: [], pushOn: false, pushHour: 19, lastNudge: null,
   mix: { base: 40, rare: 60, superrare: 60, epic: 40, mythic: 25, legendary: 15 },
   theme: 'terminal',
-  klass: null, history: {}, lessons: {}, xpDay: {}, srs: {},
+  klass: null, history: {}, lessons: {}, xpDay: {}, srs: {}, aiUrl: '',
   done: {}, wrong: {}, correct: {}, box: {}, favs: {}, onboarded: false
 };
 let S = load();
@@ -919,7 +934,7 @@ function cardHTML(c) {
       `<button class="opt" data-o="${esc(op.id)}" onclick="answer('${c.id}','${esc(op.id)}')">
          <i class="key rnd">${esc(op.id)}</i><span>${esc(op.text)}</span></button>`).join('') + `</div>`;
   } else if (c.content.solution) {
-    bottom = `<div class="opts"><button class="btn rnd" onclick="reveal('${c.id}')">Показать разбор</button></div>`;
+    bottom = `<div class="opts"><button class="btn rnd" onclick="reveal('${c.id}')">Показать разбор</button>${aiRow(c.id)}</div>`;
   } else {
     bottom = `<div class="opts"><button class="btn ghost rnd" onclick="markSeen('${c.id}',this)">Прочитал</button></div>`;
   }
@@ -1798,6 +1813,7 @@ function renderMe() {
       <span class="th-tx"><b>${esc(t.title)}</b><span>${esc(t.note)}</span></span>
     </button>`).join('') + `</div>`;
   h += typeof pushBlockHTML === 'function' ? pushBlockHTML() : '';
+  h += aiSettingsHTML();
   h += `<div class="h2">Избранное · ${favs.length}</div>`;
   if (!favs.length) h += `<div class="empty" style="padding:24px">Двойной тап по карточке в ленте добавит её сюда.</div>`;
   else favs.forEach(c => {
@@ -1906,6 +1922,67 @@ function pushBlockHTML() {
       <div class="mixnote" style="padding:2px 4px 0">Фоновые напоминания приходят, если браузер их поддерживает; иначе — при следующем заходе после этого часа.</div>`;
   }
   return h;
+}
+
+/* ==================== AI-тренер ====================
+   Онлайн-надстройка через бесплатный прокси (ai/README.md). Офлайн/без URL —
+   скрыта. Проверка, подсказки и «объясни проще» привязаны к эталонному
+   решению: AI не решает с нуля и не переопределяет официальный ответ. */
+const aiHintLevel = {};
+function aiOn() { return !!(S.aiUrl && S.aiUrl.trim()) && navigator.onLine; }
+async function callAI(task, payload) {
+  const r = await fetch(S.aiUrl.trim(), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ task, ...payload }) });
+  let d = {};
+  try { d = await r.json(); } catch (e) {}
+  if (!r.ok) throw new Error(d.message || 'AI недоступен');
+  return d;
+}
+function aiRow(cid) {
+  if (!aiOn()) return '';
+  return `<div class="ai-row">
+    <button class="ai-btn" onclick="aiCheck('${cid}')">✍️ Проверить</button>
+    <button class="ai-btn" onclick="aiHint('${cid}')">💡 Подсказка</button>
+    <button class="ai-btn" onclick="aiExplain('${cid}')">🙂 Проще</button>
+    <button class="ai-btn" onclick="aiSimilar('${cid}')">🔁 Похожая</button></div>`;
+}
+const aiBusy = t => `<div class="ai-busy"><span class="ai-spin"></span>${esc(t || 'AI думает…')}</div>`;
+function aiSheet(title, inner) { sheet(`<div class="grab"></div><div class="big rnd">${esc(title)}</div><div id="aiBox">${inner}</div>`); }
+function refData(cid) { const ct = cardById[cid].content; return { problem: ct.text || '', reference: ct.solution || ct.explanation || '' }; }
+async function aiRun(task, payload, title, render) {
+  aiSheet(title, aiBusy());
+  try { const d = await callAI(task, payload); const b = document.getElementById('aiBox'); if (b) b.innerHTML = render(d); }
+  catch (e) { const b = document.getElementById('aiBox'); if (b) b.innerHTML = `<div class="ai-out ai-err">${esc(e.message || 'Ошибка AI')}</div>`; }
+}
+function aiCheck(cid) {
+  aiSheet('Проверить решение', `<div class="mixnote" style="padding:2px 2px 8px">Напиши своё решение — AI сверит его с эталоном и укажет ошибки.</div>
+    <textarea id="aiSol" class="ai-ta" placeholder="Твоё решение…"></textarea>
+    <button class="btn rnd" onclick="aiCheckGo('${cid}')">Проверить</button>`);
+}
+async function aiCheckGo(cid) {
+  const ta = document.getElementById('aiSol'), answer = ta ? ta.value.trim() : '';
+  if (!answer) { ta && ta.focus(); return; }
+  await aiRun('check', { ...refData(cid), answer }, 'Проверить решение', d => `<div class="ai-out">${rich(d.text)}</div><div style="height:8px"></div><button class="btn ghost sm rnd" onclick="aiCheck('${cid}')">Ещё раз</button>`);
+}
+function aiHint(cid) {
+  const lvl = Math.min(3, (aiHintLevel[cid] || 0) + 1); aiHintLevel[cid] = lvl;
+  aiRun('hint', { ...refData(cid), level: lvl }, `Подсказка · уровень ${lvl}/3`, d => `<div class="ai-out">${rich(d.text)}</div>` + (lvl < 3 ? `<div style="height:8px"></div><button class="btn ghost sm rnd" onclick="aiHint('${cid}')">Ещё подсказку</button>` : ''));
+}
+function aiExplain(cid) { aiRun('explain', refData(cid), 'Объясни проще', d => `<div class="ai-out">${rich(d.text)}</div>`); }
+function aiSimilar(cid) { aiRun('similar', refData(cid), 'Похожая задача', d => `<div class="ai-note">🤖 Сгенерировано AI — ответ не проверен официально.</div><div class="ai-out">${rich(d.text)}</div><div style="height:8px"></div><button class="btn ghost sm rnd" onclick="aiSimilar('${cid}')">Ещё одну</button>`); }
+function aiSettingsHTML() {
+  const on = !!(S.aiUrl && S.aiUrl.trim());
+  let h = `<div class="h2">AI-тренер</div>
+    <div class="mixnote" style="padding:2px 4px 8px">Проверка решений, подсказки и «объясни проще» — бесплатно через свой прокси. Как поднять за 5 минут: <b>ai/README.md</b> в репозитории.</div>
+    <input class="ai-url" id="aiUrl" type="url" inputmode="url" autocomplete="off" placeholder="https://…workers.dev" value="${esc(S.aiUrl || '')}" oninput="setAiUrl(this.value)">
+    <div class="mixnote" id="aiStat" style="padding:6px 4px 0">${on ? 'Подключён — кнопки появятся на задачах с разбором.' : 'Пусто — AI-функции скрыты.'}</div>`;
+  if (on) h += `<div style="height:6px"></div><button class="btn ghost sm rnd" onclick="aiTest()">Проверить связь</button>`;
+  return h;
+}
+function setAiUrl(v) { S.aiUrl = v.trim(); save(); const st = document.getElementById('aiStat'); if (st) st.textContent = S.aiUrl ? 'Подключён — кнопки появятся на задачах с разбором.' : 'Пусто — AI-функции скрыты.'; }
+async function aiTest() {
+  const st = document.getElementById('aiStat'); if (st) st.textContent = 'Проверяю…';
+  try { const d = await callAI('explain', { problem: 'Проверка связи.', reference: 'Ответь одним словом: работает.' }); if (st) st.textContent = '✓ Связь есть: ' + (d.text || '').slice(0, 50); }
+  catch (e) { if (st) st.textContent = '✗ ' + (e.message || 'нет связи'); }
 }
 
 /* ==================== запуск ==================== */
