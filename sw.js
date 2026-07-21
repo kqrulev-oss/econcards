@@ -1,6 +1,6 @@
 /* EconCards service worker: полный оффлайн после первого открытия.
    При обновлении базы меняй номер версии — клиенты подтянут новую сами. */
-const CACHE = 'econcards-v11';
+const CACHE = 'econcards-v12';
 const ASSETS = [
   './', './index.html', './manifest.webmanifest',
   './icons/icon-192.png', './icons/icon-512.png', './icons/apple-touch-icon.png'
@@ -70,19 +70,25 @@ function pickNudge(state) {
   return NUDGES[Math.floor(Math.random() * NUDGES.length)];
 }
 
-self.addEventListener('push', event => {
-  event.waitUntil((async () => {
-    const state = await readState();
-    const [title, body] = pickNudge(state);
-    await self.registration.showNotification(title, {
-      body,
-      icon: './icons/icon-192.png',
-      badge: './icons/icon-192.png',
-      tag: 'econcards-nudge',
-      renotify: true,
-      data: { url: './index.html' }
-    });
-  })());
+async function showNudge() {
+  const state = await readState();
+  const [title, body] = pickNudge(state);
+  await self.registration.showNotification(title, {
+    body,
+    icon: './icons/icon-192.png',
+    badge: './icons/icon-192.png',
+    tag: 'econcards-nudge',
+    renotify: true,
+    data: { url: './index.html' }
+  });
+}
+
+/* Серверный пуш (если появится push-сервер с VAPID). */
+self.addEventListener('push', event => { event.waitUntil(showNudge()); });
+
+/* Локальные фоновые напоминания без сервера — там, где браузер их поддерживает. */
+self.addEventListener('periodicsync', event => {
+  if (event.tag === 'econcards-nudge') event.waitUntil(showNudge());
 });
 
 self.addEventListener('notificationclick', event => {

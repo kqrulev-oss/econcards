@@ -425,6 +425,12 @@ input[type=range]::-webkit-slider-thumb{
 .th.on .th-tx b::after{content:' ✓';color:var(--accent)}
 
 @media (prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;transition-duration:.01ms!important}}
+
+/* переключатель напоминаний */
+.toggle{width:46px;height:28px;border-radius:999px;border:none;background:var(--soft2);position:relative;flex:none;cursor:pointer;transition:background .18s;padding:0}
+.toggle.on{background:var(--ok)}
+.toggle i{position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:#fff;transition:transform .18s;box-shadow:0 1px 2px rgba(0,0,0,.25)}
+.toggle.on i{transform:translateX(18px)}
 </style>
 </head>
 <body>
@@ -1148,6 +1154,89 @@ function resetAll() {
   save(); renderMe(); drawChart(); buildQueue(); renderFeed();
 }
 
+/* ==================== напоминания ====================
+   Полноценный серверный веб-пуш требует VAPID-сервера, которого у статичного
+   сайта нет. Поэтому напоминания работают локально:
+   1) periodicSync — фоном, если браузер и установленная PWA его поддерживают;
+   2) фолбэк — если наступил час напоминания, а цель дня не закрыта, показываем
+      уведомление при следующем открытии приложения.
+   Персональный текст в обоих случаях собирает service worker из снимка прогресса. */
+function nudgeSupported() {
+  return 'Notification' in window && 'serviceWorker' in navigator;
+}
+/* Кладём свежий прогресс туда, откуда его читает service worker (readState/pickNudge). */
+async function syncStateForSW() {
+  if (!('caches' in window)) return;
+  try {
+    const c = await caches.open('econcards-state');
+    const snap = { goalToday: S.goalToday, doneToday: S.doneToday, streakDays: S.streakDays, pushHour: S.pushHour };
+    await c.put('state', new Response(JSON.stringify(snap), { headers: { 'Content-Type': 'application/json' } }));
+  } catch (e) {}
+}
+async function enableNudges() {
+  if (!nudgeSupported()) { alert('Уведомления не поддерживаются в этом браузере.'); return; }
+  let perm = Notification.permission;
+  if (perm === 'default') perm = await Notification.requestPermission();
+  if (perm !== 'granted') {
+    S.pushOn = false; save(); renderMe();
+    alert('Разрешение на уведомления не выдано. Включи его в настройках сайта и попробуй снова.');
+    return;
+  }
+  S.pushOn = true; save(); syncStateForSW();
+  try {
+    const reg = await navigator.serviceWorker.ready;
+    if (reg.periodicSync) {
+      const tags = await reg.periodicSync.getTags();
+      if (!tags.includes('econcards-nudge'))
+        await reg.periodicSync.register('econcards-nudge', { minInterval: 22 * 60 * 60 * 1000 });
+    }
+  } catch (e) {}
+  renderMe();
+}
+function disableNudges() {
+  S.pushOn = false; save();
+  if (navigator.serviceWorker) navigator.serviceWorker.ready
+    .then(reg => reg.periodicSync && reg.periodicSync.unregister('econcards-nudge').catch(() => {}))
+    .catch(() => {});
+  renderMe();
+}
+function toggleNudges() { S.pushOn ? disableNudges() : enableNudges(); }
+function chHour(d) { S.pushHour = Math.max(6, Math.min(23, S.pushHour + d)); save(); renderMe(); }
+/* Фолбэк: наступил час напоминания, цель не закрыта, сегодня ещё не напоминали. */
+function maybeForegroundNudge() {
+  if (!S.pushOn || !nudgeSupported() || Notification.permission !== 'granted') return;
+  const t = today();
+  if (S.lastNudge === t || S.doneToday >= S.goalToday) return;
+  if (new Date().getHours() < S.pushHour) return;
+  S.lastNudge = t; save();
+  const left = S.goalToday - S.doneToday;
+  const title = S.doneToday > 0 ? 'Осталось ' + left + ' до цели дня' : 'Задача дня ждёт';
+  const body = S.doneToday > 0 ? 'Ты уже начал — доводить проще, чем начинать.'
+    : 'Пара карточек с разбором — и день засчитан.';
+  try {
+    navigator.serviceWorker.ready.then(reg => reg.showNotification(title, {
+      body, icon: './icons/icon-192.png', badge: './icons/icon-192.png',
+      tag: 'econcards-nudge', renotify: true, data: { url: './index.html' }
+    })).catch(() => {});
+  } catch (e) {}
+}
+function pushBlockHTML() {
+  if (!nudgeSupported()) return '';
+  const on = !!S.pushOn && Notification.permission === 'granted';
+  const hh = String(S.pushHour).padStart(2, '0');
+  let h = `<div class="h2">Напоминания</div>
+    <div class="row"><span class="tx"><span class="tt">Напоминать заниматься</span>
+      <span class="ts">${on ? 'Включены' : 'Выключены'}</span></span>
+      <button class="toggle ${on ? 'on' : ''}" onclick="toggleNudges()" aria-label="Напоминания"><i></i></button></div>`;
+  if (on) {
+    h += `<div class="row"><span class="tx"><span class="tt">Время</span>
+      <span class="ts">Если к ${hh}:00 цель не закрыта</span></span>
+      <span class="step"><button onclick="chHour(-1)">−</button><b class="rnd">${hh}:00</b><button onclick="chHour(1)">+</button></span></div>
+      <div class="mixnote" style="padding:2px 4px 0">Фоновые напоминания приходят, если браузер их поддерживает; иначе — при следующем заходе после этого часа.</div>`;
+  }
+  return h;
+}
+
 /* ==================== запуск ==================== */
 function startApp() {
   S.onboarded = true; rollDay(); save();
@@ -1161,6 +1250,13 @@ if (S.onboarded) {
   document.getElementById('ob').style.display = 'none';
   buildQueue(); renderFeed();
 } else drawChart();
+
+/* Прогресс — в кэш для service worker, плюс догоняющее напоминание при заходе. */
+syncStateForSW();
+maybeForegroundNudge();
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden) { rollDay(); maybeForegroundNudge(); }
+});
 </script>
 <script>
 if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
