@@ -486,6 +486,8 @@ input[type=range]::-webkit-slider-thumb{
 .les-h{font-size:22px;font-weight:900;line-height:1.22;margin:2px 0 15px}
 .les-body{font-size:15.5px;line-height:1.62;white-space:pre-wrap}
 .les-body .fblock{margin:10px 0}
+.f sup,.fblock sup{font-size:.72em;line-height:0}
+.btn[disabled]{opacity:.55;pointer-events:none}
 </style>
 </head>
 <body>
@@ -613,7 +615,7 @@ const DEFAULT = {
   goalDay: null, todayLog: [], pushOn: false, pushHour: 19, lastNudge: null,
   mix: { base: 40, rare: 60, superrare: 60, epic: 40, mythic: 25, legendary: 15 },
   theme: 'terminal',
-  klass: null, history: {}, lessons: {},
+  klass: null, history: {}, lessons: {}, xpDay: {},
   done: {}, wrong: {}, correct: {}, box: {}, favs: {}, onboarded: false
 };
 let S = load();
@@ -846,12 +848,20 @@ function esc(s) {
 /* Формулы помечены в тексте символами ⟦ ⟧. Выводим их отдельным блоком,
    если формула занимает строку целиком, иначе — выделенным фрагментом.
    В обоих случаях формула не переносится по словам. */
+/* Степени внутри формул: ^2, ^{n}, ^(−1) → надстрочный индекс. Применяем
+   только внутри ⟦…⟧, чтобы не трогать обычный текст. */
+function supify(t) {
+  return t
+    .replace(/\^\{([^}]*)\}/g, '<sup>$1</sup>')
+    .replace(/\^\(([^)]*)\)/g, '<sup>$1</sup>')
+    .replace(/\^([0-9A-Za-zА-Яа-яα-ωΑ-Ω]|[+\-−][0-9]+)/g, '<sup>$1</sup>');
+}
 function rich(s) {
   const lines = esc(s).split('\n');
   return lines.map(line => {
     const solo = line.trim().match(/^⟦(.+)⟧$/);
-    if (solo) return `<span class="fblock">${solo[1]}</span>`;
-    return line.replace(/⟦(.+?)⟧/g, '<span class="f">$1</span>');
+    if (solo) return `<span class="fblock">${supify(solo[1])}</span>`;
+    return line.replace(/⟦(.+?)⟧/g, (m, g) => `<span class="f">${supify(g)}</span>`);
   }).join('\n');
 }
 
@@ -877,7 +887,7 @@ function cardHTML(c) {
   } else if (c.content.solution) {
     bottom = `<div class="opts"><button class="btn rnd" onclick="reveal('${c.id}')">Показать разбор</button></div>`;
   } else {
-    bottom = `<div class="opts"><button class="btn ghost rnd" onclick="markSeen('${c.id}')">Прочитал</button></div>`;
+    bottom = `<div class="opts"><button class="btn ghost rnd" onclick="markSeen('${c.id}',this)">Прочитал</button></div>`;
   }
   const rr = rarById[c.rarity] || rarById.base;
   return `<div class="card" style="--accent:${col}" ondblclick="toggleFav('${c.id}')">
@@ -928,24 +938,34 @@ function selfGrade(cid, win) {
     <p>${win ? 'Карточка уйдёт в редкие повторы.' : 'Покажу её снова в ближайшие дни.'}</p></div>`;
   finish(cardById[cid], win, null, true);
 }
-function markSeen(cid) { finish(cardById[cid], true, null, true); }
+function markSeen(cid, btn) {
+  finish(cardById[cid], true, null, true);
+  if (btn) { btn.disabled = true; btn.textContent = 'Прочитано ✓'; }
+}
 
 function finish(c, win, note, quiet) {
   const id = c.id;
+  const t = today();
+  /* XP, цель и серия — не чаще одного раза в день на карточку. Иначе можно было
+     фармить опыт, повторно жимкая «Прочитал» или разбор на одной карточке.
+     SRS не страдает: назавтра карточка снова приносит опыт. */
+  S.xpDay = S.xpDay || {};
+  const firstToday = S.xpDay[id] !== t;
   if (!S.done[id]) S.done[id] = 0;
   S.done[id]++;
   if (win) { S.correct[id] = 1; S.box[id] = Math.min(5, (S.box[id] || 0) + 1); }
   else { S.wrong[id] = 1; S.box[id] = 0; }
-  const gain = win ? 10 : 3;
-  S.xp += gain;
-  S.doneToday++;
-  S.todayLog = (S.todayLog || []).concat(win ? 1 : 0).slice(-60);
-  recordDay();
-  /* Серию засчитываем один раз в день — по достижению цели, даже если её
-     потом подняли или перевыполнили. Строгое «===» пропускало день,
-     когда цель меняли на лету или отвечали пачкой. */
-  if (S.doneToday >= S.goalToday && S.goalDay !== today()) {
-    S.goalDay = today(); S.streakDays++; confetti();
+  const gain = firstToday ? (win ? 10 : 3) : 0;
+  if (firstToday) {
+    S.xpDay[id] = t;
+    S.xp += gain;
+    S.doneToday++;
+    S.todayLog = (S.todayLog || []).concat(win ? 1 : 0).slice(-60);
+    recordDay();
+    /* Серию засчитываем один раз в день — по достижению цели. */
+    if (S.doneToday >= S.goalToday && S.goalDay !== t) {
+      S.goalDay = t; S.streakDays++; confetti();
+    }
   }
   save();
   if (!quiet) {
@@ -958,7 +978,7 @@ function finish(c, win, note, quiet) {
       markMore(document.getElementById('b-' + id));
     }
   }
-  xpPop(gain);
+  if (gain) xpPop(gain);
   drawChart();
   navigator.vibrate && navigator.vibrate(win ? 14 : [8, 40, 8]);
 }
@@ -1360,17 +1380,24 @@ function finishExam() {
   clearInterval(examTimer);
   const elapsed = Date.now() - exam.start;
   let correct = 0; const wrong = [];
+  const t = today();
+  S.xpDay = S.xpDay || {};
   exam.cards.forEach(c => {
     const ok = exam.answers[c.id] === c.content.correctOptionID;
     if (ok) correct++; else wrong.push(c);
     S.done[c.id] = (S.done[c.id] || 0) + 1;
-    if (ok) { S.correct[c.id] = 1; S.box[c.id] = Math.min(5, (S.box[c.id] || 0) + 1); S.xp += 10; }
-    else { S.wrong[c.id] = 1; S.box[c.id] = 0; S.xp += 3; }
-    S.doneToday++;
-    S.todayLog = (S.todayLog || []).concat(ok ? 1 : 0).slice(-60);
-    recordDay();
+    if (ok) { S.correct[c.id] = 1; S.box[c.id] = Math.min(5, (S.box[c.id] || 0) + 1); }
+    else { S.wrong[c.id] = 1; S.box[c.id] = 0; }
+    /* Опыт и цель — раз в день на карточку (как в обычной ленте). */
+    if (S.xpDay[c.id] !== t) {
+      S.xpDay[c.id] = t;
+      S.xp += ok ? 10 : 3;
+      S.doneToday++;
+      S.todayLog = (S.todayLog || []).concat(ok ? 1 : 0).slice(-60);
+      recordDay();
+    }
   });
-  if (S.doneToday >= S.goalToday && S.goalDay !== today()) { S.goalDay = today(); S.streakDays++; confetti(); }
+  if (S.doneToday >= S.goalToday && S.goalDay !== t) { S.goalDay = t; S.streakDays++; confetti(); }
   save(); drawChart();
   renderExamResults(correct, wrong, elapsed);
 }
