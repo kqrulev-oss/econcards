@@ -2,7 +2,7 @@
 <html lang="ru" data-theme="terminal">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,maximum-scale=1,user-scalable=no">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="theme-color" content="#0C0F16" id="tc">
@@ -425,6 +425,35 @@ input[type=range]::-webkit-slider-thumb{
 .th.on .th-tx b::after{content:' ✓';color:var(--accent)}
 
 @media (prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;transition-duration:.01ms!important}}
+
+/* переключатель напоминаний */
+.toggle{width:46px;height:28px;border-radius:999px;border:none;background:var(--soft2);position:relative;flex:none;cursor:pointer;transition:background .18s;padding:0}
+.toggle.on{background:var(--ok)}
+.toggle i{position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:#fff;transition:transform .18s;box-shadow:0 1px 2px rgba(0,0,0,.25)}
+.toggle.on i{transform:translateX(18px)}
+
+/* режим пробника (экзамен на время) */
+#exam{position:absolute;inset:0;z-index:120;background:var(--bg);display:none;flex-direction:column;--accent:var(--c4);padding-top:var(--safe-t)}
+.ex-top{display:flex;align-items:center;justify-content:space-between;padding:12px 16px 10px;gap:12px;flex:none}
+.ex-x{width:34px;height:34px;border-radius:50%;border:none;background:var(--soft);color:var(--ink);font-size:15px;flex:none;cursor:pointer}
+.ex-prog{font-weight:800;color:var(--muted);font-size:15px}
+.ex-prog b{color:var(--ink)}
+.ex-time{font-family:var(--fmono);font-weight:700;color:var(--muted);font-variant-numeric:tabular-nums}
+.ex-track{height:4px;background:var(--soft2);flex:none;margin:0 16px;border-radius:2px;overflow:hidden}
+.ex-track i{display:block;height:100%;background:var(--accent);transition:width .25s}
+.ex-body{flex:1;overflow-y:auto;padding:16px 16px 20px;-webkit-overflow-scrolling:touch}
+.ex-tags{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.ex-foot{flex:none;padding:12px 16px calc(12px + var(--safe-b));border-top:var(--bw) solid var(--line);background:var(--bg)}
+.opt.sel{background:var(--soft2);border-color:var(--accent)}
+.opt.sel .key{background:var(--accent);border-color:var(--accent);color:var(--onaccent)}
+.ex-score{display:flex;align-items:center;gap:16px;padding:8px 0 14px}
+.ex-score-tx b{font-size:26px;font-weight:900;display:block}
+.ex-score-tx span{color:var(--muted);font-size:14px}
+.ex-miss{padding:14px 0;border-top:var(--bw) solid var(--line)}
+.ex-your{font-size:14px;margin-top:8px;padding:8px 11px;border-radius:var(--r-sm);background:var(--soft)}
+.ex-your.no{background:var(--no-soft);color:var(--no-ink)}
+.ex-your.ok{background:var(--ok-soft);color:var(--ok-ink)}
+.ex-expl{font-size:14px;line-height:1.5;color:var(--muted);margin-top:8px;white-space:pre-wrap}
 </style>
 </head>
 <body>
@@ -539,7 +568,7 @@ function setTheme(id) {
 /* ==================== состояние ==================== */
 const DEFAULT = {
   xp: 0, streakDays: 0, lastActive: null, goalToday: 15, doneToday: 0,
-  todayLog: [], pushOn: false, pushHour: 19,
+  goalDay: null, todayLog: [], pushOn: false, pushHour: 19, lastNudge: null,
   mix: { base: 40, rare: 60, superrare: 60, epic: 40, mythic: 25, legendary: 15 },
   theme: 'terminal',
   done: {}, wrong: {}, correct: {}, box: {}, favs: {}, onboarded: false
@@ -590,12 +619,14 @@ function filterName() {
   }
   if (filter.kind === 'favs') return 'Избранное';
   if (filter.kind === 'repeat') return 'Повторение';
+  if (filter.kind === 'examrev') return 'Ошибки пробника';
   return 'Все темы';
 }
 function filterColor() {
   if (filter.kind === 'topic') return topicColor[filter.topic];
   if (filter.kind === 'set') return 'var(--c4)';
   if (filter.kind === 'favs') return 'var(--c5)';
+  if (filter.kind === 'examrev') return 'var(--c3)';
   return 'var(--c1)';
 }
 
@@ -603,6 +634,7 @@ function pool() {
   if (filter.kind === 'topic') return CARDS.filter(c => c.topicID === filter.topic);
   if (filter.kind === 'favs') return CARDS.filter(c => S.favs[c.id]);
   if (filter.kind === 'repeat') return CARDS.filter(c => S.wrong[c.id] && !S.correct[c.id]);
+  if (filter.kind === 'examrev') return examReviewIds.map(id => cardById[id]).filter(Boolean);
   if (filter.kind === 'set') {
     const s = filter.set;
     return CARDS.filter(c => c.olympiad && c.olympiad.olympiadID === s.olympiad
@@ -630,7 +662,7 @@ function weight(c) {
 function buildQueue(shuffle = true) {
   let p = pool();
   if (!p.length) { queue = []; qi = 0; return; }
-  if (filter.kind === 'set') {
+  if (filter.kind === 'set' || filter.kind === 'examrev') {
     p.sort((a, b) => a.id.localeCompare(b.id, 'ru', { numeric: true }));
     queue = p;
   } else if (shuffle) {
@@ -830,7 +862,12 @@ function finish(c, win, note, quiet) {
   S.xp += gain;
   S.doneToday++;
   S.todayLog = (S.todayLog || []).concat(win ? 1 : 0).slice(-60);
-  if (S.doneToday === S.goalToday) { S.streakDays++; confetti(); }
+  /* Серию засчитываем один раз в день — по достижению цели, даже если её
+     потом подняли или перевыполнили. Строгое «===» пропускало день,
+     когда цель меняли на лету или отвечали пачкой. */
+  if (S.doneToday >= S.goalToday && S.goalDay !== today()) {
+    S.goalDay = today(); S.streakDays++; confetti();
+  }
   save();
   if (!quiet) {
     const v = document.getElementById('v-' + id);
@@ -1074,7 +1111,7 @@ function renderOneOlymp(id) {
         const pct = cs.length ? Math.round(ok / cs.length * 100) : 0;
         const classes = [...new Set(cs.map(c => (c.tags.find(t => /класс/.test(t)) || '').replace(' класс', '')))]
           .filter(Boolean).join(', ');
-        h += `<button class="tile" onclick="runSet('${s.olympiad}',${s.year},'${s.stage}')">
+        h += `<button class="tile" onclick="openSetSheet('${s.olympiad}',${s.year},'${s.stage}')">
           <i class="ico" style="background:var(--soft)">${pct === 100 ? '🏅' : '📄'}</i>
           <span class="tx"><span class="tt">${esc(stageTitle[s.stage] || s.stage)}</span>
             <span class="ts">${cs.length} заданий${classes ? ' · ' + classes + ' класс' : ''} · решено ${ok}</span></span>
@@ -1092,6 +1129,144 @@ function infoBlock(title, body) {
 function runSet(olympiad, year, stage) {
   filter = { kind: 'set', topic: null, set: { olympiad, year, stage } };
   buildQueue(); renderFeed(); go('feed');
+}
+
+/* ==================== пробник (экзамен на время) ====================
+   Набор заданий олимпиады превращаем в тест: таймер, ответы без мгновенной
+   подсказки, в конце — балл, время и разбор ошибок. В пробник берём только
+   задания с вариантами и известным ключом — остальные не проверить автоматом. */
+let exam = null, examTimer = 0, examReviewIds = [];
+
+function gradeable(cards) {
+  return cards.filter(c => c.content.options && c.content.options.length && c.content.correctOptionID);
+}
+function setCards(olympiad, year, stage) {
+  return CARDS.filter(c => c.olympiad && c.olympiad.olympiadID === olympiad
+    && c.olympiad.year === year && c.olympiad.stage === stage);
+}
+/* Тап по набору предлагает выбор: листать с разбором или пройти пробник. */
+function openSetSheet(olympiad, year, stage) {
+  const all = setCards(olympiad, year, stage);
+  const g = gradeable(all);
+  const title = `${olympTitle[olympiad] || olympiad} · ${year} · ${stageTitle[stage] || stage}`;
+  let h = `<div class="grab"></div><div class="big rnd">${esc(title)}</div>
+    <div class="mixnote" style="margin:-6px 4px 14px">${all.length} заданий в наборе${g.length < all.length ? `, из них ${g.length} с автопроверкой` : ''}.</div>`;
+  h += tileBtn('📄', 'Листать с разбором', all.length + ' заданий', `runSetFromSheet('${olympiad}',${year},'${stage}')`);
+  if (g.length) h += tileBtn('⏱', 'Пробник на время', g.length + ' заданий · балл и разбор', `startExam('${olympiad}',${year},'${stage}')`);
+  else h += `<div class="mixnote" style="padding:8px 4px">Пробник недоступен: в наборе нет заданий с вариантами ответа.</div>`;
+  sheet(h);
+}
+function runSetFromSheet(o, y, s) { closeSheet(); runSet(o, y, s); }
+
+function fmtTime(ms) {
+  const s = Math.max(0, Math.floor(ms / 1000));
+  return String(Math.floor(s / 60)).padStart(2, '0') + ':' + String(s % 60).padStart(2, '0');
+}
+function startExam(olympiad, year, stage) {
+  closeSheet();
+  const cards = gradeable(setCards(olympiad, year, stage))
+    .sort((a, b) => a.id.localeCompare(b.id, 'ru', { numeric: true }));
+  if (!cards.length) { alert('В этом наборе нет заданий с автопроверкой.'); return; }
+  exam = { cards, idx: 0, answers: {}, start: Date.now() };
+  let el = document.getElementById('exam');
+  if (!el) { el = document.createElement('div'); el.id = 'exam'; document.getElementById('app').appendChild(el); }
+  el.style.display = 'flex';
+  renderExam();
+  clearInterval(examTimer);
+  examTimer = setInterval(() => {
+    const t = document.getElementById('exTime');
+    if (t && exam) t.textContent = fmtTime(Date.now() - exam.start);
+  }, 1000);
+}
+function renderExam() {
+  const el = document.getElementById('exam');
+  const c = exam.cards[exam.idx], n = exam.cards.length, sel = exam.answers[c.id];
+  const rr = rarById[c.rarity] || rarById.base;
+  const o = c.olympiad, meta = o ? `${o.year} · ${stageTitle[o.stage] || o.stage}` : '';
+  const last = exam.idx === n - 1;
+  const opts = c.content.options.map(op =>
+    `<button class="opt ${sel === op.id ? 'sel' : ''}" data-o="${esc(op.id)}" onclick="pickExam('${esc(op.id)}')">
+       <i class="key rnd">${esc(op.id)}</i><span>${esc(op.text)}</span></button>`).join('');
+  el.innerHTML = `
+    <div class="ex-top">
+      <button class="ex-x" onclick="quitExam()" aria-label="Выйти">✕</button>
+      <div class="ex-prog"><b>${exam.idx + 1}</b> / ${n}</div>
+      <div class="ex-time" id="exTime">${fmtTime(Date.now() - exam.start)}</div>
+    </div>
+    <div class="ex-track"><i style="width:${exam.idx / n * 100}%"></i></div>
+    <div class="ex-body">
+      <div class="ex-tags"><span class="rar rnd" style="color:${rr.color}"><i class="rar-dot"></i>${esc(rr.title)}</span>
+        <span class="card-meta">${esc(meta)}</span></div>
+      <div class="q">${rich(c.content.text)}${imgHTML(c)}</div>
+      <div class="opts" style="max-height:none;overflow:visible;padding:16px 0 0">${opts}</div>
+    </div>
+    <div class="ex-foot"><button class="btn rnd" onclick="nextExam()">${last ? 'Завершить пробник' : 'Далее'}</button></div>`;
+  const body = el.querySelector('.ex-body');
+  if (body) body.scrollTop = 0;
+}
+function pickExam(oid) {
+  exam.answers[exam.cards[exam.idx].id] = oid;
+  document.querySelectorAll('#exam .opt').forEach(b => b.classList.toggle('sel', b.dataset.o === oid));
+}
+function nextExam() {
+  if (exam.idx < exam.cards.length - 1) { exam.idx++; renderExam(); }
+  else finishExam();
+}
+function finishExam() {
+  clearInterval(examTimer);
+  const elapsed = Date.now() - exam.start;
+  let correct = 0; const wrong = [];
+  exam.cards.forEach(c => {
+    const ok = exam.answers[c.id] === c.content.correctOptionID;
+    if (ok) correct++; else wrong.push(c);
+    S.done[c.id] = (S.done[c.id] || 0) + 1;
+    if (ok) { S.correct[c.id] = 1; S.box[c.id] = Math.min(5, (S.box[c.id] || 0) + 1); S.xp += 10; }
+    else { S.wrong[c.id] = 1; S.box[c.id] = 0; S.xp += 3; }
+    S.doneToday++;
+    S.todayLog = (S.todayLog || []).concat(ok ? 1 : 0).slice(-60);
+  });
+  if (S.doneToday >= S.goalToday && S.goalDay !== today()) { S.goalDay = today(); S.streakDays++; confetti(); }
+  save(); drawChart();
+  renderExamResults(correct, wrong, elapsed);
+}
+function renderExamResults(correct, wrong, elapsed) {
+  const el = document.getElementById('exam'), n = exam.cards.length, pct = Math.round(correct / n * 100);
+  const grade = pct >= 85 ? 'Отлично' : pct >= 70 ? 'Хорошо' : pct >= 50 ? 'Неплохо' : 'Есть над чем поработать';
+  const optText = (c, id) => (c.content.options.find(o => o.id === id) || {}).text || '';
+  let h = `<div class="ex-top"><button class="ex-x" onclick="closeExam()" aria-label="Закрыть">✕</button>
+      <div class="ex-prog">Итог</div><div class="ex-time">${fmtTime(elapsed)}</div></div>
+    <div class="ex-body">
+      <div class="ex-score">${ringHTML(pct, 'var(--c4)')}
+        <div class="ex-score-tx"><b class="rnd">${correct} из ${n}</b><span>${grade} · время ${fmtTime(elapsed)}</span></div>
+      </div>`;
+  if (wrong.length) {
+    h += `<div class="h2">Разбор ошибок · ${wrong.length}</div>`;
+    wrong.forEach(c => {
+      const a = exam.answers[c.id], right = c.content.correctOptionID;
+      h += `<div class="ex-miss">
+        <div class="q" style="font-weight:700">${rich(c.content.text)}</div>
+        ${a ? `<div class="ex-your no">Твой ответ — ${esc(a)}. ${esc(optText(c, a))}</div>` : `<div class="ex-your">Без ответа</div>`}
+        <div class="ex-your ok">Верно — ${esc(right)}. ${esc(optText(c, right))}</div>
+        ${c.content.explanation ? `<div class="ex-expl">${rich(c.content.explanation)}</div>` : ''}
+      </div>`;
+    });
+  } else h += `<div class="empty" style="padding:22px">Ни одной ошибки. Чисто.</div>`;
+  h += `</div><div class="ex-foot">`;
+  if (wrong.length) h += `<button class="btn rnd" onclick="reviewExamMistakes()">Повторить ошибки в ленте</button><div style="height:8px"></div>`;
+  h += `<button class="btn ghost rnd" onclick="closeExam()">Закрыть</button></div>`;
+  el.innerHTML = h;
+}
+function reviewExamMistakes() {
+  examReviewIds = exam.cards.filter(c => exam.answers[c.id] !== c.content.correctOptionID).map(c => c.id);
+  closeExam();
+  filter = { kind: 'examrev', topic: null, set: null };
+  buildQueue(); renderFeed(); go('feed');
+}
+function quitExam() { if (confirm('Выйти из пробника? Результат не сохранится.')) closeExam(); }
+function closeExam() {
+  clearInterval(examTimer); exam = null;
+  const el = document.getElementById('exam');
+  if (el) { el.style.display = 'none'; el.innerHTML = ''; }
 }
 
 /* ==================== экран «Я» ==================== */
@@ -1143,6 +1318,89 @@ function resetAll() {
   save(); renderMe(); drawChart(); buildQueue(); renderFeed();
 }
 
+/* ==================== напоминания ====================
+   Полноценный серверный веб-пуш требует VAPID-сервера, которого у статичного
+   сайта нет. Поэтому напоминания работают локально:
+   1) periodicSync — фоном, если браузер и установленная PWA его поддерживают;
+   2) фолбэк — если наступил час напоминания, а цель дня не закрыта, показываем
+      уведомление при следующем открытии приложения.
+   Персональный текст в обоих случаях собирает service worker из снимка прогресса. */
+function nudgeSupported() {
+  return 'Notification' in window && 'serviceWorker' in navigator;
+}
+/* Кладём свежий прогресс туда, откуда его читает service worker (readState/pickNudge). */
+async function syncStateForSW() {
+  if (!('caches' in window)) return;
+  try {
+    const c = await caches.open('econcards-state');
+    const snap = { goalToday: S.goalToday, doneToday: S.doneToday, streakDays: S.streakDays, pushHour: S.pushHour };
+    await c.put('state', new Response(JSON.stringify(snap), { headers: { 'Content-Type': 'application/json' } }));
+  } catch (e) {}
+}
+async function enableNudges() {
+  if (!nudgeSupported()) { alert('Уведомления не поддерживаются в этом браузере.'); return; }
+  let perm = Notification.permission;
+  if (perm === 'default') perm = await Notification.requestPermission();
+  if (perm !== 'granted') {
+    S.pushOn = false; save(); renderMe();
+    alert('Разрешение на уведомления не выдано. Включи его в настройках сайта и попробуй снова.');
+    return;
+  }
+  S.pushOn = true; save(); syncStateForSW();
+  try {
+    const reg = await navigator.serviceWorker.ready;
+    if (reg.periodicSync) {
+      const tags = await reg.periodicSync.getTags();
+      if (!tags.includes('econcards-nudge'))
+        await reg.periodicSync.register('econcards-nudge', { minInterval: 22 * 60 * 60 * 1000 });
+    }
+  } catch (e) {}
+  renderMe();
+}
+function disableNudges() {
+  S.pushOn = false; save();
+  if (navigator.serviceWorker) navigator.serviceWorker.ready
+    .then(reg => reg.periodicSync && reg.periodicSync.unregister('econcards-nudge').catch(() => {}))
+    .catch(() => {});
+  renderMe();
+}
+function toggleNudges() { S.pushOn ? disableNudges() : enableNudges(); }
+function chHour(d) { S.pushHour = Math.max(6, Math.min(23, S.pushHour + d)); save(); renderMe(); }
+/* Фолбэк: наступил час напоминания, цель не закрыта, сегодня ещё не напоминали. */
+function maybeForegroundNudge() {
+  if (!S.pushOn || !nudgeSupported() || Notification.permission !== 'granted') return;
+  const t = today();
+  if (S.lastNudge === t || S.doneToday >= S.goalToday) return;
+  if (new Date().getHours() < S.pushHour) return;
+  S.lastNudge = t; save();
+  const left = S.goalToday - S.doneToday;
+  const title = S.doneToday > 0 ? 'Осталось ' + left + ' до цели дня' : 'Задача дня ждёт';
+  const body = S.doneToday > 0 ? 'Ты уже начал — доводить проще, чем начинать.'
+    : 'Пара карточек с разбором — и день засчитан.';
+  try {
+    navigator.serviceWorker.ready.then(reg => reg.showNotification(title, {
+      body, icon: './icons/icon-192.png', badge: './icons/icon-192.png',
+      tag: 'econcards-nudge', renotify: true, data: { url: './index.html' }
+    })).catch(() => {});
+  } catch (e) {}
+}
+function pushBlockHTML() {
+  if (!nudgeSupported()) return '';
+  const on = !!S.pushOn && Notification.permission === 'granted';
+  const hh = String(S.pushHour).padStart(2, '0');
+  let h = `<div class="h2">Напоминания</div>
+    <div class="row"><span class="tx"><span class="tt">Напоминать заниматься</span>
+      <span class="ts">${on ? 'Включены' : 'Выключены'}</span></span>
+      <button class="toggle ${on ? 'on' : ''}" onclick="toggleNudges()" aria-label="Напоминания"><i></i></button></div>`;
+  if (on) {
+    h += `<div class="row"><span class="tx"><span class="tt">Время</span>
+      <span class="ts">Если к ${hh}:00 цель не закрыта</span></span>
+      <span class="step"><button onclick="chHour(-1)">−</button><b class="rnd">${hh}:00</b><button onclick="chHour(1)">+</button></span></div>
+      <div class="mixnote" style="padding:2px 4px 0">Фоновые напоминания приходят, если браузер их поддерживает; иначе — при следующем заходе после этого часа.</div>`;
+  }
+  return h;
+}
+
 /* ==================== запуск ==================== */
 function startApp() {
   S.onboarded = true; rollDay(); save();
@@ -1156,6 +1414,13 @@ if (S.onboarded) {
   document.getElementById('ob').style.display = 'none';
   buildQueue(); renderFeed();
 } else drawChart();
+
+/* Прогресс — в кэш для service worker, плюс догоняющее напоминание при заходе. */
+syncStateForSW();
+maybeForegroundNudge();
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden) { rollDay(); maybeForegroundNudge(); }
+});
 </script>
 <script>
 if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
