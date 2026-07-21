@@ -647,7 +647,7 @@ const DEFAULT = {
   goalDay: null, todayLog: [], pushOn: false, pushHour: 19, lastNudge: null,
   mix: { base: 40, rare: 60, superrare: 60, epic: 40, mythic: 25, legendary: 15 },
   theme: 'terminal',
-  klass: null, history: {}, lessons: {}, xpDay: {}, srs: {}, aiUrl: '',
+  klass: null, history: {}, lessons: {}, xpDay: {}, srs: {}, aiUrl: '', aiModel: '',
   done: {}, wrong: {}, correct: {}, box: {}, favs: {}, onboarded: false
 };
 let S = load();
@@ -1962,7 +1962,7 @@ async function callAI(task, payload) {
     contents: [{ role: 'user', parts: [{ text: AI_PROMPT[task](payload) }] }],
     generationConfig: { temperature: task === 'similar' ? 0.7 : 0.3, maxOutputTokens: 900 },
   };
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/${AI_MODEL}:generateContent?key=${encodeURIComponent(v)}`;
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${S.aiModel || AI_MODEL}:generateContent?key=${encodeURIComponent(v)}`;
   const r = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
   let d = {}; try { d = await r.json(); } catch (e) {}
   if (!r.ok) throw new Error((d.error && d.error.message) || 'Ошибка Gemini — проверь ключ или модель.');
@@ -2022,8 +2022,35 @@ function aiSettingsHTML() {
     <div class="mixnote" style="padding:2px 4px 8px"><b>Проще всего:</b> вставь бесплатный ключ Gemini (начинается с <b>AIza…</b>) — Cloudflare не нужен. Взять: aistudio.google.com/apikey. Либо URL своего Worker'а (ai/README.md).</div>
     <input class="ai-url" id="aiUrl" type="text" autocomplete="off" spellcheck="false" placeholder="AIza… (ключ Gemini) или https://…workers.dev" value="${esc(S.aiUrl || '')}" oninput="setAiUrl(this.value)">
     <div class="mixnote" id="aiStat" style="padding:6px 4px 0">${on ? (key ? 'Ключ Gemini подключён — кнопки появятся на задачах.' : 'Прокси подключён — кнопки появятся на задачах.') : 'Пусто — AI-функции скрыты.'}</div>`;
-  if (on) h += `<div style="height:6px"></div><button class="btn ghost sm rnd" onclick="aiTest()">Проверить связь</button>`;
+  if (key) h += `<div class="mixnote" style="padding:6px 4px 2px">Модель: <b>${esc(S.aiModel || AI_MODEL)}</b>. Если пишет «quota / limit: 0» — модель не бесплатна, нажми «Подобрать».</div>
+    <input class="ai-url" id="aiModelInp" type="text" autocomplete="off" spellcheck="false" placeholder="модель (напр. gemini-1.5-flash)" value="${esc(S.aiModel || '')}" oninput="setAiModel(this.value)" style="margin-top:4px">`;
+  if (on) h += `<div style="height:8px"></div><div style="display:flex;gap:8px"><button class="btn ghost sm rnd" onclick="aiTest()">Проверить связь</button>${key ? `<button class="btn ghost sm rnd" onclick="aiPickModel()">Подобрать модель</button>` : ''}</div>`;
   return h;
+}
+function setAiModel(v) { S.aiModel = v.trim(); save(); }
+/* Автоподбор: берём список моделей ключа и находим ту, что реально работает (не «limit: 0»). */
+async function aiPickModel() {
+  const st = document.getElementById('aiStat'); const key = S.aiUrl.trim();
+  if (!key || /^https?:\/\//i.test(key)) { if (st) st.textContent = 'Автоподбор — только для прямого ключа Gemini.'; return; }
+  if (st) st.textContent = 'Ищу бесплатную модель…';
+  try {
+    const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${encodeURIComponent(key)}`);
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.error?.message || 'нет доступа к списку моделей');
+    const cand = (d.models || [])
+      .filter(m => (m.supportedGenerationMethods || []).includes('generateContent'))
+      .map(m => m.name.replace('models/', ''))
+      .filter(n => /flash|lite/i.test(n) && !/vision|thinking|preview|image|audio|tts|embedding/i.test(n));
+    for (const m of cand) {
+      if (st) st.textContent = 'Пробую ' + m + '…';
+      try {
+        const rr = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent?key=${encodeURIComponent(key)}`,
+          { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contents: [{ parts: [{ text: 'ok' }] }], generationConfig: { maxOutputTokens: 5 } }) });
+        if (rr.ok) { S.aiModel = m; save(); const mi = document.getElementById('aiModelInp'); if (mi) mi.value = m; if (st) st.textContent = '✓ Рабочая модель: ' + m + ' — готово!'; return; }
+      } catch (e) {}
+    }
+    if (st) st.textContent = '✗ Бесплатных моделей не нашлось — возможно, нужен billing в Google AI Studio.';
+  } catch (e) { if (st) st.textContent = '✗ ' + (e.message || 'ошибка'); }
 }
 function setAiUrl(v) {
   S.aiUrl = v.trim(); save();
@@ -2033,7 +2060,7 @@ function setAiUrl(v) {
 }
 async function aiTest() {
   const st = document.getElementById('aiStat'); if (st) st.textContent = 'Проверяю…';
-  try { const d = await callAI('explain', { problem: 'Проверка связи.', reference: 'Ответь одним словом: работает.' }); if (st) st.textContent = '✓ Связь есть: ' + (d.text || '').slice(0, 50); }
+  try { const d = await callAI('explain', { problem: 'Проверка связи.', reference: 'Ответь одним словом: работает.' }); if (st) st.textContent = '✓ Связь есть (' + (S.aiModel || AI_MODEL) + '): ' + (d.text || '').slice(0, 40); }
   catch (e) { if (st) st.textContent = '✗ ' + (e.message || 'нет связи'); }
 }
 
