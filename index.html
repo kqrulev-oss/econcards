@@ -461,6 +461,25 @@ input[type=range]::-webkit-slider-thumb{
 .srch input:focus{outline:none;border-color:var(--accent)}
 .srch input::placeholder{color:var(--muted)}
 #srchRes{margin-top:4px}
+
+/* выбор класса */
+.clsrow{display:flex;align-items:center;gap:7px;margin:2px 2px 12px;flex-wrap:wrap}
+.clslab{color:var(--muted);font-size:13px;margin-right:2px}
+.cls{min-width:40px;padding:8px 12px;border-radius:999px;border:var(--bw) solid var(--line);background:var(--soft);color:var(--ink);font-size:14px;font-weight:700;cursor:pointer}
+.cls.on{background:var(--c1);border-color:var(--c1);color:#fff}
+
+/* аналитика в профиле */
+.an-acc{display:flex;align-items:baseline;gap:8px;margin:2px 2px 10px}
+.an-acc b{font-size:30px;font-weight:900}
+.an-acc span{color:var(--muted);font-size:14px}
+.heat{display:flex;flex-wrap:wrap;gap:3px;margin:6px 2px 4px}
+.heat i{width:13px;height:13px;border-radius:3px;background:var(--soft2)}
+.wtopic{display:flex;align-items:center;gap:10px;padding:9px 2px}
+.wtopic .wt-name{flex:1;font-size:14px;font-weight:700}
+.wtopic .wt-bar{flex:none;width:74px;height:7px;border-radius:4px;background:var(--soft2);overflow:hidden}
+.wtopic .wt-bar i{display:block;height:100%}
+.wtopic .wt-pct{flex:none;width:34px;text-align:right;font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums}
+.wtopic .wt-go{flex:none;border:none;background:var(--soft);color:var(--ink);border-radius:8px;padding:6px 10px;font-size:13px;font-weight:700;cursor:pointer}
 </style>
 </head>
 <body>
@@ -578,6 +597,7 @@ const DEFAULT = {
   goalDay: null, todayLog: [], pushOn: false, pushHour: 19, lastNudge: null,
   mix: { base: 40, rare: 60, superrare: 60, epic: 40, mythic: 25, legendary: 15 },
   theme: 'terminal',
+  klass: null, history: {},
   done: {}, wrong: {}, correct: {}, box: {}, favs: {}, onboarded: false
 };
 let S = load();
@@ -591,6 +611,14 @@ function save() {
   if (typeof syncStateForSW === 'function') syncStateForSW();
 }
 function today() { return new Date().toISOString().slice(0, 10); }
+/* Счётчик решённого по дням — для календаря активности. Храним ~120 дней. */
+function recordDay() {
+  const t = today();
+  S.history = S.history || {};
+  S.history[t] = (S.history[t] || 0) + 1;
+  const keys = Object.keys(S.history);
+  if (keys.length > 140) keys.sort().slice(0, keys.length - 120).forEach(k => delete S.history[k]);
+}
 function rollDay() {
   const t = today();
   if (S.lastActive === t) return;
@@ -619,16 +647,17 @@ let filter = { kind: 'all', topic: null, set: null };
 let queue = [], qi = 0;
 
 function filterName() {
-  if (filter.kind === 'topic') return topicTitle[filter.topic] || 'Тема';
+  const kl = S.klass && filter.kind !== 'set' && filter.kind !== 'examrev' && filter.kind !== 'search' ? ` · ${S.klass} кл` : '';
+  if (filter.kind === 'topic') return (topicTitle[filter.topic] || 'Тема') + kl;
   if (filter.kind === 'set') {
     const s = filter.set;
     return `${olympTitle[s.olympiad] || s.olympiad} · ${s.year}`;
   }
-  if (filter.kind === 'favs') return 'Избранное';
-  if (filter.kind === 'repeat') return 'Повторение';
+  if (filter.kind === 'favs') return 'Избранное' + kl;
+  if (filter.kind === 'repeat') return 'Повторение' + kl;
   if (filter.kind === 'examrev') return 'Ошибки пробника';
   if (filter.kind === 'search') return `Поиск: «${searchQuery.trim()}»`;
-  return 'Все темы';
+  return 'Все темы' + kl;
 }
 function filterColor() {
   if (filter.kind === 'topic') return topicColor[filter.topic];
@@ -639,18 +668,39 @@ function filterColor() {
   return 'var(--c1)';
 }
 
+/* Классы карточки: тег вида «9 класс» или диапазон «7–8 класс» / «10-11 класс». */
+function cardGrades(c) {
+  const gs = new Set();
+  (c.tags || []).forEach(t => {
+    const m = /^(\d+)(?:\s*[–-]\s*(\d+))?\s*класс/.exec(t);
+    if (m) { const a = +m[1], b = m[2] ? +m[2] : a; for (let g = a; g <= b; g++) gs.add(g); }
+  });
+  return gs;
+}
+const GRADES = [7, 8, 9, 10, 11];
+
 function pool() {
-  if (filter.kind === 'topic') return CARDS.filter(c => c.topicID === filter.topic);
-  if (filter.kind === 'favs') return CARDS.filter(c => S.favs[c.id]);
-  if (filter.kind === 'repeat') return CARDS.filter(c => S.wrong[c.id] && !S.correct[c.id]);
-  if (filter.kind === 'examrev') return examReviewIds.map(id => cardById[id]).filter(Boolean);
-  if (filter.kind === 'search') return searchMatches(searchQuery);
-  if (filter.kind === 'set') {
+  let list;
+  if (filter.kind === 'topic') list = CARDS.filter(c => c.topicID === filter.topic);
+  else if (filter.kind === 'favs') list = CARDS.filter(c => S.favs[c.id]);
+  else if (filter.kind === 'repeat') list = CARDS.filter(c => S.wrong[c.id] && !S.correct[c.id]);
+  else if (filter.kind === 'examrev') return examReviewIds.map(id => cardById[id]).filter(Boolean);
+  else if (filter.kind === 'search') return searchMatches(searchQuery);
+  else if (filter.kind === 'set') {
     const s = filter.set;
     return CARDS.filter(c => c.olympiad && c.olympiad.olympiadID === s.olympiad
       && c.olympiad.year === s.year && c.olympiad.stage === s.stage);
   }
-  return CARDS.slice();
+  else list = CARDS.slice();
+  /* Класс — необязательное сужение поверх ленты, тем, повторения и избранного. */
+  if (S.klass) list = list.filter(c => cardGrades(c).has(S.klass));
+  return list;
+}
+function setClass(g) {
+  S.klass = S.klass === g ? null : (g || null);
+  save();
+  buildQueue(); renderFeed();
+  if (document.getElementById('modal').innerHTML) { closeSheet(); openFilter(); }
 }
 
 /* Вес карточки = интервальное повторение × доля уровня.
@@ -873,6 +923,7 @@ function finish(c, win, note, quiet) {
   S.xp += gain;
   S.doneToday++;
   S.todayLog = (S.todayLog || []).concat(win ? 1 : 0).slice(-60);
+  recordDay();
   /* Серию засчитываем один раз в день — по достижению цели, даже если её
      потом подняли или перевыполнили. Строгое «===» пропускало день,
      когда цель меняли на лету или отвечали пачкой. */
@@ -1051,7 +1102,13 @@ function openFilter() {
   const secs = [...new Set(TOPICS.map(t => t.section))];
   let h = `<div class="grab"></div><div class="big rnd">Что показывать</div>
     <div class="srch"><input id="srchIn" type="search" placeholder="Поиск по карточкам…" autocomplete="off" oninput="onSearch(this.value)"><div id="srchRes"></div></div>`;
-  h += tileBtn('🎲', 'Всё подряд', CARDS.length + ' карточек', `setFilter('all')`);
+  h += `<div class="clsrow"><span class="clslab">Класс</span>
+    <button class="cls ${!S.klass ? 'on' : ''}" onclick="setClass(null)">Все</button>` +
+    GRADES.map(g => `<button class="cls ${S.klass === g ? 'on' : ''}" onclick="setClass(${g})">${g}</button>`).join('') +
+    `</div>`;
+  const klN = S.klass ? CARDS.filter(c => cardGrades(c).has(S.klass)).length : CARDS.length;
+  if (S.klass) h += `<div class="mixnote" style="margin:-4px 4px 10px">Класс сужает ленту, темы, повторение и избранное. Для ${S.klass} класса — ${klN} заданий.</div>`;
+  h += tileBtn('🎲', 'Всё подряд', klN + ' карточек', `setFilter('all')`);
   const rep = CARDS.filter(c => S.wrong[c.id] && !S.correct[c.id]).length;
   h += tileBtn('🔁', 'Работа над ошибками', rep + ' карточек', `setFilter('repeat')`);
   const fv = Object.keys(S.favs).length;
@@ -1294,6 +1351,7 @@ function finishExam() {
     else { S.wrong[c.id] = 1; S.box[c.id] = 0; S.xp += 3; }
     S.doneToday++;
     S.todayLog = (S.todayLog || []).concat(ok ? 1 : 0).slice(-60);
+    recordDay();
   });
   if (S.doneToday >= S.goalToday && S.goalDay !== today()) { S.goalDay = today(); S.streakDays++; confetti(); }
   save(); drawChart();
@@ -1340,6 +1398,54 @@ function closeExam() {
 }
 
 /* ==================== экран «Я» ==================== */
+/* Аналитика: общая точность, календарь активности за 4 недели, слабые темы. */
+function analyticsHTML() {
+  let corr = 0, wr = 0;
+  const stat = {};
+  CARDS.forEach(c => {
+    const t = c.topicID;
+    if (!stat[t]) stat[t] = { c: 0, w: 0 };
+    if (S.correct[c.id]) { corr++; stat[t].c++; }
+    else if (S.wrong[c.id]) { wr++; stat[t].w++; }
+  });
+  const attempted = corr + wr;
+  let h = `<div class="h2">Аналитика</div>`;
+  if (!attempted) return h + `<div class="empty" style="padding:20px">Порешай карточки — здесь появятся точность, слабые темы и календарь активности.</div>`;
+  const acc = Math.round(corr / attempted * 100);
+  h += `<div class="an-acc"><b style="color:var(--ok)">${acc}%</b><span>точность · ${corr} верно из ${attempted}</span></div>`;
+  /* календарь активности за 28 дней */
+  const days = 28, base = new Date(today());
+  const arr = [];
+  for (let i = days - 1; i >= 0; i--) { const d = new Date(base); d.setDate(d.getDate() - i); arr.push(d.toISOString().slice(0, 10)); }
+  const hist = S.history || {};
+  const max = Math.max(1, ...arr.map(d => hist[d] || 0));
+  const heat = arr.map(d => {
+    const v = hist[d] || 0;
+    const op = v ? (v >= max * .66 ? 1 : v >= max * .33 ? .7 : .45) : 0;
+    return `<i title="${d}: ${v}"${v ? ` style="background:var(--ok);opacity:${op}"` : ''}></i>`;
+  }).join('');
+  h += `<div class="heat">${heat}</div><div class="mixnote" style="padding:0 2px 8px">Активность за 4 недели</div>`;
+  /* слабые темы */
+  const weak = Object.keys(stat).map(t => {
+    const a = stat[t].c + stat[t].w;
+    return { t, a, pct: a ? Math.round(stat[t].c / a * 100) : 0 };
+  }).filter(x => x.a >= 3).sort((a, b) => a.pct - b.pct).slice(0, 5);
+  if (weak.length) {
+    weak.forEach(w => {
+      const col = w.pct < 50 ? 'var(--no)' : w.pct < 75 ? 'var(--c4)' : 'var(--ok)';
+      h += `<div class="wtopic">
+        <span class="wt-name">${esc(topicTitle[w.t] || w.t)}</span>
+        <span class="wt-bar"><i style="width:${w.pct}%;background:${col}"></i></span>
+        <span class="wt-pct">${w.pct}%</span>
+        <button class="wt-go" onclick="drillTopic('${w.t}')">Подтянуть</button>
+      </div>`;
+    });
+    h += `<div class="mixnote" style="padding:6px 2px 0">Слабые темы — где ниже всего точность (от 3 попыток). «Подтянуть» откроет тему в ленте.</div>`;
+  }
+  return h;
+}
+function drillTopic(t) { setFilter('topic', t); }
+
 function renderMe() {
   const lvl = Math.floor(S.xp / 100) + 1;
   const solved = Object.keys(S.correct).length;
@@ -1353,6 +1459,7 @@ function renderMe() {
   <div class="row"><span class="tx"><span class="tt">Цель дня</span>
     <span class="ts">${S.doneToday} из ${S.goalToday} сегодня</span></span>
     <span class="step"><button onclick="chGoal(-5)">−</button><b class="rnd">${S.goalToday}</b><button onclick="chGoal(5)">+</button></span></div>`;
+  h += analyticsHTML();
   h += `<div class="h2">Оформление</div><div class="themes">` + THEMES.map(t => `
     <button class="th ${S.theme === t.id ? 'on' : ''}" onclick="setTheme('${t.id}')">
       <span class="th-prev" style="background:${t.bar}">
