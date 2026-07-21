@@ -488,6 +488,19 @@ input[type=range]::-webkit-slider-thumb{
 .les-body .fblock{margin:10px 0}
 .f sup,.fblock sup{font-size:.72em;line-height:0}
 .btn[disabled]{opacity:.55;pointer-events:none}
+
+/* песочница моделей (интерактивные графики) */
+#model{position:absolute;inset:0;z-index:120;background:var(--bg);display:none;flex-direction:column;padding-top:var(--safe-t)}
+.mdl-h{font-size:20px;font-weight:900;margin:2px 2px 2px}
+.mdl-svg{width:100%;height:auto;display:block;touch-action:manipulation}
+.mdl-svg text{fill:var(--muted);font-family:var(--fmono);font-size:9px}
+.mdl-read{display:flex;flex-wrap:wrap;gap:7px;margin:8px 2px 4px}
+.mdl-chip{background:var(--soft);border-radius:999px;padding:6px 11px;font-size:13px;font-weight:700}
+.mdl-chip b{font-family:var(--fmono)}
+.mdl-row{display:flex;align-items:center;gap:10px;margin:9px 2px}
+.mdl-row .lab{flex:none;width:104px;font-size:13px;color:var(--muted)}
+.mdl-row input[type=range]{flex:1}
+.mdl-row .v{flex:none;width:38px;text-align:right;font-family:var(--fmono);font-size:13px}
 </style>
 </head>
 <body>
@@ -1455,6 +1468,11 @@ function renderCourses() {
   if (!COURSES.length) { box.innerHTML = `<div class="big rnd">Курсы</div><div class="empty" style="padding:24px">Курсы скоро появятся.</div>`; return; }
   let h = `<div class="big rnd">Курсы</div>
     <div class="mixnote" style="margin:-8px 4px 16px">Короткая теория с формулами, а сразу после — карточки по теме, чтобы закрепить.</div>`;
+  h += `<button class="tile" onclick="openModel('sd')">
+    <i class="ico" style="background:var(--c4)22">🧪</i>
+    <span class="tx"><span class="tt">Песочница моделей</span>
+      <span class="ts">Спрос/предложение, налог и DWL — двигай вживую</span></span>
+    <i class="chev">›</i></button>`;
   COURSES.forEach(c => {
     const p = courseProgress(c);
     h += `<button class="tile" onclick="openCourse('${c.id}')">
@@ -1524,6 +1542,100 @@ function lessonDone(courseId, lessonId) {
   renderCourses();
 }
 function practiceLesson(topic) { closeLesson(); if (topic) setFilter('topic', topic); else go('feed'); }
+
+/* ==================== песочница моделей ====================
+   Интерактивные графики: двигаешь ползунки — модель и цифры пересчитываются
+   вживую. Экономику понимают руками. Пока одна модель — спрос/предложение
+   с налогом и чистыми потерями (DWL); движок рассчитан на добавление новых. */
+const QMAX = 180, PMAX = 180;
+const PAD_L = 42, PAD_T = 14, PLOT_W = 286, PLOT_H = 250;
+const mX = q => PAD_L + q / QMAX * PLOT_W;
+const mY = p => PAD_T + (1 - p / PMAX) * PLOT_H;
+const sdState = { d: 0, s: 0, t: 0 };
+function sdCompute() {
+  const Ad = 120 + sdState.d, As = 20 + sdState.s, t = sdState.t;   // наклоны Bd=Bs=1
+  const Q0 = (Ad - As) / 2, P0 = Ad - Q0;
+  const Qt = Math.max(0, (Ad - As - t) / 2);
+  const Pc = Ad - Qt, Pp = As + Qt;
+  return { Ad, As, t, Q0, P0, Qt, Pc, Pp, rev: t * Qt, dwl: 0.5 * t * Math.max(0, Q0 - Qt) };
+}
+function sdSVG() {
+  const m = sdCompute();
+  const line = (x1, y1, x2, y2, col, w, dash) =>
+    `<line x1="${mX(x1)}" y1="${mY(y1)}" x2="${mX(x2)}" y2="${mY(y2)}" stroke="${col}" stroke-width="${w}"${dash ? ` stroke-dasharray="4 4"` : ''} stroke-linecap="round"/>`;
+  const dot = (q, p, col) => `<circle cx="${mX(q)}" cy="${mY(p)}" r="4.5" fill="${col}"/>`;
+  let g = '';
+  // сетка
+  for (let v = 30; v < QMAX; v += 30) g += line(v, 0, v, PMAX, 'var(--soft2)', 1);
+  for (let v = 30; v < PMAX; v += 30) g += line(0, v, QMAX, v, 'var(--soft2)', 1);
+  // оси
+  g += line(0, 0, QMAX, 0, 'var(--muted)', 1.5) + line(0, 0, 0, PMAX, 'var(--muted)', 1.5);
+  g += `<text x="${mX(QMAX) - 6}" y="${mY(0) + 12}">Q</text><text x="${mX(0) - 10}" y="${mY(PMAX) + 4}">P</text>`;
+  // налог: заливки под кривыми
+  if (m.t > 0) {
+    g += `<polygon points="${mX(0)},${mY(m.Pp)} ${mX(0)},${mY(m.Pc)} ${mX(m.Qt)},${mY(m.Pc)} ${mX(m.Qt)},${mY(m.Pp)}" fill="var(--c4)" opacity=".22"/>`;
+    g += `<polygon points="${mX(m.Qt)},${mY(m.Pc)} ${mX(m.Q0)},${mY(m.P0)} ${mX(m.Qt)},${mY(m.Pp)}" fill="var(--c3)" opacity=".3"/>`;
+  }
+  // кривые: спрос (Q-интерсепт = Ad), предложение (от (0,As))
+  g += line(0, m.Ad, m.Ad, 0, 'var(--c1)', 2.5);
+  g += line(0, m.As, QMAX, m.As + QMAX, 'var(--c2)', 2.5);
+  if (m.t > 0) {
+    g += line(0, m.As + m.t, QMAX, m.As + m.t + QMAX, 'var(--c2)', 1.8, true);
+    g += line(m.Qt, m.Pp, m.Qt, m.Pc, 'var(--ink)', 1.4, true);
+    g += dot(m.Qt, m.Pc, 'var(--c1)') + dot(m.Qt, m.Pp, 'var(--c2)');
+  } else {
+    g += dot(m.Q0, m.P0, 'var(--accent)');
+  }
+  return `<svg class="mdl-svg" viewBox="0 0 ${PAD_L + PLOT_W + 6} ${PAD_T + PLOT_H + 18}" preserveAspectRatio="xMidYMid meet" style="--accent:var(--c4)">${g}</svg>`;
+}
+function sdReadout() {
+  const m = sdCompute();
+  const n = x => Math.round(x * 10) / 10;
+  let h = `<span class="mdl-chip">Равновесие: <b>P*=${n(m.P0)}</b>, <b>Q*=${n(m.Q0)}</b></span>`;
+  if (m.t > 0) {
+    h += `<span class="mdl-chip">Цена покупателя <b>${n(m.Pc)}</b></span>
+      <span class="mdl-chip">Цена продавца <b>${n(m.Pp)}</b></span>
+      <span class="mdl-chip">Объём <b>${n(m.Qt)}</b></span>
+      <span class="mdl-chip" style="background:var(--c4);opacity:.9">Сбор налога <b>${n(m.rev)}</b></span>
+      <span class="mdl-chip" style="background:var(--c3);color:#fff">Потери DWL <b>${n(m.dwl)}</b></span>`;
+  }
+  return h;
+}
+function sdSet(k, v) {
+  sdState[k] = Number(v);
+  const el = document.getElementById('model');
+  if (!el) return;
+  el.querySelector('.mdl-plot').innerHTML = sdSVG();
+  el.querySelector('.mdl-read').innerHTML = sdReadout();
+  el.querySelector('#mv-' + k).textContent = (k === 't' ? '' : (v > 0 ? '+' : '')) + v;
+}
+function openModel(id) {
+  let el = document.getElementById('model');
+  if (!el) { el = document.createElement('div'); el.id = 'model'; document.getElementById('app').appendChild(el); }
+  const slider = (k, lab, min, max) =>
+    `<div class="mdl-row"><span class="lab">${lab}</span>
+      <input type="range" min="${min}" max="${max}" step="1" value="${sdState[k]}" oninput="sdSet('${k}',this.value)">
+      <span class="v" id="mv-${k}">${(k === 't' ? '' : (sdState[k] > 0 ? '+' : '')) + sdState[k]}</span></div>`;
+  el.innerHTML = `
+    <div class="ex-top">
+      <button class="ex-x" onclick="closeModel()" aria-label="Закрыть">✕</button>
+      <div class="ex-prog">Спрос и предложение</div><div class="ex-time">🧪</div>
+    </div>
+    <div class="ex-body">
+      <div class="mdl-h rnd">Двигай ползунки — модель живая</div>
+      <div class="mixnote" style="padding:2px 2px 6px"><span style="color:var(--c1)">■</span> спрос · <span style="color:var(--c2)">■</span> предложение · при налоге появляются клин, сбор (жёлтый) и чистые потери DWL (красный).</div>
+      <div class="mdl-plot">${sdSVG()}</div>
+      <div class="mdl-read">${sdReadout()}</div>
+      ${slider('d', 'Спрос (сдвиг)', -40, 50)}
+      ${slider('s', 'Предложение', -15, 60)}
+      ${slider('t', 'Налог t', 0, 60)}
+      <div style="height:6px"></div>
+      <div class="mixnote" style="padding:0 2px">Налог с производителя поднимает кривую предложения на t: покупатель платит больше, продавец получает меньше, часть сделок исчезает — это и есть DWL.</div>
+    </div>
+    <div class="ex-foot"><button class="btn ghost rnd" onclick="closeModel()">Закрыть</button></div>`;
+  el.style.display = 'flex';
+}
+function closeModel() { const el = document.getElementById('model'); if (el) { el.style.display = 'none'; el.innerHTML = ''; } }
 
 /* ==================== экран «Я» ==================== */
 /* Аналитика: общая точность, календарь активности за 4 недели, слабые темы. */
