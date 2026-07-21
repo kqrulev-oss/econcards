@@ -67,7 +67,7 @@ export default {
     const payload = {
       systemInstruction: { parts: [{ text: SYSTEM[task] }] },
       contents: [{ role: 'user', parts: [{ text: PROMPT[task](body) }] }],
-      generationConfig: { temperature: task === 'similar' ? 0.7 : 0.3, maxOutputTokens: 900 },
+      generationConfig: { temperature: task === 'similar' ? 0.7 : 0.3, maxOutputTokens: 2048 },
     };
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${env.GEMINI_KEY}`;
 

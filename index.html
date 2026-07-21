@@ -1960,7 +1960,7 @@ async function callAI(task, payload) {
   const body = {
     systemInstruction: { parts: [{ text: AI_SYS[task] }] },
     contents: [{ role: 'user', parts: [{ text: AI_PROMPT[task](payload) }] }],
-    generationConfig: { temperature: task === 'similar' ? 0.7 : 0.3, maxOutputTokens: 900 },
+    generationConfig: { temperature: task === 'similar' ? 0.7 : 0.3, maxOutputTokens: 2048 },
   };
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${S.aiModel || AI_MODEL}:generateContent?key=${encodeURIComponent(v)}`;
   const r = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
@@ -2040,7 +2040,9 @@ async function aiPickModel() {
     const cand = (d.models || [])
       .filter(m => (m.supportedGenerationMethods || []).includes('generateContent'))
       .map(m => m.name.replace('models/', ''))
-      .filter(n => /flash|lite/i.test(n) && !/vision|thinking|preview|image|audio|tts|embedding/i.test(n));
+      .filter(n => /flash|lite/i.test(n) && !/vision|thinking|preview|image|audio|tts|embedding/i.test(n))
+      /* сначала модели без внутреннего «думанья» (не 2.5): весь бюджет токенов идёт в ответ */
+      .sort((a, b) => (/2\.5/.test(a) ? 1 : 0) - (/2\.5/.test(b) ? 1 : 0) || (/lite/i.test(b) ? 1 : 0) - (/lite/i.test(a) ? 1 : 0));
     for (const m of cand) {
       if (st) st.textContent = 'Пробую ' + m + '…';
       try {
