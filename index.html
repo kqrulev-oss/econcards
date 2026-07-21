@@ -454,6 +454,13 @@ input[type=range]::-webkit-slider-thumb{
 .ex-your.no{background:var(--no-soft);color:var(--no-ink)}
 .ex-your.ok{background:var(--ok-soft);color:var(--ok-ink)}
 .ex-expl{font-size:14px;line-height:1.5;color:var(--muted);margin-top:8px;white-space:pre-wrap}
+
+/* поиск по карточкам */
+.srch{margin:2px 0 10px}
+.srch input{width:100%;padding:12px 14px;border-radius:var(--r);border:var(--bw) solid var(--line);background:var(--soft);color:var(--ink);font-size:15px;font-family:var(--fbody);-webkit-appearance:none}
+.srch input:focus{outline:none;border-color:var(--accent)}
+.srch input::placeholder{color:var(--muted)}
+#srchRes{margin-top:4px}
 </style>
 </head>
 <body>
@@ -620,6 +627,7 @@ function filterName() {
   if (filter.kind === 'favs') return 'Избранное';
   if (filter.kind === 'repeat') return 'Повторение';
   if (filter.kind === 'examrev') return 'Ошибки пробника';
+  if (filter.kind === 'search') return `Поиск: «${searchQuery.trim()}»`;
   return 'Все темы';
 }
 function filterColor() {
@@ -627,6 +635,7 @@ function filterColor() {
   if (filter.kind === 'set') return 'var(--c4)';
   if (filter.kind === 'favs') return 'var(--c5)';
   if (filter.kind === 'examrev') return 'var(--c3)';
+  if (filter.kind === 'search') return 'var(--c8)';
   return 'var(--c1)';
 }
 
@@ -635,6 +644,7 @@ function pool() {
   if (filter.kind === 'favs') return CARDS.filter(c => S.favs[c.id]);
   if (filter.kind === 'repeat') return CARDS.filter(c => S.wrong[c.id] && !S.correct[c.id]);
   if (filter.kind === 'examrev') return examReviewIds.map(id => cardById[id]).filter(Boolean);
+  if (filter.kind === 'search') return searchMatches(searchQuery);
   if (filter.kind === 'set') {
     const s = filter.set;
     return CARDS.filter(c => c.olympiad && c.olympiad.olympiadID === s.olympiad
@@ -662,6 +672,7 @@ function weight(c) {
 function buildQueue(shuffle = true) {
   let p = pool();
   if (!p.length) { queue = []; qi = 0; return; }
+  if (filter.kind === 'search') { queue = p; qi = 0; return; }  /* сохраняем порядок по релевантности */
   if (filter.kind === 'set' || filter.kind === 'examrev') {
     p.sort((a, b) => a.id.localeCompare(b.id, 'ru', { numeric: true }));
     queue = p;
@@ -978,9 +989,68 @@ function applyMix() {
   closeSheet(); buildQueue(); renderFeed(); go('feed');
 }
 
+/* ==================== поиск ====================
+   Живой поиск по 1211 карточкам: текст задания, тема, теги, олимпиада, тип.
+   Регистр и «ё/е» не важны; все слова запроса должны встретиться. */
+let searchQuery = '';
+const unitIcon = {};
+UNITS.forEach(u => unitIcon[u.topic] = u.icon);
+function norm(s) { return String(s || '').toLowerCase().replace(/ё/g, 'е'); }
+function searchMatches(q) {
+  q = norm(q).trim();
+  if (q.length < 2) return [];
+  const terms = q.split(/\s+/);
+  const scored = [];
+  CARDS.forEach(c => {
+    const hay = norm([c.content.text, topicTitle[c.topicID], (c.tags || []).join(' '),
+      c.olympiad ? olympTitle[c.olympiad.olympiadID] : '', KIND[c.type]].join(' '));
+    if (terms.every(t => hay.includes(t))) {
+      const pos = norm(c.content.text).indexOf(terms[0]);
+      scored.push({ c, s: pos < 0 ? 1e9 : pos });
+    }
+  });
+  scored.sort((a, b) => a.s - b.s);
+  return scored.map(x => x.c);
+}
+function onSearch(q) {
+  searchQuery = q;
+  const box = document.getElementById('srchRes');
+  if (!box) return;
+  if (norm(q).trim().length < 2) { box.innerHTML = ''; return; }
+  const m = searchMatches(q);
+  if (!m.length) { box.innerHTML = `<div class="mixnote" style="padding:10px 4px">Ничего не найдено.</div>`; return; }
+  let h = `<button class="tile" onclick="runSearch()"><i class="ico" style="background:var(--soft)">🔎</i>
+    <span class="tx"><span class="tt">Открыть все в ленте</span><span class="ts">${m.length} ${m.length === 1 ? 'карточка' : 'карточек'} по запросу</span></span><i class="chev">›</i></button>`;
+  m.slice(0, 24).forEach(c => {
+    const txt = c.content.text;
+    h += `<button class="tile" onclick="openFound('${c.id}')">
+      <i class="ico" style="background:${topicColor[c.topicID]}22">${unitIcon[c.topicID] || '📄'}</i>
+      <span class="tx"><span class="tt" style="font-size:14px;font-weight:700">${esc(txt.slice(0, 72))}${txt.length > 72 ? '…' : ''}</span>
+      <span class="ts">${KIND[c.type] || ''} · ${esc(topicTitle[c.topicID] || '')}</span></span></button>`;
+  });
+  if (m.length > 24) h += `<div class="mixnote" style="padding:8px 4px">…и ещё ${m.length - 24}. Открой все в ленте.</div>`;
+  box.innerHTML = h;
+}
+function runSearch() {
+  if (norm(searchQuery).trim().length < 2) return;
+  filter = { kind: 'search', topic: null, set: null };
+  closeSheet(); buildQueue(); renderFeed(); go('feed');
+}
+/* Открыть один результат: грузим всю выдачу в ленту и прокручиваем к нему. */
+function openFound(id) {
+  filter = { kind: 'search', topic: null, set: null };
+  closeSheet(); buildQueue(); renderFeed(); go('feed');
+  const i = queue.findIndex(c => c.id === id);
+  if (i < 0) return;
+  const feed = document.getElementById('feed');
+  while (rendered <= i && rendered < queue.length) appendSlides(BATCH);
+  setTimeout(() => { feed.scrollTop = i * feed.clientHeight; updatePos(); }, 40);
+}
+
 function openFilter() {
   const secs = [...new Set(TOPICS.map(t => t.section))];
-  let h = `<div class="grab"></div><div class="big rnd">Что показывать</div>`;
+  let h = `<div class="grab"></div><div class="big rnd">Что показывать</div>
+    <div class="srch"><input id="srchIn" type="search" placeholder="Поиск по карточкам…" autocomplete="off" oninput="onSearch(this.value)"><div id="srchRes"></div></div>`;
   h += tileBtn('🎲', 'Всё подряд', CARDS.length + ' карточек', `setFilter('all')`);
   const rep = CARDS.filter(c => S.wrong[c.id] && !S.correct[c.id]).length;
   h += tileBtn('🔁', 'Работа над ошибками', rep + ' карточек', `setFilter('repeat')`);
