@@ -431,6 +431,29 @@ input[type=range]::-webkit-slider-thumb{
 .toggle.on{background:var(--ok)}
 .toggle i{position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:#fff;transition:transform .18s;box-shadow:0 1px 2px rgba(0,0,0,.25)}
 .toggle.on i{transform:translateX(18px)}
+
+/* режим пробника (экзамен на время) */
+#exam{position:absolute;inset:0;z-index:120;background:var(--bg);display:none;flex-direction:column;--accent:var(--c4);padding-top:var(--safe-t)}
+.ex-top{display:flex;align-items:center;justify-content:space-between;padding:12px 16px 10px;gap:12px;flex:none}
+.ex-x{width:34px;height:34px;border-radius:50%;border:none;background:var(--soft);color:var(--ink);font-size:15px;flex:none;cursor:pointer}
+.ex-prog{font-weight:800;color:var(--muted);font-size:15px}
+.ex-prog b{color:var(--ink)}
+.ex-time{font-family:var(--fmono);font-weight:700;color:var(--muted);font-variant-numeric:tabular-nums}
+.ex-track{height:4px;background:var(--soft2);flex:none;margin:0 16px;border-radius:2px;overflow:hidden}
+.ex-track i{display:block;height:100%;background:var(--accent);transition:width .25s}
+.ex-body{flex:1;overflow-y:auto;padding:16px 16px 20px;-webkit-overflow-scrolling:touch}
+.ex-tags{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.ex-foot{flex:none;padding:12px 16px calc(12px + var(--safe-b));border-top:var(--bw) solid var(--line);background:var(--bg)}
+.opt.sel{background:var(--soft2);border-color:var(--accent)}
+.opt.sel .key{background:var(--accent);border-color:var(--accent);color:var(--onaccent)}
+.ex-score{display:flex;align-items:center;gap:16px;padding:8px 0 14px}
+.ex-score-tx b{font-size:26px;font-weight:900;display:block}
+.ex-score-tx span{color:var(--muted);font-size:14px}
+.ex-miss{padding:14px 0;border-top:var(--bw) solid var(--line)}
+.ex-your{font-size:14px;margin-top:8px;padding:8px 11px;border-radius:var(--r-sm);background:var(--soft)}
+.ex-your.no{background:var(--no-soft);color:var(--no-ink)}
+.ex-your.ok{background:var(--ok-soft);color:var(--ok-ink)}
+.ex-expl{font-size:14px;line-height:1.5;color:var(--muted);margin-top:8px;white-space:pre-wrap}
 </style>
 </head>
 <body>
@@ -596,12 +619,14 @@ function filterName() {
   }
   if (filter.kind === 'favs') return 'Избранное';
   if (filter.kind === 'repeat') return 'Повторение';
+  if (filter.kind === 'examrev') return 'Ошибки пробника';
   return 'Все темы';
 }
 function filterColor() {
   if (filter.kind === 'topic') return topicColor[filter.topic];
   if (filter.kind === 'set') return 'var(--c4)';
   if (filter.kind === 'favs') return 'var(--c5)';
+  if (filter.kind === 'examrev') return 'var(--c3)';
   return 'var(--c1)';
 }
 
@@ -609,6 +634,7 @@ function pool() {
   if (filter.kind === 'topic') return CARDS.filter(c => c.topicID === filter.topic);
   if (filter.kind === 'favs') return CARDS.filter(c => S.favs[c.id]);
   if (filter.kind === 'repeat') return CARDS.filter(c => S.wrong[c.id] && !S.correct[c.id]);
+  if (filter.kind === 'examrev') return examReviewIds.map(id => cardById[id]).filter(Boolean);
   if (filter.kind === 'set') {
     const s = filter.set;
     return CARDS.filter(c => c.olympiad && c.olympiad.olympiadID === s.olympiad
@@ -636,7 +662,7 @@ function weight(c) {
 function buildQueue(shuffle = true) {
   let p = pool();
   if (!p.length) { queue = []; qi = 0; return; }
-  if (filter.kind === 'set') {
+  if (filter.kind === 'set' || filter.kind === 'examrev') {
     p.sort((a, b) => a.id.localeCompare(b.id, 'ru', { numeric: true }));
     queue = p;
   } else if (shuffle) {
@@ -1085,7 +1111,7 @@ function renderOneOlymp(id) {
         const pct = cs.length ? Math.round(ok / cs.length * 100) : 0;
         const classes = [...new Set(cs.map(c => (c.tags.find(t => /класс/.test(t)) || '').replace(' класс', '')))]
           .filter(Boolean).join(', ');
-        h += `<button class="tile" onclick="runSet('${s.olympiad}',${s.year},'${s.stage}')">
+        h += `<button class="tile" onclick="openSetSheet('${s.olympiad}',${s.year},'${s.stage}')">
           <i class="ico" style="background:var(--soft)">${pct === 100 ? '🏅' : '📄'}</i>
           <span class="tx"><span class="tt">${esc(stageTitle[s.stage] || s.stage)}</span>
             <span class="ts">${cs.length} заданий${classes ? ' · ' + classes + ' класс' : ''} · решено ${ok}</span></span>
@@ -1103,6 +1129,144 @@ function infoBlock(title, body) {
 function runSet(olympiad, year, stage) {
   filter = { kind: 'set', topic: null, set: { olympiad, year, stage } };
   buildQueue(); renderFeed(); go('feed');
+}
+
+/* ==================== пробник (экзамен на время) ====================
+   Набор заданий олимпиады превращаем в тест: таймер, ответы без мгновенной
+   подсказки, в конце — балл, время и разбор ошибок. В пробник берём только
+   задания с вариантами и известным ключом — остальные не проверить автоматом. */
+let exam = null, examTimer = 0, examReviewIds = [];
+
+function gradeable(cards) {
+  return cards.filter(c => c.content.options && c.content.options.length && c.content.correctOptionID);
+}
+function setCards(olympiad, year, stage) {
+  return CARDS.filter(c => c.olympiad && c.olympiad.olympiadID === olympiad
+    && c.olympiad.year === year && c.olympiad.stage === stage);
+}
+/* Тап по набору предлагает выбор: листать с разбором или пройти пробник. */
+function openSetSheet(olympiad, year, stage) {
+  const all = setCards(olympiad, year, stage);
+  const g = gradeable(all);
+  const title = `${olympTitle[olympiad] || olympiad} · ${year} · ${stageTitle[stage] || stage}`;
+  let h = `<div class="grab"></div><div class="big rnd">${esc(title)}</div>
+    <div class="mixnote" style="margin:-6px 4px 14px">${all.length} заданий в наборе${g.length < all.length ? `, из них ${g.length} с автопроверкой` : ''}.</div>`;
+  h += tileBtn('📄', 'Листать с разбором', all.length + ' заданий', `runSetFromSheet('${olympiad}',${year},'${stage}')`);
+  if (g.length) h += tileBtn('⏱', 'Пробник на время', g.length + ' заданий · балл и разбор', `startExam('${olympiad}',${year},'${stage}')`);
+  else h += `<div class="mixnote" style="padding:8px 4px">Пробник недоступен: в наборе нет заданий с вариантами ответа.</div>`;
+  sheet(h);
+}
+function runSetFromSheet(o, y, s) { closeSheet(); runSet(o, y, s); }
+
+function fmtTime(ms) {
+  const s = Math.max(0, Math.floor(ms / 1000));
+  return String(Math.floor(s / 60)).padStart(2, '0') + ':' + String(s % 60).padStart(2, '0');
+}
+function startExam(olympiad, year, stage) {
+  closeSheet();
+  const cards = gradeable(setCards(olympiad, year, stage))
+    .sort((a, b) => a.id.localeCompare(b.id, 'ru', { numeric: true }));
+  if (!cards.length) { alert('В этом наборе нет заданий с автопроверкой.'); return; }
+  exam = { cards, idx: 0, answers: {}, start: Date.now() };
+  let el = document.getElementById('exam');
+  if (!el) { el = document.createElement('div'); el.id = 'exam'; document.getElementById('app').appendChild(el); }
+  el.style.display = 'flex';
+  renderExam();
+  clearInterval(examTimer);
+  examTimer = setInterval(() => {
+    const t = document.getElementById('exTime');
+    if (t && exam) t.textContent = fmtTime(Date.now() - exam.start);
+  }, 1000);
+}
+function renderExam() {
+  const el = document.getElementById('exam');
+  const c = exam.cards[exam.idx], n = exam.cards.length, sel = exam.answers[c.id];
+  const rr = rarById[c.rarity] || rarById.base;
+  const o = c.olympiad, meta = o ? `${o.year} · ${stageTitle[o.stage] || o.stage}` : '';
+  const last = exam.idx === n - 1;
+  const opts = c.content.options.map(op =>
+    `<button class="opt ${sel === op.id ? 'sel' : ''}" data-o="${esc(op.id)}" onclick="pickExam('${esc(op.id)}')">
+       <i class="key rnd">${esc(op.id)}</i><span>${esc(op.text)}</span></button>`).join('');
+  el.innerHTML = `
+    <div class="ex-top">
+      <button class="ex-x" onclick="quitExam()" aria-label="Выйти">✕</button>
+      <div class="ex-prog"><b>${exam.idx + 1}</b> / ${n}</div>
+      <div class="ex-time" id="exTime">${fmtTime(Date.now() - exam.start)}</div>
+    </div>
+    <div class="ex-track"><i style="width:${exam.idx / n * 100}%"></i></div>
+    <div class="ex-body">
+      <div class="ex-tags"><span class="rar rnd" style="color:${rr.color}"><i class="rar-dot"></i>${esc(rr.title)}</span>
+        <span class="card-meta">${esc(meta)}</span></div>
+      <div class="q">${rich(c.content.text)}${imgHTML(c)}</div>
+      <div class="opts" style="max-height:none;overflow:visible;padding:16px 0 0">${opts}</div>
+    </div>
+    <div class="ex-foot"><button class="btn rnd" onclick="nextExam()">${last ? 'Завершить пробник' : 'Далее'}</button></div>`;
+  const body = el.querySelector('.ex-body');
+  if (body) body.scrollTop = 0;
+}
+function pickExam(oid) {
+  exam.answers[exam.cards[exam.idx].id] = oid;
+  document.querySelectorAll('#exam .opt').forEach(b => b.classList.toggle('sel', b.dataset.o === oid));
+}
+function nextExam() {
+  if (exam.idx < exam.cards.length - 1) { exam.idx++; renderExam(); }
+  else finishExam();
+}
+function finishExam() {
+  clearInterval(examTimer);
+  const elapsed = Date.now() - exam.start;
+  let correct = 0; const wrong = [];
+  exam.cards.forEach(c => {
+    const ok = exam.answers[c.id] === c.content.correctOptionID;
+    if (ok) correct++; else wrong.push(c);
+    S.done[c.id] = (S.done[c.id] || 0) + 1;
+    if (ok) { S.correct[c.id] = 1; S.box[c.id] = Math.min(5, (S.box[c.id] || 0) + 1); S.xp += 10; }
+    else { S.wrong[c.id] = 1; S.box[c.id] = 0; S.xp += 3; }
+    S.doneToday++;
+    S.todayLog = (S.todayLog || []).concat(ok ? 1 : 0).slice(-60);
+  });
+  if (S.doneToday >= S.goalToday && S.goalDay !== today()) { S.goalDay = today(); S.streakDays++; confetti(); }
+  save(); drawChart();
+  renderExamResults(correct, wrong, elapsed);
+}
+function renderExamResults(correct, wrong, elapsed) {
+  const el = document.getElementById('exam'), n = exam.cards.length, pct = Math.round(correct / n * 100);
+  const grade = pct >= 85 ? 'Отлично' : pct >= 70 ? 'Хорошо' : pct >= 50 ? 'Неплохо' : 'Есть над чем поработать';
+  const optText = (c, id) => (c.content.options.find(o => o.id === id) || {}).text || '';
+  let h = `<div class="ex-top"><button class="ex-x" onclick="closeExam()" aria-label="Закрыть">✕</button>
+      <div class="ex-prog">Итог</div><div class="ex-time">${fmtTime(elapsed)}</div></div>
+    <div class="ex-body">
+      <div class="ex-score">${ringHTML(pct, 'var(--c4)')}
+        <div class="ex-score-tx"><b class="rnd">${correct} из ${n}</b><span>${grade} · время ${fmtTime(elapsed)}</span></div>
+      </div>`;
+  if (wrong.length) {
+    h += `<div class="h2">Разбор ошибок · ${wrong.length}</div>`;
+    wrong.forEach(c => {
+      const a = exam.answers[c.id], right = c.content.correctOptionID;
+      h += `<div class="ex-miss">
+        <div class="q" style="font-weight:700">${rich(c.content.text)}</div>
+        ${a ? `<div class="ex-your no">Твой ответ — ${esc(a)}. ${esc(optText(c, a))}</div>` : `<div class="ex-your">Без ответа</div>`}
+        <div class="ex-your ok">Верно — ${esc(right)}. ${esc(optText(c, right))}</div>
+        ${c.content.explanation ? `<div class="ex-expl">${rich(c.content.explanation)}</div>` : ''}
+      </div>`;
+    });
+  } else h += `<div class="empty" style="padding:22px">Ни одной ошибки. Чисто.</div>`;
+  h += `</div><div class="ex-foot">`;
+  if (wrong.length) h += `<button class="btn rnd" onclick="reviewExamMistakes()">Повторить ошибки в ленте</button><div style="height:8px"></div>`;
+  h += `<button class="btn ghost rnd" onclick="closeExam()">Закрыть</button></div>`;
+  el.innerHTML = h;
+}
+function reviewExamMistakes() {
+  examReviewIds = exam.cards.filter(c => exam.answers[c.id] !== c.content.correctOptionID).map(c => c.id);
+  closeExam();
+  filter = { kind: 'examrev', topic: null, set: null };
+  buildQueue(); renderFeed(); go('feed');
+}
+function quitExam() { if (confirm('Выйти из пробника? Результат не сохранится.')) closeExam(); }
+function closeExam() {
+  clearInterval(examTimer); exam = null;
+  const el = document.getElementById('exam');
+  if (el) { el.style.display = 'none'; el.innerHTML = ''; }
 }
 
 /* ==================== экран «Я» ==================== */
