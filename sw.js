@@ -1,10 +1,12 @@
 /* EconCards service worker: полный оффлайн после первого открытия.
    При обновлении базы меняй номер версии — клиенты подтянут новую сами. */
-const CACHE = 'econcards-v5';
+const CACHE = 'econcards-v7';
 const ASSETS = [
   './', './index.html', './manifest.webmanifest',
   './icons/icon-192.png', './icons/icon-512.png', './icons/apple-touch-icon.png'
 ];
+/* Картинки к заданиям кэшируются по мере просмотра: класть 65 файлов
+   в обязательный список установки — значит замедлить первый запуск. */
 
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)).then(() => self.skipWaiting()));
