@@ -654,6 +654,19 @@ function recordDay() {
   const keys = Object.keys(S.history);
   if (keys.length > 140) keys.sort().slice(0, keys.length - 120).forEach(k => delete S.history[k]);
 }
+/* ---------- интервальное повторение (SRS по датам) ----------
+   Лёгкий SM-2: верный ответ растит интервал (1→3→×ease), ошибка сбрасывает
+   на 1 день. due — дата следующего показа. «Повторить сегодня» = due ≤ сегодня. */
+function addDays(dstr, n) { const d = new Date(dstr); d.setDate(d.getDate() + n); return d.toISOString().slice(0, 10); }
+function schedule(id, win) {
+  S.srs = S.srs || {};
+  const s = S.srs[id] || { ivl: 0, ease: 2.5 };
+  if (win) { s.ivl = s.ivl < 1 ? 1 : (s.ivl < 3 ? 3 : Math.round(s.ivl * s.ease)); s.ease = Math.min(2.8, s.ease + 0.05); }
+  else { s.ivl = 1; s.ease = Math.max(1.6, s.ease - 0.2); }
+  s.due = addDays(today(), s.ivl);
+  S.srs[id] = s;
+}
+function dueList() { const t = today(); const s = S.srs || {}; return CARDS.filter(c => s[c.id] && s[c.id].due <= t); }
 function rollDay() {
   const t = today();
   if (S.lastActive === t) return;
@@ -692,6 +705,7 @@ function filterName() {
   if (filter.kind === 'favs') return 'Избранное' + kl;
   if (filter.kind === 'repeat') return 'Повторение' + kl;
   if (filter.kind === 'examrev') return 'Ошибки пробника';
+  if (filter.kind === 'due') return 'Повторить сегодня' + kl;
   if (filter.kind === 'search') return `Поиск: «${searchQuery.trim()}»`;
   return 'Все темы' + kl;
 }
@@ -700,6 +714,7 @@ function filterColor() {
   if (filter.kind === 'set') return 'var(--c4)';
   if (filter.kind === 'favs') return 'var(--c5)';
   if (filter.kind === 'examrev') return 'var(--c3)';
+  if (filter.kind === 'due') return 'var(--c6)';
   if (filter.kind === 'search') return 'var(--c8)';
   return 'var(--c1)';
 }
@@ -721,6 +736,7 @@ function pool() {
   else if (filter.kind === 'favs') list = CARDS.filter(c => S.favs[c.id]);
   else if (filter.kind === 'repeat') list = CARDS.filter(c => S.wrong[c.id] && !S.correct[c.id]);
   else if (filter.kind === 'examrev') return examReviewIds.map(id => cardById[id]).filter(Boolean);
+  else if (filter.kind === 'due') return dueList();
   else if (filter.kind === 'search') return searchMatches(searchQuery);
   else if (filter.kind === 'set') {
     const s = filter.set;
@@ -759,6 +775,7 @@ function buildQueue(shuffle = true) {
   let p = pool();
   if (!p.length) { queue = []; qi = 0; return; }
   if (filter.kind === 'search') { queue = p; qi = 0; return; }  /* сохраняем порядок по релевантности */
+  if (filter.kind === 'due') { p.sort((a, b) => (S.srs[a.id].due).localeCompare(S.srs[b.id].due)); queue = p; qi = 0; return; }  /* самые просроченные вперёд */
   if (filter.kind === 'set' || filter.kind === 'examrev') {
     p.sort((a, b) => a.id.localeCompare(b.id, 'ru', { numeric: true }));
     queue = p;
@@ -973,6 +990,7 @@ function finish(c, win, note, quiet) {
   if (win) { S.correct[id] = 1; S.box[id] = Math.min(5, (S.box[id] || 0) + 1); }
   else { S.wrong[id] = 1; S.box[id] = 0; }
   const gain = firstToday ? (win ? 10 : 3) : 0;
+  schedule(id, win);
   if (firstToday) {
     S.xpDay[id] = t;
     S.xp += gain;
@@ -1162,6 +1180,8 @@ function openFilter() {
     `</div>`;
   const klN = S.klass ? CARDS.filter(c => cardGrades(c).has(S.klass)).length : CARDS.length;
   if (S.klass) h += `<div class="mixnote" style="margin:-4px 4px 10px">Класс сужает ленту, темы, повторение и избранное. Для ${S.klass} класса — ${klN} заданий.</div>`;
+  const dueN = dueList().length;
+  if (dueN) h += tileBtn('🔁', 'Повторить сегодня', dueN + ' карточек по расписанию', `setFilter('due')`);
   h += tileBtn('🎲', 'Всё подряд', klN + ' карточек', `setFilter('all')`);
   const rep = CARDS.filter(c => S.wrong[c.id] && !S.correct[c.id]).length;
   h += tileBtn('🔁', 'Работа над ошибками', rep + ' карточек', `setFilter('repeat')`);
@@ -1405,6 +1425,7 @@ function finishExam() {
     S.done[c.id] = (S.done[c.id] || 0) + 1;
     if (ok) { S.correct[c.id] = 1; S.box[c.id] = Math.min(5, (S.box[c.id] || 0) + 1); }
     else { S.wrong[c.id] = 1; S.box[c.id] = 0; }
+    schedule(c.id, ok);
     /* Опыт и цель — раз в день на карточку (как в обычной ленте). */
     if (S.xpDay[c.id] !== t) {
       S.xpDay[c.id] = t;
@@ -1684,7 +1705,10 @@ function analyticsHTML() {
   let h = `<div class="h2">Аналитика</div>`;
   if (!attempted) return h + `<div class="empty" style="padding:20px">Порешай карточки — здесь появятся точность, слабые темы и календарь активности.</div>`;
   const acc = Math.round(corr / attempted * 100);
+  const coverage = Math.round(Object.keys(S.correct).length / CARDS.length * 100);
+  const ready = Math.round(0.5 * coverage + 0.5 * acc);
   h += `<div class="an-acc"><b style="color:var(--ok)">${acc}%</b><span>точность · ${corr} верно из ${attempted}</span></div>`;
+  h += `<div class="mdl-read" style="margin:0 0 8px"><span class="mdl-chip">Пройдено <b>${coverage}%</b> базы</span><span class="mdl-chip" style="background:var(--c6);color:#111">Готовность (оценка) <b>${ready}%</b></span></div>`;
   /* календарь активности за 28 дней */
   const days = 28, base = new Date(today());
   const arr = [];
@@ -1731,6 +1755,12 @@ function renderMe() {
   <div class="row"><span class="tx"><span class="tt">Цель дня</span>
     <span class="ts">${S.doneToday} из ${S.goalToday} сегодня</span></span>
     <span class="step"><button onclick="chGoal(-5)">−</button><b class="rnd">${S.goalToday}</b><button onclick="chGoal(5)">+</button></span></div>`;
+  const dueN = dueList().length;
+  if (dueN) h += `<button class="tile" onclick="setFilter('due');go('feed')" style="border:var(--bw) solid var(--c6)">
+    <i class="ico" style="background:var(--soft)">🔁</i>
+    <span class="tx"><span class="tt">К повторению сегодня</span>
+      <span class="ts">${dueN} ${dueN === 1 ? 'карточка' : 'карточек'} по интервальному расписанию</span></span>
+    <i class="chev">›</i></button>`;
   h += analyticsHTML();
   h += `<div class="h2">Оформление</div><div class="themes">` + THEMES.map(t => `
     <button class="th ${S.theme === t.id ? 'on' : ''}" onclick="setTheme('${t.id}')">
