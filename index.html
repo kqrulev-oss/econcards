@@ -1569,13 +1569,18 @@ function lessonDone(courseId, lessonId) {
 function practiceLesson(topic) { closeLesson(); if (topic) setFilter('topic', topic); else go('feed'); }
 
 /* ==================== песочница моделей ====================
-   Интерактивные графики: двигаешь ползунки — модель и цифры пересчитываются
-   вживую. Экономику понимают руками. Движок общий, модели в реестре MODELS. */
+   Интерактивные графики: ТАЩИ точку по графику (или двигай ползунки) — модель
+   и цифры пересчитываются вживую. Оси фиксированы, чтобы изменения были видны.
+   Общий viewBox 336×282; каждая модель — в реестре MODELS. */
+const PL = { L: 42, T: 14, W: 286, H: 250 };
 function mkPlot(xmax, ymax) {
-  const L = 42, T = 14, W = 286, H = 250;
-  return { L, T, W, H, xmax, ymax, VW: L + W + 8, VH: T + H + 18,
-    x: q => L + q / xmax * W, y: p => T + (1 - Math.max(-0.05, Math.min(1.05, p / ymax)) * 1) * H };
+  return { xmax, ymax, L: PL.L, T: PL.T, W: PL.W, H: PL.H,
+    x: q => PL.L + q / xmax * PL.W,
+    y: p => PL.T + (1 - Math.max(-0.04, Math.min(1.06, p / ymax))) * PL.H,
+    ix: px => (px - PL.L) / PL.W * xmax,
+    iy: py => (1 - (py - PL.T) / PL.H) * ymax };
 }
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 function gl(P, x1, y1, x2, y2, c, w, d) {
   return `<line x1="${P.x(x1)}" y1="${P.y(y1)}" x2="${P.x(x2)}" y2="${P.y(y2)}" stroke="${c}" stroke-width="${w}"${d ? ' stroke-dasharray="4 4"' : ''} stroke-linecap="round"/>`;
 }
@@ -1584,6 +1589,7 @@ function gpath(P, pts, c, w) {
   return `<path d="${d}" fill="none" stroke="${c}" stroke-width="${w}" stroke-linejoin="round" stroke-linecap="round"/>`;
 }
 function gdot(P, x, y, c) { return `<circle cx="${P.x(x)}" cy="${P.y(y)}" r="4.5" fill="${c}"/>`; }
+function gHandle(P, x, y, c) { return `<circle cx="${P.x(x)}" cy="${P.y(y)}" r="10" fill="${c}" opacity=".22"/><circle cx="${P.x(x)}" cy="${P.y(y)}" r="5.5" fill="${c}" stroke="#fff" stroke-width="1.5"/>`; }
 function gaxes(P, xl, yl) {
   let g = '';
   for (let i = 1; i < 6; i++) { g += gl(P, P.xmax * i / 6, 0, P.xmax * i / 6, P.ymax, 'var(--soft2)', 1); g += gl(P, 0, P.ymax * i / 6, P.xmax, P.ymax * i / 6, 'var(--soft2)', 1); }
@@ -1591,95 +1597,117 @@ function gaxes(P, xl, yl) {
   g += `<text x="${P.x(P.xmax) - 6}" y="${P.y(0) + 12}">${xl}</text><text x="${P.x(0) - 10}" y="${P.y(P.ymax) + 4}">${yl}</text>`;
   return g;
 }
-function svgWrap(P, inner, accent) {
-  return `<svg class="mdl-svg" viewBox="0 0 ${P.VW} ${P.VH}" preserveAspectRatio="xMidYMid meet" style="--accent:${accent || 'var(--c4)'}">${inner}</svg>`;
-}
 const chip = (t, s) => `<span class="mdl-chip"${s ? ` style="${s}"` : ''}>${t}</span>`;
 const r1 = x => Math.round(x * 10) / 10;
 
 const MODELS = {
   sd: {
-    name: 'Спрос/предложение',
+    name: 'Спрос/предложение', accent: 'var(--c4)',
     legend: '<span style="color:var(--c1)">■</span> спрос · <span style="color:var(--c2)">■</span> предложение · при налоге: клин, сбор (жёлтый), DWL (красный)',
-    note: 'Налог с производителя поднимает предложение на t: покупатель платит больше, продавец меньше, часть сделок исчезает — это чистые потери DWL.',
+    note: 'Тащи точку равновесия — двигается кривая спроса. Налог с производителя поднимает предложение на t: покупатель платит больше, продавец меньше, часть сделок исчезает — это чистые потери DWL.',
     st: { d: 0, s: 0, t: 0 }, sliders: [['d', 'Спрос (сдвиг)', -40, 50], ['s', 'Предложение', -15, 60], ['t', 'Налог t', 0, 60]],
+    plot() { return mkPlot(180, 180); },
     f(st) { const Ad = 120 + st.d, As = 20 + st.s, t = st.t, Q0 = (Ad - As) / 2, P0 = Ad - Q0, Qt = Math.max(0, (Ad - As - t) / 2); return { Ad, As, t, Q0, P0, Qt, Pc: Ad - Qt, Pp: As + Qt, rev: t * Qt, dwl: 0.5 * t * Math.max(0, Q0 - Qt) }; },
-    svg(st) { const m = this.f(st), P = mkPlot(180, 180); let g = gaxes(P, 'Q', 'P');
+    svg(st) { const m = this.f(st), P = this.plot(); let g = gaxes(P, 'Q', 'P');
       if (m.t > 0) { g += `<polygon points="${P.x(0)},${P.y(m.Pp)} ${P.x(0)},${P.y(m.Pc)} ${P.x(m.Qt)},${P.y(m.Pc)} ${P.x(m.Qt)},${P.y(m.Pp)}" fill="var(--c4)" opacity=".22"/>`;
         g += `<polygon points="${P.x(m.Qt)},${P.y(m.Pc)} ${P.x(m.Q0)},${P.y(m.P0)} ${P.x(m.Qt)},${P.y(m.Pp)}" fill="var(--c3)" opacity=".3"/>`; }
       g += gl(P, 0, m.Ad, m.Ad, 0, 'var(--c1)', 2.5) + gl(P, 0, m.As, 180, m.As + 180, 'var(--c2)', 2.5);
       if (m.t > 0) g += gl(P, 0, m.As + m.t, 180, m.As + m.t + 180, 'var(--c2)', 1.8, 1) + gl(P, m.Qt, m.Pp, m.Qt, m.Pc, 'var(--ink)', 1.4, 1) + gdot(P, m.Qt, m.Pc, 'var(--c1)') + gdot(P, m.Qt, m.Pp, 'var(--c2)');
-      else g += gdot(P, m.Q0, m.P0, 'var(--c4)');
-      return svgWrap(P, g); },
+      else g += gHandle(P, m.Q0, m.P0, 'var(--c4)');
+      return g; },
+    drag(tx, ty) { this.st.d = clamp(Math.round(tx + ty - 120), -40, 50); },
     read(st) { const m = this.f(st); let h = chip(`Равновесие: <b>P*=${r1(m.P0)}</b>, <b>Q*=${r1(m.Q0)}</b>`);
       if (m.t > 0) h += chip(`Покупатель <b>${r1(m.Pc)}</b>`) + chip(`Продавец <b>${r1(m.Pp)}</b>`) + chip(`Объём <b>${r1(m.Qt)}</b>`) + chip(`Сбор <b>${r1(m.rev)}</b>`, 'background:var(--c4)') + chip(`DWL <b>${r1(m.dwl)}</b>`, 'background:var(--c3);color:#fff');
       return h; }
   },
   ppf: {
-    name: 'КПВ',
+    name: 'КПВ', accent: 'var(--c6)',
     legend: '<span style="color:var(--c6)">■</span> граница возможностей · точка — эффективный набор',
-    note: 'На прямой КПВ альтернативные издержки постоянны: АИ одного X = наклон = Ymax/Xmax. Точка на кривой эффективна, внутри — нет, снаружи — недостижима.',
+    note: 'Тащи точку по кривой. На прямой КПВ альтернативные издержки постоянны: АИ одного X = наклон = Ymax/Xmax. Точка на кривой эффективна, внутри — нет, снаружи — недостижима.',
     st: { X: 120, Y: 100, pt: 50 }, sliders: [['X', 'Макс X', 40, 160], ['Y', 'Макс Y', 40, 160], ['pt', 'Набор (% на X)', 0, 100]],
+    plot() { return mkPlot(170, 170); },
     f(st) { const x = st.pt / 100 * st.X, y = st.Y * (1 - st.pt / 100); return { X: st.X, Y: st.Y, x, y, aiX: st.Y / st.X, aiY: st.X / st.Y }; },
-    svg(st) { const m = this.f(st), P = mkPlot(170, 170); let g = gaxes(P, 'X', 'Y');
+    svg(st) { const m = this.f(st), P = this.plot(); let g = gaxes(P, 'X', 'Y');
       g += gl(P, 0, m.Y, m.X, 0, 'var(--c6)', 2.5);
-      g += gl(P, m.x, 0, m.x, m.y, 'var(--muted)', 1, 1) + gl(P, 0, m.y, m.x, m.y, 'var(--muted)', 1, 1) + gdot(P, m.x, m.y, 'var(--c4)');
-      return svgWrap(P, g, 'var(--c6)'); },
+      g += gl(P, m.x, 0, m.x, m.y, 'var(--muted)', 1, 1) + gl(P, 0, m.y, m.x, m.y, 'var(--muted)', 1, 1) + gHandle(P, m.x, m.y, 'var(--c4)');
+      return g; },
+    drag(tx) { this.st.pt = clamp(Math.round(tx / this.st.X * 100), 0, 100); },
     read(st) { const m = this.f(st); return chip(`Набор: <b>X=${r1(m.x)}</b>, <b>Y=${r1(m.y)}</b>`) + chip(`АИ 1 X = <b>${r1(m.aiX)}</b> Y`) + chip(`АИ 1 Y = <b>${r1(m.aiY)}</b> X`); }
   },
   cost: {
-    name: 'Издержки',
+    name: 'Издержки', accent: 'var(--c4)',
     legend: '<span style="color:var(--c3)">■</span> MC · <span style="color:var(--c1)">■</span> AC · <span style="color:var(--c2)">■</span> AVC',
-    note: 'TC = FC + a·Q + b·Q². Предельные MC = a + 2b·Q, средние AC = TC/Q (U-образны из-за падающих AFC). MC пересекает AC точно в минимуме AC.',
+    note: 'Тащи точку минимума AC — меняется крутизна издержек. TC = FC + a·Q + b·Q². Предельные MC = a + 2b·Q, средние AC = TC/Q (U-образны из-за падающих AFC). MC пересекает AC точно в минимуме AC.',
     st: { FC: 36, a: 6, b: 4 }, sliders: [['FC', 'FC', 0, 90], ['a', 'a', 2, 20], ['b', 'b ×0.1', 1, 10]],
+    plot() { return mkPlot(24, 34); },
     f(st) { const FC = st.FC, a = st.a, b = st.b / 10; const qm = Math.sqrt(FC / b) || 1; return { FC, a, b, qm, acmin: FC / qm + a + b * qm }; },
-    svg(st) { const m = this.f(st), QM = 24, P = mkPlot(QM, 34); let g = gaxes(P, 'Q', '₽');
+    svg(st) { const m = this.f(st), QM = 24, P = this.plot(); let g = gaxes(P, 'Q', '₽');
       const mc = [], ac = [], avc = [];
       for (let q = 1; q <= QM; q++) { mc.push([q, m.a + 2 * m.b * q]); avc.push([q, m.a + m.b * q]); ac.push([q, m.FC / q + m.a + m.b * q]); }
       g += gpath(P, avc, 'var(--c2)', 2) + gpath(P, ac, 'var(--c1)', 2.5) + gpath(P, mc, 'var(--c3)', 2.5);
-      if (m.qm <= QM) g += gdot(P, m.qm, m.acmin, 'var(--c4)');
-      return svgWrap(P, g); },
+      if (m.qm <= QM) g += gHandle(P, m.qm, m.acmin, 'var(--c4)');
+      return g; },
+    drag(tx) { if (tx >= 1) this.st.b = clamp(Math.round(10 * this.st.FC / (tx * tx)), 1, 10); },
     read(st) { const m = this.f(st); return chip(`Мин AC при <b>Q=${r1(m.qm)}</b>`) + chip(`AC<sub>min</sub> = <b>${r1(m.acmin)}</b>`) + chip(`MC = ${m.a} + ${r1(2 * m.b)}·Q`); }
   },
   util: {
-    name: 'Полезность',
+    name: 'Полезность', accent: 'var(--c5)',
     legend: '<span style="color:var(--c5)">■</span> бюджет · <span style="color:var(--c7)">■</span> кривые безразличия · точка — оптимум',
-    note: 'U = x·y, бюджет ⟦Px·x + Py·y = I⟧. Оптимум там, где бюджет касается кривой безразличия: x* = I/(2Px), y* = I/(2Py).',
-    st: { I: 100, Px: 4, Py: 5 }, sliders: [['I', 'Доход I', 40, 160], ['Px', 'Цена X', 1, 10], ['Py', 'Цена Y', 1, 10]],
+    note: 'Тащи оптимум — под него подстраиваются цены. U = x·y, бюджет ⟦Px·x + Py·y = I⟧. Оптимум там, где бюджет касается кривой безразличия: x* = I/(2Px), y* = I/(2Py).',
+    st: { I: 80, Px: 4, Py: 4 }, sliders: [['I', 'Доход I', 40, 90], ['Px', 'Цена X', 3, 12], ['Py', 'Цена Y', 3, 12]],
+    plot() { return mkPlot(34, 34); },
     f(st) { const xs = st.I / (2 * st.Px), ys = st.I / (2 * st.Py); return { I: st.I, Px: st.Px, Py: st.Py, xI: st.I / st.Px, yI: st.I / st.Py, xs, ys, U: xs * ys }; },
-    svg(st) { const m = this.f(st), P = mkPlot(m.xI * 1.05, m.yI * 1.05); let g = gaxes(P, 'X', 'Y');
+    svg(st) { const m = this.f(st), P = this.plot(); let g = gaxes(P, 'X', 'Y');
       g += gl(P, 0, m.yI, m.xI, 0, 'var(--c5)', 2.5);
-      [0.5, 1, 1.7].forEach(k => { const U = m.U * k, pts = []; for (let i = 0; i <= 40; i++) { const x = P.xmax * (0.06 + 0.94 * i / 40), y = U / x; if (y <= P.ymax) pts.push([x, y]); } if (pts.length > 1) g += gpath(P, pts, 'var(--c7)', k === 1 ? 2.2 : 1.2); });
-      g += gdot(P, m.xs, m.ys, 'var(--c4)');
-      return svgWrap(P, g, 'var(--c5)'); },
+      [0.55, 1, 1.7].forEach(k => { const U = m.U * k, pts = []; for (let i = 0; i <= 44; i++) { const x = P.xmax * (0.04 + 0.96 * i / 44), y = U / x; if (y <= P.ymax) pts.push([x, y]); } if (pts.length > 1) g += gpath(P, pts, 'var(--c7)', k === 1 ? 2.2 : 1.2); });
+      g += gHandle(P, m.xs, m.ys, 'var(--c4)');
+      return g; },
+    drag(tx, ty) { if (tx >= 1) this.st.Px = clamp(Math.round(this.st.I / (2 * tx)), 3, 12); if (ty >= 1) this.st.Py = clamp(Math.round(this.st.I / (2 * ty)), 3, 12); },
     read(st) { const m = this.f(st); return chip(`Оптимум: <b>x*=${r1(m.xs)}</b>, <b>y*=${r1(m.ys)}</b>`) + chip(`U* = <b>${r1(m.U)}</b>`); }
   }
 };
 
 let modelId = 'sd';
-function mdlSet(k, v) {
-  const M = MODELS[modelId]; M.st[k] = Number(v);
-  const el = document.getElementById('model'); if (!el) return;
-  el.querySelector('.mdl-plot').innerHTML = M.svg(M.st);
+function mdlUpdate() {
+  const M = MODELS[modelId], el = document.getElementById('model'); if (!el) return;
+  const svg = el.querySelector('.mdl-svg'); if (svg) svg.innerHTML = M.svg(M.st);
   el.querySelector('.mdl-read').innerHTML = M.read(M.st);
-  const vv = el.querySelector('#mv-' + k); if (vv) vv.textContent = v;
+  M.sliders.forEach(([k]) => { const inp = el.querySelector(`.mdl-row input[data-k="${k}"]`); if (inp) inp.value = M.st[k]; const vv = el.querySelector('#mv-' + k); if (vv) vv.textContent = M.st[k]; });
+}
+function mdlSet(k, v) { MODELS[modelId].st[k] = Number(v); mdlUpdate(); }
+function mdlDrag(ev) {
+  const M = MODELS[modelId]; if (!M.drag) return;
+  const svg = ev.currentTarget, rect = svg.getBoundingClientRect();
+  const px = (ev.clientX - rect.left) / rect.width * 336, py = (ev.clientY - rect.top) / rect.height * 282;
+  const P = M.plot();
+  const tx = clamp(P.ix(px), 0, P.xmax), ty = clamp(P.iy(py), 0, P.ymax);
+  M.drag(tx, ty); mdlUpdate();
 }
 function switchModel(id) { modelId = id; renderModel(); }
 function renderModel() {
   const el = document.getElementById('model'); const M = MODELS[modelId];
   const chips = Object.keys(MODELS).map(id => `<button class="mchip ${id === modelId ? 'on' : ''}" onclick="switchModel('${id}')">${MODELS[id].name}</button>`).join('');
-  const sliders = M.sliders.map(([k, lab, mn, mx]) => `<div class="mdl-row"><span class="lab">${esc(lab)}</span><input type="range" min="${mn}" max="${mx}" step="1" value="${M.st[k]}" oninput="mdlSet('${k}',this.value)"><span class="v" id="mv-${k}">${M.st[k]}</span></div>`).join('');
+  const sliders = M.sliders.map(([k, lab, mn, mx]) => `<div class="mdl-row"><span class="lab">${esc(lab)}</span><input type="range" data-k="${k}" min="${mn}" max="${mx}" step="1" value="${M.st[k]}" oninput="mdlSet('${k}',this.value)"><span class="v" id="mv-${k}">${M.st[k]}</span></div>`).join('');
   el.innerHTML = `<div class="ex-top"><button class="ex-x" onclick="closeModel()" aria-label="Закрыть">✕</button><div class="ex-prog">Песочница</div><div class="ex-time">🧪</div></div>
     <div class="ex-body">
       <div class="mchips">${chips}</div>
-      <div class="mixnote" style="padding:2px 2px 6px">${M.legend}</div>
-      <div class="mdl-plot">${M.svg(M.st)}</div>
+      <div class="mixnote" style="padding:2px 2px 4px">${M.legend}</div>
+      <div class="mdl-plot"><svg class="mdl-svg" viewBox="0 0 336 282" preserveAspectRatio="xMidYMid meet" style="--accent:${M.accent};touch-action:none;cursor:grab">${M.svg(M.st)}</svg></div>
+      <div class="mixnote" style="padding:0 2px 6px;text-align:center">✋ тащи точку по графику</div>
       <div class="mdl-read">${M.read(M.st)}</div>
       ${sliders}
       <div style="height:6px"></div>
       <div class="mixnote" style="padding:0 2px">${rich(M.note)}</div>
     </div>
     <div class="ex-foot"><button class="btn ghost rnd" onclick="closeModel()">Закрыть</button></div>`;
+  const svg = el.querySelector('.mdl-svg');
+  if (svg && M.drag) {
+    let dragging = false;
+    svg.addEventListener('pointerdown', e => { dragging = true; try { svg.setPointerCapture(e.pointerId); } catch (_) {} mdlDrag(e); e.preventDefault(); });
+    svg.addEventListener('pointermove', e => { if (dragging) { mdlDrag(e); e.preventDefault(); } });
+    const end = () => { dragging = false; };
+    svg.addEventListener('pointerup', end); svg.addEventListener('pointercancel', end);
+  }
   const body = el.querySelector('.ex-body'); if (body) body.scrollTop = 0;
 }
 function openModel(id) {
