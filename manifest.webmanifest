@@ -1,16 +1,25 @@
 {
   "name": "EconCards — олимпиадная экономика",
   "short_name": "EconCards",
-  "description": "415 карточек: ВсОШ, МОШ, Высшая проба, Сибириада, РЭШ, IEO + теория с нуля. Работает офлайн.",
+  "description": "451 карточка по олимпиадной экономике: ВсОШ, МОШ, Высшая проба, Сибириада, РАНХиГС, СПбГУ, РЭШ, IEO. Офлайн.",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#111B36",
-  "theme_color": "#111B36",
+  "background_color": "#FFFDF8",
+  "theme_color": "#FFFDF8",
   "lang": "ru",
   "icons": [
-    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
-    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
   ]
 }
