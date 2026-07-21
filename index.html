@@ -2,7 +2,7 @@
 <html lang="ru" data-theme="terminal">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,maximum-scale=1,user-scalable=no">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="theme-color" content="#0C0F16" id="tc">
@@ -539,7 +539,7 @@ function setTheme(id) {
 /* ==================== состояние ==================== */
 const DEFAULT = {
   xp: 0, streakDays: 0, lastActive: null, goalToday: 15, doneToday: 0,
-  todayLog: [], pushOn: false, pushHour: 19,
+  goalDay: null, todayLog: [], pushOn: false, pushHour: 19, lastNudge: null,
   mix: { base: 40, rare: 60, superrare: 60, epic: 40, mythic: 25, legendary: 15 },
   theme: 'terminal',
   done: {}, wrong: {}, correct: {}, box: {}, favs: {}, onboarded: false
@@ -830,7 +830,12 @@ function finish(c, win, note, quiet) {
   S.xp += gain;
   S.doneToday++;
   S.todayLog = (S.todayLog || []).concat(win ? 1 : 0).slice(-60);
-  if (S.doneToday === S.goalToday) { S.streakDays++; confetti(); }
+  /* Серию засчитываем один раз в день — по достижению цели, даже если её
+     потом подняли или перевыполнили. Строгое «===» пропускало день,
+     когда цель меняли на лету или отвечали пачкой. */
+  if (S.doneToday >= S.goalToday && S.goalDay !== today()) {
+    S.goalDay = today(); S.streakDays++; confetti();
+  }
   save();
   if (!quiet) {
     const v = document.getElementById('v-' + id);
