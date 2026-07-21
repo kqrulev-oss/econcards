@@ -501,6 +501,10 @@ input[type=range]::-webkit-slider-thumb{
 .mdl-row .lab{flex:none;width:104px;font-size:13px;color:var(--muted)}
 .mdl-row input[type=range]{flex:1}
 .mdl-row .v{flex:none;width:38px;text-align:right;font-family:var(--fmono);font-size:13px}
+.mchips{display:flex;gap:6px;overflow-x:auto;padding:2px 0 8px;-webkit-overflow-scrolling:touch}
+.mchip{flex:none;border:var(--bw) solid var(--line);background:var(--soft);color:var(--muted);border-radius:999px;padding:7px 13px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap}
+.mchip.on{background:var(--c4);border-color:var(--c4);color:#111}
+.mdl-chip sub{font-size:.75em}
 </style>
 </head>
 <body>
@@ -1545,95 +1549,123 @@ function practiceLesson(topic) { closeLesson(); if (topic) setFilter('topic', to
 
 /* ==================== песочница моделей ====================
    Интерактивные графики: двигаешь ползунки — модель и цифры пересчитываются
-   вживую. Экономику понимают руками. Пока одна модель — спрос/предложение
-   с налогом и чистыми потерями (DWL); движок рассчитан на добавление новых. */
-const QMAX = 180, PMAX = 180;
-const PAD_L = 42, PAD_T = 14, PLOT_W = 286, PLOT_H = 250;
-const mX = q => PAD_L + q / QMAX * PLOT_W;
-const mY = p => PAD_T + (1 - p / PMAX) * PLOT_H;
-const sdState = { d: 0, s: 0, t: 0 };
-function sdCompute() {
-  const Ad = 120 + sdState.d, As = 20 + sdState.s, t = sdState.t;   // наклоны Bd=Bs=1
-  const Q0 = (Ad - As) / 2, P0 = Ad - Q0;
-  const Qt = Math.max(0, (Ad - As - t) / 2);
-  const Pc = Ad - Qt, Pp = As + Qt;
-  return { Ad, As, t, Q0, P0, Qt, Pc, Pp, rev: t * Qt, dwl: 0.5 * t * Math.max(0, Q0 - Qt) };
+   вживую. Экономику понимают руками. Движок общий, модели в реестре MODELS. */
+function mkPlot(xmax, ymax) {
+  const L = 42, T = 14, W = 286, H = 250;
+  return { L, T, W, H, xmax, ymax, VW: L + W + 8, VH: T + H + 18,
+    x: q => L + q / xmax * W, y: p => T + (1 - Math.max(-0.05, Math.min(1.05, p / ymax)) * 1) * H };
 }
-function sdSVG() {
-  const m = sdCompute();
-  const line = (x1, y1, x2, y2, col, w, dash) =>
-    `<line x1="${mX(x1)}" y1="${mY(y1)}" x2="${mX(x2)}" y2="${mY(y2)}" stroke="${col}" stroke-width="${w}"${dash ? ` stroke-dasharray="4 4"` : ''} stroke-linecap="round"/>`;
-  const dot = (q, p, col) => `<circle cx="${mX(q)}" cy="${mY(p)}" r="4.5" fill="${col}"/>`;
+function gl(P, x1, y1, x2, y2, c, w, d) {
+  return `<line x1="${P.x(x1)}" y1="${P.y(y1)}" x2="${P.x(x2)}" y2="${P.y(y2)}" stroke="${c}" stroke-width="${w}"${d ? ' stroke-dasharray="4 4"' : ''} stroke-linecap="round"/>`;
+}
+function gpath(P, pts, c, w) {
+  const d = pts.map((p, i) => (i ? 'L' : 'M') + P.x(p[0]).toFixed(1) + ' ' + P.y(p[1]).toFixed(1)).join(' ');
+  return `<path d="${d}" fill="none" stroke="${c}" stroke-width="${w}" stroke-linejoin="round" stroke-linecap="round"/>`;
+}
+function gdot(P, x, y, c) { return `<circle cx="${P.x(x)}" cy="${P.y(y)}" r="4.5" fill="${c}"/>`; }
+function gaxes(P, xl, yl) {
   let g = '';
-  // сетка
-  for (let v = 30; v < QMAX; v += 30) g += line(v, 0, v, PMAX, 'var(--soft2)', 1);
-  for (let v = 30; v < PMAX; v += 30) g += line(0, v, QMAX, v, 'var(--soft2)', 1);
-  // оси
-  g += line(0, 0, QMAX, 0, 'var(--muted)', 1.5) + line(0, 0, 0, PMAX, 'var(--muted)', 1.5);
-  g += `<text x="${mX(QMAX) - 6}" y="${mY(0) + 12}">Q</text><text x="${mX(0) - 10}" y="${mY(PMAX) + 4}">P</text>`;
-  // налог: заливки под кривыми
-  if (m.t > 0) {
-    g += `<polygon points="${mX(0)},${mY(m.Pp)} ${mX(0)},${mY(m.Pc)} ${mX(m.Qt)},${mY(m.Pc)} ${mX(m.Qt)},${mY(m.Pp)}" fill="var(--c4)" opacity=".22"/>`;
-    g += `<polygon points="${mX(m.Qt)},${mY(m.Pc)} ${mX(m.Q0)},${mY(m.P0)} ${mX(m.Qt)},${mY(m.Pp)}" fill="var(--c3)" opacity=".3"/>`;
-  }
-  // кривые: спрос (Q-интерсепт = Ad), предложение (от (0,As))
-  g += line(0, m.Ad, m.Ad, 0, 'var(--c1)', 2.5);
-  g += line(0, m.As, QMAX, m.As + QMAX, 'var(--c2)', 2.5);
-  if (m.t > 0) {
-    g += line(0, m.As + m.t, QMAX, m.As + m.t + QMAX, 'var(--c2)', 1.8, true);
-    g += line(m.Qt, m.Pp, m.Qt, m.Pc, 'var(--ink)', 1.4, true);
-    g += dot(m.Qt, m.Pc, 'var(--c1)') + dot(m.Qt, m.Pp, 'var(--c2)');
-  } else {
-    g += dot(m.Q0, m.P0, 'var(--accent)');
-  }
-  return `<svg class="mdl-svg" viewBox="0 0 ${PAD_L + PLOT_W + 6} ${PAD_T + PLOT_H + 18}" preserveAspectRatio="xMidYMid meet" style="--accent:var(--c4)">${g}</svg>`;
+  for (let i = 1; i < 6; i++) { g += gl(P, P.xmax * i / 6, 0, P.xmax * i / 6, P.ymax, 'var(--soft2)', 1); g += gl(P, 0, P.ymax * i / 6, P.xmax, P.ymax * i / 6, 'var(--soft2)', 1); }
+  g += gl(P, 0, 0, P.xmax, 0, 'var(--muted)', 1.5) + gl(P, 0, 0, 0, P.ymax, 'var(--muted)', 1.5);
+  g += `<text x="${P.x(P.xmax) - 6}" y="${P.y(0) + 12}">${xl}</text><text x="${P.x(0) - 10}" y="${P.y(P.ymax) + 4}">${yl}</text>`;
+  return g;
 }
-function sdReadout() {
-  const m = sdCompute();
-  const n = x => Math.round(x * 10) / 10;
-  let h = `<span class="mdl-chip">Равновесие: <b>P*=${n(m.P0)}</b>, <b>Q*=${n(m.Q0)}</b></span>`;
-  if (m.t > 0) {
-    h += `<span class="mdl-chip">Цена покупателя <b>${n(m.Pc)}</b></span>
-      <span class="mdl-chip">Цена продавца <b>${n(m.Pp)}</b></span>
-      <span class="mdl-chip">Объём <b>${n(m.Qt)}</b></span>
-      <span class="mdl-chip" style="background:var(--c4);opacity:.9">Сбор налога <b>${n(m.rev)}</b></span>
-      <span class="mdl-chip" style="background:var(--c3);color:#fff">Потери DWL <b>${n(m.dwl)}</b></span>`;
+function svgWrap(P, inner, accent) {
+  return `<svg class="mdl-svg" viewBox="0 0 ${P.VW} ${P.VH}" preserveAspectRatio="xMidYMid meet" style="--accent:${accent || 'var(--c4)'}">${inner}</svg>`;
+}
+const chip = (t, s) => `<span class="mdl-chip"${s ? ` style="${s}"` : ''}>${t}</span>`;
+const r1 = x => Math.round(x * 10) / 10;
+
+const MODELS = {
+  sd: {
+    name: 'Спрос/предложение',
+    legend: '<span style="color:var(--c1)">■</span> спрос · <span style="color:var(--c2)">■</span> предложение · при налоге: клин, сбор (жёлтый), DWL (красный)',
+    note: 'Налог с производителя поднимает предложение на t: покупатель платит больше, продавец меньше, часть сделок исчезает — это чистые потери DWL.',
+    st: { d: 0, s: 0, t: 0 }, sliders: [['d', 'Спрос (сдвиг)', -40, 50], ['s', 'Предложение', -15, 60], ['t', 'Налог t', 0, 60]],
+    f(st) { const Ad = 120 + st.d, As = 20 + st.s, t = st.t, Q0 = (Ad - As) / 2, P0 = Ad - Q0, Qt = Math.max(0, (Ad - As - t) / 2); return { Ad, As, t, Q0, P0, Qt, Pc: Ad - Qt, Pp: As + Qt, rev: t * Qt, dwl: 0.5 * t * Math.max(0, Q0 - Qt) }; },
+    svg(st) { const m = this.f(st), P = mkPlot(180, 180); let g = gaxes(P, 'Q', 'P');
+      if (m.t > 0) { g += `<polygon points="${P.x(0)},${P.y(m.Pp)} ${P.x(0)},${P.y(m.Pc)} ${P.x(m.Qt)},${P.y(m.Pc)} ${P.x(m.Qt)},${P.y(m.Pp)}" fill="var(--c4)" opacity=".22"/>`;
+        g += `<polygon points="${P.x(m.Qt)},${P.y(m.Pc)} ${P.x(m.Q0)},${P.y(m.P0)} ${P.x(m.Qt)},${P.y(m.Pp)}" fill="var(--c3)" opacity=".3"/>`; }
+      g += gl(P, 0, m.Ad, m.Ad, 0, 'var(--c1)', 2.5) + gl(P, 0, m.As, 180, m.As + 180, 'var(--c2)', 2.5);
+      if (m.t > 0) g += gl(P, 0, m.As + m.t, 180, m.As + m.t + 180, 'var(--c2)', 1.8, 1) + gl(P, m.Qt, m.Pp, m.Qt, m.Pc, 'var(--ink)', 1.4, 1) + gdot(P, m.Qt, m.Pc, 'var(--c1)') + gdot(P, m.Qt, m.Pp, 'var(--c2)');
+      else g += gdot(P, m.Q0, m.P0, 'var(--c4)');
+      return svgWrap(P, g); },
+    read(st) { const m = this.f(st); let h = chip(`Равновесие: <b>P*=${r1(m.P0)}</b>, <b>Q*=${r1(m.Q0)}</b>`);
+      if (m.t > 0) h += chip(`Покупатель <b>${r1(m.Pc)}</b>`) + chip(`Продавец <b>${r1(m.Pp)}</b>`) + chip(`Объём <b>${r1(m.Qt)}</b>`) + chip(`Сбор <b>${r1(m.rev)}</b>`, 'background:var(--c4)') + chip(`DWL <b>${r1(m.dwl)}</b>`, 'background:var(--c3);color:#fff');
+      return h; }
+  },
+  ppf: {
+    name: 'КПВ',
+    legend: '<span style="color:var(--c6)">■</span> граница возможностей · точка — эффективный набор',
+    note: 'На прямой КПВ альтернативные издержки постоянны: АИ одного X = наклон = Ymax/Xmax. Точка на кривой эффективна, внутри — нет, снаружи — недостижима.',
+    st: { X: 120, Y: 100, pt: 50 }, sliders: [['X', 'Макс X', 40, 160], ['Y', 'Макс Y', 40, 160], ['pt', 'Набор (% на X)', 0, 100]],
+    f(st) { const x = st.pt / 100 * st.X, y = st.Y * (1 - st.pt / 100); return { X: st.X, Y: st.Y, x, y, aiX: st.Y / st.X, aiY: st.X / st.Y }; },
+    svg(st) { const m = this.f(st), P = mkPlot(170, 170); let g = gaxes(P, 'X', 'Y');
+      g += gl(P, 0, m.Y, m.X, 0, 'var(--c6)', 2.5);
+      g += gl(P, m.x, 0, m.x, m.y, 'var(--muted)', 1, 1) + gl(P, 0, m.y, m.x, m.y, 'var(--muted)', 1, 1) + gdot(P, m.x, m.y, 'var(--c4)');
+      return svgWrap(P, g, 'var(--c6)'); },
+    read(st) { const m = this.f(st); return chip(`Набор: <b>X=${r1(m.x)}</b>, <b>Y=${r1(m.y)}</b>`) + chip(`АИ 1 X = <b>${r1(m.aiX)}</b> Y`) + chip(`АИ 1 Y = <b>${r1(m.aiY)}</b> X`); }
+  },
+  cost: {
+    name: 'Издержки',
+    legend: '<span style="color:var(--c3)">■</span> MC · <span style="color:var(--c1)">■</span> AC · <span style="color:var(--c2)">■</span> AVC',
+    note: 'TC = FC + a·Q + b·Q². Предельные MC = a + 2b·Q, средние AC = TC/Q (U-образны из-за падающих AFC). MC пересекает AC точно в минимуме AC.',
+    st: { FC: 36, a: 6, b: 4 }, sliders: [['FC', 'FC', 0, 90], ['a', 'a', 2, 20], ['b', 'b ×0.1', 1, 10]],
+    f(st) { const FC = st.FC, a = st.a, b = st.b / 10; const qm = Math.sqrt(FC / b) || 1; return { FC, a, b, qm, acmin: FC / qm + a + b * qm }; },
+    svg(st) { const m = this.f(st), QM = 24, P = mkPlot(QM, 34); let g = gaxes(P, 'Q', '₽');
+      const mc = [], ac = [], avc = [];
+      for (let q = 1; q <= QM; q++) { mc.push([q, m.a + 2 * m.b * q]); avc.push([q, m.a + m.b * q]); ac.push([q, m.FC / q + m.a + m.b * q]); }
+      g += gpath(P, avc, 'var(--c2)', 2) + gpath(P, ac, 'var(--c1)', 2.5) + gpath(P, mc, 'var(--c3)', 2.5);
+      if (m.qm <= QM) g += gdot(P, m.qm, m.acmin, 'var(--c4)');
+      return svgWrap(P, g); },
+    read(st) { const m = this.f(st); return chip(`Мин AC при <b>Q=${r1(m.qm)}</b>`) + chip(`AC<sub>min</sub> = <b>${r1(m.acmin)}</b>`) + chip(`MC = ${m.a} + ${r1(2 * m.b)}·Q`); }
+  },
+  util: {
+    name: 'Полезность',
+    legend: '<span style="color:var(--c5)">■</span> бюджет · <span style="color:var(--c7)">■</span> кривые безразличия · точка — оптимум',
+    note: 'U = x·y, бюджет ⟦Px·x + Py·y = I⟧. Оптимум там, где бюджет касается кривой безразличия: x* = I/(2Px), y* = I/(2Py).',
+    st: { I: 100, Px: 4, Py: 5 }, sliders: [['I', 'Доход I', 40, 160], ['Px', 'Цена X', 1, 10], ['Py', 'Цена Y', 1, 10]],
+    f(st) { const xs = st.I / (2 * st.Px), ys = st.I / (2 * st.Py); return { I: st.I, Px: st.Px, Py: st.Py, xI: st.I / st.Px, yI: st.I / st.Py, xs, ys, U: xs * ys }; },
+    svg(st) { const m = this.f(st), P = mkPlot(m.xI * 1.05, m.yI * 1.05); let g = gaxes(P, 'X', 'Y');
+      g += gl(P, 0, m.yI, m.xI, 0, 'var(--c5)', 2.5);
+      [0.5, 1, 1.7].forEach(k => { const U = m.U * k, pts = []; for (let i = 0; i <= 40; i++) { const x = P.xmax * (0.06 + 0.94 * i / 40), y = U / x; if (y <= P.ymax) pts.push([x, y]); } if (pts.length > 1) g += gpath(P, pts, 'var(--c7)', k === 1 ? 2.2 : 1.2); });
+      g += gdot(P, m.xs, m.ys, 'var(--c4)');
+      return svgWrap(P, g, 'var(--c5)'); },
+    read(st) { const m = this.f(st); return chip(`Оптимум: <b>x*=${r1(m.xs)}</b>, <b>y*=${r1(m.ys)}</b>`) + chip(`U* = <b>${r1(m.U)}</b>`); }
   }
-  return h;
+};
+
+let modelId = 'sd';
+function mdlSet(k, v) {
+  const M = MODELS[modelId]; M.st[k] = Number(v);
+  const el = document.getElementById('model'); if (!el) return;
+  el.querySelector('.mdl-plot').innerHTML = M.svg(M.st);
+  el.querySelector('.mdl-read').innerHTML = M.read(M.st);
+  const vv = el.querySelector('#mv-' + k); if (vv) vv.textContent = v;
 }
-function sdSet(k, v) {
-  sdState[k] = Number(v);
-  const el = document.getElementById('model');
-  if (!el) return;
-  el.querySelector('.mdl-plot').innerHTML = sdSVG();
-  el.querySelector('.mdl-read').innerHTML = sdReadout();
-  el.querySelector('#mv-' + k).textContent = (k === 't' ? '' : (v > 0 ? '+' : '')) + v;
-}
-function openModel(id) {
-  let el = document.getElementById('model');
-  if (!el) { el = document.createElement('div'); el.id = 'model'; document.getElementById('app').appendChild(el); }
-  const slider = (k, lab, min, max) =>
-    `<div class="mdl-row"><span class="lab">${lab}</span>
-      <input type="range" min="${min}" max="${max}" step="1" value="${sdState[k]}" oninput="sdSet('${k}',this.value)">
-      <span class="v" id="mv-${k}">${(k === 't' ? '' : (sdState[k] > 0 ? '+' : '')) + sdState[k]}</span></div>`;
-  el.innerHTML = `
-    <div class="ex-top">
-      <button class="ex-x" onclick="closeModel()" aria-label="Закрыть">✕</button>
-      <div class="ex-prog">Спрос и предложение</div><div class="ex-time">🧪</div>
-    </div>
+function switchModel(id) { modelId = id; renderModel(); }
+function renderModel() {
+  const el = document.getElementById('model'); const M = MODELS[modelId];
+  const chips = Object.keys(MODELS).map(id => `<button class="mchip ${id === modelId ? 'on' : ''}" onclick="switchModel('${id}')">${MODELS[id].name}</button>`).join('');
+  const sliders = M.sliders.map(([k, lab, mn, mx]) => `<div class="mdl-row"><span class="lab">${esc(lab)}</span><input type="range" min="${mn}" max="${mx}" step="1" value="${M.st[k]}" oninput="mdlSet('${k}',this.value)"><span class="v" id="mv-${k}">${M.st[k]}</span></div>`).join('');
+  el.innerHTML = `<div class="ex-top"><button class="ex-x" onclick="closeModel()" aria-label="Закрыть">✕</button><div class="ex-prog">Песочница</div><div class="ex-time">🧪</div></div>
     <div class="ex-body">
-      <div class="mdl-h rnd">Двигай ползунки — модель живая</div>
-      <div class="mixnote" style="padding:2px 2px 6px"><span style="color:var(--c1)">■</span> спрос · <span style="color:var(--c2)">■</span> предложение · при налоге появляются клин, сбор (жёлтый) и чистые потери DWL (красный).</div>
-      <div class="mdl-plot">${sdSVG()}</div>
-      <div class="mdl-read">${sdReadout()}</div>
-      ${slider('d', 'Спрос (сдвиг)', -40, 50)}
-      ${slider('s', 'Предложение', -15, 60)}
-      ${slider('t', 'Налог t', 0, 60)}
+      <div class="mchips">${chips}</div>
+      <div class="mixnote" style="padding:2px 2px 6px">${M.legend}</div>
+      <div class="mdl-plot">${M.svg(M.st)}</div>
+      <div class="mdl-read">${M.read(M.st)}</div>
+      ${sliders}
       <div style="height:6px"></div>
-      <div class="mixnote" style="padding:0 2px">Налог с производителя поднимает кривую предложения на t: покупатель платит больше, продавец получает меньше, часть сделок исчезает — это и есть DWL.</div>
+      <div class="mixnote" style="padding:0 2px">${rich(M.note)}</div>
     </div>
     <div class="ex-foot"><button class="btn ghost rnd" onclick="closeModel()">Закрыть</button></div>`;
-  el.style.display = 'flex';
+  const body = el.querySelector('.ex-body'); if (body) body.scrollTop = 0;
+}
+function openModel(id) {
+  if (id) modelId = id;
+  let el = document.getElementById('model');
+  if (!el) { el = document.createElement('div'); el.id = 'model'; document.getElementById('app').appendChild(el); }
+  renderModel(); el.style.display = 'flex';
 }
 function closeModel() { const el = document.getElementById('model'); if (el) { el.style.display = 'none'; el.innerHTML = ''; } }
 
