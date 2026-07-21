@@ -1946,7 +1946,7 @@ function aiRow(cid) {
   if (ct.solution) h += `<button class="ai-btn" onclick="aiCheck('${cid}')">✍️ Проверить</button>`;
   h += `<button class="ai-btn" onclick="aiHint('${cid}')">💡 Подсказка</button>
     <button class="ai-btn" onclick="aiExplain('${cid}')">🙂 ${ct.solution ? 'Проще' : 'Разобрать'}</button>
-    <button class="ai-btn" onclick="aiSimilar('${cid}')">🔁 Похожая</button>`;
+    <button class="ai-btn" onclick="aiSimilar('${cid}')">🔁 Другие числа</button>`;
   return h + '</div>';
 }
 const aiBusy = t => `<div class="ai-busy"><span class="ai-spin"></span>${esc(t || 'AI думает…')}</div>`;
@@ -1983,7 +1983,7 @@ function aiHint(cid) {
   aiRun('hint', { ...refData(cid), level: lvl }, `Подсказка · уровень ${lvl}/3`, d => `<div class="ai-out">${rich(d.text)}</div>` + (lvl < 3 ? `<div style="height:8px"></div><button class="btn ghost sm rnd" onclick="aiHint('${cid}')">Ещё подсказку</button>` : ''));
 }
 function aiExplain(cid) { aiRun('explain', refData(cid), 'Объясни проще', d => `<div class="ai-out">${rich(d.text)}</div>`); }
-function aiSimilar(cid) { aiRun('similar', refData(cid), 'Похожая задача', d => `<div class="ai-note">🤖 Сгенерировано AI — ответ не проверен официально.</div><div class="ai-out">${rich(d.text)}</div><div style="height:8px"></div><button class="btn ghost sm rnd" onclick="aiSimilar('${cid}')">Ещё одну</button>`); }
+function aiSimilar(cid) { aiRun('similar', refData(cid), 'Та же задача с новыми числами', d => `<div class="ai-note">🤖 Та же задача, но с изменёнными числами — сверь вычисления сам.</div><div class="ai-out">${rich(d.text)}</div><div style="height:8px"></div><button class="btn ghost sm rnd" onclick="aiSimilar('${cid}')">Ещё вариант</button>`); }
 function aiSettingsHTML() {
   const on = !!(S.aiUrl && S.aiUrl.trim());
   let h = `<div class="h2">AI-тренер</div>
