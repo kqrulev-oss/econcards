@@ -678,7 +678,7 @@ const DEFAULT = {
   theme: 'terminal',
   klass: null, history: {}, lessons: {}, xpDay: {}, srs: {}, aiUrl: '', aiModel: '',
   done: {}, wrong: {}, correct: {}, box: {}, favs: {}, onboarded: false,
-  subject: 'econ'
+  subject: 'econ', examDates: {}
 };
 let S = load();
 function load() {
@@ -743,6 +743,7 @@ function renderHub() {
   const tracks = [...new Set(SUBJECTS.map(s => s.track))];
   let h = `<div class="big rnd">Разделы</div>
     <div class="mixnote" style="margin:-8px 4px 16px">Выбери направление и предмет — лента, курсы и темы подстроятся под него.</div>`;
+  h += tileBtn('🎯', 'План на сегодня', 'повторение, ошибки и следующий урок · ' + curSubj().title, `openDayPlan()`);
   tracks.forEach(tr => {
     h += `<div class="cat-h rnd">${tr === 'Олимпиады' ? '🏆 ' : '🎓 '}${tr}</div>`;
     SUBJECTS.filter(s => s.track === tr).forEach(s => {
@@ -762,6 +763,68 @@ function pickSubject(id) {
   setSubject(id);
   renderFeed();
   go(id === 'econ' ? 'feed' : 'course');
+}
+
+/* ==================== план на сегодня ====================
+   Личный дневной план из данных пользователя: повторение по расписанию,
+   работа над ошибками, самая слабая тема и следующий непройденный урок.
+   Плюс обратный отсчёт до экзамена (дату задаёт сам пользователь). */
+function nextLessonFor(subj) {
+  for (const c of COURSES.filter(x => courseSubj(x) === subj)) {
+    const l = c.lessons.find(x => !S.lessons[x.id]);
+    if (l) return { course: c, lesson: l };
+  }
+  return null;
+}
+function weakTopic() {
+  const dir = curSubj().dir;
+  const cnt = {};
+  CARDS.forEach(c => {
+    if (c.direction === dir && S.wrong[c.id] && !S.correct[c.id])
+      cnt[c.topicID] = (cnt[c.topicID] || 0) + 1;
+  });
+  let best = null;
+  Object.entries(cnt).forEach(([t, n]) => { if (!best || n > best[1]) best = [t, n]; });
+  return best;
+}
+function examDaysLeft() {
+  const d = (S.examDates || {})[S.subject];
+  if (!d) return null;
+  const ms = new Date(d + 'T09:00:00') - new Date();
+  return Math.ceil(ms / 86400000);
+}
+function setExamDate() {
+  const cur = (S.examDates || {})[S.subject] || '';
+  const v = prompt('Дата экзамена (ГГГГ-ММ-ДД). Пусто — убрать дату:', cur || '2026-06-01');
+  if (v === null) return;
+  S.examDates = S.examDates || {};
+  const t = v.trim();
+  if (/^\d{4}-\d{2}-\d{2}$/.test(t) && !isNaN(new Date(t))) S.examDates[S.subject] = t;
+  else if (!t) delete S.examDates[S.subject];
+  save(); openDayPlan();
+}
+function openDayPlan() {
+  const dir = curSubj().dir;
+  const due = dueList().filter(c => c.direction === dir).length;
+  const rep = CARDS.filter(c => c.direction === dir && S.wrong[c.id] && !S.correct[c.id]).length;
+  const wt = weakTopic();
+  const nl = nextLessonFor(S.subject);
+  const days = examDaysLeft();
+  const cd = days === null ? 'дата экзамена не задана'
+    : days > 1 ? `до экзамена ${days} дн.`
+    : days === 1 ? 'экзамен завтра!'
+    : days === 0 ? 'экзамен сегодня — удачи!'
+    : 'экзамен уже прошёл';
+  let h = `<div class="grab"></div><div class="big rnd">🎯 План на сегодня</div>
+    <div class="mixnote" style="margin:-8px 4px 12px">${esc(curSubj().title)} · ${esc(cd)} · цель дня ${S.goalToday}, сделано ${S.doneToday}</div>`;
+  if (due) h += tileBtn('🔁', '1. Повторить по расписанию', due + ' карточек ждут повторения', `setFilter('due')`);
+  if (rep) h += tileBtn('🧯', (due ? '2' : '1') + '. Работа над ошибками', rep + ' карточек с прошлыми ошибками', `setFilter('repeat')`);
+  if (wt) h += tileBtn('🎯', 'Подтянуть слабое место', (topicTitle[wt[0]] || wt[0]) + ' · ' + wt[1] + ' нерешённых ошибок', `setFilter('topic','${wt[0]}')`);
+  if (nl) h += tileBtn('📖', 'Пройти следующий урок', nl.lesson.t, `closeSheet();go('course');openCourse('${nl.course.id}');openLesson('${nl.course.id}','${nl.lesson.id}')`);
+  if (!due && !rep && !wt) h += `<div class="mixnote">Повторений и ошибок нет — чистый день: пройди урок и добей цель дня свободной практикой.</div>`;
+  h += tileBtn('🎲', 'Свободная практика', 'лента по текущему разделу', `setFilter('all')`);
+  h += tileBtn('📅', 'Дата экзамена', ((S.examDates || {})[S.subject]) || 'не задана — нажми и укажи', `setExamDate()`);
+  sheet(h);
 }
 
 /* ==================== фильтр и лента ==================== */
@@ -1259,7 +1322,8 @@ function openFilter() {
   const subjCards = CARDS.filter(c => c.direction === curSubj().dir);
   const klN = S.klass ? subjCards.filter(c => cardGrades(c).has(S.klass)).length : subjCards.length;
   if (S.klass) h += `<div class="mixnote" style="margin:-4px 4px 10px">Класс сужает ленту, темы, повторение и избранное. Для ${S.klass} класса — ${klN} заданий.</div>`;
-  const dueN = dueList().length;
+  h += tileBtn('🎯', 'План на сегодня', 'повторение, ошибки и следующий урок', `openDayPlan()`);
+  const dueN = dueList().filter(c => c.direction === curSubj().dir).length;
   if (dueN) h += tileBtn('🔁', 'Повторить сегодня', dueN + ' карточек по расписанию', `setFilter('due')`);
   h += tileBtn('🎲', 'Всё подряд', klN + ' карточек', `setFilter('all')`);
   const dir = curSubj().dir;
