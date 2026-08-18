@@ -270,8 +270,8 @@ button{font-family:inherit;font-size:inherit;color:inherit;border:0;background:n
   font-size:23px;background:var(--soft);
 }
 .tile .tx{flex:1;min-width:0}
-.tile .tt{font-size:16px;font-weight:800;letter-spacing:-.01em}
-.tile .ts{font-size:13px;color:var(--muted);font-weight:600;margin-top:1px}
+.tile .tt{display:block;font-size:16px;font-weight:800;letter-spacing:-.01em;line-height:1.25}
+.tile .ts{display:block;font-size:13px;color:var(--muted);font-weight:600;margin-top:3px;line-height:1.35}
 .ring{flex:none;width:40px;height:40px;position:relative}
 .ring svg{transform:rotate(-90deg)}
 .ring b{
@@ -750,11 +750,12 @@ function renderHub() {
       const active = S.subject === s.id;
       const cnt = CARDS.filter(c => c.direction === s.dir).length;
       const click = s.on ? `onclick="pickSubject('${s.id}')"` : '';
-      h += `<button class="tile" ${click} style="${s.on ? '' : 'opacity:.5'}">
+      const st = !s.on ? 'opacity:.5' : (active ? `border-color:var(${s.color})` : '');
+      h += `<button class="tile" ${click} style="${st}">
         <i class="ico" style="background:var(${s.color})22">${s.icon}</i>
-        <span class="tx"><span class="tt">${esc(s.title)}${active ? ' · выбрано' : ''}</span>
-          <span class="ts">${s.on ? (cnt ? cnt + ' карточек · ' + s.sub : s.sub) : 'Скоро'}</span></span>
-        <i class="chev">${s.on ? '›' : ''}</i></button>`;
+        <span class="tx"><span class="tt">${esc(s.title)}</span>
+          <span class="ts">${s.on ? (active ? '✓ выбран сейчас · ' : '') + (cnt ? pluCards(cnt) + ' · ' + s.sub : s.sub) : 'Скоро'}</span></span>
+        <i class="chev">${s.on ? (active ? '✓' : '›') : ''}</i></button>`;
     });
   });
   box.innerHTML = h;
@@ -817,9 +818,9 @@ function openDayPlan() {
     : 'экзамен уже прошёл';
   let h = `<div class="grab"></div><div class="big rnd">🎯 План на сегодня</div>
     <div class="mixnote" style="margin:-8px 4px 12px">${esc(curSubj().title)} · ${esc(cd)} · цель дня ${S.goalToday}, сделано ${S.doneToday}</div>`;
-  if (due) h += tileBtn('🔁', '1. Повторить по расписанию', due + ' карточек ждут повторения', `setFilter('due')`);
-  if (rep) h += tileBtn('🧯', (due ? '2' : '1') + '. Работа над ошибками', rep + ' карточек с прошлыми ошибками', `setFilter('repeat')`);
-  if (wt) h += tileBtn('🎯', 'Подтянуть слабое место', (topicTitle[wt[0]] || wt[0]) + ' · ' + wt[1] + ' нерешённых ошибок', `setFilter('topic','${wt[0]}')`);
+  if (due) h += tileBtn('🔁', 'Повторить по расписанию', pluCards(due) + ' — пора освежить', `setFilter('due')`);
+  if (rep) h += tileBtn('🧯', 'Работа над ошибками', pluCards(rep) + ' с прошлыми ошибками', `setFilter('repeat')`);
+  if (wt) h += tileBtn('🎯', 'Подтянуть слабое место', (topicTitle[wt[0]] || wt[0]) + ' · ' + plu(wt[1], ['ошибка','ошибки','ошибок']), `setFilter('topic','${wt[0]}')`);
   if (nl) h += tileBtn('📖', 'Пройти следующий урок', nl.lesson.t, `closeSheet();go('course');openCourse('${nl.course.id}');openLesson('${nl.course.id}','${nl.lesson.id}')`);
   if (!due && !rep && !wt) h += `<div class="mixnote">Повторений и ошибок нет — чистый день: пройди урок и добей цель дня свободной практикой.</div>`;
   h += tileBtn('🎲', 'Свободная практика', 'лента по текущему разделу', `setFilter('all')`);
@@ -1018,6 +1019,14 @@ function markMore(box) {
 function esc(s) {
   return String(s).replace(/[&<>"]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[m]));
 }
+
+/* Русские склонения: plu(3,['карточка','карточки','карточек']) → «3 карточки» */
+function plu(n, forms) {
+  const a = Math.abs(n) % 100, b = a % 10;
+  const f = (a > 10 && a < 20) ? forms[2] : (b === 1 ? forms[0] : (b >= 2 && b <= 4 ? forms[1] : forms[2]));
+  return n + ' ' + f;
+}
+const pluCards = n => plu(n, ['карточка', 'карточки', 'карточек']);
 
 /* Формулы помечены в тексте символами ⟦ ⟧. Выводим их отдельным блоком,
    если формула занимает строку целиком, иначе — выделенным фрагментом.
@@ -1321,23 +1330,23 @@ function openFilter() {
     `</div>`;
   const subjCards = CARDS.filter(c => c.direction === curSubj().dir);
   const klN = S.klass ? subjCards.filter(c => cardGrades(c).has(S.klass)).length : subjCards.length;
-  if (S.klass) h += `<div class="mixnote" style="margin:-4px 4px 10px">Класс сужает ленту, темы, повторение и избранное. Для ${S.klass} класса — ${klN} заданий.</div>`;
+  if (S.klass) h += `<div class="mixnote" style="margin:-4px 4px 10px">Класс сужает ленту, темы, повторение и избранное. Для ${S.klass} класса — ${plu(klN, ['задание','задания','заданий'])}.</div>`;
   h += tileBtn('🎯', 'План на сегодня', 'повторение, ошибки и следующий урок', `openDayPlan()`);
   const dueN = dueList().filter(c => c.direction === curSubj().dir).length;
-  if (dueN) h += tileBtn('🔁', 'Повторить сегодня', dueN + ' карточек по расписанию', `setFilter('due')`);
-  h += tileBtn('🎲', 'Всё подряд', klN + ' карточек', `setFilter('all')`);
+  if (dueN) h += tileBtn('🔁', 'Повторить сегодня', pluCards(dueN) + ' по расписанию', `setFilter('due')`);
+  h += tileBtn('🎲', 'Всё подряд', pluCards(klN), `setFilter('all')`);
   const dir = curSubj().dir;
   const rep = CARDS.filter(c => c.direction === dir && S.wrong[c.id] && !S.correct[c.id]).length;
-  h += tileBtn('🔁', 'Работа над ошибками', rep + ' карточек', `setFilter('repeat')`);
+  h += tileBtn('🧯', 'Работа над ошибками', pluCards(rep), `setFilter('repeat')`);
   const fv = CARDS.filter(c => c.direction === dir && S.favs[c.id]).length;
-  h += tileBtn('★', 'Избранное', fv + ' карточек', `setFilter('favs')`);
+  h += tileBtn('★', 'Избранное', pluCards(fv), `setFilter('favs')`);
   const revN = CARDS.filter(c => c.direction === dir && (c.tags || []).includes('обратное')).length;
-  if (revN) h += tileBtn('🔄', 'Только обратные задания', revN + ' карточек', `setFilter('reverse')`);
+  if (revN) h += tileBtn('🔄', 'Только обратные задания', pluCards(revN), `setFilter('reverse')`);
   secs.forEach(sec => {
     const us = UNITS.filter(u => topicSection[u.topic] === sec && topicSubj(u.topic) === S.subject);
     if (!us.length) return;
     h += `<div class="h2">${esc(sec)}</div>`;
-    us.forEach(u => h += tileBtn(u.icon, u.title, u.count + ' карточек', `setFilter('topic','${u.topic}')`));
+    us.forEach(u => h += tileBtn(u.icon, u.title, pluCards(u.count), `setFilter('topic','${u.topic}')`));
   });
   h += mixHTML();
   sheet(h);
