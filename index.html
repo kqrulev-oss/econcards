@@ -1,11 +1,11 @@
 <!DOCTYPE html>
-<html lang="ru" data-theme="terminal">
+<html lang="ru" data-theme="fresh">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta name="theme-color" content="#0C0F16" id="tc">
+<meta name="theme-color" content="#F5F7FB" id="tc">
 <title>EconCards</title>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
@@ -92,6 +92,25 @@
 [data-theme="neon"] .opt.no{box-shadow:0 0 0 1px var(--no),0 0 18px -6px var(--no)}
 [data-theme="neon"] .tab.on .ti{filter:drop-shadow(0 0 7px var(--accent))}
 [data-theme="neon"] .chart .bar.hit{box-shadow:0 0 10px -2px var(--ok)}
+
+/* ---------- Свежая: светлая, яркая, мягкие крупные формы ---------- */
+[data-theme="fresh"]{
+  --bg:#F5F7FB; --card:#FFFFFF; --ink:#1B1F2E; --muted:#7A8299; --line:#E6EAF2;
+  --soft:#F0F3F9; --soft2:#E6EAF2; --soft3:#C9D1E0;
+  --ok:#16A57B; --ok-soft:#E3F6EE; --ok-ink:#0E8A65; --ok-dark:#0E8A65;
+  --no:#F04452; --no-soft:#FEE9EB; --no-ink:#D42D3C; --miss:#F9C6CB;
+  --flame:#FF9F1C; --onaccent:#FFFFFF; --onaccent-soft:rgba(255,255,255,.25);
+  --warn-bg:#FFF6E0; --warn-line:#F2D992; --warn-ink:#8A6A14;
+  --veil:rgba(27,31,46,.45); --tapc:rgba(27,31,46,.18);
+  --c1:#5B67F5; --c2:#0FB5A6; --c3:#FF6B5B; --c4:#FFAA2B; --c5:#F0559C;
+  --c6:#2FBF71; --c7:#9B5DE5; --c8:#3E8EF7;
+  --r:22px; --r-sm:16px; --bw:2px; --bwb:5px; --bwb2:4px; --tap:0 4px 0;
+}
+[data-theme="fresh"] .card{box-shadow:0 2px 12px rgba(27,31,46,.06)}
+[data-theme="fresh"] .tile{box-shadow:0 1px 4px rgba(27,31,46,.04)}
+[data-theme="fresh"] .stat{box-shadow:0 1px 4px rgba(27,31,46,.04)}
+[data-theme="fresh"] .tabs{box-shadow:0 -4px 16px rgba(27,31,46,.05)}
+[data-theme="fresh"] .big,[data-theme="fresh"] .oly-hero h1{font-weight:900}
 
 /* ---------- Классика: прежний тёплый и объёмный вид ---------- */
 [data-theme="classic"]{
@@ -652,6 +671,7 @@ const KIND = {
 
 /* ==================== темы ==================== */
 const THEMES = [
+  { id: 'fresh',    title: 'Свежая',   note: 'Светлая, яркие акценты и мягкие формы', bar: '#F5F7FB', chip: ['#FFFFFF', '#5B67F5', '#0FB5A6'] },
   { id: 'terminal', title: 'Терминал', note: 'Тёмный, данные, моноширинные цифры', bar: '#0C0F16', chip: ['#141922', '#2DD4A7', '#FF5C6E'] },
   { id: 'paper',    title: 'Бумага',   note: 'Светлый учебник, засечки, спокойное чтение', bar: '#F6F2E9', chip: ['#FFFDF7', '#3C4E7A', '#A4342E'] },
   { id: 'neon',     title: 'Неон',     note: 'Тёмный экран, светящиеся акценты', bar: '#07070E', chip: ['#12122A', '#8B5CFF', '#31E5A0'] },
@@ -665,6 +685,7 @@ function applyTheme(id) {
   S.theme = t.id;
 }
 function setTheme(id) {
+  S.themePicked = true;
   applyTheme(id); save();
   if (scene === 'me') renderMe();
   if (queue.length) renderFeed();
@@ -675,12 +696,14 @@ const DEFAULT = {
   xp: 0, streakDays: 0, lastActive: null, goalToday: 15, doneToday: 0,
   goalDay: null, todayLog: [], pushOn: false, pushHour: 19, lastNudge: null,
   mix: { base: 40, rare: 60, superrare: 60, epic: 40, mythic: 25, legendary: 15 },
-  theme: 'terminal',
+  theme: 'fresh', themePicked: false,
   klass: null, history: {}, lessons: {}, xpDay: {}, srs: {}, aiUrl: '', aiModel: '',
   done: {}, wrong: {}, correct: {}, box: {}, favs: {}, onboarded: false,
   subject: 'econ', examDates: {}
 };
 let S = load();
+/* Разовая миграция: у кого тема осталась стандартной (сам не выбирал) — переводим на новую. */
+if (!S.themePicked) S.theme = 'fresh';
 function load() {
   try { const r = localStorage.getItem('econcards'); if (r) return Object.assign({}, DEFAULT, JSON.parse(r)); }
   catch (e) {}
