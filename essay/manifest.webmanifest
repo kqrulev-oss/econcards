@@ -1,0 +1,15 @@
+{
+  "name": "Сочинение — тренажёр ЕГЭ",
+  "short_name": "Сочинение",
+  "description": "Тренажёр сочинения ЕГЭ: банк тем, редактор с таймером, чек-лист К1–К12 и AI-проверка.",
+  "lang": "ru",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#F5F7FB",
+  "theme_color": "#F5F7FB",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}

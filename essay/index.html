@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="theme-color" content="#F5F7FB">
+<title>Сочинение</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<style>
+:root{
+  --bg:#F5F7FB; --card:#FFFFFF; --ink:#1B1F2E; --muted:#7A8299; --line:#E6EAF2;
+  --soft:#F0F3F9; --soft2:#E6EAF2;
+  --ok:#16A57B; --ok-soft:#E3F6EE; --ok-ink:#0E8A65;
+  --no:#F04452; --no-soft:#FEE9EB; --no-ink:#D42D3C;
+  --warn:#8A6A14; --warn-bg:#FFF6E0;
+  --c1:#5B67F5; --c1d:#4652D6; --c2:#0FB5A6; --c4:#FFAA2B;
+  --veil:rgba(27,31,46,.45);
+  --safe-b:env(safe-area-inset-bottom,0px);
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;overscroll-behavior:none}
+body{background:var(--bg);color:var(--ink);font-family:-apple-system,"SF Pro Text","Segoe UI",Roboto,sans-serif;
+  font-size:17px;line-height:1.45;-webkit-font-smoothing:antialiased}
+button{font-family:inherit;font-size:inherit;color:inherit;border:0;background:none;cursor:pointer}
+#app{position:fixed;inset:0;display:flex;flex-direction:column}
+main{flex:1;min-height:0;position:relative}
+.scene{position:absolute;inset:0;display:none;overflow-y:auto;padding:18px 16px 24px}
+.scene.on{display:block}
+#s-write.scene.on{display:flex;flex-direction:column;overflow:hidden}
+.big{font-size:24px;font-weight:900;letter-spacing:-.02em;margin:2px 2px 12px}
+.note{font-size:13px;color:var(--muted);line-height:1.4;margin:-6px 2px 14px}
+.h2{font-size:13px;font-weight:800;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);margin:20px 2px 10px}
+.tile{display:flex;align-items:center;gap:12px;width:100%;text-align:left;padding:14px;background:var(--card);
+  border:1px solid var(--line);border-radius:16px;margin-bottom:9px;box-shadow:0 1px 4px rgba(27,31,46,.04)}
+.tile:active{transform:scale(.99)}
+.tile .ico{flex:none;width:44px;height:44px;border-radius:13px;display:grid;place-items:center;font-size:22px;background:var(--soft)}
+.tile .tx{flex:1;min-width:0}
+.tile .tt{display:block;font-size:16px;font-weight:800;line-height:1.3}
+.tile .ts{display:block;font-size:13px;color:var(--muted);font-weight:600;margin-top:3px;line-height:1.35}
+.chev{flex:none;color:#C9D1E0;font-size:20px;font-weight:900}
+.btn{display:block;width:100%;padding:15px;border-radius:16px;background:var(--c1);color:#fff;font-weight:800;
+  text-align:center;border-bottom:4px solid var(--c1d)}
+.btn:active{transform:translateY(2px);border-bottom-width:2px}
+.btn.ghost{background:var(--soft);color:var(--ink);border-bottom-color:var(--soft2)}
+.btn.green{background:var(--ok);border-bottom-color:#0E8A65;color:#fff}
+.tabs{flex:none;display:flex;background:var(--card);border-top:1px solid var(--line);padding-bottom:var(--safe-b);
+  box-shadow:0 -4px 16px rgba(27,31,46,.05);z-index:10}
+.tab{flex:1;padding:9px 0 7px;text-align:center;color:var(--muted)}
+.tab .ti{display:block;font-size:21px;filter:grayscale(1);opacity:.6}
+.tab .tl{font-size:10.5px;font-weight:800}
+.tab.on{color:var(--c1)}
+.tab.on .ti{filter:none;opacity:1}
+/* редактор */
+.wtop{flex:none;padding:12px 16px 10px;background:var(--card);border-bottom:1px solid var(--line)}
+.wtopic{font-size:14px;font-weight:700;line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.wmeta{display:flex;gap:8px;margin-top:9px;flex-wrap:wrap}
+.chip{font-size:12.5px;font-weight:800;padding:5px 10px;border-radius:99px;background:var(--soft);color:var(--muted)}
+.chip.on{background:#EDEFFE;color:var(--c1)}
+.chip.bad{background:var(--no-soft);color:var(--no-ink)}
+.chip.good{background:var(--ok-soft);color:var(--ok-ink)}
+#ta{flex:1;min-height:0;width:100%;padding:16px;border:0;outline:0;resize:none;background:var(--bg);color:var(--ink);
+  font-family:inherit;font-size:17px;line-height:1.55}
+.wfoot{flex:none;display:flex;gap:9px;padding:10px 16px calc(12px + var(--safe-b));background:var(--card);border-top:1px solid var(--line)}
+.wfoot .btn{flex:1;padding:13px}
+/* шторка */
+#modal:empty{display:none}
+.sheet{position:fixed;inset:0;background:var(--veil);display:flex;align-items:flex-end;z-index:50}
+.sheet-in{width:100%;max-height:86%;overflow-y:auto;background:var(--bg);border-radius:22px 22px 0 0;
+  padding:10px 16px calc(20px + var(--safe-b))}
+.grab{width:44px;height:5px;border-radius:3px;background:var(--soft2);margin:6px auto 14px}
+.crit{display:flex;align-items:center;gap:11px;padding:12px 13px;background:var(--card);border:1px solid var(--line);
+  border-radius:14px;margin-bottom:8px}
+.crit input{width:21px;height:21px;accent-color:var(--c1);flex:none}
+.crit .ct{flex:1;font-size:14.5px;font-weight:600;line-height:1.35}
+.crit .cp{flex:none;font-size:13px;font-weight:900;color:var(--muted)}
+.score{font-size:17px;font-weight:900;text-align:center;padding:13px;border-radius:16px;background:var(--card);
+  border:1px solid var(--line);margin:6px 0 12px}
+.aibox{white-space:pre-wrap;font-size:14.5px;line-height:1.5;background:var(--card);border:1px solid var(--line);
+  border-radius:16px;padding:14px;margin-top:10px}
+.help p{margin-bottom:10px;font-size:15px;line-height:1.5}
+.help b{font-weight:800}
+input.field{width:100%;padding:13px 14px;border-radius:14px;border:1px solid var(--line);background:var(--card);
+  font-family:inherit;font-size:16px;color:var(--ink);outline:none}
+.empty{text-align:center;color:var(--muted);padding:36px 16px;font-size:15px}
+.del{flex:none;width:34px;height:34px;border-radius:11px;background:var(--soft);display:grid;place-items:center;color:var(--muted);font-weight:900}
+</style>
+</head>
+<body>
+<div id="app">
+  <main>
+    <section class="scene on" id="s-topics"><div id="topicsList"></div></section>
+    <section class="scene" id="s-write">
+      <div class="wtop">
+        <div class="wtopic" id="wTopic"></div>
+        <div class="wmeta">
+          <span class="chip" id="wWords">0 слов</span>
+          <button class="chip" id="wTimer" onclick="toggleTimer()">⏱ таймер</button>
+          <span class="chip" id="wMode"></span>
+        </div>
+      </div>
+      <textarea id="ta" placeholder="Пиши сочинение здесь. Черновик сохраняется сам…" oninput="onType()"></textarea>
+      <div class="wfoot">
+        <button class="btn ghost" onclick="openFrame()">Каркас</button>
+        <button class="btn" onclick="openCheck()">Проверить</button>
+      </div>
+    </section>
+    <section class="scene" id="s-mine"><div id="mineList"></div></section>
+    <section class="scene" id="s-more"><div id="moreList"></div></section>
+  </main>
+  <nav class="tabs">
+    <button class="tab on" id="t-topics" onclick="go('topics')"><span class="ti">📚</span><span class="tl">Темы</span></button>
+    <button class="tab" id="t-write" onclick="go('write')"><span class="ti">✍️</span><span class="tl">Письмо</span></button>
+    <button class="tab" id="t-mine" onclick="go('mine')"><span class="ti">📁</span><span class="tl">Мои</span></button>
+    <button class="tab" id="t-more" onclick="go('more')"><span class="ti">⚙️</span><span class="tl">Ещё</span></button>
+  </nav>
+  <div id="modal"></div>
+</div>
+
+<script>
+/* ==================== данные тем ==================== */
+const EGE = [
+  {p:'Проблема влияния войны на человека', lit:'«Судьба человека» М. Шолохова; «А зори здесь тихие…» Б. Васильева'},
+  {p:'Проблема исторической памяти: зачем хранить память о прошлом', lit:'«Письма о добром и прекрасном» Д. Лихачёва; «Обелиск» В. Быкова'},
+  {p:'Проблема ответственности человека перед природой', lit:'«Царь-рыба» В. Астафьева; «Прощание с Матёрой» В. Распутина'},
+  {p:'Проблема милосердия и сострадания к людям', lit:'«Матрёнин двор» А. Солженицына; образ Сони в «Преступлении и наказании»'},
+  {p:'Проблема выбора жизненного пути', lit:'«Обломов» И. Гончарова; «Мартин Иден» Дж. Лондона'},
+  {p:'Проблема роли учителя в жизни человека', lit:'«Уроки французского» В. Распутина; «Тринадцатый подвиг Геракла» Ф. Искандера'},
+  {p:'Проблема взаимоотношений поколений («отцы и дети»)', lit:'«Отцы и дети» И. Тургенева; «Телеграмма» К. Паустовского'},
+  {p:'Проблема влияния технологий на живое общение', lit:'«451° по Фаренгейту» Р. Брэдбери; «Мы» Е. Замятина'},
+  {p:'Проблема истинной дружбы', lit:'Андрей Болконский и Пьер Безухов в «Войне и мире»; «Три товарища» Э. М. Ремарка'},
+  {p:'Проблема любви к Родине', lit:'«Война и мир» Л. Толстого; лирика С. Есенина'},
+  {p:'Проблема чести и достоинства', lit:'«Капитанская дочка» А. Пушкина; «Песня про купца Калашникова» М. Лермонтова'},
+  {p:'Проблема самопожертвования ради людей', lit:'легенда о Данко из «Старухи Изергиль» М. Горького; «Сотников» В. Быкова'},
+  {p:'Проблема роли книги и чтения в жизни человека', lit:'«Письма о добром и прекрасном» Д. Лихачёва; «Мартин Иден» Дж. Лондона'},
+  {p:'Проблема равнодушия к чужой беде', lit:'«Людочка» В. Астафьева; «Крыжовник» А. Чехова'},
+  {p:'Проблема совести и нравственного выбора', lit:'«Преступление и наказание» Ф. Достоевского; «Гроза» А. Островского'},
+  {p:'Проблема мечты и реальности', lit:'«Алые паруса» А. Грина; «Ионыч» А. Чехова'},
+  {p:'Проблема истинной красоты человека', lit:'образы Наташи Ростовой и княжны Марьи в «Войне и мире»; «Юшка» А. Платонова'},
+  {p:'Проблема мужества и стойкости в трудных обстоятельствах', lit:'«Василий Тёркин» А. Твардовского; «Судьба человека» М. Шолохова'},
+  {p:'Проблема бережного отношения к родному языку', lit:'публицистика Д. Лихачёва; стихотворение в прозе «Русский язык» И. Тургенева'},
+  {p:'Проблема взросления и ответственности за свои поступки', lit:'«Капитанская дочка» А. Пушкина; «Уроки французского» В. Распутина'},
+];
+const FINAL = [
+  'Почему важно уметь прощать?','Согласны ли вы с тем, что опыт — лучший учитель?',
+  'Что значит быть верным своему слову?','Может ли человек изменить свою судьбу?',
+  'В чём проявляется истинная любовь к Родине?','Почему людей привлекает мечта?',
+  'Как технологии меняют человека?','Что помогает человеку не сломаться в трудных обстоятельствах?',
+  'Какого человека можно назвать сильной личностью?','Почему важно сохранять память о прошлом?',
+  'Чем опасно равнодушие?','Что значит жить по совести?',
+];
+const CRIT_EGE = [
+  ['К1. Проблема сформулирована верно (как вопрос, а не тема)',1],
+  ['К2. Два примера из текста + пояснение к каждому + связь между ними проанализирована',3],
+  ['К3. Позиция автора указана (его ответ на вопрос)',1],
+  ['К4. Своё отношение + обоснование (пример из жизни/литературы)',1],
+  ['К5. Логика: абзацы по схеме, без скачков и повторов',2],
+  ['К6. Точность и богатство речи',2],
+  ['К7. Орфография (0–1 ошибка)',3],
+  ['К8. Пунктуация (0–1 ошибка)',3],
+  ['К9. Грамматика: деепричастия, управление, согласование',2],
+  ['К10. Речевые нормы: без повторов и канцелярита',2],
+  ['К11. Этика: корректно об авторе и героях',1],
+  ['К12. Факты: имена, названия, события без ошибок',1],
+];
+const CRIT_FINAL = [
+  ['Объём не меньше 250 слов (рекомендуется 350)',0],
+  ['Текст написан самостоятельно',0],
+  ['1. Соответствие теме: отвечаю именно на этот вопрос',0],
+  ['2. Аргументация с опорой на литературный пример',0],
+  ['3. Композиция: тезис → аргументы → вывод, логика не рвётся',0],
+  ['4. Качество речи: мысль выражена точно, без штампов',0],
+  ['5. Грамотность: ошибки не мешают пониманию',0],
+];
+
+/* ==================== состояние ==================== */
+const DEF = { drafts: [], cur: null, aiKey: '', aiModel: '' };
+let S = load();
+function load(){ try{ const r = localStorage.getItem('essayapp'); if (r) return Object.assign({}, DEF, JSON.parse(r)); }catch(e){} return Object.assign({}, DEF); }
+function save(){ try{ localStorage.setItem('essayapp', JSON.stringify(S)); }catch(e){} }
+function esc(s){ return String(s).replace(/[&<>"]/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m])); }
+function plu(n, f){ const a = Math.abs(n)%100, b = a%10; return n+' '+((a>10&&a<20)?f[2]:(b===1?f[0]:(b>=2&&b<=4?f[1]:f[2]))); }
+function cur(){ return S.drafts.find(d => d.id === S.cur) || null; }
+function words(t){ return (t||'').trim() ? t.trim().split(/\s+/).filter(w => /[А-Яа-яЁёA-Za-z0-9]/.test(w)).length : 0; }
+
+/* ==================== навигация ==================== */
+let scene = 'topics';
+function go(name){
+  scene = name;
+  document.querySelectorAll('.scene').forEach(s => s.classList.remove('on'));
+  document.getElementById('s-'+name).classList.add('on');
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('on'));
+  document.getElementById('t-'+name).classList.add('on');
+  if (name === 'topics') renderTopics();
+  if (name === 'write') renderWrite();
+  if (name === 'mine') renderMine();
+  if (name === 'more') renderMore();
+}
+function sheet(html){ document.getElementById('modal').innerHTML =
+  `<div class="sheet" onclick="if(event.target===this)closeSheet()"><div class="sheet-in">${html}</div></div>`; }
+function closeSheet(){ document.getElementById('modal').innerHTML = ''; }
+
+/* ==================== темы ==================== */
+function renderTopics(){
+  let h = `<div class="big">Сочинение</div>
+    <div class="note">Выбери тему — откроется редактор. Черновики сохраняются сами, проверка — по критериям ЕГЭ.</div>`;
+  h += `<button class="tile" onclick="startEssay('ege', -1)">
+    <span class="ico" style="background:#EDEFFE">✍️</span>
+    <span class="tx"><span class="tt">Своя тема</span><span class="ts">впиши проблему из любого сборника или пробника</span></span>
+    <span class="chev">›</span></button>`;
+  h += `<div class="h2">Сочинение ЕГЭ · задание 27</div>`;
+  EGE.forEach((t, i) => {
+    h += `<button class="tile" onclick="startEssay('ege', ${i})">
+      <span class="ico">📝</span>
+      <span class="tx"><span class="tt">${esc(t.p)}</span><span class="ts">Литература: ${esc(t.lit)}</span></span>
+      <span class="chev">›</span></button>`;
+  });
+  h += `<div class="h2">Итоговое сочинение · допуск</div>`;
+  FINAL.forEach((q, i) => {
+    h += `<button class="tile" onclick="startEssay('final', ${i})">
+      <span class="ico">🎓</span>
+      <span class="tx"><span class="tt">${esc(q)}</span><span class="ts">итоговое · нужен литературный аргумент · от 250 слов</span></span>
+      <span class="chev">›</span></button>`;
+  });
+  document.getElementById('topicsList').innerHTML = h;
+}
+function startEssay(mode, i){
+  let topic;
+  if (i === -1){
+    topic = (prompt('Сформулируй проблему (вопрос, над которым размышляет автор):') || '').trim();
+    if (!topic) return;
+  } else topic = mode === 'ege' ? EGE[i].p : FINAL[i];
+  const d = { id: 'd' + Date.now(), mode, topic, text: '', upd: Date.now(), ai: null };
+  S.drafts.unshift(d); S.cur = d.id; save();
+  go('write');
+}
+
+/* ==================== редактор ==================== */
+let deadline = null, tInt = null;
+function renderWrite(){
+  const d = cur();
+  const ta = document.getElementById('ta');
+  if (!d){
+    document.getElementById('wTopic').textContent = 'Выбери тему на вкладке «Темы» — или начни со своей.';
+    document.getElementById('wMode').textContent = '';
+    ta.value = ''; ta.disabled = true; updWords(); return;
+  }
+  ta.disabled = false;
+  document.getElementById('wTopic').textContent = d.topic;
+  document.getElementById('wMode').textContent = d.mode === 'ege' ? 'ЕГЭ · К1–К12' : 'итоговое';
+  if (ta.value !== d.text) ta.value = d.text;
+  updWords();
+}
+function onType(){
+  const d = cur(); if (!d) return;
+  d.text = document.getElementById('ta').value;
+  d.upd = Date.now(); save(); updWords();
+}
+function updWords(){
+  const d = cur();
+  const n = d ? words(d.text) : 0;
+  const el = document.getElementById('wWords');
+  el.textContent = plu(n, ['слово','слова','слов']);
+  const min = d && d.mode === 'final' ? 250 : 150;
+  el.className = 'chip ' + (n === 0 ? '' : n < min ? 'bad' : 'good');
+}
+function toggleTimer(){
+  const el = document.getElementById('wTimer');
+  if (deadline){ clearInterval(tInt); deadline = null; el.textContent = '⏱ таймер'; el.className = 'chip'; return; }
+  deadline = Date.now() + 90*60*1000;
+  el.className = 'chip on';
+  tInt = setInterval(() => {
+    const left = deadline - Date.now();
+    if (left <= 0){ clearInterval(tInt); deadline = null; el.textContent = '⏱ время вышло'; el.className = 'chip bad'; return; }
+    const m = Math.floor(left/60000), s = Math.floor(left%60000/1000);
+    el.textContent = '⏱ ' + m + ':' + String(s).padStart(2,'0');
+  }, 500);
+  el.textContent = '⏱ 90:00';
+}
+
+/* ==================== каркас ==================== */
+function openFrame(){
+  const d = cur();
+  const fin = d && d.mode === 'final';
+  let h = `<div class="grab"></div><div class="big">Каркас сочинения</div><div class="help">`;
+  if (!fin){
+    h += `<p><b>1. Проблема (К1).</b> Вопрос, над которым размышляет автор: «Что помогает человеку выстоять?» Не тема, а вопрос.</p>
+      <p><b>2. Комментарий (К2, до 3 баллов).</b> Два примера из текста. К каждому — пояснение: что этот эпизод показывает. Потом связь между примерами (противопоставление, дополнение, причина-следствие) — и анализ этой связи.</p>
+      <p><b>3. Позиция автора (К3).</b> «Автор убеждён, что…» — его ответ на вопрос из пункта 1.</p>
+      <p><b>4. Своё отношение (К4).</b> Согласен/не согласен + короткое обоснование: пример из жизни, литературы, истории.</p>
+      <p><b>Объём:</b> от 150 слов (меньше — 0 баллов). Оптимум 250–300.</p>
+      <p><b>Главные потери:</b> пересказ вместо анализа; примеры без пояснений; забытая связь; проблема подменена темой.</p>`;
+  } else {
+    h += `<p><b>1. Вступление-тезис.</b> Прямой ответ на вопрос темы — одним-двумя предложениями.</p>
+      <p><b>2. Аргумент из литературы.</b> Произведение, герой, эпизод — и микровывод: как это доказывает тезис.</p>
+      <p><b>3. Второй аргумент</b> (по желанию) — другое произведение или другой угол.</p>
+      <p><b>4. Вывод.</b> Вернись к вопросу и закрепи ответ.</p>
+      <p><b>Объём:</b> минимум 250 слов, рекомендуют от 350. Пересказ без анализа не считается аргументом.</p>`;
+  }
+  h += `</div><button class="btn ghost" onclick="closeSheet()">Понятно</button>`;
+  sheet(h);
+}
+
+/* ==================== проверка ==================== */
+function openCheck(){
+  const d = cur(); if (!d) return;
+  const n = words(d.text);
+  const min = d.mode === 'final' ? 250 : 150;
+  const crits = d.mode === 'final' ? CRIT_FINAL : CRIT_EGE;
+  let h = `<div class="grab"></div><div class="big">Проверка</div>
+    <div class="score">${plu(n, ['слово','слова','слов'])} · ${n < min ? '<span style="color:var(--no-ink)">меньше минимума ' + min + '</span>' : '<span style="color:var(--ok-ink)">объём в норме</span>'}</div>
+    <div class="h2" style="margin-top:4px">Чек-лист ${d.mode === 'final' ? 'итогового' : 'К1–К12'}</div>`;
+  crits.forEach((c, i) => {
+    h += `<label class="crit"><input type="checkbox" onchange="calcScore()" data-p="${c[1]}">
+      <span class="ct">${esc(c[0])}</span>${c[1] ? `<span class="cp">${c[1]}</span>` : ''}</label>`;
+  });
+  h += d.mode === 'final'
+    ? `<div class="score" id="scoreBox">Отметь, что выполнено</div>`
+    : `<div class="score" id="scoreBox">Самооценка: 0 из 22</div>`;
+  h += `<button class="btn" onclick="aiCheck()" id="aiBtn">${S.aiKey ? '🤖 Проверить с ИИ' : '🤖 ИИ-проверка (нужен ключ — вкладка «Ещё»)'}</button>`;
+  h += `<div id="aiOut">${d.ai ? '<div class="aibox">' + esc(d.ai) + '</div>' : ''}</div>`;
+  sheet(h);
+  window._checkMode = d.mode;
+}
+function calcScore(){
+  const boxes = [...document.querySelectorAll('.crit input')];
+  const box = document.getElementById('scoreBox');
+  if (window._checkMode === 'final'){
+    const done = boxes.filter(b => b.checked).length;
+    box.textContent = done >= 5 ? 'Похоже на зачёт ✓' : 'Выполнено ' + done + ' из ' + boxes.length;
+  } else {
+    const sum = boxes.reduce((a, b) => a + (b.checked ? +b.dataset.p : 0), 0);
+    box.textContent = 'Самооценка: ' + sum + ' из 22';
+  }
+}
+
+/* ==================== ИИ-проверка (ключ Gemini, как в EconCards) ==================== */
+const MODELS = ['gemini-2.0-flash', 'gemini-2.0-flash-lite', 'gemini-1.5-flash'];
+async function aiCheck(){
+  const d = cur(); if (!d) return;
+  if (!S.aiKey){ go('more'); closeSheet(); return; }
+  if (words(d.text) < 30){ document.getElementById('aiOut').innerHTML = '<div class="aibox">Напиши хотя бы несколько абзацев — тогда проверка будет осмысленной.</div>'; return; }
+  const btn = document.getElementById('aiBtn');
+  btn.textContent = '⏳ Проверяю…';
+  const sys = d.mode === 'final'
+    ? 'Ты эксперт, проверяющий итоговое сочинение (допуск к ЕГЭ). Оцени по критериям: 1) соответствие теме, 2) аргументация с опорой на литературу, 3) композиция и логика, 4) качество речи, 5) грамотность. По каждому — зачёт/незачёт с пояснением в одну-две строки, затем общий вердикт и три главных совета. Пиши по-русски, кратко и по делу.'
+    : 'Ты строгий эксперт ЕГЭ по русскому языку. Проверь сочинение (задание 27) по критериям К1–К12 (макс 22 балла). По каждому критерию — балл и пояснение одной строкой. Затем сумма и три главных совета, как поднять балл. Если объём меньше 150 слов — напомни, что такая работа получает 0. Пиши по-русски, кратко.';
+  const userText = 'Тема/проблема: ' + d.topic + '\n\nСочинение ученика:\n' + d.text.slice(0, 12000);
+  const tries = [...new Set([S.aiModel || MODELS[0], ...MODELS])];
+  for (const m of tries){
+    try{
+      const r = await fetch('https://generativelanguage.googleapis.com/v1beta/models/' + m + ':generateContent?key=' + encodeURIComponent(S.aiKey), {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          systemInstruction: { parts: [{ text: sys }] },
+          contents: [{ role: 'user', parts: [{ text: userText }] }],
+          generationConfig: { temperature: 0.3, maxOutputTokens: 2048 },
+        }),
+      });
+      if (!r.ok) continue;
+      const data = await r.json();
+      const text = (data.candidates?.[0]?.content?.parts || []).map(p => p.text).join('').trim();
+      if (!text) continue;
+      d.ai = text; d.upd = Date.now(); S.aiModel = m; save();
+      btn.textContent = '🤖 Проверить с ИИ';
+      document.getElementById('aiOut').innerHTML = '<div class="aibox">' + esc(text) + '</div>';
+      return;
+    }catch(e){ /* пробуем следующую модель */ }
+  }
+  btn.textContent = '🤖 Проверить с ИИ';
+  document.getElementById('aiOut').innerHTML = '<div class="aibox">Не получилось связаться с ИИ. Проверь ключ на вкладке «Ещё» и интернет.</div>';
+}
+
+/* ==================== мои сочинения ==================== */
+function renderMine(){
+  let h = `<div class="big">Мои сочинения</div>`;
+  if (!S.drafts.length){
+    h += `<div class="empty">Пока пусто. Выбери тему — и первый черновик появится здесь.</div>`;
+  } else {
+    S.drafts.forEach(d => {
+      const dt = new Date(d.upd);
+      const date = dt.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' });
+      h += `<div class="tile" style="padding-right:10px">
+        <button style="flex:1;min-width:0;text-align:left;display:flex;gap:12px;align-items:center" onclick="openDraft('${d.id}')">
+          <span class="ico">${d.mode === 'final' ? '🎓' : '📝'}</span>
+          <span class="tx"><span class="tt">${esc(d.topic)}</span>
+          <span class="ts">${plu(words(d.text), ['слово','слова','слов'])} · ${date}${d.ai ? ' · есть разбор ИИ' : ''}</span></span>
+        </button>
+        <button class="del" onclick="delDraft('${d.id}')">✕</button></div>`;
+    });
+  }
+  document.getElementById('mineList').innerHTML = h;
+}
+function openDraft(id){ S.cur = id; save(); go('write'); }
+function delDraft(id){
+  if (!confirm('Удалить это сочинение навсегда?')) return;
+  S.drafts = S.drafts.filter(d => d.id !== id);
+  if (S.cur === id) S.cur = null;
+  save(); renderMine();
+}
+
+/* ==================== ещё ==================== */
+function renderMore(){
+  let h = `<div class="big">Ещё</div>
+    <div class="h2">ИИ-проверка</div>
+    <div class="note" style="margin-top:0">Вставь бесплатный ключ Google AI Studio (aistudio.google.com/apikey) — тот же, что в EconCards. Хранится только на этом устройстве.</div>
+    <input class="field" id="keyIn" type="password" placeholder="Ключ Gemini…" value="${esc(S.aiKey)}">
+    <div style="height:9px"></div>
+    <button class="btn" onclick="saveKey()">Сохранить ключ</button>
+    <div class="h2">Установка</div>
+    <div class="note" style="margin-top:0">В Safari: Поделиться → «На экран „Домой“» — и это будет отдельное приложение со своей иконкой. Работает без интернета (кроме ИИ-проверки).</div>
+    <div class="h2">Семья приложений</div>
+    <button class="tile" onclick="location.href='../'">
+      <span class="ico">🃏</span>
+      <span class="tx"><span class="tt">EconCards</span><span class="ts">карточки: олимпиадная экономика и ЕГЭ-тренажёр</span></span>
+      <span class="chev">›</span></button>`;
+  document.getElementById('moreList').innerHTML = h;
+}
+function saveKey(){
+  S.aiKey = document.getElementById('keyIn').value.trim();
+  S.aiModel = ''; save();
+  alert(S.aiKey ? 'Ключ сохранён. Кнопка «Проверить с ИИ» теперь активна.' : 'Ключ удалён.');
+}
+
+/* ==================== старт ==================== */
+renderTopics();
+if (S.cur && cur()) { /* продолжаем последний черновик по кнопке «Письмо» */ }
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(() => {});
+</script>
+</body>
+</html>
