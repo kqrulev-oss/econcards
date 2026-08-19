@@ -596,7 +596,7 @@ function renderPath(){
   h += '<div class="h2">Справочник</div>';
   REF.forEach((c, i) => {
     h += '<button class="tile" onclick="openRef(' + i + ')"><span class="ico" style="background:var(--soft)">' + ic(c.icon, 21) + '</span>'+
-      '<span class="tx"><span class="tt">' + esc(c.t) + '</span><span class="ts">≈ ' + c.min + ' мин чтения</span></span><span class="chev">›</span></button>';
+      '<span class="tx"><span class="tt">' + esc(c.t) + '</span></span><span class="chev">›</span></button>';
   });
   document.getElementById('pathList').innerHTML = h;
 }

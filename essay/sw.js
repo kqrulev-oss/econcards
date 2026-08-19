@@ -1,5 +1,5 @@
 /* Сочинение-тренажёр: офлайн после первого открытия. */
-const CACHE = 'essay-v5';
+const CACHE = 'essay-v6';
 const ASSETS = ['./', './index.html', './manifest.webmanifest',
   './icons/icon-192.png', './icons/icon-512.png', './icons/apple-touch-icon.png'];
 
