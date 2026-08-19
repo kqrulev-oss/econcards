@@ -5,93 +5,234 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta name="theme-color" content="#F5F7FB">
+<meta name="theme-color" content="#F6F5F1">
 <title>Сочинение</title>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <style>
+/* ============================================================
+   СОЧИНЕНИЕ — дизайн-система «Чернила»
+   Бумажный фон, издательская типографика с засечками,
+   единая цветовая система частей сочинения:
+   проблема · пример · пояснение · связь · позиция · мнение · вывод
+   ============================================================ */
 :root{
-  --bg:#F5F7FB; --card:#FFFFFF; --ink:#1B1F2E; --muted:#7A8299; --line:#E6EAF2;
-  --soft:#F0F3F9; --soft2:#E6EAF2;
+  --bg:#F6F5F1; --card:#FFFFFF; --ink:#16192B; --muted:#7C8095; --line:#E8E6DE;
+  --soft:#F0EEE8; --soft2:#E4E1D8;
   --ok:#16A57B; --ok-soft:#E3F6EE; --ok-ink:#0E8A65;
   --no:#F04452; --no-soft:#FEE9EB; --no-ink:#D42D3C;
-  --warn:#8A6A14; --warn-bg:#FFF6E0;
-  --c1:#5B67F5; --c1d:#4652D6; --c2:#0FB5A6; --c4:#FFAA2B;
-  --veil:rgba(27,31,46,.45);
+  --g1:#5B67F5; --g2:#9B5DE5;
+  --grad:linear-gradient(135deg,#5B67F5 0%,#8A5CE5 55%,#B04FD9 100%);
+  /* цвета частей сочинения */
+  --pr:#4A56E2;  --pr-bg:#ECEEFE;   /* проблема */
+  --ex:#0F9D95;  --ex-bg:#E2F5F4;   /* пример */
+  --po:#DC8A06;  --po-bg:#FCF2DC;   /* пояснение */
+  --sv:#DB4E95;  --sv-bg:#FBE7F2;   /* связь */
+  --pz:#279A5F;  --pz-bg:#E4F5EB;   /* позиция автора */
+  --mn:#8A5CE5;  --mn-bg:#F1EBFD;   /* моё мнение */
+  --vy:#5B7A99;  --vy-bg:#E9F0F6;   /* вывод */
+  --veil:rgba(22,25,43,.5);
   --safe-b:env(safe-area-inset-bottom,0px);
+  --fserif:ui-serif,"New York",Georgia,"Times New Roman",serif;
 }
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{height:100%;overscroll-behavior:none}
-body{background:var(--bg);color:var(--ink);font-family:-apple-system,"SF Pro Text","Segoe UI",Roboto,sans-serif;
-  font-size:17px;line-height:1.45;-webkit-font-smoothing:antialiased}
-button{font-family:inherit;font-size:inherit;color:inherit;border:0;background:none;cursor:pointer}
+body{background:var(--bg);color:var(--ink);
+  font-family:-apple-system,"SF Pro Text","Segoe UI",Roboto,sans-serif;
+  font-size:16.5px;line-height:1.5;-webkit-font-smoothing:antialiased}
+button{font-family:inherit;font-size:inherit;color:inherit;border:0;background:none;cursor:pointer;text-align:left}
+.disp{font-family:var(--fserif);letter-spacing:-.01em}
 #app{position:fixed;inset:0;display:flex;flex-direction:column}
 main{flex:1;min-height:0;position:relative}
-.scene{position:absolute;inset:0;display:none;overflow-y:auto;padding:18px 16px 24px}
+.scene{position:absolute;inset:0;display:none;overflow-y:auto;padding:16px 16px 28px}
 .scene.on{display:block}
-#s-write.scene.on{display:flex;flex-direction:column;overflow:hidden}
-.big{font-size:24px;font-weight:900;letter-spacing:-.02em;margin:2px 2px 12px}
-.note{font-size:13px;color:var(--muted);line-height:1.4;margin:-6px 2px 14px}
-.h2{font-size:13px;font-weight:800;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);margin:20px 2px 10px}
-.tile{display:flex;align-items:center;gap:12px;width:100%;text-align:left;padding:14px;background:var(--card);
-  border:1px solid var(--line);border-radius:16px;margin-bottom:9px;box-shadow:0 1px 4px rgba(27,31,46,.04)}
-.tile:active{transform:scale(.99)}
-.tile .ico{flex:none;width:44px;height:44px;border-radius:13px;display:grid;place-items:center;font-size:22px;background:var(--soft)}
+#s-write.scene.on{display:flex;flex-direction:column;overflow:hidden;padding:0}
+
+/* ---------- общие элементы ---------- */
+.big{font-size:26px;font-weight:800;margin:6px 2px 12px}
+.note{font-size:13.5px;color:var(--muted);line-height:1.45;margin:-6px 2px 16px}
+.h2{font-size:12.5px;font-weight:800;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin:22px 4px 10px}
+.tile{display:flex;align-items:center;gap:12px;width:100%;padding:14px;background:var(--card);
+  border:1px solid var(--line);border-radius:18px;margin-bottom:10px;
+  box-shadow:0 1px 3px rgba(22,25,43,.05);transition:transform .1s}
+.tile:active{transform:scale(.985)}
+.tile .ico{flex:none;width:44px;height:44px;border-radius:14px;display:grid;place-items:center;font-size:21px;background:var(--soft)}
 .tile .tx{flex:1;min-width:0}
-.tile .tt{display:block;font-size:16px;font-weight:800;line-height:1.3}
-.tile .ts{display:block;font-size:13px;color:var(--muted);font-weight:600;margin-top:3px;line-height:1.35}
-.chev{flex:none;color:#C9D1E0;font-size:20px;font-weight:900}
-.btn{display:block;width:100%;padding:15px;border-radius:16px;background:var(--c1);color:#fff;font-weight:800;
-  text-align:center;border-bottom:4px solid var(--c1d)}
-.btn:active{transform:translateY(2px);border-bottom-width:2px}
-.btn.ghost{background:var(--soft);color:var(--ink);border-bottom-color:var(--soft2)}
-.btn.green{background:var(--ok);border-bottom-color:#0E8A65;color:#fff}
-.tabs{flex:none;display:flex;background:var(--card);border-top:1px solid var(--line);padding-bottom:var(--safe-b);
-  box-shadow:0 -4px 16px rgba(27,31,46,.05);z-index:10}
+.tile .tt{display:block;font-size:15.5px;font-weight:750;line-height:1.3}
+.tile .ts{display:block;font-size:13px;color:var(--muted);margin-top:3px;line-height:1.35}
+.chev{flex:none;color:#CFCCC2;font-size:19px;font-weight:900}
+.btn{display:block;width:100%;padding:15px;border-radius:17px;background:var(--ink);color:#fff;
+  font-weight:800;text-align:center;transition:transform .1s;box-shadow:0 6px 18px -8px rgba(22,25,43,.5)}
+.btn:active{transform:scale(.98)}
+.btn.grad{background:var(--grad);box-shadow:0 8px 22px -8px rgba(114,84,235,.6)}
+.btn.ghost{background:var(--card);color:var(--ink);border:1px solid var(--line);box-shadow:none}
+.btn.green{background:var(--ok);box-shadow:0 8px 22px -8px rgba(22,165,123,.55)}
+.btn[disabled]{opacity:.4;pointer-events:none}
+
+/* ---------- таб-бар ---------- */
+.tabs{flex:none;display:flex;background:rgba(255,255,255,.92);backdrop-filter:blur(14px);
+  border-top:1px solid var(--line);padding-bottom:var(--safe-b);z-index:10}
 .tab{flex:1;padding:9px 0 7px;text-align:center;color:var(--muted)}
-.tab .ti{display:block;font-size:21px;filter:grayscale(1);opacity:.6}
-.tab .tl{font-size:10.5px;font-weight:800}
-.tab.on{color:var(--c1)}
-.tab.on .ti{filter:none;opacity:1}
-/* редактор */
+.tab .ti{display:block;font-size:20px;filter:grayscale(1);opacity:.55;transition:.15s}
+.tab .tl{font-size:10px;font-weight:800;letter-spacing:.02em}
+.tab.on{color:var(--g1)}
+.tab.on .ti{filter:none;opacity:1;transform:translateY(-1px)}
+
+/* ---------- ПУТЬ: hero ---------- */
+.hero{position:relative;overflow:hidden;background:#171A2E;color:#fff;border-radius:24px;
+  padding:22px 20px 20px;margin-bottom:20px;box-shadow:0 18px 40px -18px rgba(23,26,46,.55)}
+.hero::before{content:'';position:absolute;width:340px;height:340px;border-radius:50%;
+  background:radial-gradient(circle,rgba(102,92,255,.55),transparent 65%);top:-160px;right:-120px}
+.hero::after{content:'';position:absolute;width:260px;height:260px;border-radius:50%;
+  background:radial-gradient(circle,rgba(219,78,149,.35),transparent 65%);bottom:-140px;left:-90px}
+.hero *{position:relative;z-index:1}
+.hero .kicker{font-size:11.5px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:#9FA6D9}
+.hero h1{font-family:var(--fserif);font-size:30px;line-height:1.12;font-weight:700;margin:8px 0 6px}
+.hero p{font-size:13.5px;color:#B9BEDF;line-height:1.45;max-width:88%}
+.hero .pb{height:9px;border-radius:5px;background:rgba(255,255,255,.14);margin-top:16px;overflow:hidden}
+.hero .pb i{display:block;height:100%;border-radius:5px;background:var(--grad);transition:width .6s cubic-bezier(.2,.8,.2,1)}
+.hero .pl{display:flex;justify-content:space-between;font-size:12px;font-weight:700;color:#B9BEDF;margin-top:8px}
+
+/* ---------- ПУТЬ: узлы ---------- */
+.path{position:relative;padding:4px 0 8px}
+.path::before{content:'';position:absolute;left:29px;top:20px;bottom:26px;width:3px;
+  border-radius:2px;background:var(--soft2)}
+.pnode{position:relative;display:flex;gap:14px;align-items:center;width:100%;padding:9px 0}
+.pc{flex:none;width:58px;height:58px;border-radius:50%;display:grid;place-items:center;
+  font-weight:900;font-size:19px;background:var(--soft);color:#B7B4A8;
+  border:3px solid var(--bg);z-index:1;transition:.2s}
+.pnode.done .pc{background:var(--grad);color:#fff;box-shadow:0 8px 18px -8px rgba(114,84,235,.7)}
+.pnode.cur .pc{background:#fff;color:var(--g1);border:3px solid var(--g1);animation:pulse 2s infinite}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(91,103,245,.35)}70%{box-shadow:0 0 0 14px rgba(91,103,245,0)}100%{box-shadow:0 0 0 0 rgba(91,103,245,0)}}
+.pt{flex:1;min-width:0;background:var(--card);border:1px solid var(--line);border-radius:18px;
+  padding:12px 14px;box-shadow:0 1px 3px rgba(22,25,43,.05)}
+.pnode.cur .pt{border-color:#C9CDFB;box-shadow:0 8px 22px -12px rgba(91,103,245,.5)}
+.pnode.lock .pt{opacity:.55}
+.pt .tt{display:block;font-size:15px;font-weight:750;line-height:1.3}
+.pt .ts{display:block;font-size:12.5px;color:var(--muted);margin-top:3px;line-height:1.35}
+.pt .badge{display:inline-block;margin-top:7px;font-size:11px;font-weight:800;padding:3px 9px;border-radius:99px}
+.badge.b-done{background:var(--ok-soft);color:var(--ok-ink)}
+.badge.b-cur{background:#ECEEFE;color:var(--g1)}
+.badge.b-lock{background:var(--soft);color:var(--muted)}
+
+/* ---------- урок (оверлей) ---------- */
+#lesson{position:fixed;inset:0;background:var(--bg);z-index:40;display:none;flex-direction:column;
+  animation:rise .28s cubic-bezier(.2,.8,.2,1)}
+@keyframes rise{from{transform:translateY(28px);opacity:0}to{transform:none;opacity:1}}
+.ltop{flex:none;display:flex;align-items:center;gap:10px;padding:14px 16px 10px}
+.lx{width:38px;height:38px;border-radius:12px;background:var(--card);border:1px solid var(--line);
+  display:grid;place-items:center;font-size:16px;font-weight:900;color:var(--muted)}
+.lstep{font-size:12px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.lbody{flex:1;min-height:0;overflow-y:auto;padding:4px 18px 40px}
+.lbody h1{font-family:var(--fserif);font-size:27px;line-height:1.15;font-weight:700;margin:6px 0 16px}
+.lbody p{margin-bottom:12px;font-size:16px;line-height:1.58}
+.lbody p b{font-weight:750}
+.callout{border-radius:16px;padding:13px 15px;margin:4px 0 14px;font-size:15px;line-height:1.5}
+.callout.c-idea{background:#ECEEFE;color:#2E3690}
+.callout.c-warn{background:#FCF2DC;color:#7A5A10}
+.callout.c-ok{background:var(--ok-soft);color:var(--ok-ink)}
+/* метки частей сочинения */
+.mk{padding:1px 6px;border-radius:7px;font-weight:650}
+.mk-pr{background:var(--pr-bg);color:var(--pr)} .mk-ex{background:var(--ex-bg);color:var(--ex)}
+.mk-po{background:var(--po-bg);color:var(--po)} .mk-sv{background:var(--sv-bg);color:var(--sv)}
+.mk-pz{background:var(--pz-bg);color:var(--pz)} .mk-mn{background:var(--mn-bg);color:var(--mn)}
+.mk-vy{background:var(--vy-bg);color:var(--vy)}
+
+/* ---------- тренировка ---------- */
+.qcard{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:16px;
+  margin-bottom:14px;box-shadow:0 2px 8px rgba(22,25,43,.05)}
+.qn{font-size:11.5px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--g1);margin-bottom:8px}
+.qq{font-size:15.5px;font-weight:700;line-height:1.45;margin-bottom:12px}
+.qo{display:block;width:100%;padding:12px 14px;border-radius:14px;border:1.5px solid var(--line);
+  background:var(--bg);font-size:14.5px;line-height:1.4;margin-bottom:8px;transition:.15s}
+.qo:active{transform:scale(.99)}
+.qo.correct{border-color:var(--ok);background:var(--ok-soft);color:var(--ok-ink);font-weight:700}
+.qo.wrong{border-color:var(--no);background:var(--no-soft);color:var(--no-ink);animation:shake .3s}
+.qo.faded{opacity:.45;pointer-events:none}
+@keyframes shake{0%,100%{transform:none}25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
+.qexp{font-size:14px;line-height:1.5;border-radius:13px;padding:11px 13px;margin-top:4px;
+  background:var(--ok-soft);color:var(--ok-ink);display:none}
+.qexp.show{display:block;animation:rise .25s}
+.qdone{color:var(--ok-ink);font-weight:800;font-size:13px}
+/* мини-письмо */
+.mw textarea{width:100%;min-height:96px;border:1.5px solid var(--line);border-radius:14px;background:var(--bg);
+  padding:12px;font-family:inherit;font-size:15px;line-height:1.5;color:var(--ink);outline:none;resize:vertical}
+.mw textarea:focus{border-color:#B9BFF9}
+.sample{display:none;margin-top:10px;border-left:3px solid var(--g1);background:#ECEEFE;color:#2E3690;
+  border-radius:0 13px 13px 0;padding:11px 13px;font-size:14.5px;line-height:1.5}
+.sample.show{display:block;animation:rise .25s}
+.lfoot{padding:16px 18px calc(16px + var(--safe-b));background:linear-gradient(transparent,var(--bg) 30%)}
+
+/* ---------- эталон ---------- */
+.legend{display:flex;flex-wrap:wrap;gap:7px;margin:2px 0 16px}
+.lg{font-size:12px;font-weight:800;padding:6px 11px;border-radius:99px;border:1.5px solid transparent}
+.lg.dim{opacity:.35}
+.etalon{font-family:var(--fserif);font-size:17px;line-height:1.72}
+.etalon .mk{border-radius:5px;padding:0 3px;transition:.2s}
+.etalon.f .mk{background:transparent;color:inherit}
+.etalon.f .mk.hot{background:var(--hotbg);color:var(--hotc)}
+
+/* ---------- конструктор ---------- */
+.blk{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:14px;margin-bottom:12px}
+.blk .bh{display:flex;align-items:center;gap:8px;margin-bottom:9px}
+.blk .dot{width:10px;height:10px;border-radius:50%}
+.blk .bt{font-size:14px;font-weight:800}
+.blk .bs{font-size:12px;color:var(--muted);margin-left:auto}
+.blk textarea{width:100%;min-height:74px;border:1.5px solid var(--line);border-radius:13px;background:var(--bg);
+  padding:11px;font-family:inherit;font-size:15px;line-height:1.5;color:var(--ink);outline:none;resize:vertical}
+.blk textarea:focus{border-color:#B9BFF9}
+.cliche{display:flex;gap:7px;overflow-x:auto;padding:9px 2px 2px;scrollbar-width:none}
+.cliche::-webkit-scrollbar{display:none}
+.cl{flex:none;font-size:12.5px;font-weight:700;color:var(--g1);background:#ECEEFE;
+  padding:7px 11px;border-radius:99px;white-space:nowrap}
+.cl:active{transform:scale(.96)}
+
+/* ---------- редактор ---------- */
 .wtop{flex:none;padding:12px 16px 10px;background:var(--card);border-bottom:1px solid var(--line)}
 .wtopic{font-size:14px;font-weight:700;line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .wmeta{display:flex;gap:8px;margin-top:9px;flex-wrap:wrap}
-.chip{font-size:12.5px;font-weight:800;padding:5px 10px;border-radius:99px;background:var(--soft);color:var(--muted)}
-.chip.on{background:#EDEFFE;color:var(--c1)}
+.chip{font-size:12.5px;font-weight:800;padding:5px 11px;border-radius:99px;background:var(--soft);color:var(--muted)}
+.chip.on{background:#ECEEFE;color:var(--g1)}
 .chip.bad{background:var(--no-soft);color:var(--no-ink)}
 .chip.good{background:var(--ok-soft);color:var(--ok-ink)}
 #ta{flex:1;min-height:0;width:100%;padding:16px;border:0;outline:0;resize:none;background:var(--bg);color:var(--ink);
-  font-family:inherit;font-size:17px;line-height:1.55}
+  font-family:var(--fserif);font-size:17.5px;line-height:1.62}
 .wfoot{flex:none;display:flex;gap:9px;padding:10px 16px calc(12px + var(--safe-b));background:var(--card);border-top:1px solid var(--line)}
 .wfoot .btn{flex:1;padding:13px}
-/* шторка */
+
+/* ---------- шторка ---------- */
 #modal:empty{display:none}
-.sheet{position:fixed;inset:0;background:var(--veil);display:flex;align-items:flex-end;z-index:50}
-.sheet-in{width:100%;max-height:86%;overflow-y:auto;background:var(--bg);border-radius:22px 22px 0 0;
-  padding:10px 16px calc(20px + var(--safe-b))}
-.grab{width:44px;height:5px;border-radius:3px;background:var(--soft2);margin:6px auto 14px}
+.sheet{position:fixed;inset:0;background:var(--veil);display:flex;align-items:flex-end;z-index:60}
+.sheet-in{width:100%;max-height:88%;overflow-y:auto;background:var(--bg);border-radius:24px 24px 0 0;
+  padding:8px 16px calc(22px + var(--safe-b));animation:rise .25s}
+.grab{width:44px;height:5px;border-radius:3px;background:var(--soft2);margin:8px auto 14px}
 .crit{display:flex;align-items:center;gap:11px;padding:12px 13px;background:var(--card);border:1px solid var(--line);
-  border-radius:14px;margin-bottom:8px}
-.crit input{width:21px;height:21px;accent-color:var(--c1);flex:none}
-.crit .ct{flex:1;font-size:14.5px;font-weight:600;line-height:1.35}
+  border-radius:15px;margin-bottom:8px}
+.crit input{width:21px;height:21px;accent-color:var(--g1);flex:none}
+.crit .ct{flex:1;font-size:14px;font-weight:600;line-height:1.35}
 .crit .cp{flex:none;font-size:13px;font-weight:900;color:var(--muted)}
-.score{font-size:17px;font-weight:900;text-align:center;padding:13px;border-radius:16px;background:var(--card);
-  border:1px solid var(--line);margin:6px 0 12px}
-.aibox{white-space:pre-wrap;font-size:14.5px;line-height:1.5;background:var(--card);border:1px solid var(--line);
+.score{font-size:16.5px;font-weight:800;text-align:center;padding:13px;border-radius:16px;
+  background:var(--card);border:1px solid var(--line);margin:6px 0 12px}
+.aibox{white-space:pre-wrap;font-size:14.5px;line-height:1.55;background:var(--card);border:1px solid var(--line);
   border-radius:16px;padding:14px;margin-top:10px}
-.help p{margin-bottom:10px;font-size:15px;line-height:1.5}
-.help b{font-weight:800}
-input.field{width:100%;padding:13px 14px;border-radius:14px;border:1px solid var(--line);background:var(--card);
+input.field{width:100%;padding:13px 14px;border-radius:15px;border:1.5px solid var(--line);background:var(--card);
   font-family:inherit;font-size:16px;color:var(--ink);outline:none}
-.empty{text-align:center;color:var(--muted);padding:36px 16px;font-size:15px}
+input.field:focus{border-color:#B9BFF9}
+.empty{text-align:center;color:var(--muted);padding:40px 16px;font-size:15px}
 .del{flex:none;width:34px;height:34px;border-radius:11px;background:var(--soft);display:grid;place-items:center;color:var(--muted);font-weight:900}
+/* тост и конфетти */
+#toast{position:fixed;left:50%;bottom:calc(86px + var(--safe-b));transform:translateX(-50%) translateY(20px);
+  background:var(--ink);color:#fff;font-size:14px;font-weight:700;padding:11px 18px;border-radius:99px;
+  opacity:0;pointer-events:none;transition:.25s;z-index:80;white-space:nowrap}
+#toast.show{opacity:1;transform:translateX(-50%)}
+.cf{position:fixed;top:-20px;font-size:22px;z-index:90;pointer-events:none;transition:transform 1.6s cubic-bezier(.2,.6,.3,1),opacity 1.6s}
 </style>
 </head>
 <body>
 <div id="app">
   <main>
-    <section class="scene on" id="s-topics"><div id="topicsList"></div></section>
+    <section class="scene on" id="s-path"><div id="pathList"></div></section>
+    <section class="scene" id="s-topics"><div id="topicsList"></div></section>
     <section class="scene" id="s-write">
       <div class="wtop">
         <div class="wtopic" id="wTopic"></div>
@@ -101,26 +242,199 @@ input.field{width:100%;padding:13px 14px;border-radius:14px;border:1px solid var
           <span class="chip" id="wMode"></span>
         </div>
       </div>
-      <textarea id="ta" placeholder="Пиши сочинение здесь. Черновик сохраняется сам…" oninput="onType()"></textarea>
+      <textarea id="ta" placeholder="Пиши здесь. Черновик сохраняется сам…" oninput="onType()"></textarea>
       <div class="wfoot">
         <button class="btn ghost" onclick="openFrame()">Каркас</button>
-        <button class="btn" onclick="openCheck()">Проверить</button>
+        <button class="btn grad" onclick="openCheck()">Проверить</button>
       </div>
     </section>
     <section class="scene" id="s-mine"><div id="mineList"></div></section>
     <section class="scene" id="s-more"><div id="moreList"></div></section>
   </main>
   <nav class="tabs">
-    <button class="tab on" id="t-topics" onclick="go('topics')"><span class="ti">📚</span><span class="tl">Темы</span></button>
+    <button class="tab on" id="t-path" onclick="go('path')"><span class="ti">🎓</span><span class="tl">Школа</span></button>
+    <button class="tab" id="t-topics" onclick="go('topics')"><span class="ti">📚</span><span class="tl">Темы</span></button>
     <button class="tab" id="t-write" onclick="go('write')"><span class="ti">✍️</span><span class="tl">Письмо</span></button>
     <button class="tab" id="t-mine" onclick="go('mine')"><span class="ti">📁</span><span class="tl">Мои</span></button>
     <button class="tab" id="t-more" onclick="go('more')"><span class="ti">⚙️</span><span class="tl">Ещё</span></button>
   </nav>
+  <div id="lesson"></div>
   <div id="modal"></div>
+  <div id="toast"></div>
 </div>
 
 <script>
-/* ==================== данные тем ==================== */
+/* ==================== ШКОЛА: уроки с нуля ==================== */
+/* mk(): подсветка части сочинения её фирменным цветом */
+const PARTS = {
+  pr:['Проблема','var(--pr)','var(--pr-bg)'], ex:['Пример','var(--ex)','var(--ex-bg)'],
+  po:['Пояснение','var(--po)','var(--po-bg)'], sv:['Связь','var(--sv)','var(--sv-bg)'],
+  pz:['Позиция автора','var(--pz)','var(--pz-bg)'], mn:['Моё мнение','var(--mn)','var(--mn-bg)'],
+  vy:['Вывод','var(--vy)','var(--vy-bg)'],
+};
+const mk = (k, t) => '<span class="mk mk-' + k + '">' + t + '</span>';
+
+const SCHOOL = [
+{ id:'l0', icon:'🧭', t:'Как устроено сочинение', sub:'Правила игры: за что дают 22 балла',
+  theory:
+  '<p>Сочинение ЕГЭ — это <b>не «творчество на свободную тему»</b>. Это работа по точным правилам: тебе дают текст, а ты показываешь, что понял его и умеешь рассуждать. За неё дают до <b>22 первичных баллов</b> — почти половину всего экзамена.</p>'+
+  '<div class="callout c-idea">Хорошая новость: раз есть правила — сочинению можно научиться как алгоритму. Именно это мы и сделаем за 10 шагов.</div>'+
+  '<p>Из чего состоит сочинение (каждая часть — свой цвет, запомни их):</p>'+
+  '<p>1. ' + mk('pr','Проблема') + ' — вопрос, над которым размышляет автор текста.<br>'+
+  '2. ' + mk('ex','Два примера') + ' из текста + ' + mk('po','пояснение') + ' к каждому + ' + mk('sv','связь') + ' между ними.<br>'+
+  '3. ' + mk('pz','Позиция автора') + ' — его ответ на вопрос.<br>'+
+  '4. ' + mk('mn','Моё отношение') + ' с обоснованием.<br>'+
+  '5. ' + mk('vy','Вывод') + '.</p>'+
+  '<p>Проверяют по критериям К1–К12: содержание (К1–К4), логика и речь (К5–К6), грамотность (К7–К12).</p>'+
+  '<div class="callout c-warn">Жёсткое правило объёма: меньше 150 слов — работу не проверяют вообще, 0 баллов. Ориентир — 250–300 слов.</div>',
+  drills:[
+    {q:'Сколько баллов максимум даёт сочинение?', o:['10','22','50','5'], a:1, e:'22 первичных балла из 50 за весь экзамен — почти половина. Поэтому сочинение тренируем в первую очередь.'},
+    {q:'Что случится с сочинением из 120 слов?', o:['Проверят, но снизят балл','Получит 0 — его не проверяют','Ничего, объём не важен'], a:1, e:'Минимум — 150 слов. Всё, что короче, оценивается нулём по всем критериям.'},
+    {q:'Сочинение ЕГЭ — это…', o:['свободное эссе о жизни','работа по строгой структуре на основе текста','пересказ исходного текста'], a:1, e:'Именно структура приносит баллы: проблема → комментарий → позиция → мнение → вывод.'},
+  ]},
+{ id:'l1', icon:'❓', t:'Проблема: сердце сочинения', sub:'К1 · отличаем проблему от темы',
+  theory:
+  '<p>' + mk('pr','Проблема') + ' — это <b>вопрос, над которым размышляет автор</b>. Не тема, а именно вопрос.</p>'+
+  '<p><b>Тема</b> — о чём текст вообще: «война», «дружба», «учитель».<br><b>Проблема</b> — что автора в этом волнует: «Как война меняет человека?», «Что такое настоящая дружба?»</p>'+
+  '<div class="callout c-idea">Приём: прочитал текст — спроси себя: «На какой вопрос автор отвечает всем текстом?» Этот вопрос и есть проблема.</div>'+
+  '<p>Две законные формы записи:<br>— вопросом: <i>«Что помогает человеку выстоять в беде?»</i><br>— через родительный падеж: <i>«Проблема стойкости человека в беде»</i>. Говорим «проблема ЧЕГО», а не «проблема О ЧЁМ».</p>'+
+  '<div class="callout c-warn">Ошибка №1 на экзамене: взять проблему «из головы», а не из текста. Если в тексте про учителя — не пиши про экологию, даже если очень хочется. И помни: неверная проблема обнуляет сразу К1–К4.</div>',
+  drills:[
+    {q:'Что из этого — ПРОБЛЕМА, а не тема?', o:['Война','Как война меняет характер человека?','Рассказ о фронтовике','Военное время'], a:1, e:'Проблема — всегда вопрос (или «проблема чего»). «Война» — просто тема.'},
+    {q:'Текст: учительница после уроков занималась с отстающим учеником, и он поверил в себя. Выбери проблему:', o:['Проблема школьных оценок','Какова роль учителя в судьбе ученика?','Автор рассказывает о школе','Почему все учителя добрые?'], a:1, e:'Вопрос, на который отвечает ВЕСЬ текст. Про оценки и «всех учителей» в тексте нет.'},
+    {q:'Какая запись оформлена верно?', o:['Проблема о значении дружбы','Проблема значения дружбы','Проблема про дружбу'], a:1, e:'«Проблема ЧЕГО» — родительный падеж: проблема значения дружбы.'},
+    {q:'Если проблема определена неверно, что будет?', o:['Снимут 1 балл','Обнулятся сразу К1–К4','Ничего страшного'], a:1, e:'Комментарий, позиция и мнение привязаны к проблеме — ошибся в ней, рушится всё содержание.'},
+  ],
+  write:{task:'Потренируйся: текст рассказывает о враче, который в эпидемию остался в городе лечить людей, хотя мог уехать. Сформулируй проблему одним предложением.',
+    sample:'Что заставляет человека оставаться верным профессиональному долгу даже перед лицом опасности? (или: «Проблема верности профессиональному долгу».)'}},
+{ id:'l2', icon:'🎯', t:'Позиция автора', sub:'К3 · находим ответ автора',
+  theory:
+  '<p>' + mk('pz','Позиция автора') + ' — это <b>его ответ на вопрос-проблему</b>. Проблема и позиция — пара «вопрос — ответ». Если они у тебя не стыкуются, эксперт это сразу видит.</p>'+
+  '<p>Проблема: «Что помогает выстоять в беде?» → Позиция: «Автор убеждён: выстоять помогает поддержка близких людей».</p>'+
+  '<div class="callout c-idea">В публицистике автор говорит прямо — ищи фразы-сигналы: «я уверен», «важно понять». В художественном тексте позиция спрятана в сюжете: смотри, чем всё закончилось и как автор относится к героям (какими словами их описывает).</div>'+
+  '<p>Клише: «Позиция автора ясна: …», «Автор убеждён, что…», «Писатель приводит читателя к мысли: …»</p>'+
+  '<div class="callout c-warn">Не путай: позиция АВТОРА — не твоё мнение (оно пойдёт в К4) и не слова любого героя. Герой может ошибаться — автор показывает это ходом сюжета. И главное: не сформулируешь позицию — обнулятся К1–К3.</div>',
+  drills:[
+    {q:'Проблема: «Какова роль учителя в судьбе ученика?» Что здесь позиция автора?', o:['Автор описывает школу 60-х годов','Настоящий учитель меняет судьбу: он учит верить в себя','Я думаю, что учителя важны','Учительница занималась с мальчиком'], a:1, e:'Позиция — ОТВЕТ на вопрос проблемы. Вариант 1 — фон, 3 — твоё мнение, 4 — пересказ.'},
+    {q:'Где искать позицию в художественном рассказе?', o:['В первом предложении','В том, чем кончился сюжет и как автор описывает героев','В словах любого персонажа'], a:1, e:'Автор «голосует» развязкой и оценочными словами. Слова героя могут быть ошибкой, которую автор опровергает.'},
+    {q:'Проблема и позиция должны…', o:['быть о разном, чтобы было интереснее','стыковаться как вопрос и ответ','повторять друг друга дословно'], a:1, e:'Позиция буквально отвечает на вопрос проблемы. Проверь себя: прочитай их подряд — диалог получился?'},
+  ],
+  write:{task:'Проблема из прошлого шага: «Что заставляет человека оставаться верным долгу перед лицом опасности?» Напиши позицию автора одним предложением.',
+    sample:'Автор убеждён: верность своему делу и ответственность за людей оказываются сильнее страха за собственную жизнь.'}},
+{ id:'l3', icon:'🔍', t:'Примеры из текста', sub:'К2 · выбираем два эпизода',
+  theory:
+  '<p>Комментарий (К2) — самая дорогая часть: до <b>3 баллов</b>. Его фундамент — ' + mk('ex','два примера-иллюстрации') + ' из исходного текста.</p>'+
+  '<p>Пример — это <b>конкретный эпизод, поступок или мысль из текста</b>, которые показывают, как автор раскрывает проблему. Не «весь текст», а точечный момент: «учитель остался после уроков», «герой отдал последние деньги».</p>'+
+  '<div class="callout c-idea">Как выбирать: найди два момента, где проблема видна ярче всего. Идеально — если они разные (до/после, поступок/слова, два героя): такие легче связать.</div>'+
+  '<p>Ссылаться можно пересказом («рассказчик вспоминает, как…») или короткой цитатой. Цитата — не больше пары строк: сочинение из цитат не считается твоим.</p>'+
+  '<div class="callout c-warn">Пример из жизни или другой книги сюда НЕЛЬЗЯ — в комментарии работают только эпизоды исходного текста. Своё и литературу прибережём для К4.</div>',
+  drills:[
+    {q:'Что может быть примером-иллюстрацией в К2?', o:['Похожий случай из моей жизни','Эпизод из исходного текста','Цитата из «Войны и мира»','Мнение моего учителя'], a:1, e:'В комментарии — только исходный текст. Жизнь и другие книги пойдут в обоснование своего мнения (К4).'},
+    {q:'Сколько примеров нужно для максимума по К2?', o:['Один яркий','Два, с пояснениями и связью','Чем больше, тем лучше'], a:1, e:'Ровно два, но «одетых»: к каждому пояснение, между ними — проанализированная связь.'},
+    {q:'Какая пара примеров удобнее всего для связи?', o:['Два одинаковых эпизода','Контрастные: герой до и после события','Любые два предложения подряд'], a:1, e:'Контраст сам подсказывает связь — противопоставление. Такую связь легко и назвать, и проанализировать.'},
+  ]},
+{ id:'l4', icon:'💡', t:'Пояснение: не пересказывай!', sub:'К2 · говорим, ЧТО показывает пример',
+  theory:
+  '<p>' + mk('po','Пояснение') + ' — то, что превращает пересказ в анализ. После каждого примера ответь на вопрос: <b>«И что это показывает?»</b></p>'+
+  '<p>Смотри разницу:<br>❌ <i>«Учитель остался с мальчиком после уроков. Потом они решали задачи»</i> — это пересказ, баллов нет.<br>✅ <i>«Учитель остался с мальчиком после уроков. ' + mk('po','Эта деталь показывает: ему важны не отчёты, а сам ученик и его вера в себя') + '»</i> — это анализ.</p>'+
+  '<div class="callout c-idea">Формулы пояснения: «Этот эпизод показывает, что…», «Так автор подчёркивает…», «Деталь неслучайна: она говорит о…»</div>'+
+  '<p>Пояснение — это твоя мысль о примере, а не новые факты из текста. Одно-два предложения достаточно.</p>'+
+  '<div class="callout c-warn">Главная потеря баллов на всём экзамене — «голые» примеры без пояснений. Механически проверяй: после каждого примера есть предложение со словом «показывает/подчёркивает/говорит о»?</div>',
+  drills:[
+    {q:'Пример: «Герой отдал незнакомцу последние деньги». Где ПОЯСНЕНИЕ?', o:['Потом герой пошёл домой','Этот поступок показывает: сострадание в нём сильнее расчёта','Мне понравился этот момент','Деньги были большие'], a:1, e:'Пояснение отвечает на «что это показывает?». Вариант 1 — продолжение пересказа, 3 — эмоция без анализа.'},
+    {q:'Чем пересказ отличается от анализа?', o:['Ничем, это одно и то же','Пересказ — «что было», анализ — «что это значит»','Анализ длиннее'], a:1, e:'Эксперт ищет твою мысль о тексте. «Что было» он и сам читал.'},
+    {q:'Сколько пояснений нужно в комментарии?', o:['Одно на всё сочинение','К каждому из двух примеров — своё','Можно без них, если примеры яркие'], a:1, e:'Схема жёсткая: пример 1 + пояснение, пример 2 + пояснение. Без пояснений К2 резко падает.'},
+  ],
+  write:{task:'Пример: «Врач ночами вёл записи о болезни, чтобы другие города знали, как лечить». Напиши пояснение одним-двумя предложениями.',
+    sample:'Эта деталь показывает: героем движет не только долг перед своими пациентами — он думает о людях, которых никогда не увидит. Автор подчёркивает: настоящая ответственность шире собственного города.'}},
+{ id:'l5', icon:'🔗', t:'Связь между примерами', sub:'К2 · самый недооценённый шаг',
+  theory:
+  '<p>Два примера с пояснениями — ещё не всё. Нужно показать, <b>как они соотносятся</b>, — это ' + mk('sv','связь') + '. Именно на ней теряют третий балл К2.</p>'+
+  '<p>Основные типы:<br>— <b>противопоставление</b>: герой до и после; трусость одного — смелость другого;<br>— <b>дополнение</b>: второй пример усиливает первый;<br>— <b>причина → следствие</b>: из первого вытекает второе;<br>— <b>сравнение</b>: два похожих случая с разным исходом.</p>'+
+  '<div class="callout c-warn">Назвать связь словом — мало! «Примеры дополняют друг друга» без продолжения не засчитают. Нужен АНАЛИЗ: что это соотношение даёт для понимания проблемы.</div>'+
+  '<div class="callout c-idea">Формула анализа связи: «Противопоставляя эти эпизоды, автор показывает…» + вывод по проблеме. Пример: «Противопоставляя героя до и после встречи с учителем, автор показывает: один человек способен развернуть чужую судьбу».</div>',
+  drills:[
+    {q:'Пример 1: до войны герой боялся крови. Пример 2: на фронте выносит раненых под обстрелом. Тип связи?', o:['Дополнение','Противопоставление («до — после»)','Причина и следствие'], a:1, e:'Контраст состояний героя. Такое «до/после» — классическое противопоставление.'},
+    {q:'Что значит ПРОАНАЛИЗИРОВАТЬ связь?', o:['Написать слово «дополняют»','Объяснить, что это соотношение даёт для понимания проблемы','Пересказать оба примера ещё раз'], a:1, e:'Одно слово — это «указать». Балл дают за объяснение, зачем автору эти два примера вместе.'},
+    {q:'Выбери полноценный анализ связи:', o:['Оба примера важны и интересны','Эти примеры связаны между собой','Противопоставляя равнодушного прохожего и сердобольную старушку, автор показывает: выбор — помогать или пройти мимо — есть у каждого'], a:2, e:'Назван тип (противопоставление) и объяснено, что он открывает в проблеме. Первые два — пустые слова.'},
+  ],
+  write:{task:'Пример 1: врач остался в городе. Пример 2: он вёл записи для других городов. Напиши связь с анализом (1–2 предложения).',
+    sample:'Второй пример дополняет первый: автор показывает, что подлинный долг не ограничивается «своими» — забота героя растёт от пациентов рядом до людей, которых он никогда не встретит.'}},
+{ id:'l6', icon:'🗣️', t:'Своё мнение и обоснование', sub:'К4 · соглашаемся не «просто так»',
+  theory:
+  '<p>' + mk('mn','Своё отношение') + ' — короткая часть, но с обязательным условием: <b>мнение + обоснование</b>. «Я согласен с автором» без продолжения — 0 по К4.</p>'+
+  '<p>Схема: 1) согласие/несогласие; 2) СВОЙ довод — почему ты так думаешь; 3) подкрепление: пример из литературы, истории, жизни или просто логичное рассуждение.</p>'+
+  '<div class="callout c-idea">Литературный пример здесь — самый выигрышный: «Вспомним Лидию Михайловну из „Уроков французского“ В. Распутина…» Одного точного примера достаточно, длинный пересказ не нужен — 2–3 предложения.</div>'+
+  '<p>Клише: «Трудно не согласиться с автором: …», «Я разделяю эту позицию, ведь…», «Мой читательский опыт подтверждает: …»</p>'+
+  '<div class="callout c-warn">Если приводишь книгу — не переври автора и героев: фактическая ошибка снимет балл ещё и по К12. Не уверен — обоснуй логикой, без названий.</div>',
+  drills:[
+    {q:'Что обязательно для балла по К4?', o:['Просто написать «я согласен»','Мнение + его обоснование','Пересказать позицию автора другими словами'], a:1, e:'Формула: отношение + «потому что…» + пример или довод.'},
+    {q:'Что подойдёт как обоснование?', o:['Пример из литературы или жизни, логичный довод','Ещё один пример из исходного текста','Фраза «это все знают»'], a:0, e:'Исходный текст уже отработал в К2. Здесь — твой материал: книги, история, опыт, логика.'},
+    {q:'«Я согласен с автором. Действительно, доброта важна». Засчитают ли К4?', o:['Да, мнение есть','Нет — это мнение без обоснования','Да, если нет ошибок'], a:1, e:'«Действительно, важна» — не довод, а повтор. Нужно ПОЧЕМУ: довод или пример.'},
+  ],
+  write:{task:'Позиция автора: «Верность долгу сильнее страха». Напиши своё отношение с обоснованием (2–3 предложения).',
+    sample:'Я разделяю позицию автора: человек, который бросает дело при первой опасности, по-настоящему им и не жил. Вспомним доктора Дымова из «Попрыгуньи» А. Чехова — он до конца оставался верен своему призванию, даже ценой жизни.'}},
+{ id:'l7', icon:'🧱', t:'Композиция: собираем скелет', sub:'К5 · абзацы, вступление, вывод',
+  theory:
+  '<p>Логичность (К5) — 2 балла, которые легко забрать: просто держи <b>жёсткий порядок абзацев</b>:</p>'+
+  '<p>1. ' + mk('pr','Проблема') + ' (можно с коротким вступлением в одно предложение)<br>2. ' + mk('ex','Пример 1') + ' + ' + mk('po','пояснение') + '<br>3. ' + mk('ex','Пример 2') + ' + ' + mk('po','пояснение') + ' + ' + mk('sv','связь') + '<br>4. ' + mk('pz','Позиция автора') + '<br>5. ' + mk('mn','Моё мнение') + ' с обоснованием<br>6. ' + mk('vy','Вывод') + '</p>'+
+  '<div class="callout c-idea">Вступление НЕ обязательно. «Красивые» заходы издалека («Испокон веков люди задумывались…») — вода. Можно начинать сразу с вопроса-проблемы — это выглядит профессионально.</div>'+
+  '<p>' + mk('vy','Вывод') + ' — 1–2 предложения, замыкающие круг: вернись к проблеме и закрепи ответ. Без новых мыслей.</p>'+
+  '<div class="callout c-warn">Логические ошибки, за которые снимают К5: мысль скачет без перехода, один абзац на всё сочинение, вывод противоречит началу, повтор одной мысли по кругу.</div>',
+  drills:[
+    {q:'Обязательно ли длинное красивое вступление?', o:['Да, без него снизят','Нет — можно начать сразу с проблемы','Да, минимум пять предложений'], a:1, e:'Вступление — по желанию. Вода «испокон веков…» только размывает работу.'},
+    {q:'Сколько смысловых абзацев в надёжной схеме?', o:['Один сплошной','5–6 по структуре','Чем больше, тем лучше — хоть 15'], a:1, e:'Проблема / пример 1 / пример 2 + связь / позиция / мнение / вывод. Эксперт видит структуру с первого взгляда.'},
+    {q:'Что должно быть в выводе?', o:['Новый аргумент напоследок','Возврат к проблеме и закрепление ответа','Пересказ всего текста'], a:1, e:'Вывод замыкает кольцо. Новые мысли в конце — логическая ошибка.'},
+  ]},
+{ id:'l8', icon:'🛡️', t:'Речь и грамотность', sub:'К6–К12 · как не терять «технические» баллы',
+  theory:
+  '<p>Половина баллов сочинения — «техника»: орфография (К7, 3 балла), пунктуация (К8, 3), грамматика (К9, 2), речь (К10, 2), точность (К6, 2), этика (К11) и факты (К12).</p>'+
+  '<div class="callout c-idea">Золотое правило: <b>не уверен — перестрой предложение</b>. Сомневаешься в запятой у оборота — разбей на два коротких предложения. Короткая фраза безопаснее красивой длинной.</div>'+
+  '<p>Три самые частые ошибки:<br>— деепричастие без хозяина: «Прочитав текст, мне стало грустно» ❌ → «Когда я прочитал текст, мне стало грустно» ✅;<br>— повторы: «автор… автор… автор» → чередуй: писатель, публицист, он;<br>— канцелярит: «данный текст», «в данном произведении» → «этот текст».</p>'+
+  '<div class="callout c-warn">К11 и К12 — по 1 баллу, которые снимают за секунды: грубость об авторе или героях и фактические ошибки (перепутал имя, автора, век). Не уверен в факте — не пиши его.</div>',
+  drills:[
+    {q:'«Прочитав текст, мне стало грустно». Что не так?', o:['Всё в порядке','Деепричастие повисло: «мне» не читало текст','Не хватает запятой'], a:1, e:'Действие деепричастия должно выполнять подлежащее. Верно: «Когда я прочитал текст, мне стало грустно».'},
+    {q:'Сомневаешься в запятой в длинной фразе. Лучший ход?', o:['Поставить наугад','Перестроить: разбить на два коротких предложения','Убрать все запятые'], a:1, e:'Ошибки нет там, где нет сложной конструкции. Это легальный способ защитить К8.'},
+    {q:'Как избежать потери по К12?', o:['Не приводить сомнительные факты и имена','Писать больше дат для солидности','Цитировать по памяти'], a:0, e:'Каждая неточность (не тот автор, не тот герой) — минус балл. Не уверен — обоснуй логикой без имён.'},
+  ]},
+{ id:'l9', icon:'🏗️', t:'Сборка: пишем целиком', sub:'Эталон с разметкой + конструктор',
+  theory:
+  '<p>Ты прошёл все части — теперь собери их. Два инструмента ниже:</p>'+
+  '<p><b>1. Эталон с разметкой.</b> Готовое сочинение, где каждая часть подсвечена своим цветом. Нажимай на легенду — увидишь, где что живёт.</p>'+
+  '<p><b>2. Конструктор.</b> Семь блоков с клише-подсказками: заполняешь по одному — получаешь готовое сочинение в редакторе.</p>'+
+  '<div class="callout c-idea">Тайминг на экзамене (на сочинение остаётся ~90 минут): 15 мин — читаешь текст дважды и формулируешь проблему; 35 мин — комментарий (примеры, пояснения, связь); 15 мин — позиция, мнение, вывод; 25 мин — переписать и проверить.</div>'+
+  '<div class="callout c-ok">Финальное задание школы: напиши первое полное сочинение. Возьми тему из «Тем» или собери через конструктор — и прогони по чек-листу К1–К12.</div>',
+  drills:[
+    {q:'С чего начать 90 минут сочинения?', o:['Сразу писать вступление','Дважды прочитать текст и сформулировать проблему','С вывода'], a:1, e:'Проблема — фундамент: ошибёшься — рухнет всё. На неё не жалко 15 минут.'},
+    {q:'Что оставить на конец?', o:['Придумывание примеров','Переписывание начисто и проверку ошибок','Формулировку проблемы'], a:1, e:'Последние 20–25 минут — чистовик и охота за ошибками (деепричастия, повторы, запятые).'},
+  ]},
+];
+
+/* ==================== ЭТАЛОН с разметкой ==================== */
+const ETALON_HTML =
+  '<span class="mk mk-pr">Что значит настоящий учитель в судьбе ученика? Именно над этим вопросом размышляет автор.</span> '+
+  '<span class="mk mk-ex">Рассказчик вспоминает, как учитель оставался с ним после уроков и терпеливо разбирал задачи, в которых мальчик безнадёжно запутался.</span> '+
+  '<span class="mk mk-po">Эта деталь показывает: учителю важны не отчёты и отметки, а сам ученик — его вера в собственные силы.</span> '+
+  '<span class="mk mk-sv">Автор не ограничивается школьной историей — он противопоставляет ей эпизод из взрослой жизни героя.</span> '+
+  '<span class="mk mk-ex">Спустя годы, оказавшись перед трудным выбором, рассказчик поступает так, «как поступил бы учитель», — честно, хотя это невыгодно.</span> '+
+  '<span class="mk mk-po">Значит, уроки наставника проросли в характер: он передал не формулы, а способ жить.</span> '+
+  '<span class="mk mk-sv">Противопоставление школьного эпизода и взрослого поступка убеждает: влияние настоящего учителя не заканчивается со звонком — оно определяет человека на всю жизнь.</span> '+
+  '<span class="mk mk-pz">Позиция автора ясна: настоящий учитель — тот, кто воспитывает личность, а не просто передаёт знания.</span> '+
+  '<span class="mk mk-mn">Трудно с этим не согласиться. Вспомним Лидию Михайловну из «Уроков французского» В. Распутина: рискуя работой, она играла с учеником на деньги, чтобы голодный мальчик мог принимать помощь без унижения. Для него это стало уроком доброты на всю жизнь.</span> '+
+  '<span class="mk mk-vy">Настоящий учитель меняет не оценки в дневнике, а самого человека — и в этом его подлинная сила.</span>';
+
+/* ==================== КОНСТРУКТОР: блоки и клише ==================== */
+const BLOCKS = [
+  {k:'pr', t:'Проблема', hint:'Вопрос, над которым размышляет автор', cl:['Что такое …? Именно над этим вопросом размышляет автор.','Автор поднимает проблему …','Текст заставляет задуматься: …?']},
+  {k:'ex', t:'Пример 1 + пояснение', hint:'Эпизод из текста и что он показывает', cl:['Автор обращает внимание на эпизод, где …','Рассказчик вспоминает, как …','Этот эпизод показывает, что …']},
+  {k:'ex', t:'Пример 2 + пояснение', hint:'Второй эпизод и что он показывает', cl:['Особенно показательна сцена, где …','Не менее важен эпизод, в котором …','Так автор подчёркивает …']},
+  {k:'sv', t:'Связь примеров', hint:'Как соотносятся + что это даёт', cl:['Противопоставляя эти эпизоды, автор показывает: …','Второй пример дополняет первый: …','Оба примера, дополняя друг друга, убеждают: …']},
+  {k:'pz', t:'Позиция автора', hint:'Ответ автора на вопрос', cl:['Позиция автора ясна: …','Автор убеждён, что …','Писатель приводит читателя к мысли: …']},
+  {k:'mn', t:'Моё мнение + обоснование', hint:'Согласие + довод или пример', cl:['Трудно не согласиться с автором: …','Я разделяю эту позицию, ведь …','Мой читательский опыт подтверждает это: в …']},
+  {k:'vy', t:'Вывод', hint:'Вернись к проблеме, закрепи ответ', cl:['Итак, …','Текст ещё раз убеждает: …','Таким образом, …']},
+];
+
+/* ==================== банк тем ==================== */
 const EGE = [
   {p:'Проблема влияния войны на человека', lit:'«Судьба человека» М. Шолохова; «А зори здесь тихие…» Б. Васильева'},
   {p:'Проблема исторической памяти: зачем хранить память о прошлом', lit:'«Письма о добром и прекрасном» Д. Лихачёва; «Обелиск» В. Быкова'},
@@ -176,7 +490,7 @@ const CRIT_FINAL = [
 ];
 
 /* ==================== состояние ==================== */
-const DEF = { drafts: [], cur: null, aiKey: '', aiModel: '' };
+const DEF = { drafts: [], cur: null, aiKey: '', aiModel: '', school: {} };
 let S = load();
 function load(){ try{ const r = localStorage.getItem('essayapp'); if (r) return Object.assign({}, DEF, JSON.parse(r)); }catch(e){} return Object.assign({}, DEF); }
 function save(){ try{ localStorage.setItem('essayapp', JSON.stringify(S)); }catch(e){} }
@@ -184,45 +498,225 @@ function esc(s){ return String(s).replace(/[&<>"]/g, m => ({'&':'&amp;','<':'&lt
 function plu(n, f){ const a = Math.abs(n)%100, b = a%10; return n+' '+((a>10&&a<20)?f[2]:(b===1?f[0]:(b>=2&&b<=4?f[1]:f[2]))); }
 function cur(){ return S.drafts.find(d => d.id === S.cur) || null; }
 function words(t){ return (t||'').trim() ? t.trim().split(/\s+/).filter(w => /[А-Яа-яЁёA-Za-z0-9]/.test(w)).length : 0; }
+function toast(t){ const el = document.getElementById('toast'); el.textContent = t; el.classList.add('show'); setTimeout(() => el.classList.remove('show'), 1800); }
+function confetti(){
+  const em = ['🎉','✨','💜','📝','⭐'];
+  for (let i = 0; i < 26; i++){
+    const d = document.createElement('div');
+    d.className = 'cf'; d.textContent = em[i % em.length];
+    d.style.left = (5 + Math.random()*90) + 'vw';
+    document.body.appendChild(d);
+    requestAnimationFrame(() => {
+      d.style.transform = 'translateY(' + (60 + Math.random()*35) + 'vh) rotate(' + (Math.random()*540-270) + 'deg)';
+      d.style.opacity = '0';
+    });
+    setTimeout(() => d.remove(), 1700);
+  }
+}
 
 /* ==================== навигация ==================== */
-let scene = 'topics';
+let scene = 'path';
 function go(name){
   scene = name;
   document.querySelectorAll('.scene').forEach(s => s.classList.remove('on'));
   document.getElementById('s-'+name).classList.add('on');
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('on'));
   document.getElementById('t-'+name).classList.add('on');
+  if (name === 'path') renderPath();
   if (name === 'topics') renderTopics();
   if (name === 'write') renderWrite();
   if (name === 'mine') renderMine();
   if (name === 'more') renderMore();
 }
 function sheet(html){ document.getElementById('modal').innerHTML =
-  `<div class="sheet" onclick="if(event.target===this)closeSheet()"><div class="sheet-in">${html}</div></div>`; }
+  '<div class="sheet" onclick="if(event.target===this)closeSheet()"><div class="sheet-in">' + html + '</div></div>'; }
 function closeSheet(){ document.getElementById('modal').innerHTML = ''; }
 
-/* ==================== темы ==================== */
-function renderTopics(){
-  let h = `<div class="big">Сочинение</div>
-    <div class="note">Выбери тему — откроется редактор. Черновики сохраняются сами, проверка — по критериям ЕГЭ.</div>`;
-  h += `<button class="tile" onclick="startEssay('ege', -1)">
-    <span class="ico" style="background:#EDEFFE">✍️</span>
-    <span class="tx"><span class="tt">Своя тема</span><span class="ts">впиши проблему из любого сборника или пробника</span></span>
-    <span class="chev">›</span></button>`;
-  h += `<div class="h2">Сочинение ЕГЭ · задание 27</div>`;
-  EGE.forEach((t, i) => {
-    h += `<button class="tile" onclick="startEssay('ege', ${i})">
-      <span class="ico">📝</span>
-      <span class="tx"><span class="tt">${esc(t.p)}</span><span class="ts">Литература: ${esc(t.lit)}</span></span>
-      <span class="chev">›</span></button>`;
+/* ==================== ПУТЬ ==================== */
+function doneCount(){ return SCHOOL.filter(l => S.school[l.id]).length; }
+function renderPath(){
+  const done = doneCount(), total = SCHOOL.length;
+  const curIdx = SCHOOL.findIndex(l => !S.school[l.id]);
+  let h = '<div class="hero">'+
+    '<div class="kicker">Школа сочинения</div>'+
+    '<h1>Научись писать<br>на 22 балла</h1>'+
+    '<p>С полного нуля: ' + total + ' коротких шагов — от «что такое проблема» до готового сочинения.</p>'+
+    '<div class="pb"><i style="width:' + Math.round(done/total*100) + '%"></i></div>'+
+    '<div class="pl"><span>' + plu(done, ['шаг пройден','шага пройдено','шагов пройдено']) + '</span><span>' + done + ' / ' + total + '</span></div>'+
+    '</div>';
+  h += '<div class="path">';
+  SCHOOL.forEach((l, i) => {
+    const isDone = !!S.school[l.id];
+    const isCur = i === curIdx;
+    const state = isDone ? 'done' : isCur ? 'cur' : 'lock';
+    const badge = isDone ? '<span class="badge b-done">Пройдено ✓</span>'
+      : isCur ? '<span class="badge b-cur">Твой следующий шаг</span>'
+      : '<span class="badge b-lock">🔒 Откроется после шага ' + i + '</span>';
+    h += '<button class="pnode ' + state + '" onclick="openLesson(' + i + ')">'+
+      '<span class="pc">' + (isDone ? '✓' : (i + 1)) + '</span>'+
+      '<span class="pt"><span class="tt">' + l.icon + ' ' + esc(l.t) + '</span>'+
+      '<span class="ts">' + esc(l.sub) + '</span>' + badge + '</span></button>';
   });
-  h += `<div class="h2">Итоговое сочинение · допуск</div>`;
+  h += '</div>';
+  h += '<div class="h2">Инструменты</div>'+
+    '<button class="tile" onclick="openEtalon()"><span class="ico" style="background:var(--pr-bg)">📖</span>'+
+    '<span class="tx"><span class="tt">Эталон с разметкой</span><span class="ts">готовое сочинение — каждая часть своим цветом</span></span><span class="chev">›</span></button>'+
+    '<button class="tile" onclick="openBuilder()"><span class="ico" style="background:var(--sv-bg)">🧩</span>'+
+    '<span class="tx"><span class="tt">Конструктор сочинения</span><span class="ts">собери по блокам с клише-подсказками</span></span><span class="chev">›</span></button>';
+  document.getElementById('pathList').innerHTML = h;
+}
+
+/* ==================== УРОК ==================== */
+let L = null; /* { idx, need, got:Set } */
+function openLesson(i){
+  const prevDone = i === 0 || !!S.school[SCHOOL[i-1].id];
+  if (!prevDone){ toast('Сначала пройди шаг ' + i); return; }
+  const l = SCHOOL[i];
+  L = { idx: i, need: l.drills.length, got: new Set() };
+  let h = '<div class="ltop"><button class="lx" onclick="closeLesson()">✕</button>'+
+    '<span class="lstep">Шаг ' + (i + 1) + ' из ' + SCHOOL.length + '</span></div>'+
+    '<div class="lbody"><h1>' + l.icon + ' ' + esc(l.t) + '</h1>' + l.theory;
+  h += '<div class="h2">Тренировка</div>';
+  l.drills.forEach((d, qi) => {
+    h += '<div class="qcard" id="q' + qi + '"><div class="qn">Вопрос ' + (qi + 1) + ' из ' + l.drills.length + '</div>'+
+      '<div class="qq">' + esc(d.q) + '</div>';
+    d.o.forEach((o, oi) => {
+      h += '<button class="qo" id="q' + qi + 'o' + oi + '" onclick="answer(' + qi + ',' + oi + ')">' + esc(o) + '</button>';
+    });
+    h += '<div class="qexp" id="q' + qi + 'e">' + esc(d.e) + '</div></div>';
+  });
+  if (l.write){
+    h += '<div class="h2">Мини-письмо</div><div class="qcard mw">'+
+      '<div class="qq">' + esc(l.write.task) + '</div>'+
+      '<textarea placeholder="Напиши свой вариант…"></textarea>'+
+      '<div style="height:9px"></div>'+
+      '<button class="btn ghost" onclick="this.nextElementSibling.classList.add(\'show\');this.style.display=\'none\'">Сравнить с образцом</button>'+
+      '<div class="sample"><b>Образец:</b> ' + esc(l.write.sample) + '</div></div>';
+  }
+  h += '</div><div class="lfoot"><button class="btn grad" id="lessonDone" disabled onclick="finishLesson()">Ответь на все вопросы ↑</button></div>';
+  const el = document.getElementById('lesson');
+  el.innerHTML = h; el.style.display = 'flex';
+  el.querySelector('.lbody').scrollTop = 0;
+  if (S.school[l.id]) unlockFinish(true);
+}
+function answer(qi, oi){
+  const d = SCHOOL[L.idx].drills[qi];
+  const btn = document.getElementById('q' + qi + 'o' + oi);
+  if (oi === d.a){
+    document.querySelectorAll('#q' + qi + ' .qo').forEach(b => b.classList.add('faded'));
+    btn.classList.remove('faded'); btn.classList.add('correct');
+    document.getElementById('q' + qi + 'e').classList.add('show');
+    L.got.add(qi);
+    if (L.got.size >= L.need) unlockFinish(false);
+  } else {
+    btn.classList.add('wrong');
+    setTimeout(() => btn.classList.remove('wrong'), 450);
+  }
+}
+function unlockFinish(already){
+  const b = document.getElementById('lessonDone');
+  b.disabled = false;
+  b.textContent = already ? 'Шаг уже пройден — закрыть' : 'Шаг пройден! Дальше →';
+}
+function finishLesson(){
+  const l = SCHOOL[L.idx];
+  const first = !S.school[l.id];
+  S.school[l.id] = 1; save();
+  closeLesson();
+  renderPath();
+  if (first){
+    confetti();
+    if (doneCount() === SCHOOL.length) toast('Школа пройдена! Теперь — полное сочинение 🎓');
+    else toast('Шаг ' + (L.idx + 1) + ' пройден ✓');
+  }
+}
+function closeLesson(){ const el = document.getElementById('lesson'); el.style.display = 'none'; el.innerHTML = ''; }
+
+/* ==================== ЭТАЛОН ==================== */
+let focusPart = null;
+function openEtalon(){
+  let h = '<div class="ltop"><button class="lx" onclick="closeLesson()">✕</button><span class="lstep">Эталон · ~210 слов</span></div>'+
+    '<div class="lbody"><h1>📖 Сочинение с разметкой</h1>'+
+    '<p style="color:var(--muted);font-size:14px">Учебный пример по тексту о сельском учителе. Нажми на часть в легенде — она подсветится в тексте.</p>'+
+    '<div class="legend" id="lgd">';
+  Object.entries(PARTS).forEach(([k, v]) => {
+    h += '<button class="lg" id="lg-' + k + '" style="background:' + v[2] + ';color:' + v[1] + '" onclick="focusOn(\'' + k + '\')">' + v[0] + '</button>';
+  });
+  h += '</div><div class="etalon" id="eta">' + ETALON_HTML + '</div>'+
+    '<div style="height:16px"></div><div class="callout c-idea">Обрати внимание: пересказа почти нет — после каждого примера сразу мысль «что это показывает». Именно так выглядит анализ.</div>'+
+    '</div><div class="lfoot"><button class="btn ghost" onclick="closeLesson()">Понятно</button></div>';
+  const el = document.getElementById('lesson');
+  el.innerHTML = h; el.style.display = 'flex';
+  focusPart = null;
+}
+function focusOn(k){
+  const eta = document.getElementById('eta');
+  if (focusPart === k){ /* сброс */
+    focusPart = null;
+    eta.classList.remove('f');
+    eta.querySelectorAll('.mk').forEach(m => m.classList.remove('hot'));
+    document.querySelectorAll('.lg').forEach(b => b.classList.remove('dim'));
+    return;
+  }
+  focusPart = k;
+  eta.classList.add('f');
+  eta.style.setProperty('--hotbg', PARTS[k][2]);
+  eta.style.setProperty('--hotc', PARTS[k][1]);
+  eta.querySelectorAll('.mk').forEach(m => m.classList.toggle('hot', m.classList.contains('mk-' + k)));
+  document.querySelectorAll('.lg').forEach(b => b.classList.toggle('dim', b.id !== 'lg-' + k));
+}
+
+/* ==================== КОНСТРУКТОР ==================== */
+function openBuilder(){
+  let h = '<div class="ltop"><button class="lx" onclick="closeLesson()">✕</button><span class="lstep">Конструктор</span></div>'+
+    '<div class="lbody"><h1>🧩 Собери сочинение</h1>'+
+    '<p style="color:var(--muted);font-size:14px">Заполняй блоки по порядку. Нажми на клише — оно вставится в блок. Внизу всё соберётся в цельный текст.</p>';
+  BLOCKS.forEach((b, i) => {
+    const v = PARTS[b.k];
+    h += '<div class="blk"><div class="bh"><span class="dot" style="background:' + v[1] + '"></span>'+
+      '<span class="bt">' + esc(b.t) + '</span><span class="bs">' + esc(b.hint) + '</span></div>'+
+      '<textarea id="bl' + i + '" placeholder="…"></textarea><div class="cliche">';
+    b.cl.forEach((c, ci) => {
+      h += '<button class="cl" onclick="addCliche(' + i + ',' + ci + ')">' + esc(c) + '</button>';
+    });
+    h += '</div></div>';
+  });
+  h += '</div><div class="lfoot"><button class="btn grad" onclick="assemble()">Собрать сочинение →</button></div>';
+  const el = document.getElementById('lesson');
+  el.innerHTML = h; el.style.display = 'flex';
+}
+function addCliche(bi, ci){
+  const ta = document.getElementById('bl' + bi);
+  const c = BLOCKS[bi].cl[ci];
+  ta.value = ta.value ? (ta.value.replace(/\s+$/, '') + ' ' + c) : c;
+  ta.focus();
+}
+function assemble(){
+  const parts = BLOCKS.map((b, i) => document.getElementById('bl' + i).value.trim()).filter(Boolean);
+  if (!parts.length){ toast('Заполни хотя бы один блок'); return; }
+  const d = { id: 'd' + Date.now(), mode: 'ege', topic: 'Сочинение из конструктора', text: parts.join('\n\n'), upd: Date.now(), ai: null };
+  S.drafts.unshift(d); S.cur = d.id; save();
+  closeLesson(); go('write');
+  toast('Собрано! Доработай текст здесь');
+}
+
+/* ==================== ТЕМЫ ==================== */
+function renderTopics(){
+  let h = '<div class="big disp">Темы</div>'+
+    '<div class="note">Выбери тему — откроется редактор. Или собери сочинение из блоков в конструкторе.</div>';
+  h += '<button class="tile" onclick="startEssay(\'ege\', -1)"><span class="ico" style="background:var(--pr-bg)">✍️</span>'+
+    '<span class="tx"><span class="tt">Своя тема</span><span class="ts">впиши проблему из сборника или пробника</span></span><span class="chev">›</span></button>';
+  h += '<button class="tile" onclick="openBuilder()"><span class="ico" style="background:var(--sv-bg)">🧩</span>'+
+    '<span class="tx"><span class="tt">Конструктор</span><span class="ts">по блокам с клише — для первых сочинений</span></span><span class="chev">›</span></button>';
+  h += '<div class="h2">Сочинение ЕГЭ · задание 27</div>';
+  EGE.forEach((t, i) => {
+    h += '<button class="tile" onclick="startEssay(\'ege\', ' + i + ')"><span class="ico">📝</span>'+
+      '<span class="tx"><span class="tt">' + esc(t.p) + '</span><span class="ts">Литература: ' + esc(t.lit) + '</span></span><span class="chev">›</span></button>';
+  });
+  h += '<div class="h2">Итоговое сочинение · допуск</div>';
   FINAL.forEach((q, i) => {
-    h += `<button class="tile" onclick="startEssay('final', ${i})">
-      <span class="ico">🎓</span>
-      <span class="tx"><span class="tt">${esc(q)}</span><span class="ts">итоговое · нужен литературный аргумент · от 250 слов</span></span>
-      <span class="chev">›</span></button>`;
+    h += '<button class="tile" onclick="startEssay(\'final\', ' + i + ')"><span class="ico">🎓</span>'+
+      '<span class="tx"><span class="tt">' + esc(q) + '</span><span class="ts">нужен литературный аргумент · от 250 слов</span></span><span class="chev">›</span></button>';
   });
   document.getElementById('topicsList').innerHTML = h;
 }
@@ -237,13 +731,13 @@ function startEssay(mode, i){
   go('write');
 }
 
-/* ==================== редактор ==================== */
+/* ==================== РЕДАКТОР ==================== */
 let deadline = null, tInt = null;
 function renderWrite(){
   const d = cur();
   const ta = document.getElementById('ta');
   if (!d){
-    document.getElementById('wTopic').textContent = 'Выбери тему на вкладке «Темы» — или начни со своей.';
+    document.getElementById('wTopic').textContent = 'Выбери тему на вкладке «Темы» — или пройди школу и собери первое сочинение в конструкторе.';
     document.getElementById('wMode').textContent = '';
     ta.value = ''; ta.disabled = true; updWords(); return;
   }
@@ -279,48 +773,45 @@ function toggleTimer(){
   }, 500);
   el.textContent = '⏱ 90:00';
 }
-
-/* ==================== каркас ==================== */
 function openFrame(){
   const d = cur();
   const fin = d && d.mode === 'final';
-  let h = `<div class="grab"></div><div class="big">Каркас сочинения</div><div class="help">`;
+  let h = '<div class="grab"></div><div class="big disp">Каркас</div>';
   if (!fin){
-    h += `<p><b>1. Проблема (К1).</b> Вопрос, над которым размышляет автор: «Что помогает человеку выстоять?» Не тема, а вопрос.</p>
-      <p><b>2. Комментарий (К2, до 3 баллов).</b> Два примера из текста. К каждому — пояснение: что этот эпизод показывает. Потом связь между примерами (противопоставление, дополнение, причина-следствие) — и анализ этой связи.</p>
-      <p><b>3. Позиция автора (К3).</b> «Автор убеждён, что…» — его ответ на вопрос из пункта 1.</p>
-      <p><b>4. Своё отношение (К4).</b> Согласен/не согласен + короткое обоснование: пример из жизни, литературы, истории.</p>
-      <p><b>Объём:</b> от 150 слов (меньше — 0 баллов). Оптимум 250–300.</p>
-      <p><b>Главные потери:</b> пересказ вместо анализа; примеры без пояснений; забытая связь; проблема подменена темой.</p>`;
+    h += '<p style="margin-bottom:10px">1. ' + mk('pr','Проблема') + ' — вопрос автора.</p>'+
+      '<p style="margin-bottom:10px">2. ' + mk('ex','Пример 1') + ' + ' + mk('po','пояснение') + '.</p>'+
+      '<p style="margin-bottom:10px">3. ' + mk('ex','Пример 2') + ' + ' + mk('po','пояснение') + ' + ' + mk('sv','связь с анализом') + '.</p>'+
+      '<p style="margin-bottom:10px">4. ' + mk('pz','Позиция автора') + ' — его ответ.</p>'+
+      '<p style="margin-bottom:10px">5. ' + mk('mn','Моё мнение') + ' + обоснование.</p>'+
+      '<p style="margin-bottom:14px">6. ' + mk('vy','Вывод') + ' — замкни круг.</p>'+
+      '<div class="callout c-warn">От 150 слов (меньше — 0). Оптимум 250–300. После каждого примера — «что это показывает?»</div>';
   } else {
-    h += `<p><b>1. Вступление-тезис.</b> Прямой ответ на вопрос темы — одним-двумя предложениями.</p>
-      <p><b>2. Аргумент из литературы.</b> Произведение, герой, эпизод — и микровывод: как это доказывает тезис.</p>
-      <p><b>3. Второй аргумент</b> (по желанию) — другое произведение или другой угол.</p>
-      <p><b>4. Вывод.</b> Вернись к вопросу и закрепи ответ.</p>
-      <p><b>Объём:</b> минимум 250 слов, рекомендуют от 350. Пересказ без анализа не считается аргументом.</p>`;
+    h += '<p style="margin-bottom:10px">1. Тезис — прямой ответ на вопрос темы.</p>'+
+      '<p style="margin-bottom:10px">2. Аргумент из литературы: произведение → эпизод → микровывод.</p>'+
+      '<p style="margin-bottom:10px">3. Второй аргумент (по желанию).</p>'+
+      '<p style="margin-bottom:14px">4. Вывод — вернись к вопросу.</p>'+
+      '<div class="callout c-warn">Минимум 250 слов, рекомендуется от 350. Пересказ без вывода — не аргумент.</div>';
   }
-  h += `</div><button class="btn ghost" onclick="closeSheet()">Понятно</button>`;
+  h += '<div style="height:10px"></div><button class="btn ghost" onclick="closeSheet()">Понятно</button>';
   sheet(h);
 }
 
-/* ==================== проверка ==================== */
+/* ==================== ПРОВЕРКА ==================== */
 function openCheck(){
   const d = cur(); if (!d) return;
   const n = words(d.text);
   const min = d.mode === 'final' ? 250 : 150;
   const crits = d.mode === 'final' ? CRIT_FINAL : CRIT_EGE;
-  let h = `<div class="grab"></div><div class="big">Проверка</div>
-    <div class="score">${plu(n, ['слово','слова','слов'])} · ${n < min ? '<span style="color:var(--no-ink)">меньше минимума ' + min + '</span>' : '<span style="color:var(--ok-ink)">объём в норме</span>'}</div>
-    <div class="h2" style="margin-top:4px">Чек-лист ${d.mode === 'final' ? 'итогового' : 'К1–К12'}</div>`;
-  crits.forEach((c, i) => {
-    h += `<label class="crit"><input type="checkbox" onchange="calcScore()" data-p="${c[1]}">
-      <span class="ct">${esc(c[0])}</span>${c[1] ? `<span class="cp">${c[1]}</span>` : ''}</label>`;
+  let h = '<div class="grab"></div><div class="big disp">Проверка</div>'+
+    '<div class="score">' + plu(n, ['слово','слова','слов']) + ' · ' + (n < min ? '<span style="color:var(--no-ink)">меньше минимума ' + min + '</span>' : '<span style="color:var(--ok-ink)">объём в норме</span>') + '</div>'+
+    '<div class="h2" style="margin-top:4px">Чек-лист ' + (d.mode === 'final' ? 'итогового' : 'К1–К12') + '</div>';
+  crits.forEach(c => {
+    h += '<label class="crit"><input type="checkbox" onchange="calcScore()" data-p="' + c[1] + '">'+
+      '<span class="ct">' + esc(c[0]) + '</span>' + (c[1] ? '<span class="cp">' + c[1] + '</span>' : '') + '</label>';
   });
-  h += d.mode === 'final'
-    ? `<div class="score" id="scoreBox">Отметь, что выполнено</div>`
-    : `<div class="score" id="scoreBox">Самооценка: 0 из 22</div>`;
-  h += `<button class="btn" onclick="aiCheck()" id="aiBtn">${S.aiKey ? '🤖 Проверить с ИИ' : '🤖 ИИ-проверка (нужен ключ — вкладка «Ещё»)'}</button>`;
-  h += `<div id="aiOut">${d.ai ? '<div class="aibox">' + esc(d.ai) + '</div>' : ''}</div>`;
+  h += '<div class="score" id="scoreBox">' + (d.mode === 'final' ? 'Отметь, что выполнено' : 'Самооценка: 0 из 22') + '</div>';
+  h += '<button class="btn grad" onclick="aiCheck()" id="aiBtn">' + (S.aiKey ? '🤖 Проверить с ИИ' : '🤖 ИИ-проверка (нужен ключ — «Ещё»)') + '</button>';
+  h += '<div id="aiOut">' + (d.ai ? '<div class="aibox">' + esc(d.ai) + '</div>' : '') + '</div>';
   sheet(h);
   window._checkMode = d.mode;
 }
@@ -336,11 +827,11 @@ function calcScore(){
   }
 }
 
-/* ==================== ИИ-проверка (ключ Gemini, как в EconCards) ==================== */
+/* ==================== ИИ ==================== */
 const MODELS = ['gemini-2.0-flash', 'gemini-2.0-flash-lite', 'gemini-1.5-flash'];
 async function aiCheck(){
   const d = cur(); if (!d) return;
-  if (!S.aiKey){ go('more'); closeSheet(); return; }
+  if (!S.aiKey){ closeSheet(); go('more'); return; }
   if (words(d.text) < 30){ document.getElementById('aiOut').innerHTML = '<div class="aibox">Напиши хотя бы несколько абзацев — тогда проверка будет осмысленной.</div>'; return; }
   const btn = document.getElementById('aiBtn');
   btn.textContent = '⏳ Проверяю…';
@@ -367,28 +858,27 @@ async function aiCheck(){
       btn.textContent = '🤖 Проверить с ИИ';
       document.getElementById('aiOut').innerHTML = '<div class="aibox">' + esc(text) + '</div>';
       return;
-    }catch(e){ /* пробуем следующую модель */ }
+    }catch(e){}
   }
   btn.textContent = '🤖 Проверить с ИИ';
-  document.getElementById('aiOut').innerHTML = '<div class="aibox">Не получилось связаться с ИИ. Проверь ключ на вкладке «Ещё» и интернет.</div>';
+  document.getElementById('aiOut').innerHTML = '<div class="aibox">Не получилось связаться с ИИ. Проверь ключ во вкладке «Ещё» и интернет.</div>';
 }
 
-/* ==================== мои сочинения ==================== */
+/* ==================== МОИ ==================== */
 function renderMine(){
-  let h = `<div class="big">Мои сочинения</div>`;
+  let h = '<div class="big disp">Мои сочинения</div>';
   if (!S.drafts.length){
-    h += `<div class="empty">Пока пусто. Выбери тему — и первый черновик появится здесь.</div>`;
+    h += '<div class="empty">Пока пусто.<br>Пройди пару шагов школы — и напиши первое.</div>';
   } else {
     S.drafts.forEach(d => {
       const dt = new Date(d.upd);
       const date = dt.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' });
-      h += `<div class="tile" style="padding-right:10px">
-        <button style="flex:1;min-width:0;text-align:left;display:flex;gap:12px;align-items:center" onclick="openDraft('${d.id}')">
-          <span class="ico">${d.mode === 'final' ? '🎓' : '📝'}</span>
-          <span class="tx"><span class="tt">${esc(d.topic)}</span>
-          <span class="ts">${plu(words(d.text), ['слово','слова','слов'])} · ${date}${d.ai ? ' · есть разбор ИИ' : ''}</span></span>
-        </button>
-        <button class="del" onclick="delDraft('${d.id}')">✕</button></div>`;
+      h += '<div class="tile" style="padding-right:10px">'+
+        '<button style="flex:1;min-width:0;display:flex;gap:12px;align-items:center" onclick="openDraft(\'' + d.id + '\')">'+
+        '<span class="ico">' + (d.mode === 'final' ? '🎓' : '📝') + '</span>'+
+        '<span class="tx"><span class="tt">' + esc(d.topic) + '</span>'+
+        '<span class="ts">' + plu(words(d.text), ['слово','слова','слов']) + ' · ' + date + (d.ai ? ' · есть разбор ИИ' : '') + '</span></span>'+
+        '</button><button class="del" onclick="delDraft(\'' + d.id + '\')">✕</button></div>';
     });
   }
   document.getElementById('mineList').innerHTML = h;
@@ -401,32 +891,32 @@ function delDraft(id){
   save(); renderMine();
 }
 
-/* ==================== ещё ==================== */
+/* ==================== ЕЩЁ ==================== */
 function renderMore(){
-  let h = `<div class="big">Ещё</div>
-    <div class="h2">ИИ-проверка</div>
-    <div class="note" style="margin-top:0">Вставь бесплатный ключ Google AI Studio (aistudio.google.com/apikey) — тот же, что в EconCards. Хранится только на этом устройстве.</div>
-    <input class="field" id="keyIn" type="password" placeholder="Ключ Gemini…" value="${esc(S.aiKey)}">
-    <div style="height:9px"></div>
-    <button class="btn" onclick="saveKey()">Сохранить ключ</button>
-    <div class="h2">Установка</div>
-    <div class="note" style="margin-top:0">В Safari: Поделиться → «На экран „Домой“» — и это будет отдельное приложение со своей иконкой. Работает без интернета (кроме ИИ-проверки).</div>
-    <div class="h2">Семья приложений</div>
-    <button class="tile" onclick="location.href='../'">
-      <span class="ico">🃏</span>
-      <span class="tx"><span class="tt">EconCards</span><span class="ts">карточки: олимпиадная экономика и ЕГЭ-тренажёр</span></span>
-      <span class="chev">›</span></button>`;
+  let h = '<div class="big disp">Ещё</div>'+
+    '<div class="h2">ИИ-проверка</div>'+
+    '<div class="note" style="margin-top:0">Вставь бесплатный ключ Google AI Studio (aistudio.google.com/apikey) — тот же, что в EconCards. Хранится только на этом устройстве.</div>'+
+    '<input class="field" id="keyIn" type="password" placeholder="Ключ Gemini…" value="' + esc(S.aiKey) + '">'+
+    '<div style="height:9px"></div>'+
+    '<button class="btn" onclick="saveKey()">Сохранить ключ</button>'+
+    '<div class="h2">Прогресс школы</div>'+
+    '<div class="note" style="margin-top:0">Пройдено ' + doneCount() + ' из ' + SCHOOL.length + ' шагов. Сбросить прогресс можно кнопкой ниже (сочинения не тронет).</div>'+
+    '<button class="btn ghost" onclick="if(confirm(\'Сбросить прогресс школы?\')){S.school={};save();toast(\'Прогресс сброшен\');renderMore();}">Сбросить школу</button>'+
+    '<div class="h2">Установка</div>'+
+    '<div class="note" style="margin-top:0">В Safari: Поделиться → «На экран „Домой“» — отдельное приложение со своей иконкой. Работает без интернета (кроме ИИ).</div>'+
+    '<div class="h2">Семья приложений</div>'+
+    '<button class="tile" onclick="location.href=\'../\'"><span class="ico">🃏</span>'+
+    '<span class="tx"><span class="tt">EconCards</span><span class="ts">карточки: олимпиадная экономика и ЕГЭ-тренажёр</span></span><span class="chev">›</span></button>';
   document.getElementById('moreList').innerHTML = h;
 }
 function saveKey(){
   S.aiKey = document.getElementById('keyIn').value.trim();
   S.aiModel = ''; save();
-  alert(S.aiKey ? 'Ключ сохранён. Кнопка «Проверить с ИИ» теперь активна.' : 'Ключ удалён.');
+  toast(S.aiKey ? 'Ключ сохранён ✓' : 'Ключ удалён');
 }
 
 /* ==================== старт ==================== */
-renderTopics();
-if (S.cur && cur()) { /* продолжаем последний черновик по кнопке «Письмо» */ }
+renderPath();
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(() => {});
 </script>
 </body>
