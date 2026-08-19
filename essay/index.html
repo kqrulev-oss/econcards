@@ -128,7 +128,7 @@ main{flex:1;min-height:0;position:relative}
 .lx{width:38px;height:38px;border-radius:12px;background:var(--card);border:1px solid var(--line);
   display:grid;place-items:center;font-size:16px;font-weight:900;color:var(--muted)}
 .lstep{font-size:12px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
-.lbody{flex:1;min-height:0;overflow-y:auto;padding:4px 18px 40px}
+.lbody{flex:1;min-height:0;overflow-y:auto;padding:4px 18px 120px}
 .lbody h1{font-family:var(--fserif);font-size:27px;line-height:1.15;font-weight:700;margin:6px 0 16px}
 .lbody p{margin-bottom:12px;font-size:16px;line-height:1.58}
 .lbody p b{font-weight:750}
@@ -179,18 +179,18 @@ main{flex:1;min-height:0;position:relative}
 
 /* ---------- конструктор ---------- */
 .blk{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:14px;margin-bottom:12px}
-.blk .bh{display:flex;align-items:center;gap:8px;margin-bottom:9px}
-.blk .dot{width:10px;height:10px;border-radius:50%}
-.blk .bt{font-size:14px;font-weight:800}
-.blk .bs{font-size:12px;color:var(--muted);margin-left:auto}
-.blk textarea{width:100%;min-height:74px;border:1.5px solid var(--line);border-radius:13px;background:var(--bg);
-  padding:11px;font-family:inherit;font-size:15px;line-height:1.5;color:var(--ink);outline:none;resize:vertical}
+.blk .bh{display:flex;align-items:center;gap:10px;margin-bottom:3px}
+.blk .bnum{flex:none;width:25px;height:25px;border-radius:8px;color:#fff;display:grid;place-items:center;font-size:13px;font-weight:900}
+.blk .bt{font-size:15.5px;font-weight:800}
+.blk .bhint{font-size:12.5px;color:var(--muted);line-height:1.35;margin:0 0 10px 35px}
+.blk textarea{width:100%;min-height:82px;border:1.5px solid var(--line);border-radius:13px;background:var(--bg);
+  padding:11px;font-family:inherit;font-size:15px;line-height:1.5;color:var(--ink);outline:none;resize:none;overflow:hidden}
 .blk textarea:focus{border-color:#B9BFF9}
-.cliche{display:flex;gap:7px;overflow-x:auto;padding:9px 2px 2px;scrollbar-width:none}
-.cliche::-webkit-scrollbar{display:none}
-.cl{flex:none;font-size:12.5px;font-weight:700;color:var(--g1);background:#ECEEFE;
-  padding:7px 11px;border-radius:99px;white-space:nowrap}
-.cl:active{transform:scale(.96)}
+.blk textarea::placeholder{color:#B9B6AC}
+.cliche{display:flex;flex-direction:column;gap:6px;padding:9px 0 2px}
+.cl{width:100%;text-align:left;font-size:13px;font-weight:700;color:var(--g1);background:#ECEEFE;
+  padding:9px 12px;border-radius:12px;white-space:normal;line-height:1.35}
+.cl:active{transform:scale(.98)}
 
 /* ---------- редактор ---------- */
 .wtop{flex:none;padding:12px 16px 10px;background:var(--card);border-bottom:1px solid var(--line)}
@@ -452,13 +452,13 @@ const ETALON_HTML =
 
 /* ==================== КОНСТРУКТОР: блоки и клише ==================== */
 const BLOCKS = [
-  {k:'pr', t:'Проблема', hint:'Вопрос, над которым размышляет автор', cl:['Что такое …? Именно над этим вопросом размышляет автор.','Автор поднимает проблему …','Текст заставляет задуматься: …?']},
-  {k:'ex', t:'Пример 1 + пояснение', hint:'Эпизод из текста и что он показывает', cl:['Автор обращает внимание на эпизод, где …','Рассказчик вспоминает, как …','Этот эпизод показывает, что …']},
-  {k:'ex', t:'Пример 2 + пояснение', hint:'Второй эпизод и что он показывает', cl:['Особенно показательна сцена, где …','Не менее важен эпизод, в котором …','Так автор подчёркивает …']},
-  {k:'sv', t:'Связь примеров', hint:'Как соотносятся + что это даёт', cl:['Противопоставляя эти эпизоды, автор показывает: …','Второй пример дополняет первый: …','Оба примера, дополняя друг друга, убеждают: …']},
-  {k:'pz', t:'Позиция автора', hint:'Ответ автора на вопрос', cl:['Позиция автора ясна: …','Автор убеждён, что …','Писатель приводит читателя к мысли: …']},
-  {k:'mn', t:'Моё мнение + обоснование', hint:'Согласие + довод или пример', cl:['Трудно не согласиться с автором: …','Я разделяю эту позицию, ведь …','Мой читательский опыт подтверждает это: в …']},
-  {k:'vy', t:'Вывод', hint:'Вернись к проблеме, закрепи ответ', cl:['Итак, …','Текст ещё раз убеждает: …','Таким образом, …']},
+  {k:'pr', t:'Проблема', hint:'Вопрос, над которым размышляет автор текста', ph:'Например: Что такое настоящая дружба? Именно над этим вопросом размышляет автор.', cl:['Что такое …? Именно над этим вопросом размышляет автор.','Автор поднимает проблему …','Текст заставляет задуматься: …?']},
+  {k:'ex', t:'Пример 1 + пояснение', hint:'Эпизод из текста + что он показывает', ph:'Например: Автор обращает внимание на эпизод, где герой отдаёт последние деньги незнакомцу. Это показывает, что…', cl:['Автор обращает внимание на эпизод, где …','Рассказчик вспоминает, как …','Этот эпизод показывает, что …']},
+  {k:'ex', t:'Пример 2 + пояснение', hint:'Второй эпизод + что он показывает', ph:'Например: Особенно показательна сцена, где… Так автор подчёркивает…', cl:['Особенно показательна сцена, где …','Не менее важен эпизод, в котором …','Так автор подчёркивает …']},
+  {k:'sv', t:'Связь примеров', hint:'Как соотносятся эпизоды + что это даёт для проблемы', ph:'Например: Противопоставляя эти эпизоды, автор показывает, что…', cl:['Противопоставляя эти эпизоды, автор показывает: …','Второй пример дополняет первый: …','Оба примера, дополняя друг друга, убеждают: …']},
+  {k:'pz', t:'Позиция автора', hint:'Его ответ на вопрос-проблему', ph:'Например: Позиция автора ясна: настоящий друг познаётся в беде.', cl:['Позиция автора ясна: …','Автор убеждён, что …','Писатель приводит читателя к мысли: …']},
+  {k:'mn', t:'Моё мнение + обоснование', hint:'Согласие + довод или пример из литературы/жизни', ph:'Например: Я согласен с автором. Вспомним героя…, который…', cl:['Трудно не согласиться с автором: …','Я разделяю эту позицию, ведь …','Мой читательский опыт подтверждает это: в …']},
+  {k:'vy', t:'Вывод', hint:'Вернись к проблеме и закрепи ответ', ph:'Например: Итак, дружба проверяется не словами, а поступками.', cl:['Итак, …','Текст ещё раз убеждает: …','Таким образом, …']},
 ];
 
 /* ==================== СПРАВОЧНИК ==================== */
@@ -708,9 +708,10 @@ function openBuilder(){
     '<p style="color:var(--muted);font-size:14px">Заполняй блоки по порядку. Нажми на клише — оно вставится в блок. Внизу всё соберётся в цельный текст.</p>';
   BLOCKS.forEach((b, i) => {
     const v = PARTS[b.k];
-    h += '<div class="blk"><div class="bh"><span class="dot" style="background:' + v[1] + '"></span>'+
-      '<span class="bt">' + esc(b.t) + '</span><span class="bs">' + esc(b.hint) + '</span></div>'+
-      '<textarea id="bl' + i + '" placeholder="…"></textarea><div class="cliche">';
+    h += '<div class="blk"><div class="bh"><span class="bnum" style="background:' + v[1] + '">' + (i + 1) + '</span>'+
+      '<span class="bt">' + esc(b.t) + '</span></div>'+
+      '<div class="bhint">' + esc(b.hint) + '</div>'+
+      '<textarea id="bl' + i + '" placeholder="' + esc(b.ph) + '" oninput="autoGrow(this)"></textarea><div class="cliche">';
     b.cl.forEach((c, ci) => {
       h += '<button class="cl" onclick="addCliche(' + i + ',' + ci + ')">' + esc(c) + '</button>';
     });
@@ -720,11 +721,12 @@ function openBuilder(){
   const el = document.getElementById('lesson');
   el.innerHTML = h; el.style.display = 'flex';
 }
+function autoGrow(ta){ ta.style.height = 'auto'; ta.style.height = Math.max(82, ta.scrollHeight) + 'px'; }
 function addCliche(bi, ci){
   const ta = document.getElementById('bl' + bi);
   const c = BLOCKS[bi].cl[ci];
   ta.value = ta.value ? (ta.value.replace(/\s+$/, '') + ' ' + c) : c;
-  ta.focus();
+  autoGrow(ta); ta.focus();
 }
 function assemble(){
   const parts = BLOCKS.map((b, i) => document.getElementById('bl' + i).value.trim()).filter(Boolean);
