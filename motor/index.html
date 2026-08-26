@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="ЕГЭ Мотор">
+<meta name="theme-color" content="#f3f2f2">
+<title>ЕГЭ Мотор</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   ЕГЭ МОТОР · дизайн-система Modernist
+   Нулевые скругления, линейки 2px, один красный, всё влево.
+   (Archivo без кириллицы — используем Inter Tight, тот же дух.)
+   ============================================================ */
+:root{
+  --bg:#f3f2f2; --surface:#eae9e9; --text:#201e1d; --accent:#ec3013;
+  --divider:rgba(32,30,29,.4);
+  --n100:#f8f4f4; --n200:#eae7e7; --n300:#d7d3d3; --n400:#bab6b6; --n500:#9b9797;
+  --n600:#7d7979; --n700:#605d5d; --n800:#444141; --n900:#2d2b2b;
+  --a100:#fff2ef; --a200:#ffe0d9; --a600:#dd2b0f; --a700:#ae1800; --a800:#7c1405;
+  --safe-b:env(safe-area-inset-bottom,0px); --safe-t:env(safe-area-inset-top,12px);
+  --f:'Inter Tight',-apple-system,'Segoe UI',Roboto,sans-serif;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;border-radius:0}
+html,body{height:100%;overscroll-behavior:none}
+body{background:var(--text);font-family:var(--f);color:var(--text);font-size:15px;line-height:1.45;-webkit-font-smoothing:antialiased}
+button,input{font-family:inherit;font-size:inherit;color:inherit;border:0;background:none;border-radius:0}
+button{cursor:pointer;text-align:left}
+button:active{transform:scale(.98)}
+input{outline:none}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.tnum{font-variant-numeric:tabular-nums}
+.kick{font-weight:800;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--n600)}
+@keyframes screenIn{0%{opacity:0;transform:translateY(14px)}100%{opacity:1;transform:none}}
+@keyframes stamp{0%{transform:scale(.5)}60%{transform:scale(1.18)}100%{transform:scale(1)}}
+@keyframes popA{0%{opacity:.2;transform:translateY(8px)}100%{opacity:1;transform:none}}
+@keyframes popB{0%{opacity:.2;transform:translateY(8px)}100%{opacity:1;transform:none}}
+@keyframes sheetUp{0%{transform:translateY(100%)}100%{transform:none}}
+@keyframes fadeIn{0%{opacity:0}100%{opacity:1}}
+@keyframes pushIn{0%{transform:translateY(-120%);opacity:0}60%{transform:translateY(6px);opacity:1}100%{transform:none;opacity:1}}
+@keyframes pushOut{0%{transform:none;opacity:1}100%{transform:translateY(-120%);opacity:0}}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.35}}
+
+#app{position:fixed;inset:0;max-width:520px;margin:0 auto;background:var(--bg);display:flex;flex-direction:column;overflow:hidden}
+#view{flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:calc(var(--safe-t) + 8px) 0 16px}
+.screen{animation:screenIn .4s cubic-bezier(.2,.8,.2,1) both}
+
+/* шапка */
+.head{padding:8px 20px 18px}
+.krow{display:flex;align-items:center;gap:8px}
+.krow .sq{width:10px;height:10px;background:var(--accent);flex:none}
+.krow .kick{color:var(--n600)}
+.krow .cfg{margin-left:auto;font-weight:800;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--n500);padding:6px 0 6px 12px}
+h1{font-weight:800;font-size:40px;line-height:1.12;letter-spacing:-.02em;margin-top:6px}
+
+/* полоса статистики */
+.statbar{display:grid;grid-template-columns:1fr 1fr 1fr;border-top:2px solid var(--text);border-bottom:2px solid var(--text)}
+.statbar>div{padding:14px;border-left:1px solid var(--divider)}
+.statbar>div:first-child{border-left:0;padding-left:20px}
+.statbar>div:last-child{padding-right:20px}
+.statbar .n{font-weight:800;font-size:34px;line-height:1;letter-spacing:-.02em}
+.statbar .n.acc{color:var(--a600)}
+.statbar .n.fo{font-size:30px}
+.statbar .l{font-size:10.5px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--n600);margin-top:6px}
+
+/* план на сегодня */
+.sec{padding:18px 20px 0}
+.sechead{display:flex;align-items:center;justify-content:space-between;margin-bottom:2px}
+.link{font-weight:800;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--a700)}
+.trow{display:flex;align-items:center;gap:12px;min-height:44px;padding:12px 0;border-bottom:1px solid var(--n300)}
+.cbox{width:22px;height:22px;flex:none;border:2px solid var(--text);display:flex;align-items:center;justify-content:center;
+  font-size:13px;font-weight:800;color:#fff;cursor:pointer}
+.cbox.done{border-color:var(--accent);background:var(--accent);animation:stamp .3s cubic-bezier(.3,1.4,.5,1)}
+.trow .tx{flex:1;min-width:0}
+.trow .tt{font-size:14px}
+.trow .tt.done{color:var(--n500);text-decoration:line-through}
+.trow .meta{font-size:10.5px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--n500);margin-top:2px}
+.badge{display:inline-block;font-size:9.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;
+  background:var(--a200);color:var(--a800);padding:2px 6px;margin-left:6px;vertical-align:1px}
+.fbtn{flex:none;border:1px solid var(--text);font-weight:800;font-size:11px;letter-spacing:.04em;text-transform:uppercase;padding:8px 10px}
+.fbtn:active{background:var(--text);color:#fff}
+.xbtn{flex:none;color:var(--n400);font-size:17px;font-weight:800;padding:4px 6px}
+.xbtn:active{color:var(--a600)}
+.emptyrow{border:2px dashed var(--n400);padding:18px 16px;font-size:13.5px;color:var(--n600);cursor:pointer;margin-top:8px}
+
+/* чек-ин */
+.checkin{display:flex;align-items:center;justify-content:space-between;width:100%;min-height:48px;
+  padding:15px 16px;background:var(--text);color:#fff;font-weight:800;font-size:14px;letter-spacing:.02em;margin-top:18px}
+.checkin:active{background:var(--accent)}
+.checkin.doneD{background:var(--n200);color:var(--n600);pointer-events:none}
+
+/* постер */
+.poster{background:var(--accent);color:#fff;padding:22px 20px 20px;margin-top:22px}
+.poster .k{font-size:10.5px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;opacity:.85}
+.poster .q{font-weight:800;font-size:24px;line-height:1.15;letter-spacing:-.01em;margin:10px 0 16px}
+.poster button{border:1px solid #fff;color:#fff;font-weight:800;font-size:11px;letter-spacing:.06em;text-transform:uppercase;padding:10px 14px}
+.poster button:active{background:#fff;color:var(--accent)}
+
+/* неделя */
+.card{border:2px solid var(--text);padding:14px 16px;margin:0 20px 16px;background:var(--bg)}
+.goalfield{width:100%;border-bottom:1px solid var(--n400);padding:8px 0;font-size:14px;background:transparent}
+.pbar{height:8px;background:var(--n300);margin-top:10px}
+.pbar i{display:block;height:100%;background:var(--accent);transition:width .3s}
+.daycard{border:1px solid var(--n400);background:var(--bg);margin:0 20px 10px;padding:12px 14px}
+.daycard.today{border:2px solid var(--text)}
+.dayhead{display:flex;align-items:center;gap:8px}
+.dayhead .nm{font-weight:800;font-size:15px}
+.daycard.today .dayhead .nm{color:var(--a700)}
+.dayhead .dt{font-size:11px;color:var(--n500)}
+.dayhead .tb{font-size:9.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;background:var(--accent);color:#fff;padding:2px 6px}
+.dayhead .plus{margin-left:auto;font-size:18px;font-weight:800;color:var(--a700);padding:2px 8px}
+.carrybtn{font-size:10.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--a700);flex:none;padding:6px 0 6px 8px}
+.addform{background:var(--n100);padding:12px;margin-top:10px}
+.chips{display:flex;gap:8px;flex-wrap:wrap}
+.chip{border:1px solid var(--text);font-weight:800;font-size:12px;padding:8px 12px;min-height:34px;display:flex;align-items:center}
+.chip.on{background:var(--text);color:#fff}
+.fld{width:100%;border:1px solid var(--n400);background:#fff;padding:10px 12px;font-size:14px;margin-top:8px}
+.abtns{display:flex;gap:8px;margin-top:10px}
+.abtn{background:var(--accent);color:#fff;font-weight:800;font-size:12px;letter-spacing:.04em;text-transform:uppercase;padding:11px 14px}
+.abtn.gh{background:transparent;color:var(--n600);border:1px solid var(--n400)}
+.planbtn{background:var(--text);color:#fff;font-weight:800;font-size:12px;letter-spacing:.06em;text-transform:uppercase;padding:12px 14px}
+.planbtn:active{background:var(--accent)}
+
+/* таймер */
+#tsheet{position:fixed;inset:0;z-index:40;background:var(--text);color:#fff;display:none;flex-direction:column;
+  max-width:520px;margin:0 auto;animation:sheetUp .4s cubic-bezier(.2,.9,.25,1) both;
+  padding:calc(var(--safe-t) + 10px) 20px calc(var(--safe-b) + 16px)}
+#tsheet .top{display:flex;align-items:center;gap:8px}
+#tsheet .top .sq{width:10px;height:10px;background:var(--accent)}
+#tsheet .top .k{font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;opacity:.7}
+#tsheet .top .x{margin-left:auto;font-size:22px;font-weight:800;color:#fff;padding:4px 8px}
+#tsheet .mid{flex:1;display:flex;flex-direction:column;justify-content:center;gap:14px}
+#tsheet .task{font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;opacity:.6}
+#tsheet .clock{font-weight:800;font-size:92px;line-height:1;letter-spacing:-.03em}
+#tsheet .tbar{height:6px;background:rgba(255,255,255,.18)}
+#tsheet .tbar i{display:block;height:100%;background:var(--accent);transition:width 1s linear}
+#tsheet .sub{font-size:10.5px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;opacity:.55}
+.presets{display:grid;grid-template-columns:1fr 1fr 1fr}
+.preset{border:1px solid #fff;color:#fff;font-weight:800;font-size:13px;padding:13px 0;text-align:center}
+.preset.on{background:#fff;color:var(--text)}
+.gobtn{width:100%;background:var(--accent);color:#fff;font-weight:800;font-size:15px;letter-spacing:.04em;text-transform:uppercase;
+  min-height:52px;padding:15px;text-align:center;margin-top:10px}
+.gobtn:active{background:var(--a600)}
+.resetbtn{width:100%;border:1px solid #fff;color:#fff;font-weight:800;font-size:12px;letter-spacing:.05em;text-transform:uppercase;padding:12px;text-align:center;margin-top:8px}
+#tsheet .hint{font-size:11.5px;opacity:.55;margin-top:12px}
+
+/* мини-таймер */
+#mini{display:none;align-items:center;gap:10px;background:var(--text);color:#fff;padding:11px 16px;cursor:pointer;
+  animation:sheetUp .3s cubic-bezier(.2,.9,.25,1) both}
+#mini .dot{width:8px;height:8px;background:var(--accent);animation:blink 1.2s infinite;flex:none}
+#mini .t{font-weight:800;font-size:17px}
+#mini .lbl{flex:1;min-width:0;font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;opacity:.7;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#mini button{border:1px solid #fff;color:#fff;font-weight:800;font-size:11px;letter-spacing:.05em;text-transform:uppercase;padding:7px 10px;flex:none}
+
+/* таб-бар */
+.tabs{display:grid;grid-template-columns:1fr 1fr 1fr;border-top:2px solid var(--text);background:var(--bg)}
+.tabs button{padding:14px 0 calc(14px + var(--safe-b));text-align:center;font-weight:800;font-size:12px;
+  letter-spacing:.06em;text-transform:uppercase;color:var(--n500);min-height:44px;transition:color .2s,box-shadow .25s}
+.tabs button.on{color:var(--a700);box-shadow:inset 0 3px 0 var(--accent)}
+.tabs button.timer{background:var(--accent);color:#fff}
+
+/* шторки: мастер и настройки */
+.veil{position:fixed;inset:0;background:rgba(32,30,29,.55);z-index:50;animation:fadeIn .25s both;display:flex;align-items:flex-end}
+.sheet{width:100%;max-width:520px;margin:0 auto;background:var(--bg);border-top:4px solid var(--accent);
+  max-height:86%;overflow-y:auto;animation:sheetUp .38s cubic-bezier(.2,.9,.25,1) both;
+  padding:18px 20px calc(20px + var(--safe-b))}
+.sheet .k{font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--n600)}
+.sheet h2{font-weight:800;font-size:24px;letter-spacing:-.01em;margin:6px 0 4px}
+.sheet .d{font-size:13.5px;color:var(--n700);margin-bottom:14px}
+.wide{display:flex;align-items:center;justify-content:space-between;width:100%;background:var(--accent);color:#fff;
+  font-weight:800;font-size:13px;letter-spacing:.04em;text-transform:uppercase;padding:15px 16px;margin-top:14px;min-height:48px}
+.wide.dark{background:transparent;color:var(--text);border:2px solid var(--text)}
+.count{font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--n600);margin-top:10px}
+
+/* уведомления */
+#notifs{position:fixed;top:calc(var(--safe-t) + 6px);left:0;right:0;z-index:70;display:flex;flex-direction:column;
+  gap:8px;padding:0 12px;max-width:520px;margin:0 auto;pointer-events:none}
+.push{background:#fff;border:1px solid var(--n300);box-shadow:0 18px 44px -12px rgba(32,30,29,.4);pointer-events:auto}
+.push.in{animation:pushIn .5s cubic-bezier(.3,1.1,.4,1) both}
+.push.out{animation:pushOut .35s both}
+.push .b{display:flex;gap:10px;padding:12px 12px 10px}
+.push .icn{width:34px;height:34px;background:var(--accent);color:#fff;font-weight:800;font-size:15px;
+  display:flex;align-items:center;justify-content:center;flex:none}
+.push .tt{font-size:13.5px;font-weight:800}
+.push .now{font-size:10px;color:var(--n500);margin-left:6px;font-weight:400}
+.push .bd{font-size:12.5px;color:var(--n700);margin-top:2px;line-height:1.4}
+.push .acts{display:grid;grid-template-columns:1fr 1fr;border-top:1px solid var(--n300)}
+.push .acts button{padding:11px;text-align:center;font-weight:800;font-size:11.5px;letter-spacing:.05em;text-transform:uppercase}
+.push .acts button:first-child{color:var(--a700);border-right:1px solid var(--n300)}
+.push .acts button:last-child{color:var(--n600)}
+
+/* iOS-диалог разрешения (единственное скругление — это ОС) */
+.perm{position:fixed;inset:0;z-index:80;background:rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center;animation:fadeIn .25s both}
+.perm .box{width:270px;background:#f2f2f2;border-radius:14px;overflow:hidden;text-align:center;font-family:-apple-system,'SF Pro Text',var(--f)}
+.perm h3{font-size:17px;font-weight:600;padding:18px 16px 4px;letter-spacing:0}
+.perm p{font-size:13px;color:#333;padding:0 16px 16px;line-height:1.35}
+.perm .row{display:grid;grid-template-columns:1fr 1fr;border-top:.5px solid rgba(0,0,0,.2)}
+.perm .row button{padding:12px;text-align:center;font-size:17px;color:#0a84ff;border-radius:0}
+.perm .row button:last-child{border-left:.5px solid rgba(0,0,0,.2);font-weight:600}
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="view"></div>
+  <div id="mini" onclick="openTimer()">
+    <span class="dot"></span><span class="t tnum" id="miniClock">25:00</span>
+    <span class="lbl" id="miniLbl">Свободная сессия</span>
+    <button onclick="toggleRun(event)" id="miniBtn">Пуск</button>
+  </div>
+  <nav class="tabs">
+    <button id="tab-today" class="on" onclick="go('today')">Сегодня</button>
+    <button class="timer" onclick="openTimer()">Таймер</button>
+    <button id="tab-plan" onclick="go('plan')">Неделя</button>
+  </nav>
+  <div id="tsheet"></div>
+  <div id="overlay"></div>
+  <div id="notifs"></div>
+</div>
+
+<script>
+/* ==================== данные ==================== */
+const DEF = {
+  name: '', examDate: '2027-06-01', firstUse: null,
+  subjects: ['Рус', 'Мат', 'Инф', 'Англ'],
+  entries: [],            /* {day 0-6, subj, topic, time, done, carried} */
+  weekGoal: '', weekStart: null,
+  streak: 0, lastCheck: '',
+  quoteIdx: 0,
+  focus: { date: '', sec: 0 },
+  timer: { running: false, presetSec: 1500, leftSec: 1500, task: '', endTs: 0 },
+  permAsked: false, granted: false,
+};
+let S = load();
+function load(){ try{ const r = localStorage.getItem('motorapp'); if (r){ const s = JSON.parse(r); return Object.assign({}, DEF, s, { focus: Object.assign({}, DEF.focus, s.focus), timer: Object.assign({}, DEF.timer, s.timer) }); } }catch(e){} return JSON.parse(JSON.stringify(DEF)); }
+function save(){ try{ localStorage.setItem('motorapp', JSON.stringify(S)); }catch(e){} }
+function esc(s){ return String(s).replace(/[&<>"]/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m])); }
+
+const DAYN = ['Пн','Вт','Ср','Чт','Пт','Сб','Вс'];
+const MONG = ['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'];
+function dk(ts){ const d = new Date(ts); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+function todayIdx(){ return (new Date().getDay()+6)%7; }
+function mondayTs(){ const d = new Date(); d.setHours(0,0,0,0); return d.getTime() - todayIdx()*86400000; }
+function examDays(){ const e = new Date(S.examDate+'T09:00:00'); return Math.max(0, Math.ceil((e - Date.now())/86400000)); }
+function weekLabel(){
+  const m = mondayTs(), a = new Date(m), b = new Date(m+6*86400000);
+  return a.getMonth() === b.getMonth()
+    ? a.getDate() + ' — ' + b.getDate() + ' ' + MONG[b.getMonth()]
+    : a.getDate() + ' ' + MONG[a.getMonth()] + ' — ' + b.getDate() + ' ' + MONG[b.getMonth()];
+}
+function weekNums(){
+  const total = Math.max(1, Math.ceil((new Date(S.examDate) - new Date(S.firstUse)) / (7*86400000)));
+  const passed = Math.floor((mondayTs() - new Date(S.firstUse).getTime()) / (7*86400000));
+  return [Math.min(total, Math.max(1, passed + 1)), total];
+}
+function quotes(){
+  const n = examDays();
+  return [
+    'Не обязательно быть лучшим. Достаточно быть чуть лучше, чем вчера.',
+    'Экзамен сдаёт не тот, кто больше всех знает, а тот, кто не бросил.',
+    n + ' дней — это ' + n + ' маленьких шагов. Сегодня нужен только один.',
+    'Устал — отдохни. Но не сдавайся.',
+    'Каждая закрытая тема — минус один страх на экзамене.',
+  ];
+}
+
+/* ==================== миграции при запуске ==================== */
+(function boot(){
+  const t = dk(Date.now());
+  if (!S.firstUse){ S.firstUse = t; }
+  if (!S.weekStart){ S.weekStart = dk(mondayTs()); }
+  /* стрик: пропустил день — обнулился */
+  if (S.lastCheck && S.lastCheck !== t && S.lastCheck !== dk(Date.now()-86400000)) S.streak = 0;
+  /* копилка фокуса живёт один день */
+  if (S.focus.date !== t){ S.focus = { date: t, sec: 0 }; }
+  /* новая неделя: сделанное — в архив, несделанное — на понедельник с бейджем */
+  const nm = dk(mondayTs());
+  if (S.weekStart !== nm){
+    const carried = S.entries.filter(e => !e.done).map(e => ({ ...e, day: 0, carried: true }));
+    S.entries = carried; S.weekStart = nm; S.weekGoal = '';
+    if (carried.length) setTimeout(() => pushNotif({ title: 'Новая неделя', body: 'Невыполненное с прошлой недели перенёс на понедельник — ' + carried.length + ' шт.', primaryLabel: 'К плану', dismissLabel: 'Ок', onPrimary: () => go('plan') }), 1200);
+  }
+  /* таймер дожил до конца, пока приложение было закрыто */
+  if (S.timer.running && S.timer.endTs && Date.now() >= S.timer.endTs){
+    finishSession(true);
+  }
+  save();
+})();
+
+/* ==================== уведомления ==================== */
+let _nid = 0;
+function pushNotif(n){
+  const id = ++_nid;
+  const box = document.getElementById('notifs');
+  const el = document.createElement('div');
+  el.className = 'push in'; el.id = 'pn' + id;
+  el.innerHTML = '<div class="b"><div class="icn">Е!</div><div style="flex:1;min-width:0">'+
+    '<div class="tt">' + esc(n.title) + '<span class="now">сейчас</span></div>'+
+    '<div class="bd">' + esc(n.body) + '</div></div></div>'+
+    '<div class="acts"><button id="pnp' + id + '">' + esc(n.primaryLabel || 'Ок') + '</button>'+
+    '<button id="pnd' + id + '">' + esc(n.dismissLabel || 'Закрыть') + '</button></div>';
+  box.appendChild(el);
+  const hide = () => { if (!el.parentNode) return; el.className = 'push out'; setTimeout(() => el.remove(), 360); };
+  el.querySelector('#pnp' + id).onclick = () => { hide(); if (n.onPrimary) n.onPrimary(); };
+  el.querySelector('#pnd' + id).onclick = () => { hide(); if (n.onDismiss) n.onDismiss(); };
+  setTimeout(hide, n.ttl || 9000);
+  if (S.granted && 'Notification' in window && Notification.permission === 'granted' && document.hidden){
+    try{ new Notification(n.title, { body: n.body, icon: 'icons/icon-192.png' }); }catch(e){}
+  }
+}
+
+/* ==================== стрик и фокус ==================== */
+function extendStreak(){
+  const t = dk(Date.now());
+  if (S.lastCheck === t) return false;
+  S.lastCheck = t; S.streak += 1; save(); return true;
+}
+function focusShown(){
+  return S.focus.sec + (S.timer.presetSec - curLeft());
+}
+function fmtMS(sec){ sec = Math.max(0, Math.round(sec)); return String(Math.floor(sec/60)).padStart(2,'0') + ':' + String(sec%60).padStart(2,'0'); }
+
+/* ==================== таймер (по реальным часам) ==================== */
+function curLeft(){
+  if (S.timer.running && S.timer.endTs) return Math.max(0, Math.ceil((S.timer.endTs - Date.now())/1000));
+  return S.timer.leftSec;
+}
+function openTimer(task){
+  if (typeof task === 'string' && task) S.timer.task = task;
+  timerOpen = true; save(); renderTimer(); renderMini();
+  document.getElementById('tsheet').style.display = 'flex';
+}
+function closeTimer(){ timerOpen = false; document.getElementById('tsheet').style.display = 'none'; renderMini(); }
+function toggleRun(ev){
+  if (ev) ev.stopPropagation();
+  if (S.timer.running){
+    S.timer.leftSec = curLeft(); S.timer.running = false; S.timer.endTs = 0;
+  } else {
+    if (S.timer.leftSec <= 0) S.timer.leftSec = S.timer.presetSec;
+    S.timer.endTs = Date.now() + S.timer.leftSec*1000; S.timer.running = true;
+  }
+  save(); renderTimer(); renderMini();
+}
+function setPreset(min){
+  /* смена пресета не сжигает прошедшее — банкуем */
+  bankElapsed();
+  S.timer.presetSec = min*60; S.timer.leftSec = min*60; S.timer.running = false; S.timer.endTs = 0;
+  save(); renderTimer(); renderMini(); renderToday(false);
+}
+function bankElapsed(){
+  const done = S.timer.presetSec - curLeft();
+  if (done > 0) S.focus.sec += done;
+}
+function resetTimer(){
+  bankElapsed();
+  S.timer.running = false; S.timer.endTs = 0; S.timer.leftSec = S.timer.presetSec;
+  save(); renderTimer(); renderMini(); renderToday(false);
+}
+function finishSession(silentBoot){
+  const mins = Math.round(S.timer.presetSec/60);
+  S.focus.sec += S.timer.presetSec;
+  S.timer.running = false; S.timer.endTs = 0; S.timer.leftSec = S.timer.presetSec;
+  const grew = extendStreak();
+  save();
+  const body = '+' + mins + ' мин в копилку.' + (grew ? ' Стрик продлён — красавчик.' : ' Так держать.');
+  if (!silentBoot) pushNotif({ title: 'Сессия завершена', body, primaryLabel: 'Ещё одну', dismissLabel: 'Хватит',
+    onPrimary: () => { openTimer(); toggleRun(); } });
+  else setTimeout(() => pushNotif({ title: 'Сессия завершена', body, primaryLabel: 'Ещё одну', dismissLabel: 'Хватит',
+    onPrimary: () => { openTimer(); toggleRun(); } }), 900);
+}
+
+/* тик раз в секунду */
+setInterval(() => {
+  if (S.timer.running){
+    if (curLeft() <= 0){ finishSession(false); renderTimer(); renderMini(); renderToday(false); return; }
+    if (timerOpen){
+      const c = document.getElementById('tClock'); if (c) c.textContent = fmtMS(curLeft());
+      const el = Math.floor((S.timer.presetSec - curLeft())/60);
+      const s2 = document.getElementById('tSub'); if (s2) s2.textContent = 'Прошло ' + el + ' мин / цель ' + Math.round(S.timer.presetSec/60) + ' мин';
+      const b = document.getElementById('tBar'); if (b) b.style.width = Math.min(100, (S.timer.presetSec-curLeft())/S.timer.presetSec*100) + '%';
+    }
+    const mc = document.getElementById('miniClock'); if (mc) mc.textContent = fmtMS(curLeft());
+    const fo = document.getElementById('foNum'); if (fo) fo.textContent = fmtMS(focusShown());
+  }
+}, 1000);
+
+/* ==================== экран: Сегодня ==================== */
+let screen = 'today', timerOpen = false;
+function go(name){
+  screen = name;
+  document.getElementById('tab-today').className = name === 'today' ? 'on' : '';
+  document.getElementById('tab-plan').className = name === 'plan' ? 'on' : '';
+  closeTimer();
+  if (name === 'today') renderToday(true); else renderPlan(true);
+}
+function meta(e){ return e.subj + (e.time ? ' · ' + e.time : ''); }
+function renderToday(anim){
+  const t = todayIdx();
+  const [wc, wt] = weekNums();
+  const d = new Date();
+  const kick = DAYN[t].toUpperCase() + ' · ' + d.getDate() + ' ' + MONG[d.getMonth()].toUpperCase() + ' · НЕДЕЛЯ ' + wc + '/' + wt;
+  const checked = S.lastCheck === dk(Date.now());
+  const todays = S.entries.map((e,i)=>({ ...e, i })).filter(e => e.day === t);
+  let h = '<div class="screen"' + (anim ? '' : ' style="animation:none"') + '>';
+  h += '<div class="head"><div class="krow"><span class="sq"></span><span class="kick">' + kick + '</span>'+
+    '<button class="cfg" onclick="openSettings()">Настр.</button></div>'+
+    '<h1>Привет' + (S.name ? ',<br>' + esc(S.name) : ',<br>боец') + '</h1></div>';
+  h += '<div class="statbar">'+
+    '<div><div class="n tnum">' + examDays() + '</div><div class="l">дней до ЕГЭ</div></div>'+
+    '<div><div class="n acc tnum" style="animation:' + (S.streak%2?'popA':'popB') + ' .45s both">' + S.streak + '</div><div class="l">стрик, дней</div></div>'+
+    '<div><div class="n fo tnum" id="foNum">' + fmtMS(focusShown()) + '</div><div class="l">фокус сегодня</div></div></div>';
+  h += '<div class="sec"><div class="sechead"><span class="kick">План на сегодня</span>'+
+    '<button class="link" onclick="go(\'plan\')">Неделя →</button></div>';
+  if (!todays.length){
+    h += '<div class="emptyrow" onclick="go(\'plan\')">На сегодня пусто. Тапни, чтобы спланировать неделю.</div>';
+  } else todays.forEach(e => {
+    h += '<div class="trow"><span class="cbox' + (e.done?' done':'') + '" onclick="toggleE(' + e.i + ')">' + (e.done?'✓':'') + '</span>'+
+      '<span class="tx"><span class="tt' + (e.done?' done':'') + '">' + esc(e.topic) + (e.carried?'<span class="badge">Перенос</span>':'') + '</span>'+
+      '<span class="meta">' + esc(meta(e)) + '</span></span>'+
+      '<button class="fbtn" onclick="openTimer(\'' + esc(e.subj) + ' · ' + esc(e.topic).replace(/'/g,'’') + '\')">Фокус</button></div>';
+  });
+  h += '<button class="checkin' + (checked?' doneD':'') + '" onclick="checkIn()">'+
+    '<span>' + (checked ? '✓ Сегодня ты в деле. Стрик продлён' : 'Я сегодня занимался — продлить стрик') + '</span><span>→</span></button>';
+  h += '</div>';
+  const q = quotes()[S.quoteIdx % 5];
+  h += '<div class="poster"><div class="k">Мысль дня</div>'+
+    '<div class="q" style="animation:' + (S.quoteIdx%2?'popA':'popB') + ' .4s both">' + esc(q) + '</div>'+
+    '<button onclick="S.quoteIdx++;save();renderToday(false)">Ещё →</button></div>';
+  h += '</div>';
+  document.getElementById('view').innerHTML = h;
+}
+function checkIn(){
+  if (extendStreak()) renderToday(false);
+}
+function toggleE(i){
+  S.entries[i].done = !S.entries[i].done; save();
+  if (screen === 'today') renderToday(false); else renderPlan(false);
+}
+
+/* ==================== экран: Неделя ==================== */
+let addingDay = null, formSubj = null;
+function renderPlan(anim){
+  const t = todayIdx();
+  const m = mondayTs();
+  const total = S.entries.length, done = S.entries.filter(e => e.done).length;
+  const pct = total ? Math.round(done/total*100) : 0;
+  formSubj = formSubj || S.subjects[0];
+  let h = '<div class="screen"' + (anim ? '' : ' style="animation:none"') + '>';
+  h += '<div class="head" style="padding-bottom:14px"><div class="krow"><span class="sq"></span>'+
+    '<span class="kick">' + weekLabel().toUpperCase() + '</span>'+
+    '<button class="planbtn" style="margin-left:auto" onclick="openWizard()">План →</button></div>'+
+    '<h1>Неделя</h1></div>';
+  h += '<div class="card"><div class="kick" style="color:var(--a700)">Цель недели</div>';
+  if (S.weekGoal) h += '<div style="font-weight:800;font-size:18px;margin-top:6px">' + esc(S.weekGoal) + '</div>';
+  h += '<input class="goalfield" placeholder="' + (S.weekGoal ? 'изменить цель…' : 'какая цель на эту неделю?') + '" '+
+    'onkeydown="if(event.key===\'Enter\')saveGoal(this)" onblur="saveGoal(this)">';
+  h += '<div class="kick tnum" style="margin-top:10px">' + done + ' из ' + total + ' пунктов · ' + pct + '%</div>'+
+    '<div class="pbar"><i style="width:' + pct + '%"></i></div></div>';
+  for (let d2 = 0; d2 < 7; d2++){
+    const list = S.entries.map((e,i)=>({ ...e, i })).filter(e => e.day === d2);
+    const dd = new Date(m + d2*86400000);
+    h += '<div class="daycard' + (d2===t?' today':'') + '" style="animation:screenIn .4s cubic-bezier(.2,.8,.2,1) ' + (d2*45) + 'ms both">'+
+      '<div class="dayhead"><span class="nm">' + DAYN[d2] + '</span>'+
+      '<span class="dt tnum">' + String(dd.getDate()).padStart(2,'0') + '.' + String(dd.getMonth()+1).padStart(2,'0') + '</span>'+
+      (d2===t?'<span class="tb">Сегодня</span>':'') +
+      '<button class="plus" onclick="startAdd(' + d2 + ')">+</button></div>';
+    list.forEach(e => {
+      h += '<div class="trow"><span class="cbox' + (e.done?' done':'') + '" onclick="toggleE(' + e.i + ')">' + (e.done?'✓':'') + '</span>'+
+        '<span class="tx"><span class="tt' + (e.done?' done':'') + '" style="font-size:13.5px">' + esc(e.topic) + (e.carried?'<span class="badge">Перенос</span>':'') + '</span>'+
+        '<span class="meta">' + esc(meta(e)) + '</span></span>'+
+        (d2 < t && !e.done ? '<button class="carrybtn" onclick="carryE(' + e.i + ')">→ Сегодня</button>' : '') +
+        '<button class="xbtn" onclick="removeE(' + e.i + ')">×</button></div>';
+    });
+    if (addingDay === d2){
+      h += '<div class="addform"><div class="chips">' + S.subjects.map(s2 =>
+        '<button class="chip' + (formSubj===s2?' on':'') + '" onclick="formSubj=\'' + esc(s2) + '\';renderPlan(false)">' + esc(s2) + '</button>').join('') + '</div>'+
+        '<input class="fld" id="fTopic" placeholder="Тема, напр. параметры">'+
+        '<input class="fld" id="fTime" placeholder="Время (необязательно), напр. 16:00–17:30">'+
+        '<div class="abtns"><button class="abtn" onclick="confirmAdd(' + d2 + ')">Добавить</button>'+
+        '<button class="abtn gh" onclick="addingDay=null;renderPlan(false)">Отмена</button></div></div>';
+    }
+    h += '</div>';
+  }
+  h += '<div style="height:8px"></div></div>';
+  document.getElementById('view').innerHTML = h;
+  if (addingDay !== null){ const f = document.getElementById('fTopic'); if (f) f.focus(); }
+}
+function saveGoal(inp){
+  const v = inp.value.trim();
+  if (v){ S.weekGoal = v; save(); renderPlan(false); }
+}
+function startAdd(d){ addingDay = d; renderPlan(false); }
+function confirmAdd(d){
+  const topic = document.getElementById('fTopic').value.trim();
+  const time = document.getElementById('fTime').value.trim();
+  if (!topic) return;
+  S.entries.push({ day: d, subj: formSubj, topic, time, done: false });
+  addingDay = null; save(); renderPlan(false);
+}
+function removeE(i){ S.entries.splice(i, 1); save(); renderPlan(false); }
+function carryE(i){ S.entries[i].day = todayIdx(); S.entries[i].carried = true; save(); renderPlan(false); }
+
+/* ==================== таймер: рендер ==================== */
+function renderTimer(){
+  const left = curLeft();
+  const pct = Math.min(100, (S.timer.presetSec - left)/S.timer.presetSec*100);
+  const run = S.timer.running;
+  const big = run ? 'Пауза' : (left !== S.timer.presetSec ? 'Продолжить' : 'Начать фокус');
+  let h = '<div class="top"><span class="sq"></span><span class="k">Фокус-сессия</span>'+
+    '<button class="x" onclick="closeTimer()">×</button></div>'+
+    '<div class="mid"><div class="task">' + esc(S.timer.task || 'Свободная сессия') + '</div>'+
+    '<div class="clock tnum" id="tClock">' + fmtMS(left) + '</div>'+
+    '<div class="tbar"><i id="tBar" style="width:' + pct + '%"></i></div>'+
+    '<div class="sub" id="tSub">Прошло ' + Math.floor((S.timer.presetSec-left)/60) + ' мин / цель ' + Math.round(S.timer.presetSec/60) + ' мин</div></div>'+
+    '<div class="presets">' + [25,45,90].map(p2 =>
+      '<button class="preset tnum' + (S.timer.presetSec===p2*60?' on':'') + '" onclick="setPreset(' + p2 + ')">' + p2 + ' мин</button>').join('') + '</div>'+
+    '<button class="gobtn" onclick="toggleRun()">' + big + '</button>'+
+    '<button class="resetbtn" onclick="resetTimer()">Сброс</button>'+
+    '<div class="hint">Закончишь сессию — минуты упадут в «фокус сегодня», а стрик продлится сам.</div>';
+  document.getElementById('tsheet').innerHTML = h;
+}
+function renderMini(){
+  const el = document.getElementById('mini');
+  const show = !timerOpen && (S.timer.running || S.timer.leftSec !== S.timer.presetSec);
+  el.style.display = show ? 'flex' : 'none';
+  if (show){
+    document.getElementById('miniClock').textContent = fmtMS(curLeft());
+    document.getElementById('miniLbl').textContent = S.timer.task || 'Свободная сессия';
+    document.getElementById('miniBtn').textContent = S.timer.running ? 'Пауза' : 'Пуск';
+  }
+}
+
+/* ==================== мастер недели ==================== */
+let wizStep = 1, wizDay = 0, wizAdded = 0, wizSubj = null;
+function openWizard(){ wizStep = 1; wizAdded = 0; wizDay = todayIdx(); wizSubj = S.subjects[0]; renderWizard(); }
+function renderWizard(){
+  let inner;
+  if (wizStep === 1){
+    inner = '<div class="k">Шаг 1 из 2</div><h2>Цель недели</h2>'+
+      '<div class="d">Одна главная цель — так неделя не расползётся.</div>'+
+      '<input class="fld" id="wGoal" placeholder="напр. Закрыть 3 темы по русскому" value="' + esc(S.weekGoal) + '">'+
+      '<button class="wide" onclick="wizNext()"><span>Дальше: раскидать по дням</span><span>→</span></button>';
+  } else {
+    inner = '<div class="k">Шаг 2 из 2</div><h2>Раскидай темы</h2>'+
+      '<div class="d">Выбери день, предмет и тему — добавляй сколько нужно.</div>'+
+      '<div class="chips">' + DAYN.map((n2,d2) =>
+        '<button class="chip' + (wizDay===d2?' on':'') + '" style="flex:1;justify-content:center" onclick="wizDay=' + d2 + ';renderWizard()">' + n2 + '</button>').join('') + '</div>'+
+      '<div style="height:8px"></div>'+
+      '<div class="chips">' + S.subjects.map(s2 =>
+        '<button class="chip' + (wizSubj===s2?' on':'') + '" onclick="wizSubj=\'' + esc(s2) + '\';renderWizard()">' + esc(s2) + '</button>').join('') + '</div>'+
+      '<input class="fld" id="wTopic" placeholder="Тема, напр. параметры">'+
+      '<input class="fld" id="wTime" placeholder="Время (необязательно)">'+
+      '<button class="wide dark" onclick="wizAdd()"><span>+ Добавить в план</span></button>'+
+      (wizAdded ? '<div class="count tnum">Добавлено за этот сеанс: ' + wizAdded + '</div>' : '')+
+      '<button class="wide" onclick="closeWizard()"><span>Готово — неделя спланирована</span><span>→</span></button>';
+  }
+  document.getElementById('overlay').innerHTML =
+    '<div class="veil" onclick="if(event.target===this)closeWizard()"><div class="sheet">' + inner + '</div></div>';
+}
+function wizNext(){
+  const v = document.getElementById('wGoal').value.trim();
+  if (v) S.weekGoal = v;
+  wizStep = 2; save(); renderWizard();
+}
+function wizAdd(){
+  const topic = document.getElementById('wTopic').value.trim();
+  const time = document.getElementById('wTime').value.trim();
+  if (!topic) return;
+  S.entries.push({ day: wizDay, subj: wizSubj, topic, time, done: false });
+  wizAdded++; save(); renderWizard();
+}
+function closeWizard(){
+  const g = document.getElementById('wGoal');
+  if (g && g.value.trim()) S.weekGoal = g.value.trim();
+  save();
+  document.getElementById('overlay').innerHTML = '';
+  if (screen === 'plan') renderPlan(false); else renderToday(false);
+}
+
+/* ==================== настройки ==================== */
+function openSettings(){
+  let h = '<div class="k">Настройки</div><h2>Твой мотор</h2>'+
+    '<div class="d">Имя, дата первого экзамена и набор предметов.</div>'+
+    '<div class="kick">Имя</div><input class="fld" id="setName" value="' + esc(S.name) + '" placeholder="Как тебя зовут?">'+
+    '<div class="kick" style="margin-top:12px">Дата первого ЕГЭ</div><input class="fld" id="setExam" type="date" value="' + esc(S.examDate) + '">'+
+    '<div class="kick" style="margin-top:12px">Предметы</div><div class="chips" style="margin-top:8px">'+
+    S.subjects.map((s2,i2) => '<button class="chip" onclick="delSubj(' + i2 + ')">' + esc(s2) + ' ×</button>').join('') + '</div>'+
+    '<input class="fld" id="setSubj" placeholder="Новый предмет, напр. Физ" maxlength="8">'+
+    '<button class="wide dark" onclick="addSubj()"><span>+ Добавить предмет</span></button>'+
+    '<button class="wide" onclick="closeSettings()"><span>Сохранить</span><span>→</span></button>'+
+    '<div class="d" style="margin-top:16px">Семья приложений: '+
+    '<a href="../">EconCards</a> · <a href="../essay/">Сочинение</a> · <a href="../timer/">Фокус</a></div>';
+  document.getElementById('overlay').innerHTML =
+    '<div class="veil" onclick="if(event.target===this)closeSettings()"><div class="sheet">' + h + '</div></div>';
+}
+function addSubj(){
+  const v = document.getElementById('setSubj').value.trim();
+  if (!v || S.subjects.includes(v)) return;
+  S.subjects.push(v); save(); openSettings();
+}
+function delSubj(i){
+  if (S.subjects.length <= 1) return;
+  S.subjects.splice(i,1); save(); openSettings();
+}
+function closeSettings(){
+  const n = document.getElementById('setName'), e = document.getElementById('setExam');
+  if (n) S.name = n.value.trim();
+  if (e && e.value) S.examDate = e.value;
+  save();
+  document.getElementById('overlay').innerHTML = '';
+  renderToday(false);
+}
+
+/* ==================== разрешение на уведомления ==================== */
+function askPerm(){
+  if (S.permAsked) return;
+  setTimeout(() => {
+    document.getElementById('overlay').innerHTML =
+      '<div class="perm"><div class="box"><h3>«ЕГЭ Мотор» запрашивает разрешение на уведомления</h3>'+
+      '<p>Напоминания о занятиях, живой таймер фокуса и продление стрика.</p>'+
+      '<div class="row"><button onclick="permAnswer(false)">Не разрешать</button>'+
+      '<button onclick="permAnswer(true)">Разрешить</button></div></div></div>';
+  }, 900);
+}
+function permAnswer(yes){
+  S.permAsked = true;
+  document.getElementById('overlay').innerHTML = '';
+  if (yes && 'Notification' in window){
+    Notification.requestPermission().then(p => { S.granted = p === 'granted'; save(); });
+    S.granted = true;
+  } else S.granted = false;
+  save();
+  if (yes) setTimeout(remind, 1400);
+}
+function remind(){
+  const t = todayIdx();
+  const next = S.entries.find(e => e.day === t && !e.done);
+  if (!next) return;
+  const task = next.subj + ' · ' + next.topic;
+  pushNotif({
+    title: 'Пора заниматься',
+    body: next.topic + (next.time ? ' ждёт с ' + next.time.split('–')[0] + '.' : ' ждёт.') + ' 25 минут фокуса — и свободен.',
+    primaryLabel: 'Начать фокус', dismissLabel: 'Позже',
+    onPrimary: () => { openTimer(task); if (!S.timer.running) toggleRun(); },
+    onDismiss: () => setTimeout(remind, 10*60*1000),
+  });
+}
+
+/* ==================== старт ==================== */
+renderToday(true);
+renderMini();
+askPerm();
+if (!S.permAsked) {} else setTimeout(remind, 1500);
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(() => {});
+</script>
+</body>
+</html>

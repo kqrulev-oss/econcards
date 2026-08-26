@@ -1,5 +1,5 @@
 /* Фокус: офлайн после первого открытия. */
-const CACHE = 'focus-v2';
+const CACHE = 'motor-v1';
 const ASSETS = ['./', './index.html', './manifest.webmanifest',
   './icons/icon-192.png', './icons/icon-512.png', './icons/apple-touch-icon.png'];
 self.addEventListener('install', e => {

@@ -1,0 +1,15 @@
+{
+  "name": "ЕГЭ Мотор",
+  "short_name": "Мотор",
+  "description": "Мотивация к ЕГЭ: стрик, недельный план по темам и фокус-таймер.",
+  "lang": "ru",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f3f2f2",
+  "theme_color": "#f3f2f2",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}
