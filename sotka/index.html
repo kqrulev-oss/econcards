@@ -259,6 +259,8 @@ const LMAP = {}; LESSONS.forEach(l => LMAP[l.id] = l);
 /* Правила, которые трекает планировщик: все уроки из маршрутов заданий 1–26 */
 const ROUTE = [];
 EXAM.filter(e => e.n < 27).forEach(e => e.lessons.forEach(lid => { if (!ROUTE.includes(lid)) ROUTE.push(lid); }));
+const PRIMARY_PTS = {}; EXAM.forEach(e => PRIMARY_PTS[e.n] = e.pts);
+let LASTSEL = {}; // последний выбор в карточке-соответствии
 const PRIMARY = {}; // урок -> основное задание
 EXAM.filter(e => e.n < 27).forEach(e => e.lessons.forEach(lid => { if (!(lid in PRIMARY)) PRIMARY[lid] = e.n; }));
 ROUTE.sort((a, b) => PRIMARY[a] - PRIMARY[b] || a.localeCompare(b));
@@ -451,13 +453,24 @@ $('r-close').onclick = () => {
 /* ------------ сессия ------------ */
 /* очередь = список блоков-правил; внутри блока карточки идут, пока не будет 3 верных подряд (макс 6) */
 let SESS = null;
+/* полный формат ЕГЭ (мультивыбор, соответствия) даётся, когда правило уже держится:
+   сначала мышца на простых карточках, потом экзаменационная форма */
+const HARD = c => c.k === 'multi' || c.k === 'match';
 function pickCards(lid, n, excl) {
-  const pool = poolFor(lid).filter(c => !excl.has(c.id));
+  let pool = poolFor(lid).filter(c => !excl.has(c.id));
+  const r = S.rules[lid];
+  const ready = r && (r.passes >= 2 || ruleState(lid) === 'mst');
+  const soft = pool.filter(c => !HARD(c)), hard = pool.filter(HARD);
+  if (ready && hard.length) pool = hard.concat(soft);
+  else if (soft.length) pool = soft.concat(hard);
   const unseen = pool.filter(c => !S.seen[c.id]);
   const wrongs = pool.filter(c => S.seen[c.id] && S.wrong[c.id]);
   const rest = pool.filter(c => S.seen[c.id] && !S.wrong[c.id]);
   const shuf = a => a.sort(() => Math.random() - .5);
-  return shuf(wrongs).concat(shuf(unseen)).concat(shuf(rest)).slice(0, n);
+  const ordered = shuf(wrongs).concat(shuf(unseen)).concat(shuf(rest));
+  /* держим приоритет формата: у готовых правил экзаменационные идут первыми */
+  ordered.sort((a, b) => (ready ? (HARD(b) - HARD(a)) : (HARD(a) - HARD(b))));
+  return ordered.slice(0, n);
 }
 function buildPlan(focus) {
   const plan = [];
@@ -510,7 +523,7 @@ function renderCard(c) {
   const b = $('s-body'); $('s-foot').classList.add('hidden');
   let h = '<div class="fade"><div class="ck">' + esc(blockKick(c.les || curLes())) + '</div><div class="cq">' + esc(c.q) + '</div>';
   if (c.k === 'flip') {
-    h += '<button class="flipbtn" id="flipb">Показать ответ</button><div id="flipa" class="hidden"><div class="expl"><div class="ek ok">Ответ</div><div class="et">' + esc(c.a) + (c.e ? '\n\n' + esc(c.e) : '') + '</div></div><div class="selfrow"><button class="yes" id="fk-y">Знал</button><button id="fk-n">Не знал</button></div></div>';
+    h += '<button class="flipbtn" id="flipb">Показать ответ</button><div id="flipa" class="hidden"><div class="expl"><div class="ek ok">Ответ</div><div class="et">' + hl(c.a) + (c.e ? '\n\n' + hl(c.e) : '') + '</div></div><div class="selfrow"><button class="yes" id="fk-y">Знал</button><button id="fk-n">Не знал</button></div></div>';
     b.innerHTML = h + '</div>'; b.scrollTop = 0;
     $('flipb').onclick = () => { $('flipb').classList.add('hidden'); $('flipa').classList.remove('hidden'); };
     $('fk-y').onclick = () => answer(c, true, null);
@@ -598,6 +611,7 @@ function renderMatch(c, h) {
   const sel = {};
   const confirmPick = () => {
     if (Object.keys(sel).length < c.left.length) return;
+    LASTSEL = sel;
     let ok = true;
     c.left.forEach(l => {
       const good = c.map[l.id] === sel[l.id];
@@ -642,7 +656,13 @@ function answer(c, ok, oid) {
     if (c.k === 'multi') dg = c.o.map((o, i) => c.cs.includes(o.id) ? (i + 1) : '').join('');
     else if (c.k === 'match') dg = c.left.map(l => c.map[l.id]).join('');
     else dg = String(c.o.findIndex(o => o.id === c.c) + 1);
-    h += '<div class="expl"><div class="ek ' + (ok ? 'ok' : 'no') + '">' + (ok ? 'Верно' : 'Мимо') + ' · Ответ: ' + dg + '</div><div class="et">' + esc(c.e || '') + '</div></div>';
+    let verdict = ok ? 'Верно' : 'Мимо';
+    if (c.k === 'match' && !ok) {
+      const hit = c.left.filter(l => LASTSEL[l.id] === c.map[l.id]).length;
+      const pts = (PRIMARY_PTS[c.task] === 2) ? (hit >= c.left.length - 2 ? 1 : 0) : 0;
+      verdict = hit + ' из ' + c.left.length + (PRIMARY_PTS[c.task] === 2 ? ' · ' + pts + ' балл из 2' : '');
+    }
+    h += '<div class="expl"><div class="ek ' + (ok ? 'ok' : 'no') + '">' + verdict + ' · Ответ: ' + dg + '</div><div class="et">' + hl(c.e || '') + '</div></div>';
   }
   /* первая ошибка в новом правиле -> теория */
   const lid = curLes(); const L = LMAP[lid];
