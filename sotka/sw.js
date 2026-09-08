@@ -1,5 +1,5 @@
 /* Сотка: сеть -> кэш, полный оффлайн после первого открытия. */
-const CACHE = 'sotka-v9';
+const CACHE = 'sotka-v10';
 const ASSETS = ['./', './index.html', './manifest.webmanifest', './icons/icon-192.png', './icons/icon-512.png', './icons/icon-180.png'];
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)).then(() => self.skipWaiting()));
