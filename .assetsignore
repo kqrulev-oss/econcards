@@ -1,0 +1,11 @@
+# Что не выкладывать как файлы сайта
+.git
+.github
+data
+tools
+worker
+node_modules
+.wrangler
+wrangler.jsonc
+.assetsignore
+README.md
