@@ -26,11 +26,12 @@ Cloudflare → **Storage & Databases → KV → Create namespace**, наприм
    - (необязательно) `MODEL` — по умолчанию `gemini-flash-latest` (Google сам держит его на актуальной модели), при перегрузке сервер переключается на `gemini-flash-lite-latest`;
    - (необязательно) `DAILY_LIMIT` — ИИ-запросов на IP в сутки, по умолчанию 60.
 
-Через Wrangler то же самое:
+Через Wrangler то же самое (файл `wrangler.toml` уже лежит в этой папке):
 ```
-npx wrangler kv namespace create ZADACHNIK      # id вставить в wrangler.toml как binding DB
-npx wrangler deploy worker/worker.js --name zadachnik
-npx wrangler secret put GEMINI_KEY
+cd worker
+npx wrangler kv namespace create DB      # выданный id вписать в wrangler.toml
+npx wrangler deploy
+npx wrangler secret put GEMINI_KEY       # ключ вводится в терминале, в файлы не попадает
 ```
 
 ## 4. Подключить

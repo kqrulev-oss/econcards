@@ -1,0 +1,15 @@
+# Развёртывание сервера одной командой (нужен аккаунт Cloudflare):
+#   cd worker
+#   npx wrangler kv namespace create DB     # вставить выданный id ниже
+#   npx wrangler deploy
+#   npx wrangler secret put GEMINI_KEY      # ключ вводится в терминале, в файлы не попадает
+name = "zadachnik"
+main = "worker.js"
+compatibility_date = "2026-09-01"
+
+[[kv_namespaces]]
+binding = "DB"
+id = "ВСТАВЬТЕ_ID_ИЗ_kv_namespace_create"
+
+[vars]
+DAILY_LIMIT = "60"
