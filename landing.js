@@ -5,7 +5,7 @@
 const STUDIO = 'studio/';
 
 const phone = `
-  <div class="ld-phone" aria-hidden="true">
+  <div class="ld-phone">
     <div class="ld-phone-top">
       <span class="ld-phone-x">✕</span>
       <span class="ld-phone-bar"><i style="width:40%"></i></span>
@@ -15,9 +15,10 @@ const phone = `
     <div class="ld-phone-card">
       <p>Сколько Н пишется в слове?</p>
       <p class="ld-phone-word">серебря_ый</p>
-      <div class="ld-opt ok"><b>а</b> н</div>
-      <div class="ld-opt"><b>б</b> нн</div>
-      <div class="ld-phone-exp"><b>Разбор.</b> Суффикс -ЯН- → одна Н: серебряный.</div>
+      <button class="ld-opt" data-ok="1"><b>а</b> н</button>
+      <button class="ld-opt"><b>б</b> нн</button>
+      <div class="ld-phone-exp" hidden><b>Разбор.</b> Суффикс -ЯН- → одна Н: серебряный.</div>
+      <p class="ld-phone-hint">👆 Попробуйте ответить</p>
     </div>
     <div class="ld-phone-btn">Дальше</div>
   </div>`;
@@ -128,5 +129,13 @@ export function renderLanding(root, library) {
     if (c) location.search = '?t=' + encodeURIComponent(c);
   };
   root.querySelector('#join').onclick = join;
+  // Живой пример карточки: ответ, подсветка и разбор — как у ученика
+  const opts = [...root.querySelectorAll('.ld-opt')];
+  opts.forEach(o => o.onclick = () => {
+    opts.forEach(x => { x.disabled = true; if (x.dataset.ok) x.classList.add('ok'); });
+    if (!o.dataset.ok) o.classList.add('bad');
+    root.querySelector('.ld-phone-exp').hidden = false;
+    root.querySelector('.ld-phone-hint').textContent = o.dataset.ok ? 'Верно! Так ученик занимается каждый день' : 'Ошибка вернётся завтра — и репетитор её увидит';
+  });
   root.querySelector('#code').onkeydown = e => e.key === 'Enter' && join();
 }

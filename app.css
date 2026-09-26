@@ -333,7 +333,10 @@ input:focus, select:focus, textarea:focus { outline: 2px solid var(--accent); ou
 .ld-phone-card { background: #fff; border-radius: 16px; padding: 14px; font-size: 14px; }
 .ld-phone-card p { margin: 0 0 6px; line-height: 1.4; }
 .ld-phone-word { font-size: 18px; font-weight: 700; margin: 6px 0 12px !important; }
-.ld-opt { border: 1.5px solid #E3E6EC; border-radius: 10px; padding: 8px 10px; margin-top: 6px; }
+.ld-opt { display: block; width: 100%; text-align: left; font: inherit; color: inherit; background: #fff; border: 1.5px solid #E3E6EC; border-radius: 10px; padding: 8px 10px; margin-top: 6px; cursor: pointer; }
+.ld-opt:disabled { cursor: default; color: inherit; }
+.ld-opt.bad { border-color: #D93C3C; background: #FBE7E7; }
+.ld-phone-hint { font-size: 12px !important; color: var(--accent); font-weight: 600; margin: 10px 0 0 !important; text-align: center; }
 .ld-opt b { color: #6A7180; margin-right: 8px; }
 .ld-opt.ok { border-color: #1E9E5A; background: #E4F6EC; }
 .ld-phone-exp { background: #F4F5F8; border-radius: 10px; padding: 8px 10px; margin-top: 10px; font-size: 12.5px; line-height: 1.4; }
