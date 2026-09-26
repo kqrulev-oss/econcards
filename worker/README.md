@@ -8,6 +8,17 @@
 
 На бесплатных тарифах Cloudflare и Google AI Studio всё это стоит $0 при небольшом числе учеников.
 
+## Быстрый способ: одна кнопка
+
+[![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/kqrulev-oss/econcards/tree/main/worker)
+
+1. Нажмите кнопку и войдите в Cloudflare (регистрация бесплатная). Cloudflare попросит подключить GitHub: он скопирует папку `worker/` в новый репозиторий в вашем аккаунте.
+2. В поле `GEMINI_KEY` вставьте ключ Gemini (как его получить — шаг 1 ниже). Хранилище `DB` создастся само.
+3. Нажмите **Deploy** и скопируйте адрес вида `https://zadachnik.<аккаунт>.workers.dev`.
+4. Впишите этот адрес в `config.js` в корне сайта (шаг 4 ниже).
+
+Ниже — то же самое вручную.
+
 ## 1. Ключ Gemini (1 минута)
 1. Откройте https://aistudio.google.com/apikey — нужен только Google-аккаунт.
 2. «Create API key», скопируйте ключ. С мая 2026 ключи начинаются с `AQ.` — это нормально, сервер передаёт их в заголовке `x-goog-api-key`, как требует Google.
