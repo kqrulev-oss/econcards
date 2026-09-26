@@ -87,6 +87,7 @@ function viewList() {
         <li><b>Смотрите прогресс</b> — кто занимался, где ошибается, что разобрать на уроке. Готовый отчёт для родителей в один клик.</li>
       </ol>
       <button class="btn primary" id="new">Создать тренажёр</button>
+      <button class="btn" id="sample">Готовый пример за 1 клик</button>
       <label class="btn ghost">Импорт из файла<input type="file" accept=".json" id="imp" hidden></label>
     </section>
     ${packs.length ? `<h2>Мои тренажёры</h2>${packs.map(p => `
@@ -95,6 +96,19 @@ function viewList() {
         <span class="topic-meta">${isPublished(p) ? 'опубликован' : p.published ? 'есть правки' : 'черновик'}</span></a>`).join('')}` : ''}
     ${apiBase() ? '' : `<section class="panel warn-box"><b>Сервер не подключён.</b> Можно собирать наборы и смотреть их, но для ИИ, ссылок ученикам и отчётов нужен адрес сервера — укажите его в настройках тренажёра (инструкция в worker/README.md).</section>`}`;
   $app.querySelector('#new').onclick = () => { location.hash = `#/p/${newPack()}/add`; };
+  $app.querySelector('#sample').onclick = async e => {
+    e.target.disabled = true;
+    try {
+      const src = await loadPack('ege-rus', ROOT);
+      const id = newPack();
+      const p = db.packs[id];
+      Object.assign(p, { title: 'Пример: русский, ЕГЭ', subject: 'Русский язык', color: COLORS[1], tutor: '' });
+      importTopics(p, src, ['task-4', 'task-13', 'task-15']);
+      touch(p);
+      toast('Пример готов — нажмите «Попробовать», чтобы увидеть его глазами ученика');
+      location.hash = `#/p/${id}/cards`;
+    } catch (err) { toast(err.message); e.target.disabled = false; }
+  };
   $app.querySelector('#imp').onchange = async e => {
     const f = e.target.files[0];
     if (!f) return;
@@ -235,14 +249,15 @@ function viewAdd(p) {
   const box = shell(p, 'add', `
     <section class="panel">
       <h2>Из ваших материалов</h2>
-      <p class="muted">Вставьте конспект, правила, разбор задач или свой вариант с решениями. ИИ сделает карточки, а вы проверите их перед добавлением.</p>
+      <p class="muted">Вставьте конспект, правила или разбор задач — или загрузите PDF и фото страниц. ИИ сделает карточки, а вы проверите их перед добавлением.</p>
       <div class="field"><label for="mat">Материал</label><textarea id="mat" rows="10" placeholder="Например: правила пунктуации при причастном обороте с примерами…"></textarea></div>
       <div class="row">
-        <label class="btn small">Загрузить .txt<input type="file" accept=".txt,.md,.csv" id="file" hidden></label>
+        <label class="btn small">📎 PDF, фото или .txt<input type="file" accept=".txt,.md,.csv,.pdf,application/pdf,image/*" id="file" multiple hidden></label>
         <label class="row inline">Карточек: <input id="count" type="number" min="5" max="40" value="15" style="width:80px"></label>
         <button class="btn primary" id="gen" ${apiBase() ? '' : 'disabled'}>Сделать карточки</button>
       </div>
       ${apiBase() ? '' : '<p class="muted">Нужен сервер ИИ — укажите адрес во вкладке «Настройки».</p>'}
+      <div id="att" class="att"></div>
       <div id="gen-out"></div>
     </section>
     <section class="panel">
@@ -251,18 +266,40 @@ function viewAdd(p) {
       <div id="lib"><p class="muted">Загружаю…</p></div>
     </section>`);
 
+  const files = [];
+  const drawAtt = () => {
+    box.querySelector('#att').innerHTML = files.map((f, i) =>
+      `<span class="chip">${f.mime === 'application/pdf' ? '📄' : '🖼'} ${esc(f.name)}<button data-rm="${i}" aria-label="Убрать">✕</button></span>`).join('');
+  };
+  box.querySelector('#att').onclick = e => {
+    const b = e.target.closest('[data-rm]');
+    if (b) { files.splice(+b.dataset.rm, 1); drawAtt(); }
+  };
   box.querySelector('#file').onchange = async e => {
-    const f = e.target.files[0];
-    if (f) box.querySelector('#mat').value = (await f.text()).slice(0, 30000);
+    for (const f of e.target.files) {
+      try {
+        const a = await readAttachment(f);
+        if (a.text !== undefined) {
+          const mat = box.querySelector('#mat');
+          mat.value = (mat.value ? mat.value + '\n\n' : '') + a.text.slice(0, 30000);
+        } else {
+          if (files.reduce((n, x) => n + x.data.length, 0) + a.data.length > MAX_ATTACH) throw new Error('Слишком много файлов за раз — до 10 МБ всего');
+          files.push({ name: f.name, ...a });
+        }
+      } catch (err) { toast(`${f.name}: ${err.message}`); }
+    }
+    e.target.value = '';
+    drawAtt();
   };
   box.querySelector('#gen').onclick = async e => {
     const material = box.querySelector('#mat').value.trim();
-    if (material.length < 80) return toast('Добавьте больше текста — хотя бы абзац');
+    if (material.length < 80 && !files.length) return toast('Добавьте текст (хотя бы абзац), PDF или фото');
     const out = box.querySelector('#gen-out');
     e.target.disabled = true;
-    out.innerHTML = '<p class="muted">ИИ читает материал и делает карточки — это до минуты…</p>';
+    out.innerHTML = `<p class="muted">ИИ читает материал и делает карточки — это до ${files.length ? 'двух минут' : 'минуты'}…</p>`;
     try {
-      const r = await ai('generate', { material, subject: p.subject, count: +box.querySelector('#count').value || 15 });
+      const r = await ai('generate', { material, subject: p.subject, count: +box.querySelector('#count').value || 15,
+        files: files.map(({ mime, data }) => ({ mime, data })) });
       reviewGenerated(p, r, out);
     } catch (err) {
       out.innerHTML = `<p class="muted">${esc(err.message)}</p>`;
@@ -304,6 +341,53 @@ function reviewGenerated(p, { topics, cards }, out) {
   };
 }
 
+// Переносит темы библиотеки в набор репетитора вместе с карточками и теорией
+function importTopics(p, src, tids) {
+  const have = new Set(p.cards.map(c => c.id));
+  let n = 0;
+  for (const tid of tids) {
+    const t = src.topics.find(x => x.id === tid);
+    if (!t) continue;
+    if (!p.topics.some(x => x.id === tid)) p.topics.push({ id: tid, title: t.title, section: src.title });
+    for (const c of src.cards) if (c.t === tid && !have.has(c.id)) { p.cards.push(c); have.add(c.id); n++; }
+    for (const l of src.theory || []) if (l.topic === tid && !p.theory.some(x => x.id === l.id)) p.theory.push(l);
+  }
+  if (!p.subject) p.subject = src.subject;
+  return n;
+}
+
+// PDF и фото уходят в ИИ как вложения; фото уменьшаем, чтобы не гонять мегабайты
+const MAX_ATTACH = 14e6; // символов base64 ≈ 10 МБ
+const toBase64 = blob => new Promise((ok, fail) => {
+  const r = new FileReader();
+  r.onload = () => ok(String(r.result).split(',')[1]);
+  r.onerror = () => fail(new Error('не удалось прочитать файл'));
+  r.readAsDataURL(blob);
+});
+async function readAttachment(f) {
+  if (/^text\//.test(f.type) || /\.(txt|md|csv)$/i.test(f.name)) return { text: await f.text() };
+  if (f.type === 'application/pdf' || /\.pdf$/i.test(f.name)) {
+    if (f.size > 10e6) throw new Error('PDF больше 10 МБ — разбейте на части');
+    return { mime: 'application/pdf', data: await toBase64(f) };
+  }
+  if (f.type.startsWith('image/') || /\.(heic|jpe?g|png|webp)$/i.test(f.name)) {
+    try {
+      const img = await createImageBitmap(f);
+      const k = Math.min(1, 1600 / Math.max(img.width, img.height));
+      const c = document.createElement('canvas');
+      c.width = Math.round(img.width * k);
+      c.height = Math.round(img.height * k);
+      c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+      const blob = await new Promise(ok => c.toBlob(ok, 'image/jpeg', 0.85));
+      return { mime: 'image/jpeg', data: await toBase64(blob) };
+    } catch {
+      if (f.size > 8e6) throw new Error('фото слишком большое');
+      return { mime: f.type || 'image/jpeg', data: await toBase64(f) };
+    }
+  }
+  throw new Error('поддерживаются PDF, фото и .txt');
+}
+
 async function drawLibrary(p, box) {
   const lib = await loadLibrary(ROOT);
   box.innerHTML = `<div class="row">${lib.map(l => `<button class="btn" data-id="${esc(l.id)}">${esc(l.title)} · ${l.cards}</button>`).join('')}</div><div id="lib-topics"></div>`;
@@ -323,14 +407,7 @@ async function drawLibrary(p, box) {
     out.querySelector('#lib-take').onclick = () => {
       const tids = [...out.querySelectorAll('input:checked:not(:disabled)')].map(i => i.dataset.t);
       if (!tids.length) return toast('Выберите темы');
-      let n = 0;
-      for (const tid of tids) {
-        const t = src.topics.find(x => x.id === tid);
-        if (!p.topics.some(x => x.id === tid)) p.topics.push({ id: tid, title: t.title, section: src.title });
-        for (const c of src.cards) if (c.t === tid && !have.has(c.id)) { p.cards.push(c); have.add(c.id); n++; }
-        for (const l of src.theory || []) if (l.topic === tid && !p.theory.some(x => x.id === l.id)) p.theory.push(l);
-      }
-      if (!p.subject) p.subject = src.subject;
+      const n = importTopics(p, src, tids);
       touch(p);
       toast(`Добавлено ${plural(n, 'карточка', 'карточки', 'карточек')}`);
       location.hash = `#/p/${p.id}/cards`;
