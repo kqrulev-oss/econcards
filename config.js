@@ -2,5 +2,5 @@
 // работает офлайн на встроенных наборах, но без ИИ, публикации и отчётов.
 // Пример: 'https://zadachnik.<ваш-аккаунт>.workers.dev'
 window.ZD_CONFIG = {
-  api: '',
+  api: 'https://econcards.kqrulev.workers.dev',
 };
