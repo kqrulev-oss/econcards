@@ -460,3 +460,8 @@ input:focus, select:focus, textarea:focus { outline: 2px solid var(--accent); ou
 .qr-big { text-align: center; }
 .qr-big svg { max-width: min(80vh, 420px); margin: 0 auto; background: #fff; border-radius: 16px; }
 .card-img img.graph { width: 100%; max-width: 480px; display: block; margin: 12px auto 0; border: 1px solid var(--line); }
+.strip { display: grid; grid-template-columns: repeat(14, 9px); gap: 2px; margin-top: 6px; }
+.strip i { width: 9px; height: 9px; border-radius: 2px; background: var(--line); }
+.strip i.l1 { background: color-mix(in srgb, var(--ok) 35%, var(--line)); }
+.strip i.l2 { background: color-mix(in srgb, var(--ok) 70%, var(--line)); }
+.strip i.l3 { background: var(--ok); }

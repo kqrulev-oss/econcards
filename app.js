@@ -113,6 +113,8 @@ function summary() {
   const states = Object.values(prog.cards);
   return {
     last: Date.now(), streak: streak(), today: prog.log[t] || { d: 0, ok: 0 }, week,
+    // Карточек по дням за 14 дней, от старых к сегодняшнему — для полоски активности у репетитора
+    days: Array.from({ length: 14 }, (_, i) => prog.log[t - 13 + i]?.d || 0), day: t,
     total: pack.cards.length, started: states.length, mastered: states.filter(s => s.b >= 3).length,
     topics, errs: prog.errs.slice(0, 15),
   };
