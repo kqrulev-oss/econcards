@@ -16,7 +16,7 @@
      TG_SECRET  любая длинная случайная строка (защищает вебхук)
      TG_OWNER   id вашего чата — бот подскажет его на /start
      GH_TOKEN   fine-grained токен GitHub: только этот репозиторий,
-                Issues — Read and write, Pull requests — Read
+                Issues — Read and write, Pull requests — Read and write
      GH_SECRET  секрет вебхука GitHub (любая случайная строка)
      GEMINI_KEY уже есть — им же бот распределяет задачи
    Переменная GH_REPO (по умолч. kqrulev-oss/econcards).
@@ -33,6 +33,7 @@ const ROUTER = `Ты диспетчер задач в проекте «Межд�
 - claude — ЛОГИКА И ДАННЫЕ: JavaScript-логика, сервер worker/, генераторы и наборы заданий (tools/, data/, packs/), ИИ-функции, баги, деплой, проверка кода.
 - gemini — если это просто вопрос, совет или идея, где не нужно менять код: ответь сам.
 Если задача смешанная — отдай тому, чья часть больше, и в brief попроси не трогать чужую зону без нужды.
+Главное правило команды: все изменения попадают в проект только через Claude Code. Codex делает дизайн и открывает PR, но проверяет, доводит и готовит к слиянию его всегда Claude. Поэтому в brief для codex напиши: «сделай PR, не сливай его — его проверит Claude».
 Верни ТОЛЬКО JSON: {"agent":"claude|codex|gemini","why":"коротко, почему этот агент","title":"заголовок задачи до 70 символов","brief":"понятное ТЗ для агента по-русски: что сделать, где, как проверить; напомни следовать AGENTS.md","answer":"только для gemini: ответ пользователю простым текстом"}`;
 
 const cut = (s, n) => String(s || '').slice(0, n);
@@ -78,7 +79,7 @@ async function gh(env, path, body, method = body ? 'POST' : 'GET') {
 async function createTask(env, agent, title, brief) {
   const issue = await gh(env, '/issues', {
     title: cut(title, 120) || 'Задача из Telegram',
-    body: `${brief}\n\n@${agent} возьми, пожалуйста, эту задачу. Работай по правилам AGENTS.md, результат — PR.\n\n${MARK}`,
+    body: `${brief}\n\n@${agent} возьми, пожалуйста, эту задачу. Работай по правилам AGENTS.md, результат — PR.${agent === 'codex' ? ' Не сливай PR сам: все изменения проходят через Claude Code, он проверит и доведёт.' : ''}\n\n${MARK}`,
   });
   await env.DB.put(`gh:agent:${issue.number}`, agent, { expirationTtl: TTL });
   return issue;
@@ -219,6 +220,14 @@ async function onGithub(env, event, p) {
   }
   if (event === 'pull_request' && ['opened', 'closed', 'ready_for_review'].includes(p.action)) {
     const pr = p.pull_request;
+    // Всё, что сделал не Claude (Codex, ChatGPT, правки руками), сначала проверяет Claude Code
+    const fromClaude = /claude/i.test(pr.user?.login || '') || (pr.head?.ref || '').startsWith('claude/');
+    if (['opened', 'ready_for_review'].includes(p.action) && !pr.draft && !fromClaude && !await env.DB.get(`gh:review:${pr.number}`)) {
+      await env.DB.put(`gh:review:${pr.number}`, '1', { expirationTtl: TTL });
+      await env.DB.put(`gh:agent:${pr.number}`, 'claude', { expirationTtl: TTL });
+      await gh(env, `/issues/${pr.number}/comments`, { body: `@claude проверь этот PR по AGENTS.md: открой страницы в браузере на 390 и 1280 px, в светлой и тёмной теме, прогони проверки. Исправь найденное прямо в этой ветке и напиши итог: можно ли сливать. Сам не сливай — решает владелец.\n\n${MARK}` });
+      return forward(env, pr.number, `🆕 PR от ${who(pr.user?.login)}: #${pr.number} ${pr.title}\n${pr.html_url}\n\nОтдал Claude на проверку — пришлю, что он скажет.`);
+    }
     const state = p.action === 'closed' ? (pr.merged ? '✅ смёржен' : 'закрыт') : '🆕 новый PR';
     return forward(env, null, `${state} · ${who(pr.user?.login)}\n#${pr.number} ${pr.title}\n${pr.html_url}`);
   }
