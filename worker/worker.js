@@ -74,14 +74,20 @@ async function gemini(env, task, body) {
       ...(json ? { responseMimeType: 'application/json' } : {}),
     },
   };
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/${env.MODEL || MODEL_DEFAULT}:generateContent?key=${env.GEMINI_KEY}`;
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${env.MODEL || MODEL_DEFAULT}:generateContent`;
+  // Ключ — в заголовке, а не в адресе: так принимаются и старые ключи (AIza…),
+  // и новые (AQ.…), и ключ не оседает в логах запросов
+  const headers = { 'Content-Type': 'application/json', 'x-goog-api-key': env.GEMINI_KEY };
   let r;
   try {
-    r = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+    r = await fetch(url, { method: 'POST', headers, body: JSON.stringify(payload) });
   } catch {
     throw new HttpError(502, 'ИИ временно недоступен. Попробуйте позже.');
   }
-  if (!r.ok) throw new HttpError(502, 'ИИ-сервис вернул ошибку. Проверьте модель и ключ.');
+  if (!r.ok) {
+    const detail = await r.json().then(d => d.error?.message, () => '').catch(() => '');
+    throw new HttpError(502, `ИИ-сервис вернул ошибку ${r.status}. ${cut(detail, 200) || 'Проверьте модель и ключ.'}`);
+  }
   const data = await r.json();
   return (data.candidates?.[0]?.content?.parts || []).map(p => p.text).join('').trim();
 }
