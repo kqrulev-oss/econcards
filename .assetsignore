@@ -9,3 +9,5 @@ node_modules
 wrangler.jsonc
 .assetsignore
 README.md
+AGENTS.md
+CLAUDE.md
