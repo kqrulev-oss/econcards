@@ -62,6 +62,12 @@ export const text = s => esc(s).split('\n').map(line => {
   if (solo) return `<span class="fblock">${supify(solo[1])}</span>`;
   return line.replace(/⟦(.+?)⟧/g, (m, g) => `<span class="f">${supify(g)}</span>`);
 }).join('<br>');
+// Ответ ИИ: если модель всё же прислала Markdown или LaTeX — показываем по-человечески
+const aiText = s => text(String(s || '')
+  .replace(/\$([^$\n]+)\$/g, (m, f) => f.replace(/_\{?([^}\s]+)\}?/g, '$1').replace(/\\cdot/g, '·').replace(/\\/g, ''))
+  .replace(/^#+\s*/gm, '')
+  .replace(/^\s*[*-]\s+/gm, '• '))
+  .replace(/\*\*(.+?)\*\*/g, '<b>$1</b>');
 export const day = (d = new Date()) => Math.floor((d - d.getTimezoneOffset() * 60000) / 86400000);
 export const uid = (n = 8) => Array.from(crypto.getRandomValues(new Uint8Array(n)), b => 'abcdefghijkmnpqrstuvwxyz23456789'[b % 32]).join('');
 export const plural = (n, one, few, many) => {
@@ -210,7 +216,7 @@ export function renderCard(card, root, onDone, { imgRoot = './', aiEnabled = !!a
       out.innerHTML = '<p class="muted">Думаю…</p>';
       try {
         const r = await ai(task, { problem: card.q, reference: card.a, ...extra });
-        out.innerHTML = `<div class="ai-box">${text(r.text)}</div>`;
+        out.innerHTML = `<div class="ai-box">${aiText(r.text)}</div>`;
       } catch (err) {
         out.innerHTML = `<p class="muted">${esc(err.message)}</p>`;
       }

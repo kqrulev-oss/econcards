@@ -23,7 +23,7 @@ Cloudflare → **Storage & Databases → KV → Create namespace**, наприм
 3. **Settings → Bindings → Add → KV namespace**: имя переменной `DB`, namespace из шага 2.
 4. **Settings → Variables and Secrets**:
    - секрет `GEMINI_KEY` — ключ из шага 1;
-   - (необязательно) `MODEL` — если модель по умолчанию `gemini-2.5-flash` недоступна, поставьте актуальную из AI Studio;
+   - (необязательно) `MODEL` — по умолчанию `gemini-flash-latest` (Google сам держит его на актуальной модели), при перегрузке сервер переключается на `gemini-flash-lite-latest`;
    - (необязательно) `DAILY_LIMIT` — ИИ-запросов на IP в сутки, по умолчанию 60.
 
 Через Wrangler то же самое:

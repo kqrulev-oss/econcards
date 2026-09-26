@@ -9,12 +9,17 @@
 
    Переменные (см. worker/README.md):
      GEMINI_KEY  — секрет, ключ Google AI Studio (обязательно для ИИ)
-     MODEL       — модель Gemini (по умолч. gemini-2.5-flash)
+     MODEL       — модель Gemini (по умолч. gemini-flash-latest, запасная —
+                   gemini-flash-lite-latest)
      DAILY_LIMIT — лимит ИИ-запросов на IP в сутки (по умолч. 60)
      DB          — KV-namespace: наборы, прогресс, лимиты (обязательно)
    ============================================================ */
 
-const MODEL_DEFAULT = 'gemini-2.5-flash';
+// «-latest» — псевдонимы Google на актуальную модель: конкретные версии
+// закрывают для новых ключей (так случилось с gemini-2.5-flash)
+const MODEL_DEFAULT = 'gemini-flash-latest';
+const MODEL_FALLBACK = 'gemini-flash-lite-latest';
+const PLAIN = ' Пиши простым текстом: без Markdown (никаких **, #, списков со звёздочками) и без LaTeX ($…$) — формулы вроде Qd = 100 − 2P.';
 const MAX = 4000;           // обрезаем входы проверок, чтобы не жечь токены
 const MAX_MATERIAL = 30000; // материалы репетитора для генерации
 const MAX_PACK = 5e6;       // байт на набор
@@ -47,6 +52,7 @@ const SYSTEM = {
 - Неверные варианты должны быть правдоподобными — типичные ошибки учеников.
 - В "e" коротко объясни, почему ответ верный (1–2 предложения).
 - Раздели карточки на 2–6 тем по смыслу материала.
+- Тексты карточек — простым текстом, без Markdown и LaTeX.
 Верни ТОЛЬКО JSON:
 {"topics":[{"id":"t1","title":"…"}],
  "cards":[{"t":"t1","k":"one","q":"…","o":[{"id":"а","t":"…"},{"id":"б","t":"…"},{"id":"в","t":"…"},{"id":"г","t":"…"}],"a":"б","e":"…"},
@@ -54,6 +60,8 @@ const SYSTEM = {
           {"t":"t2","k":"flip","q":"…","a":"…"},
           {"t":"t2","k":"open","q":"…","a":"полное решение с ответом"}]}`,
 };
+for (const task of ['check', 'hint', 'explain', 'similar']) SYSTEM[task] += PLAIN;
+
 const PROMPT = {
   check: d => `Условие:\n${cut(d.problem)}\n\nЭталонное решение:\n${cut(d.reference)}\n\nРешение ученика:\n${cut(d.answer)}\n\nПроверь решение ученика.`,
   hint: d => `Условие:\n${cut(d.problem)}\n\nЭталонное решение (ученику не показывай):\n${cut(d.reference)}\n\nДай подсказку уровня ${Math.max(1, Math.min(3, Number(d.level) || 1))}.`,
@@ -74,19 +82,34 @@ async function gemini(env, task, body) {
       ...(json ? { responseMimeType: 'application/json' } : {}),
     },
   };
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/${env.MODEL || MODEL_DEFAULT}:generateContent`;
   // Ключ — в заголовке, а не в адресе: так принимаются и старые ключи (AIza…),
   // и новые (AQ.…), и ключ не оседает в логах запросов
   const headers = { 'Content-Type': 'application/json', 'x-goog-api-key': env.GEMINI_KEY };
-  let r;
-  try {
-    r = await fetch(url, { method: 'POST', headers, body: JSON.stringify(payload) });
-  } catch {
-    throw new HttpError(502, 'ИИ временно недоступен. Попробуйте позже.');
+  const models = [...new Set([env.MODEL || MODEL_DEFAULT, MODEL_FALLBACK])];
+  let r, detail = '';
+  // Бесплатный Gemini часто отвечает 503/429 под нагрузкой: повторяем с паузой,
+  // затем пробуем запасную модель. Ошибки ключа (400/401/403) не повторяем.
+  attempts: for (const model of models) {
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
+    for (const wait of [0, 1500, 4000]) {
+      if (wait) await new Promise(ok => setTimeout(ok, wait));
+      try {
+        r = await fetch(url, { method: 'POST', headers, body: JSON.stringify(payload) });
+      } catch {
+        r = null;
+        continue;
+      }
+      if (r.ok) break attempts;
+      detail = await r.json().then(d => d.error?.message, () => '').catch(() => '');
+      if (r.status === 404) continue attempts;                    // модель закрыта — берём запасную
+      if (![429, 500, 503].includes(r.status)) break attempts;   // ключ, регион, запрос — повтор не поможет
+    }
   }
+  if (!r) throw new HttpError(502, 'ИИ временно недоступен. Попробуйте позже.');
   if (!r.ok) {
-    const detail = await r.json().then(d => d.error?.message, () => '').catch(() => '');
-    throw new HttpError(502, `ИИ-сервис вернул ошибку ${r.status}. ${cut(detail, 200) || 'Проверьте модель и ключ.'}`);
+    const busy = [429, 500, 503].includes(r.status);
+    throw new HttpError(502, busy ? 'ИИ сейчас перегружен. Попробуйте через минуту.'
+      : `ИИ-сервис вернул ошибку ${r.status}. ${cut(detail, 200) || 'Проверьте модель и ключ.'}`);
   }
   const data = await r.json();
   return (data.candidates?.[0]?.content?.parts || []).map(p => p.text).join('').trim();
