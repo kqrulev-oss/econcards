@@ -175,6 +175,43 @@ def econ_pack():
 
 # ---------- ЕГЭ: русский язык ----------
 
+def add_essay(topics, theory, cards):
+    """Задание 27 из приложения «Сочинение»: уроки с нуля, справочник, критерии,
+    упражнения (карточки), письменные тренировки (проверка ИИ) и аргументы."""
+    src = load('essay')
+    t27 = next(t for t in topics if t['id'] == 'task-27')
+    school = {'id': 't27-school', 'title': 'Сочинение по шагам: проблема, комментарий, позиция',
+              'tip': 'Проблема — вопрос из текста; два примера с пояснениями и связью; позиция автора — его ответ на этот вопрос.'}
+    write = {'id': 't27-write', 'title': 'Пишем фрагменты сочинения',
+             'tip': 'Сначала сформулируй сам, потом сверь с образцом или попроси ИИ проверить.'}
+    args = {'id': 't27-args', 'title': 'Литературные аргументы',
+            'tip': 'Для каждой частой проблемы держи в голове одно произведение и эпизод из него.'}
+    t27['protos'] = [school, write, args] + t27.get('protos', [])
+    for n, lesson in enumerate(src['SCHOOL'], 1):
+        theory.append({'id': f'essay-{lesson["id"]}', 'topic': 'task-27', 'title': f'{n}. {lesson["t"]}',
+                       'min': 5, 'section': 'Сочинение с нуля', 'html': f'<p class="muted">{esc(lesson["sub"])}</p>{lesson["theory"]}'})
+        for i, d in enumerate(lesson.get('drills', [])):
+            ids = 'абвгде'
+            cards.append({'id': f'essay-{lesson["id"]}-d{i + 1}', 't': 'task-27', 'p': school['id'], 'k': 'one', 'q': d['q'],
+                          'o': [{'id': ids[j], 't': o} for j, o in enumerate(d['o'])], 'a': ids[d['a']], 'e': d.get('e', '')})
+        if lesson.get('write'):
+            w = lesson['write']
+            cards.append({'id': f'essay-{lesson["id"]}-w', 't': 'task-27', 'p': write['id'], 'k': 'open',
+                          'q': w['task'], 'a': w['sample']})
+    for n, ref in enumerate(src['REF'], 1):
+        theory.append({'id': f'essay-ref{n}', 'topic': 'task-27', 'title': ref['t'], 'min': ref.get('min', 5),
+                       'section': 'Справочник', 'html': ref['html']})
+    crit = ''.join(f'<tr><td>{esc(c)}</td><td>{p}</td></tr>' for c, p in src['CRIT_EGE'])
+    theory.insert(len(theory) - len(src['REF']) - len(src['SCHOOL']), {
+        'id': 'essay-crit', 'topic': 'task-27', 'title': 'Критерии К1–К12: за что дают 22 балла', 'min': 3,
+        'section': 'Сочинение с нуля',
+        'html': f'<table><tr><th>Критерий</th><th>Баллы</th></tr>{crit}</table>'
+                f'<p>Всего: {sum(p for _, p in src["CRIT_EGE"])} первичных баллов.</p>'})
+    for i, a in enumerate(src['EGE'], 1):
+        cards.append({'id': f'essay-arg{i}', 't': 'task-27', 'p': args['id'], 'k': 'flip',
+                      'q': f'Какой литературный аргумент подойдёт к теме «{a["p"]}»?', 'a': a['lit']})
+
+
 def exam_task(x):
     """Номер задания по действующей спецификации ЕГЭ.
 
@@ -267,6 +304,7 @@ def rus_pack():
         topic = lesson_topic.get(l['id']) or (f'task-{l["tasks"][0]}' if l.get('tasks') else 'task-1')
         theory.append({'id': l['id'], 'topic': topic, 'title': l['title'], 'min': 10,
                        'section': 'Теория', 'html': blocks_to_html(l['blocks'])})
+    add_essay(topics, theory, cards)
     return {
         'id': 'ege-rus', 'title': 'ЕГЭ: русский язык', 'subject': 'Русский язык',
         'desc': 'Все тестовые задания ЕГЭ с разборами и теорией по Розенталю',
