@@ -175,7 +175,8 @@ function viewCards(p) {
 // «Похожие»: ИИ делает новые варианты того же типа (прототипа) с другими данными.
 // Новые карточки попадают в ту же тему и прототип, что и исходная.
 async function similarCards(p, src, onAdd) {
-  const kind = src.k === 'match' || src.k === 'many' ? 'one' : src.k;
+  // Сервер делает one/many/flip/num/open: соответствие — выбором, краткий ответ словом — самопроверкой
+  const kind = src.k === 'match' || src.k === 'many' ? 'one' : src.k === 'short' ? 'flip' : src.k;
   const opts = src.o && !src.o.left ? '\nВарианты: ' + src.o.map(o => `${o.id}) ${o.t}`).join('; ') : '';
   const answer = Array.isArray(src.a) ? src.a.join(', ') : typeof src.a === 'object' ? JSON.stringify(src.a) : src.a;
   const material = `Образец карточки (тип "${kind}"):\nВопрос: ${src.q}${opts}\nОтвет: ${answer}${src.e ? '\nРазбор: ' + src.e : ''}\n\n`
@@ -218,13 +219,13 @@ function editCard(p, index, onSave) {
     <h3>${index === null ? 'Новая карточка' : 'Карточка'}</h3>
     <div class="grid2">
       <label class="field"><span>Тема</span><select id="t">${p.topics.map(t => `<option value="${esc(t.id)}" ${t.id === c.t ? 'selected' : ''}>${esc(t.title)}</option>`).join('')}<option value="__new">+ Новая тема…</option></select></label>
-      <label class="field"><span>Тип</span><select id="k">${['one', 'many', 'flip', 'num', 'open'].map(k => `<option value="${k}" ${k === c.k ? 'selected' : ''}>${KIND_NAMES[k]}</option>`).join('')}</select></label>
+      <label class="field"><span>Тип</span><select id="k">${['one', 'many', 'flip', 'num', 'short', 'open'].map(k => `<option value="${k}" ${k === c.k ? 'selected' : ''}>${KIND_NAMES[k]}</option>`).join('')}</select></label>
     </div>
     <div class="field"><label for="q">Вопрос или условие</label><textarea id="q" rows="4">${esc(c.q)}</textarea></div>
     <div id="opts" class="field"><span>Варианты — отметьте верные</span>
       <div id="optlist">${opts.map(o => optRow(o, right.has(o.id))).join('')}</div>
       <button class="btn small" id="addopt">+ Вариант</button></div>
-    <div class="field" id="ans"><label for="a" id="ans-l">Ответ</label><textarea id="a" rows="4">${esc(['flip', 'open', 'num'].includes(c.k) ? c.a : '')}</textarea></div>
+    <div class="field" id="ans"><label for="a" id="ans-l">Ответ</label><textarea id="a" rows="4">${esc(['flip', 'open', 'num', 'short'].includes(c.k) ? [].concat(c.a).join(' / ') : '')}</textarea></div>
     <div class="field"><label for="e">Разбор (необязательно)</label><textarea id="e" rows="3">${esc(c.e || '')}</textarea></div>
     <div class="row"><button class="btn primary" id="save">Сохранить</button><button class="btn ghost" id="cancel">Отмена</button></div>`);
   const $ = s => box.querySelector(s);
@@ -232,7 +233,8 @@ function editCard(p, index, onSave) {
     const k = $('#k').value;
     $('#opts').hidden = !(k === 'one' || k === 'many');
     $('#ans').hidden = !$('#opts').hidden;
-    $('#ans-l').textContent = k === 'open' ? 'Эталонное решение с ответом' : k === 'num' ? 'Ответ — число (например, 0,35)' : 'Ответ';
+    $('#ans-l').textContent = k === 'open' ? 'Эталонное решение с ответом' : k === 'num' ? 'Ответ — число (например, 0,35)'
+      : k === 'short' ? 'Ответ — слово или цифры; несколько верных — через « / »' : 'Ответ';
   };
   sync();
   $('#k').onchange = sync;
@@ -270,10 +272,20 @@ function editCard(p, index, onSave) {
       card.a = $('#a').value.trim();
       if (!card.a) return toast('Напишите ответ');
       if (k === 'num' && !/^-?\d+([.,]\d+)?$/.test(card.a)) return toast('Для числового ответа нужно число: 12 или 0,35');
+      if (k === 'short') {
+        const alts = card.a.split(' / ').map(x => x.trim()).filter(Boolean);
+        card.a = alts.length > 1 ? alts : alts[0];
+      }
     }
+    // Разметка условия (банк ФИПИ) остаётся, только если текст не меняли
+    if (c.h && card.q === c.q) card.h = c.h;
+    if (c.o && card.o) card.o.forEach(o => {
+      const was = c.o.find(x => x.id === o.id);
+      if (was?.h && was.t === o.t) o.h = was.h;
+    });
     const e = $('#e').value.trim();
     if (e) card.e = e;
-    for (const key of ['src', 'img']) if (c[key]) card[key] = c[key];
+    for (const key of ['src', 'img', 'any']) if (c[key] && (key !== 'any' || k === 'short')) card[key] = c[key];
     if (index === null) p.cards.push(card); else p.cards[index] = card;
     touch(p);
     close();

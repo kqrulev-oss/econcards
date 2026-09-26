@@ -97,10 +97,57 @@ export function sameNumber(a, b) {
   return !Number.isNaN(nx) && !Number.isNaN(ny) && Math.abs(nx - ny) < 1e-9;
 }
 
+// Краткий ответ словом или цифрами: регистр, ё/е, пробелы и запятые не важны;
+// any — порядок цифр не важен (так проверяет ФИПИ для «запишите номера…»)
+export function sameShort(got, want, any = false) {
+  const norm = x => String(x).toLowerCase().replace(/ё/g, 'е').replace(/[\s.,;]+/g, '');
+  const key = x => any ? [...norm(x)].sort().join('') : norm(x);
+  return [].concat(want).some(w => key(w) === key(got));
+}
+
 export const KIND_NAMES = {
   one: 'Один ответ', many: 'Несколько ответов', match: 'Соответствие',
   flip: 'Вопрос — ответ', open: 'Развёрнутое решение', stress: 'Ударение', num: 'Числовой ответ',
+  short: 'Краткий ответ',
 };
+
+// ---------- условие с разметкой (банк ФИПИ) ----------
+// Поле h: таблицы, картинки и формулы MathML (браузер рисует их сам). Разметка
+// может прийти и в наборе репетитора, поэтому пропускаем только безопасные теги
+// и атрибуты и вставляем готовые узлы, а не строку HTML.
+const RICH_TAGS = new Set(('p div br b i u sub sup table tbody thead tr td th ul ol li img span '
+  + 'math mrow mi mn mo mtext mspace ms mfrac msqrt mroot msup msub msubsup mover munder munderover '
+  + 'mtable mtr mtd mstyle mpadded mphantom menclose mmultiscripts mprescripts none').split(' '));
+const RICH_ATTRS = new Set(('colspan rowspan start display displaystyle scriptlevel stretchy fence separator '
+  + 'lspace rspace form largeop movablelimits accent accentunder linethickness columnalign rowalign '
+  + 'columnspan width mathvariant notation').split(' '));
+const RICH_DROP = new Set(('script style template iframe frame object embed svg noscript textarea select button '
+  + 'input form link meta base annotation annotation-xml mglyph malignmark').split(' '));
+
+export function rich(html, imgRoot = './') {
+  const doc = new DOMParser().parseFromString(`<!doctype html><body>${html}`, 'text/html');
+  const walk = node => {
+    for (const el of [...node.children]) {
+      const tag = el.localName;
+      if (RICH_DROP.has(tag)) { el.remove(); continue; }
+      walk(el);
+      if (!RICH_TAGS.has(tag)) { el.replaceWith(...el.childNodes); continue; }
+      const src = el.getAttribute('src') || '';
+      for (const { name } of [...el.attributes]) if (!RICH_ATTRS.has(name)) el.removeAttribute(name);
+      if (tag === 'img') {
+        // Картинки — только из папки img/ сайта
+        if (!/^img\/[\w\/.-]+$/.test(src) || src.includes('..')) { el.remove(); continue; }
+        el.setAttribute('src', imgRoot + src);
+        el.setAttribute('alt', '');
+        el.setAttribute('loading', 'lazy');
+      }
+    }
+  };
+  walk(doc.body);
+  const frag = document.createDocumentFragment();
+  frag.append(...[...doc.body.childNodes].map(n => document.importNode(n, true)));
+  return frag;
+}
 
 // ---------- карточка ----------
 
@@ -116,7 +163,10 @@ export function renderCard(card, root, onDone, { imgRoot = './', aiEnabled = !!a
     if (done) return;
     done = true;
     root.classList.add('answered');
-    if (card.e && !['flip', 'open'].includes(card.k)) root.querySelector('.explain').innerHTML = `<b>Разбор.</b> ${text(card.e)}`;
+    if (card.e && !['flip', 'open'].includes(card.k)) {
+      root.querySelector('.explain').innerHTML = `<b>Разбор.</b> ${text(card.e)}`
+        + (card.ai ? '<p class="muted small">Решение составил ИИ, ответ подтверждён на сайте ФИПИ.</p>' : '');
+    }
     onDone(score);
   };
 
@@ -125,19 +175,21 @@ export function renderCard(card, root, onDone, { imgRoot = './', aiEnabled = !!a
     + (card.svg ? `<img class="graph" src="data:image/svg+xml;charset=utf-8,${encodeURIComponent(card.svg)}" alt="График к заданию">` : '');
   root.innerHTML = `
     ${card.src ? `<div class="card-src">${esc(card.src)}</div>` : ''}
-    <div class="card-q">${text(card.q)}</div>
+    <div class="card-q${card.h ? ' rich' : ''}">${card.h ? '' : text(card.q)}</div>
     ${imgs ? `<div class="card-img">${imgs}</div>` : ''}
     <div class="card-body"></div>
     <div class="explain"></div>`;
   const body = root.querySelector('.card-body');
+  if (card.h) root.querySelector('.card-q').append(rich(card.h, imgRoot));
 
   if (card.k === 'one' || card.k === 'many') {
     const multi = card.k === 'many';
     const right = new Set(multi ? card.a : [card.a]);
     body.innerHTML = `<div class="opts">${card.o.map(o =>
-      `<button class="opt" data-id="${esc(o.id)}"><span class="opt-id">${esc(o.id)}</span><span>${text(o.t)}</span></button>`).join('')}</div>
+      `<button class="opt" data-id="${esc(o.id)}"><span class="opt-id">${esc(o.id)}</span><span class="rich">${o.h ? '' : text(o.t)}</span></button>`).join('')}</div>
       ${multi ? '<button class="btn primary check" disabled>Проверить</button>' : ''}`;
     const opts = [...body.querySelectorAll('.opt')];
+    card.o.forEach((o, i) => o.h && opts[i].lastElementChild.append(rich(o.h, imgRoot)));
     const reveal = picked => {
       opts.forEach(b => {
         const id = b.dataset.id;
@@ -194,21 +246,27 @@ export function renderCard(card, root, onDone, { imgRoot = './', aiEnabled = !!a
       body.querySelector('.hint').innerHTML = `Правильно: <b>${esc(word)}</b>`;
       finish(+b.dataset.i === target ? 1 : 0);
     });
-  } else if (card.k === 'num') {
-    // Краткий ответ ЕГЭ: число вводится с клавиатуры, запятая и точка равноправны
+  } else if (card.k === 'num' || card.k === 'short') {
+    // Краткий ответ ЕГЭ: число (запятая и точка равноправны), слово или цифры подряд
+    const num = card.k === 'num';
+    const want = [].concat(card.a);
+    const digits = !num && /^\d+$/.test(want[0]);
+    const hint = num ? 'Целое число или десятичная дробь, как в бланке ЕГЭ'
+      : digits ? 'Цифры подряд, без пробелов и запятых' : 'Как в бланке ЕГЭ: без пробелов и знаков препинания';
     body.innerHTML = `
-      <div class="num-row"><input class="num-input" inputmode="decimal" autocomplete="off" placeholder="Ответ">
+      <div class="num-row"><input class="num-input" inputmode="${num ? 'decimal' : digits ? 'numeric' : 'text'}" autocomplete="off"
+        autocapitalize="off" spellcheck="false" placeholder="Ответ">
         <button class="btn primary check">Проверить</button></div>
-      <p class="hint">Целое число или десятичная дробь, как в бланке ЕГЭ</p>`;
+      <p class="hint">${hint}</p>`;
     const input = body.querySelector('.num-input');
     const check = () => {
       const got = input.value.trim();
       if (!got) return toast('Введи ответ');
-      const ok = sameNumber(got, card.a);
+      const ok = num ? sameNumber(got, card.a) : sameShort(got, want, card.any);
       input.disabled = true;
       input.classList.add(ok ? 'ok' : 'bad');
       body.querySelector('.check').remove();
-      body.querySelector('.hint').innerHTML = ok ? 'Верно!' : `Правильный ответ: <b>${esc(card.a)}</b>`;
+      body.querySelector('.hint').innerHTML = ok ? 'Верно!' : `Правильный ответ: <b>${esc(want[0])}</b>`;
       finish(ok ? 1 : 0);
     };
     body.querySelector('.check').onclick = check;
@@ -226,7 +284,8 @@ export function renderCard(card, root, onDone, { imgRoot = './', aiEnabled = !!a
       </div>
       <div class="ai-out"></div>
       <div class="reveal" hidden>
-        <div class="solution">${text(card.a)}${card.e && !open ? `<p class="muted">${text(card.e)}</p>` : ''}</div>
+        <div class="solution">${text(card.a)}${card.e && !open ? `<p class="muted">${text(card.e)}</p>` : ''}
+          ${card.ai ? '<p class="muted small">Решение составил ИИ — сверяйся с критериями оценивания ФИПИ.</p>' : ''}</div>
         <p class="hint">Оцени себя честно — от этого зависит, когда карточка вернётся</p>
         <div class="row grade">
           <button class="btn bad" data-s="0">${open ? 'Не решил' : 'Не знал'}</button>

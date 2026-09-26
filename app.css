@@ -269,6 +269,18 @@ input:focus, select:focus, textarea:focus { outline: 2px solid var(--accent); ou
 .modal-x { position: absolute; top: 14px; right: 14px; width: 36px; height: 36px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface); color: var(--text); cursor: pointer; }
 .modal .card { box-shadow: none; }
 
+/* условие с разметкой: задания банка ФИПИ */
+.rich p { margin: 0 0 .6em; }
+.rich p:last-child { margin-bottom: 0; }
+.rich table { border-collapse: collapse; margin: 8px 0; font-size: 15px; display: block; overflow-x: auto; max-width: 100%; }
+.rich td, .rich th { border: 1px solid var(--line); padding: 5px 8px; vertical-align: top; }
+.rich ul, .rich ol { margin: 6px 0; padding-left: 22px; }
+/* Картинки банка — чёрным по прозрачному: подложка, чтобы читались и в тёмной теме */
+.rich img { max-width: 100%; height: auto; vertical-align: middle; background: #fff; border-radius: 4px; }
+.rich math { font-size: 1.1em; }
+.rich math[display="block"] { display: block; margin: 6px 0; overflow-x: auto; }
+.muted.small { font-size: 13px; margin: 8px 0 0; }
+
 /* формулы из данных (⟦…⟧) */
 .f { white-space: nowrap; font-family: "Cambria Math", "STIX Two Math", Georgia, serif; font-size: 1.05em; }
 .fblock { display: block; overflow-x: auto; white-space: nowrap; text-align: center; margin: 6px 0; padding: 6px 10px; background: var(--bg); border-radius: 10px; font-family: "Cambria Math", "STIX Two Math", Georgia, serif; font-size: 1.05em; }

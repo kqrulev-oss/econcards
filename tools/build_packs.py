@@ -5,17 +5,21 @@
 
 Формат набора (packs/<id>.json):
   id, title, subject, desc, color
-  topics:  [{id, title, section}]
+  topics:  [{id, title, section, n?, pts?, protos?: [{id, title, tip}], pt?}]
   theory:  [{id, topic, title, min, html}]
-  cards:   [{id, t, k, q, o?, a, e?, img?, src?}]
+  cards:   [{id, t, p?, k, q, h?, o?, a, e?, img?, svg?, src?, any?, ai?}]
 
-Карточка: t — тема, k — тип:
+Карточка: t — тема, p — прототип, k — тип:
   one    — один верный вариант, a = id варианта
   many   — несколько верных, a = [id, ...]
   match  — соответствие, o = {left, right}, a = {левый id: правый id}
   flip   — вопрос → ответ (самопроверка), a = текст ответа
   open   — развёрнутое решение, a = эталонное решение (проверка ИИ или самим)
   stress — ударение, a = слово с заглавной ударной гласной
+  num    — краткий ответ числом, a = '0,35'
+  short  — краткий ответ словом или цифрами, a = строка или [варианты]; any — порядок цифр не важен
+q — текст (формулы в ⟦ ⟧), h — то же с разметкой: таблицы, картинки, MathML (банк ФИПИ);
+у вариантов o тоже может быть h. ai — разбор или решение написал ИИ.
 """
 import html
 import json
@@ -558,7 +562,134 @@ def math_pack():
     }
 
 
+# ---------- Открытый банк ФИПИ ----------
+# Задания скачивает tools/fipi_bank.py, ответы проверяет на сайте ФИПИ
+# tools/fipi_answers.py. В набор идут только задания, у которых есть ключ:
+# выбор ответа и краткий ответ — подтверждённые ФИПИ, развёрнутый — с решением-образцом.
+
+FIPI = SRC / 'fipi'
+FIPI_IDS = {'russian': 'rus', 'math_prof': 'math', 'math_base': 'math-base', 'math': 'math', 'physics': 'phys',
+            'chemistry': 'chem', 'informatics': 'inf', 'biology': 'bio', 'history': 'hist', 'social': 'soc',
+            'geography': 'geo', 'literature': 'lit', 'english': 'eng', 'german': 'de', 'french': 'fr',
+            'spanish': 'es', 'chinese': 'zh'}
+FIPI_NAMES = {'math_prof': 'профильная математика', 'math_base': 'базовая математика',
+              'informatics': 'информатика', 'math': 'математика'}
+FIPI_COLORS = {'math_base': '#12A38A', 'math': '#1E9E5A', 'physics': '#3B5BDB', 'chemistry': '#C2255C',
+               'informatics': '#0B7285', 'biology': '#2B8A3E', 'history': '#A0522D', 'social': '#E67700',
+               'geography': '#1971C2', 'literature': '#862E9C', 'english': '#D6336C', 'german': '#5C940D',
+               'french': '#364FC7', 'spanish': '#F08C00', 'chinese': '#C92A2A', 'russian': '#E4572E'}
+
+
+def short_title(name, limit=70):
+    """Длинная тема кодификатора → первая фраза, чтобы влезала в строку."""
+    if len(name) <= limit:
+        return name
+    first = name.split('. ')[0]
+    return first if len(first) <= limit else first[:limit - 1].rstrip() + '…'
+
+
+def fipi_card(t, rec):
+    """Задание банка → карточка или None, если ключа к нему пока нет."""
+    if t.get('media'):
+        return None  # аудирование и видео приложение не проигрывает
+    card = {'q': t['text'], 'src': f'Банк ФИПИ · {t["id"]}'}
+    if t.get('html'):
+        card['h'] = t['html']
+    if t['kind'] == 'select' and t.get('opts') and rec.get('a'):
+        card.update(k='one', a=rec['a'], o=[{'id': o['id'], 't': o['text'], **({'h': o['html']} if o.get('html') else {})}
+                                             for o in t['opts']])
+    elif t['kind'] == 'short' and rec.get('a'):
+        # «Запишите в ответ цифры…» — последовательность, а не число: 012 ≠ 12, порядок может не важен
+        digits = re.search(r'цифр|номер|последовательност|соответстви', t['text'], re.I)
+        card.update(k='num' if is_number(rec['a']) and not digits else 'short', a=rec['a'])
+        if rec.get('any'):
+            card['any'] = 1
+        if rec.get('e'):
+            card.update(e=rec['e'], ai=1)
+    elif t['kind'] == 'full' and rec.get('sol'):
+        card.update(k='open', a=rec['sol'], ai=1)
+    else:
+        return None
+    return card
+
+
+def fipi_content(exam, key, section):
+    """Темы (разделы кодификатора), подтемы и карточки одного предмета банка."""
+    data = json.loads((FIPI / f'{exam}-{key}.json').read_text('utf-8'))
+    ans_file = FIPI / f'{exam}-{key}-answers.json'
+    answers = json.loads(ans_file.read_text('utf-8')) if ans_file.exists() else {}
+    sections = {s['code']: s for s in data['kes']}
+    themes = {th['code']: th['name'] for s in data['kes'] for th in s['themes']}
+    cards, used, skipped = [], {}, Counter()
+    for t in data['tasks']:
+        body = fipi_card(t, answers.get(t['id'], {}))
+        if not body:
+            skipped[t['kind'] + (' (медиа)' if t.get('media') else '')] += 1
+            continue
+        # Тема — раздел кодификатора первого КЭС задания, подтема — его пункт
+        codes = t['kes'] or ['0']
+        sec = next((c.split('.')[0] for c in codes if c.split('.')[0] in sections), '0')
+        theme = next((c for c in codes if c.split('.')[0] == sec and c in themes), None)
+        card = {'id': f'fipi-{t["id"]}', 't': f'fk-{sec}'}
+        if theme:
+            card['p'] = f'fk-{theme}'
+        cards.append({**card, **body})
+        used.setdefault(sec, set()).add(theme)
+    topics = []
+    order = sorted(used, key=lambda c: [int(x) for x in c.split('.')])
+    for sec in order:
+        info = sections.get(sec, {'name': 'Другие задания', 'themes': []})
+        protos = [{'id': f'fk-{th["code"]}', 'title': f'{th["code"]} {short_title(th["name"])}', 'tip': ''}
+                  for th in info['themes'] if th['code'] in used[sec]]
+        topic = {'id': f'fk-{sec}', 'title': info['name'] or f'Раздел {sec}', 'section': section}
+        if protos:
+            topic.update(protos=protos, pt='Темы кодификатора')
+        topics.append(topic)
+    kinds = Counter(c['k'] for c in cards)
+    print(f'  ФИПИ {exam}-{key}: заданий {len(data["tasks"])}, в набор {len(cards)} {dict(kinds)}'
+          + (f', без ключа {dict(skipped)}' if skipped else ''))
+    return topics, cards, data
+
+
+def fipi_packs(packs):
+    """Дополняет готовые наборы (ege-rus, ege-math) заданиями банка и собирает наборы
+    по остальным предметам. Возвращает новые наборы."""
+    if not FIPI.exists():
+        return []
+    by_id = {p['id']: p for p in packs}
+    new = []
+    for f in sorted(FIPI.glob('*-*.json')):
+        m = re.fullmatch(r'(ege|oge)-(\w+)', f.stem)
+        if not m or m.group(2) not in FIPI_IDS:
+            continue  # *-answers.json и чужие файлы
+        exam, key = m.groups()
+        pid = f'{exam}-{FIPI_IDS[key]}'
+        base = by_id.get(pid)
+        topics, cards, data = fipi_content(exam, key, 'Открытый банк ФИПИ' if base else 'Темы кодификатора')
+        if not cards:
+            continue
+        if base:
+            base['topics'] += topics
+            base['cards'] += cards
+            base['desc'] = base['desc'].rstrip('.') + ' + открытый банк ФИПИ'
+            continue
+        ex = 'ЕГЭ' if exam == 'ege' else 'ОГЭ'
+        name = FIPI_NAMES.get(key, data['title'].lower())
+        pack = {
+            'id': pid, 'title': f'{ex}: {name}', 'subject': data['title'].split('.')[0],
+            'desc': f'Открытый банк заданий ФИПИ по темам кодификатора; ответы проверены на сайте ФИПИ',
+            'color': FIPI_COLORS.get(key, '#495057'), 'topics': topics, 'theory': [], 'cards': cards,
+        }
+        by_id[pid] = pack
+        new.append(pack)
+    return new
+
+
 if __name__ == '__main__':
-    index = [write(rus_pack()), write(math_pack()), write(econ_pack()), write(stress_pack())]
+    packs = [rus_pack(), math_pack()]
+    extra = fipi_packs(packs)
+    ege = [p for p in extra if p['id'].startswith('ege-')]
+    oge = [p for p in extra if not p['id'].startswith('ege-')]
+    index = [write(p) for p in packs + ege + [econ_pack(), stress_pack()] + oge]
     (OUT / 'index.json').write_text(json.dumps(index, ensure_ascii=False, indent=1) + '\n', 'utf-8')
     print('packs/index.json')

@@ -155,7 +155,8 @@ function viewHome() {
   const today = prog.log[t] || { d: 0, ok: 0 };
   const due = dueCards(pack.cards).length;
   const sections = [];
-  for (const tp of pack.topics) {
+  // В наборе-экзамене задания — сеткой номеров, остальные темы (банк ФИПИ) — списком ниже
+  for (const tp of pack.topics.filter(t => !isExam() || !t.n)) {
     const sec = tp.section || '';
     if (!sections.length || sections.at(-1).name !== sec) sections.push({ name: sec, items: [] });
     sections.at(-1).items.push(tp);
@@ -177,7 +178,8 @@ function viewHome() {
       ${prog.errs.length ? `<button class="btn ghost" id="errs">Работа над ошибками · ${prog.errs.length}</button>` : ''}
       ${isExam() ? `<button class="btn ghost" id="variant">📝 Пробный вариант${lastVariant()}</button>` : ''}
     </section>
-    ${isExam() ? examGrid() : sections.map(s => `
+    ${isExam() ? examGrid() : ''}
+    ${sections.map(s => `
       <section class="topics">
         ${s.name ? `<h2>${esc(s.name)}</h2>` : ''}
         ${s.items.map(tp => {
@@ -211,7 +213,7 @@ const isExam = () => pack.topics.some(t => t.n);
 const shortTitle = t => t.title.replace(/^\d+\.\s*/, '');
 
 function examGrid() {
-  return `<section class="topics"><h2>Задания ЕГЭ</h2><div class="task-grid">${pack.topics.map(tp => {
+  return `<section class="topics"><h2>Задания ЕГЭ</h2><div class="task-grid">${pack.topics.filter(t => t.n).map(tp => {
     const st = topicStats(tp.id);
     const pct = st.total ? Math.round(st.mastered / st.total * 100) : 0;
     const state = st.started >= 5 && st.acc !== null && st.acc < 0.6 ? 'weak' : pct >= 80 ? 'done' : st.started ? 'started' : '';
@@ -245,7 +247,7 @@ function viewTopic(tid) {
     <header class="top"><a class="back" href="#/">←</a><div>
       ${tp.n ? `<div class="brand-by">Задание ${tp.n} · ${plural(tp.pts, 'балл', 'балла', 'баллов')}</div>` : ''}
       <div class="brand-title">${esc(tp.n ? shortTitle(tp) : tp.title)}</div></div></header>
-    ${protos.length ? `<section class="topics"><h2>Прототипы</h2>${protos.map(pr => {
+    ${protos.length ? `<section class="topics"><h2>${esc(tp.pt || 'Прототипы')}</h2>${protos.map(pr => {
       const ps = topicStats(tid, pr.id);
       const pct = ps.total ? Math.round(ps.mastered / ps.total * 100) : 0;
       return `<div class="proto">
@@ -257,7 +259,7 @@ function viewTopic(tid) {
     }).join('')}</section>` : ''}
     <section class="panel">
       <p>${st.total ? `Освоено ${st.mastered} из ${st.total}${st.acc !== null ? ` · точность ${Math.round(st.acc * 100)}%` : ''}` : 'В этой теме пока только теория'}</p>
-      ${st.total ? `<button class="btn primary" id="train">${protos.length ? 'Все прототипы вперемешку' : 'Тренировать тему'}</button>` : ''}
+      ${st.total ? `<button class="btn primary" id="train">${protos.length ? `Все ${tp.pt ? 'темы' : 'прототипы'} вперемешку` : 'Тренировать тему'}</button>` : ''}
       ${errs.length ? `<button class="btn ghost" id="errs">Ошибки по теме · ${errs.length}</button>` : ''}
     </section>
     ${lessons.length ? `<section class="topics"><h2>Теория</h2>${lessons.map(l =>
