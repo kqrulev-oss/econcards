@@ -89,6 +89,7 @@ function viewList() {
       <button class="btn primary" id="new">Создать тренажёр</button>
       <button class="btn" id="sample">Готовый пример за 1 клик</button>
       <label class="btn ghost">Импорт из файла<input type="file" accept=".json" id="imp" hidden></label>
+      <p class="muted">Вопросы, идеи, хотите, чтобы тренажёр собрали за вас? <a href="https://t.me/trwqxp" target="_blank" rel="noopener">Напишите в Telegram @trwqxp</a></p>
     </section>
     ${packs.length ? `<h2>Мои тренажёры</h2>${packs.map(p => `
       <a class="topic" href="#/p/${p.id}/cards"><span class="dot" style="background:${esc(p.color)}"></span>
