@@ -67,6 +67,12 @@ export function renderLanding(root, library) {
     <div class="ld-hero-art">${phone}${report}</div>
   </section>
 
+  <section class="ld-scene">
+    <img srcset="img/hero-bus-768.webp 768w, img/hero-bus.webp 1536w" sizes="(max-width: 800px) 100vw, 1080px"
+      src="img/hero-bus.webp" width="1536" height="1024" loading="lazy" alt="Ученик решает карточки на телефоне в автобусе">
+    <div class="ld-scene-cap"><b>10 минут в&nbsp;день — там, где удобно</b><span>В&nbsp;автобусе, в&nbsp;очереди, перед сном. Без учебника и&nbsp;даже без интернета.</span></div>
+  </section>
+
   <section class="ld-pains">
     <h2>Знакомо?</h2>
     <div class="ld-grid3">
