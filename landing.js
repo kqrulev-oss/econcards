@@ -17,13 +17,13 @@ const phone = `
       <span class="ld-phone-bar"><i style="width:40%"></i></span>
       <span class="ld-phone-n">4/10</span>
     </div>
-    <div class="ld-phone-topic"><span>15</span> Н и НН</div>
+    <div class="ld-phone-topic"><span>15</span> Н и НН <i class="ld-card-spark" aria-hidden="true"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 2 3 7 7 3-7 3-3 7-3-7-7-3 7-3z"/></svg></i></div>
     <div class="ld-phone-card">
       <p>Сколько Н пишется в слове?</p>
       <p class="ld-phone-word">серебря_ый</p>
       <div class="ld-opts"><button class="ld-opt" data-ok="1">н</button><button class="ld-opt">нн</button></div>
       <div class="ld-phone-exp" hidden><b>Разбор.</b> Суффикс -ЯН- → одна Н: серебряный.</div>
-      <p class="ld-phone-hint">Попробуйте ответить</p>
+      <p class="ld-phone-hint" role="status" aria-live="polite">Попробуйте ответить</p>
     </div>
   </div>`;
 
@@ -62,8 +62,8 @@ export function renderLanding(root, library) {
 
   <section class="ld-hero">
     <div class="ld-hero-text">
-      <p class="ld-kicker">Для репетиторов</p>
-      <h1>Домашка, от&nbsp;которой не&nbsp;сбегают</h1>
+      <p class="ld-kicker">Для репетиторов</p><p class="ld-story-intro">Одна карточка. Путь к уверенности.</p>
+      <h1>Домашка,<br>от которой<br><span class="ld-hero-highlight">не сбегают</span></h1>
       <p class="ld-lead">Соберите тренажёр из своих материалов за&nbsp;15&nbsp;минут. Серии, цель дня и&nbsp;очки возвращают учеников к&nbsp;карточкам, а&nbsp;вы видите, кто занимался, где ошибки и&nbsp;что разобрать на&nbsp;уроке.</p>
       <div class="ld-cta">
         <a class="ld-btn primary" href="${STUDIO}">Собрать тренажёр</a>
@@ -71,7 +71,18 @@ export function renderLanding(root, library) {
       </div>
       <p class="ld-note">Бесплатно для первых репетиторов · без установки · работает с&nbsp;телефона</p>
     </div>
-    <div class="ld-hero-art"><span class="ld-blob" aria-hidden="true"></span>${phone}${sticker}${report}</div>
+    <div class="ld-hero-art">
+      <span class="ld-blob" aria-hidden="true"></span>
+      <div class="ld-live-card"><span class="ld-demo-label">Попробуйте карточку ученика</span>${phone}</div>
+      ${sticker}
+      <figure class="ld-student-art"><img src="img/hero-student.webp"
+        srcset="img/hero-student-768.webp 768w, img/hero-student.webp 1536w"
+        sizes="(min-width: 1000px) 200px, 320px" width="1536" height="1024"
+        alt="Ученица на диване решает карточки на телефоне" fetchpriority="high">
+        <figcaption>10 минут — и можно отдыхать</figcaption></figure>
+      <span class="ld-points" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m5 12 4 4L19 6"/></svg>+10</span>
+      <div class="ld-report-float"><span class="ld-demo-label">А это видите вы · пример отчёта</span>${report}</div>
+    </div>
   </section>
 
   <section class="ld-scene">
@@ -87,6 +98,16 @@ export function renderLanding(root, library) {
       <article><span class="ld-ico">${ICONS.phone}</span><h3>Родители спрашивают, есть ли прогресс</h3><p>А&nbsp;показать нечего, кроме ощущений. Оплата продлевается на&nbsp;доверии.</p></article>
       <article><span class="ld-ico">${ICONS.clock}</span><h3>Урок уходит на&nbsp;повторение</h3><p>Вместо нового материала — снова правила, которые проходили три недели назад.</p></article>
     </div>
+  </section>
+
+  <section class="ld-journey" aria-labelledby="ld-journey-title">
+    <div class="ld-journey-heading"><p class="ld-story-intro">Карточка одна. Возможностей больше.</p><h2 id="ld-journey-title">Из «я это забыл»<br>в «я это умею»</h2><p>Ваш материал становится практикой. Практика — привычкой. А привычка — видимым прогрессом.</p></div>
+    <div class="ld-story-track">
+      <article class="ld-story-beat"><span class="ld-story-index">01 / МАТЕРИАЛ</span><div class="ld-memory-card"><span class="ld-card-spark" aria-hidden="true"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 2 3 7 7 3-7 3-3 7-3-7-7-3 7-3z"/></svg></span><small>Ваша карточка</small><b>Н или НН?</b><span class="ld-paper-line"></span><span class="ld-paper-line short"></span></div><h3>Вы объяснили.</h3><p>Добавьте правило или задачу из своих материалов.</p></article>
+      <article class="ld-story-beat"><span class="ld-story-index">02 / ПРАКТИКА</span><div class="ld-memory-card"><span class="ld-card-spark" aria-hidden="true"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 2 3 7 7 3-7 3-3 7-3-7-7-3 7-3z"/></svg></span><small>Ученик вспомнил</small><b>серебряный</b><span class="ld-story-answer">н <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg></span></div><h3>Ученик попробовал.</h3><p>Короткая тренировка, ответ и понятный разбор.</p></article>
+      <article class="ld-story-beat"><span class="ld-story-index">03 / РЕЗУЛЬТАТ</span><div class="ld-memory-card"><span class="ld-card-spark" aria-hidden="true"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 2 3 7 7 3-7 3-3 7-3-7-7-3 7-3z"/></svg></span><small>Теперь в отчёте</small><b>Есть прогресс</b><div class="ld-story-bars" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div></div><h3>Вы увидели рост.</h3><p>Точность и слабые темы подскажут, что делать дальше.</p></article>
+    </div>
+    <a class="ld-btn primary" href="${STUDIO}">Создать свою карточку</a>
   </section>
 
   <section class="ld-how" id="how">
@@ -126,7 +147,7 @@ export function renderLanding(root, library) {
     <details><summary>Какие данные учеников хранятся?</summary><p>Только имя, которое ученик ввёл сам, и&nbsp;статистика занятий. Ни&nbsp;телефонов, ни&nbsp;почты.</p></details>
   </section>
 
-  <section class="ld-final">
+  <section class="ld-final"><span class="ld-final-card" aria-hidden="true"><span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 2 3 7 7 3-7 3-3 7-3-7-7-3 7-3z"/></svg></span> Ваша следующая карточка</span>
     <h2>Соберите первый тренажёр сегодня</h2>
     <p>15&nbsp;минут — и&nbsp;ученики получат ссылку. Есть вопросы или хотите, чтобы тренажёр собрали за&nbsp;вас? Напишите.</p>
     <div class="ld-cta center-cta">
