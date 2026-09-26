@@ -6,6 +6,7 @@
    PUT  /packs/:id                сохранить набор (X-Key; первый PUT задаёт ключ)
    POST /packs/:id/progress       ученик присылает сводку прогресса
    GET  /packs/:id/progress       репетитор смотрит учеников (X-Key)
+   /tg, /tg/setup, /gh            Telegram-бот для задач Claude и Codex (worker/bot.js)
 
    Переменные (см. worker/README.md):
      GEMINI_KEY  — секрет, ключ Google AI Studio (обязательно для ИИ)
@@ -14,6 +15,8 @@
      DAILY_LIMIT — лимит ИИ-запросов на IP в сутки (по умолч. 60)
      DB          — KV-namespace: наборы, прогресс, лимиты (обязательно)
    ============================================================ */
+
+import { handleBot } from './bot.js';
 
 // «-latest» — псевдонимы Google на актуальную модель: конкретные версии
 // закрывают для новых ключей (так случилось с gemini-2.5-flash)
@@ -250,7 +253,11 @@ async function handle(req, env) {
 }
 
 export default {
-  async fetch(req, env) {
+  async fetch(req, env, ctx) {
+    const path = new URL(req.url).pathname;
+    if (path === '/gh' || path === '/tg' || path.startsWith('/tg/')) {
+      return (await handleBot(req, env, ctx)) || new Response('Нет такого адреса.', { status: 404 });
+    }
     // Когда сервер развёрнут вместе с сайтом (wrangler.jsonc в корне), сюда же
     // приходят запросы к библиотеке packs/*.json — это статика, отдаём как есть
     if (env.ASSETS && new URL(req.url).pathname.endsWith('.json')) return env.ASSETS.fetch(req);
