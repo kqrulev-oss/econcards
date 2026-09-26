@@ -77,9 +77,9 @@ function preview(p, start = 0) {
 function viewList() {
   const packs = Object.values(db.packs).sort((a, b) => b.edited - a.edited);
   $app.innerHTML = `
-    <header class="top"><div><div class="brand-title">Студия репетитора</div>
+    <header class="top"><div><div class="brand-title">Студия · Между уроками</div>
       <div class="brand-by">Тренажёр для ваших учеников за 15 минут</div></div>
-      <a class="btn small" href="${ROOT}">К ученику</a></header>
+      <a class="btn small" href="${ROOT}">О сервисе</a></header>
     <section class="panel steps-intro">
       <ol>
         <li><b>Добавьте материалы</b> — вставьте конспект, правила или задачи с решениями, ИИ сделает из них карточки. Или возьмите готовые из библиотеки: больше 3000 заданий ЕГЭ и олимпиад с разборами.</li>

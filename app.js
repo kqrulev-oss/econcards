@@ -1,6 +1,7 @@
 // Приложение ученика: ежедневное занятие по интервальному повторению,
 // темы с теорией, работа над ошибками и отправка прогресса репетитору.
 import { store, api, apiBase, loadPack, loadLibrary, renderCard, esc, text, day, uid, plural, el, toast } from './lib.js';
+import { renderLanding } from './landing.js';
 
 const $app = document.getElementById('app');
 const INTERVALS = [0, 1, 3, 7, 14, 30, 60]; // дни до повтора по «коробкам»
@@ -311,7 +312,7 @@ async function viewLibrary() {
   const lib = await loadLibrary();
   const recent = store.get('zd-recent', []);
   $app.innerHTML = `
-    <header class="top"><div class="brand-title">Задачник</div></header>
+    <header class="top"><a class="back" href="./" aria-label="На главную">←</a><div class="brand-title">Открытые наборы</div></header>
     <section class="panel intro">
       <p>Тренажёр на 10 минут в день: карточки возвращаются, когда начинаешь их забывать, а репетитор видит, где ты ошибаешься.</p>
       <label class="field"><span>Код от репетитора</span>
@@ -359,8 +360,14 @@ function viewName() {
 
 const go = h => { location.hash = h; };
 
+async function viewLanding() {
+  $app.className = 'landing';
+  renderLanding($app, await loadLibrary());
+}
+
 function route() {
-  if (!pack) return viewLibrary();
+  $app.className = 'wrap';
+  if (!pack) return location.hash === '#/library' ? viewLibrary() : viewLanding();
   const [, view, arg] = decodeURI(location.hash).split('/');
   if (ref.startsWith('t:') && !prog.name) return viewName();
   if (view === 'library') return viewLibrary();
@@ -382,6 +389,7 @@ async function init() {
   const params = new URLSearchParams(location.search);
   const recent = store.get('zd-recent', []);
   ref = params.get('t') ? 't:' + params.get('t') : params.get('p') || recent[0]?.ref || null;
+  window.addEventListener('hashchange', route);
   if (!ref) return route();
   $app.innerHTML = '<p class="loading">Загружаю…</p>';
   try {
@@ -401,7 +409,6 @@ async function init() {
   // «Новых в день» в открытых наборах ученик задаёт сам, в наборе репетитора — репетитор
   if (!ref.startsWith('t:')) pack.daily = store.get('zd-daily:' + ref, pack.daily);
   applyBrand();
-  window.addEventListener('hashchange', route);
   route();
   sync(false);
 }
