@@ -188,7 +188,7 @@ function viewHome() {
           </a>`;
         }).join('')}
       </section>`).join('')}
-    <footer class="foot"><a href="#/library">Другие наборы</a></footer>`;
+    <footer class="foot"><a href="#/library">Другие наборы</a> · <a href="./?about">Для репетиторов</a></footer>`;
   $app.querySelector('#go')?.addEventListener('click', () => startSession(queue, 'Занятие'));
   $app.querySelector('#errs')?.addEventListener('click', () => startSession(buildQueue('errors'), 'Работа над ошибками'));
   $app.querySelector('#variant')?.addEventListener('click', () => startSession(buildVariant(), 'Пробный вариант', '#/', { variant: true }));
@@ -343,10 +343,12 @@ function startSession(queue, title, back = '#/', { variant = false } = {}) {
           `<li>${esc(c.q.replace(/\s+/g, ' ').slice(0, 90))}${c.q.length > 90 ? '…' : ''}</li>`).join('')}</ul></div>` : ''}
         ${ref.startsWith('t:') && prog.name ? '<p class="muted">Результат отправлен репетитору</p>' : ''}
         ${more.length ? `<button class="btn ghost big" id="more">Ещё ${plural(more.length, 'карточка', 'карточки', 'карточек')}</button>` : ''}
+        ${store.get('zd-remind:' + ref, '') ? '' : '<button class="btn ghost big" id="remind">🔔 Напоминать каждый день в 19:00</button>'}
         <button class="btn primary big" id="done">Готово</button>
       </section>`;
     $app.querySelector('#done').onclick = leave;
     $app.querySelector('#more')?.addEventListener('click', () => startSession(more, title, back));
+    $app.querySelector('#remind')?.addEventListener('click', e => { addReminder(store.get('zd-remind-time', '19:00')); e.target.remove(); });
     sync(true);
   };
   const finishVariant = () => {
@@ -376,6 +378,42 @@ function startSession(queue, title, back = '#/', { variant = false } = {}) {
   next();
 }
 
+// Напоминание без push-сервера: ежедневное событие календаря (.ics) со звуком и ссылкой.
+// Телефон сам предлагает добавить его в календарь — работает и на iPhone.
+function packLink() {
+  const base = location.origin + location.pathname;
+  return ref.startsWith('t:') ? `${base}?t=${encodeURIComponent(ref.slice(2))}` : `${base}?p=${encodeURIComponent(ref)}`;
+}
+
+function addReminder(time) {
+  const [hh, mm] = time.split(':').map(Number);
+  const start = new Date();
+  start.setHours(hh, mm, 0, 0);
+  if (start < new Date()) start.setDate(start.getDate() + 1);
+  const pad = n => String(n).padStart(2, '0');
+  const local = d => `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}T${pad(d.getHours())}${pad(d.getMinutes())}00`;
+  const utc = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d+/, '');
+  const icsText = s => s.replace(/[\\;,]/g, m => '\\' + m).replace(/\n/g, '\\n');
+  const link = packLink();
+  const title = icsText(`10 минут: ${pack.title}`);
+  const ics = [
+    'BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Между уроками//RU', 'CALSCALE:GREGORIAN',
+    'BEGIN:VEVENT', `UID:${uid(12)}@mezhdu-urokami`, `DTSTAMP:${utc}`, `DTSTART:${local(start)}`, 'DURATION:PT10M',
+    'RRULE:FREQ=DAILY', `SUMMARY:${title}`, `URL:${link}`,
+    `DESCRIPTION:${icsText('Карточки на сегодня ждут: ' + link)}`,
+    'BEGIN:VALARM', 'ACTION:DISPLAY', 'TRIGGER:PT0M', `DESCRIPTION:${title}`, 'END:VALARM',
+    'END:VEVENT', 'END:VCALENDAR', '',
+  ].join('\r\n');
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([ics], { type: 'text/calendar;charset=utf-8' }));
+  a.download = 'napominanie.ics';
+  document.body.append(a);
+  a.click();
+  a.remove();
+  store.set('zd-remind:' + ref, time);
+  toast(`Откроется календарь — подтвердите событие на ${time}`);
+}
+
 function viewMe() {
   const tutorPack = ref.startsWith('t:');
   $app.innerHTML = `
@@ -386,6 +424,12 @@ function viewMe() {
         <input id="daily" type="number" min="0" max="50" value="${pack.daily || NEW_DEFAULT}" ${tutorPack ? 'disabled' : ''}></label>
       ${tutorPack ? '<p class="muted">Норму задаёт репетитор</p>' : ''}
       <button class="btn primary" id="save">Сохранить</button>
+    </section>
+    <section class="panel">
+      <h2>Напоминание</h2>
+      <p class="muted">Добавит в календарь телефона ежедневное событие со звуком и ссылкой на тренажёр.</p>
+      <div class="row"><input id="remind-time" type="time" value="${esc(store.get('zd-remind-time', '19:00'))}" style="width:130px">
+        <button class="btn" id="remind">🔔 Добавить в календарь</button></div>
     </section>
     <section class="panel">
       <h2>Прогресс</h2>
@@ -407,6 +451,11 @@ function viewMe() {
     save();
     toast('Сохранено');
     sync(true);
+  };
+  $app.querySelector('#remind').onclick = () => {
+    const time = $app.querySelector('#remind-time').value || '19:00';
+    store.set('zd-remind-time', time);
+    addReminder(time);
   };
   $app.querySelector('#reset').onclick = () => {
     if (!confirm('Стереть весь прогресс по этому набору?')) return;
@@ -497,7 +546,8 @@ function applyBrand() {
 async function init() {
   const params = new URLSearchParams(location.search);
   const recent = store.get('zd-recent', []);
-  ref = params.get('t') ? 't:' + params.get('t') : params.get('p') || recent[0]?.ref || null;
+  // ?about — лендинг для репетиторов даже у тех, кто уже занимается в каком-то наборе
+  ref = params.has('about') ? null : params.get('t') ? 't:' + params.get('t') : params.get('p') || recent[0]?.ref || null;
   window.addEventListener('hashchange', route);
   if (!ref) return route();
   $app.innerHTML = '<p class="loading">Загружаю…</p>';
