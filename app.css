@@ -481,3 +481,17 @@ input:focus, select:focus, textarea:focus { outline: 2px solid var(--accent); ou
 .stu-topic { display: grid; grid-template-columns: 1fr 90px 44px; gap: 4px 10px; align-items: center; font-size: 14px; }
 .stu-topic small { grid-column: 1 / -1; margin-top: -4px; }
 .stu-topic .bar { height: 8px; background: var(--line); }
+
+/* уроки сочинения: подсветка частей и врезки */
+.lesson .h2 { font-weight: 700; font-size: 17px; margin: 20px 0 6px; }
+.lesson .callout { border-radius: 12px; padding: 10px 14px; margin: 12px 0; background: var(--bg); border-left: 4px solid var(--accent); }
+.lesson .c-warn { background: var(--bad-bg); border-left-color: var(--bad); }
+.lesson .c-ok { background: var(--ok-bg); border-left-color: var(--ok); }
+.mk { padding: 1px 6px; border-radius: 6px; font-weight: 600; white-space: nowrap; }
+.mk-pr { background: #FFE3D6; color: #A63D12; }
+.mk-ex { background: #DDEBFF; color: #1F4FB5; }
+.mk-po { background: #E4F6EC; color: #16734A; }
+.mk-sv { background: #F1E4FF; color: #6A31B8; }
+.mk-pz { background: #FFF1CC; color: #8A5A00; }
+.mk-mn { background: #FFE0EC; color: #A3244F; }
+.mk-vy { background: #E2E6EE; color: #333B4A; }
