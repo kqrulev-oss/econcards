@@ -308,8 +308,12 @@ def stress_pack():
 # вручную; эти карточки GPT сам пометил как ошибочные — убираем или чиним.
 MATH_DROP = {('t2-p2', 0),   # ответ √34 — не формат краткого ответа ЕГЭ
              ('t4-p1', 0),   # 1/3 — бесконечная дробь
-             ('t5-p5', 1)}   # 2/15 — бесконечная дробь
-MATH_FIX = {('t2-p3', 1): {'a': '12'}}  # (4;1)·(2;4) = 12, в анализе стояло 16
+             ('t5-p5', 1),   # 2/15 — бесконечная дробь
+             ('t7-p2', 1),   # 3√2 — не формат краткого ответа
+             ('t10-p4', 0)}  # D = 756, корень нецелый
+MATH_FIX = {('t2-p3', 1): {'a': '12'},   # (4;1)·(2;4) = 12, в анализе стояло 16
+            ('t7-p5', 0): {'a': '3'}}    # 3⁷/3⁶ = 3, в анализе стояло 1
+MATH_FILES = ['ege-math-gpt', 'ege-math-gpt-6-10']
 
 
 def is_number(s):
@@ -317,7 +321,7 @@ def is_number(s):
 
 
 def math_pack():
-    src = load('ege-math-gpt')
+    src = [task for f in MATH_FILES for task in load(f)]
     topics, theory, cards = [], [], []
     for task in src:
         tid = f'm-task-{task["task"]}'
@@ -337,9 +341,13 @@ def math_pack():
                     continue
                 c = {**c, **MATH_FIX.get((pr['id'], i), {})}
                 card = {'id': f'{pid}-{i + 1}', 't': tid, 'p': pid, 'q': c['q']}
+                final = re.search(r'Ответ:\s*(-?\d+(?:[.,]\d+)?)\s*°?\.?\s*$', c['a']) if c['k'] == 'open' else None
                 if c['k'] == 'flip' and is_number(c['a']):
                     # Краткий ответ ЕГЭ — число: ученик вводит его, приложение проверяет
                     card.update(k='num', a=str(c['a']).replace('.', ','))
+                elif final:
+                    # Решение с числовым ответом: ученик вводит число, полное решение — в разборе
+                    card.update(k='num', a=final.group(1).replace('.', ','), e=c['a'])
                 else:
                     card.update(k=c['k'], a=c['a'])
                 if c.get('e'):
@@ -356,7 +364,7 @@ def math_pack():
         })
     return {
         'id': 'ege-math', 'title': 'ЕГЭ: профильная математика', 'subject': 'Математика',
-        'desc': 'Задания 1–5 по прототипам: планиметрия, векторы, стереометрия, вероятность. Пополняется',
+        'desc': 'Задания 1–10 по прототипам: геометрия, вероятность, уравнения, выражения, производная, текстовые задачи. Пополняется',
         'color': '#1E9E5A', 'topics': topics, 'theory': theory, 'cards': cards,
     }
 
