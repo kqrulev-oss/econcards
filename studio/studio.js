@@ -152,6 +152,7 @@ function viewCards(p) {
         <span class="card-row-actions">
           <button class="btn small" data-a="view">Открыть</button>
           ${c.k === 'match' || c.k === 'stress' ? '' : '<button class="btn small" data-a="edit">Изменить</button>'}
+          ${c.k === 'stress' || !apiBase() ? '' : '<button class="btn small" data-a="more" title="ИИ сделает новые варианты этого типа">✨ Похожие</button>'}
           <button class="btn small danger" data-a="del" aria-label="Удалить">✕</button>
         </span>
       </div>`).join('') + (cards.length > shown.length ? `<p class="muted center">Показаны первые 200 из ${cards.length} — уточните поиск</p>` : '');
@@ -166,7 +167,46 @@ function viewCards(p) {
     const i = +b.closest('.card-row').dataset.i;
     if (b.dataset.a === 'view') preview(p, i);
     if (b.dataset.a === 'edit') editCard(p, i, draw);
+    if (b.dataset.a === 'more') similarCards(p, p.cards[i], draw);
     if (b.dataset.a === 'del' && confirm('Удалить карточку?')) { p.cards.splice(i, 1); touch(p); draw(); }
+  };
+}
+
+// «Похожие»: ИИ делает новые варианты того же типа (прототипа) с другими данными.
+// Новые карточки попадают в ту же тему и прототип, что и исходная.
+async function similarCards(p, src, onAdd) {
+  const kind = src.k === 'match' || src.k === 'many' ? 'one' : src.k;
+  const opts = src.o && !src.o.left ? '\nВарианты: ' + src.o.map(o => `${o.id}) ${o.t}`).join('; ') : '';
+  const answer = Array.isArray(src.a) ? src.a.join(', ') : typeof src.a === 'object' ? JSON.stringify(src.a) : src.a;
+  const material = `Образец карточки (тип "${kind}"):\nВопрос: ${src.q}${opts}\nОтвет: ${answer}${src.e ? '\nРазбор: ' + src.e : ''}\n\n`
+    + 'Сделай новые карточки ТОГО ЖЕ прототипа и того же типа: та же проверяемая идея и формат ответа, '
+    + 'но другие слова, числа или примеры. Не повторяй образец. Все ответы перепроверь.';
+  const { box, close } = modal(`<h3>✨ Похожие карточки</h3><p class="muted">ИИ делает новые варианты этого типа — до минуты…</p><div id="sim-out"></div>`);
+  const out = box.querySelector('#sim-out');
+  let r;
+  try {
+    r = await ai('generate', { material, subject: p.subject, count: 5 });
+  } catch (err) {
+    out.innerHTML = `<p class="muted">${esc(err.message)}</p>`;
+    return;
+  }
+  box.querySelector('p.muted').textContent = 'Снимите галочку с неудачных — остальные добавятся в ту же тему.';
+  out.innerHTML = `<div class="gen-list">${r.cards.map((c, i) => `
+    <label class="gen-card"><input type="checkbox" checked data-i="${i}">
+      <span><span class="badge">${KIND_NAMES[c.k]}</span><br><b>${text(c.q)}</b>
+      ${c.o ? `<ul>${c.o.map(o => `<li class="${(Array.isArray(c.a) ? c.a : [c.a]).includes(o.id) ? 'right' : ''}">${esc(o.id)}) ${esc(o.t)}</li>`).join('')}</ul>` : `<br><span class="muted">Ответ: ${text(c.a)}</span>`}
+      </span></label>`).join('')}</div>
+    <button class="btn primary" id="sim-take">Добавить выбранные</button>`;
+  out.querySelector('#sim-take').onclick = () => {
+    const picked = [...out.querySelectorAll('input:checked')].map(x => r.cards[+x.dataset.i]);
+    for (const c of picked) {
+      const { t, ...rest } = c;
+      p.cards.push({ ...rest, id: 'c-' + uid(6), t: src.t, ...(src.p ? { p: src.p } : {}) });
+    }
+    touch(p);
+    close();
+    toast(`Добавлено ${plural(picked.length, 'карточка', 'карточки', 'карточек')}`);
+    onAdd();
   };
 }
 
@@ -526,7 +566,7 @@ async function viewStudents(p) {
         const todayDone = day(new Date(s.at)) === t ? st.today.d : 0;
         const weak = weakTopics(p, st);
         return `<tr>
-          <td><b>${esc(s.name)}</b></td>
+          <td><button class="link-btn" data-stu="${i}">${esc(s.name)}</button></td>
           <td class="${Date.now() - s.at > 3 * 864e5 ? 'late' : ''}">${ago(s.at)}</td>
           <td>${todayDone || '—'}</td>
           <td>${st.week?.d || 0} <span class="muted">· ${st.week?.days || 0} дн.</span>${activityStrip(st)}</td>
@@ -547,6 +587,7 @@ async function viewStudents(p) {
       navigator.clipboard.writeText(`План урока — ${p.title}\n${txt}`).then(() => toast('Скопировано'));
       return;
     }
+    if (b.dataset.stu !== undefined) return studentCard(p, students[+b.dataset.stu]);
     const s = students[+(b.dataset.err ?? b.dataset.rep)];
     if (b.dataset.rep !== undefined) {
       const txt = parentReport(p, s);
@@ -560,6 +601,35 @@ async function viewStudents(p) {
         ${errs.length ? `<p class="muted">Последние карточки, где ученик ошибся, — готовый план разбора на уроке.</p><ol class="err-list">${errs.map(c => `<li>${esc(c.q.slice(0, 220))}</li>`).join('')}</ol>` : '<p>Ошибок нет.</p>'}`);
     }
   };
+}
+
+// Подробно про одного ученика: активность, все темы по точности, последние ошибки
+function studentCard(p, s) {
+  const st = s.stats;
+  const acc = st.week?.d ? Math.round(st.week.ok / st.week.d * 100) : null;
+  const topics = Object.entries(st.topics || {})
+    .map(([id, t]) => ({ title: p.topics.find(x => x.id === id)?.title || id, ...t }))
+    .sort((a, b) => (a.acc ?? 101) - (b.acc ?? 101));
+  const byId = Object.fromEntries(p.cards.map(c => [c.id, c]));
+  const errs = (st.errs || []).map(id => byId[id]).filter(Boolean).slice(0, 8);
+  const { box } = modal(`
+    <h3>${esc(s.name)}</h3>
+    <p class="muted">Был(а) ${ago(s.at)} · серия ${plural(st.streak || 0, 'день', 'дня', 'дней')}</p>
+    <div class="hero-stats wide-stats">
+      <div><b>${st.week?.d || 0}</b><span>карточек за 7 дней</span></div>
+      <div><b>${acc === null ? '—' : acc + '%'}</b><span>точность</span></div>
+      <div><b>${st.mastered}/${st.total}</b><span>освоено</span></div>
+    </div>
+    <h2>Активность за 2 недели</h2>
+    <div class="strip-big">${activityStrip(st)}</div>
+    <h2>Темы — от слабых к сильным</h2>
+    ${topics.length ? `<div class="stu-topics">${topics.map(t => `
+      <div class="stu-topic"><span>${esc(t.title)}</span>
+        <span class="bar"><i style="width:${t.acc ?? 0}%;background:${(t.acc ?? 100) < 60 ? 'var(--bad)' : (t.acc ?? 0) < 80 ? 'var(--mid)' : 'var(--ok)'}"></i></span>
+        <b>${t.acc === null ? '—' : t.acc + '%'}</b><small>${t.m} из ${t.s} освоено</small></div>`).join('')}</div>` : '<p class="muted">Пока нет данных по темам.</p>'}
+    ${errs.length ? `<h2>Последние ошибки</h2><ol class="err-list">${errs.map(c => `<li>${esc(c.q.replace(/\s+/g, ' ').slice(0, 200))}</li>`).join('')}</ol>` : ''}
+    <div class="row"><button class="btn primary" id="stu-rep">Отчёт для родителей</button></div>`);
+  box.querySelector('#stu-rep').onclick = () => navigator.clipboard.writeText(parentReport(p, s)).then(() => toast('Отчёт скопирован'));
 }
 
 // ---------- настройки и публикация ----------

@@ -474,3 +474,10 @@ input:focus, select:focus, textarea:focus { outline: 2px solid var(--accent); ou
 .ld-logo, .ld-nav-cta { white-space: nowrap; }
 @media (max-width: 420px) { .ld-nav { gap: 10px; } .ld-logo { font-size: 17px; } .ld-nav-cta { padding: 8px 12px; font-size: 14px; } }
 .ld-nav-tg { flex: none; }
+.link-btn { border: 0; background: none; padding: 0; font: inherit; font-weight: 700; color: var(--accent); cursor: pointer; text-align: left; }
+.strip-big .strip { grid-template-columns: repeat(14, 18px); gap: 4px; }
+.strip-big .strip i { width: 18px; height: 18px; border-radius: 4px; }
+.stu-topics { display: grid; gap: 10px; }
+.stu-topic { display: grid; grid-template-columns: 1fr 90px 44px; gap: 4px 10px; align-items: center; font-size: 14px; }
+.stu-topic small { grid-column: 1 / -1; margin-top: -4px; }
+.stu-topic .bar { height: 8px; background: var(--line); }
