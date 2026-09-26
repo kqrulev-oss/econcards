@@ -356,7 +356,7 @@ function startSession(queue, title, back = '#/', { variant = false } = {}) {
   const finishVariant = () => {
     const tasks = results.map(({ card, score }) => {
       const t = topicsById[card.t];
-      return { n: t.n, title: shortTitle(t), pts: t.pts, got: Math.round(t.pts * score * 2) / 2 };
+      return { id: t.id, n: t.n, title: shortTitle(t), pts: t.pts, got: Math.round(t.pts * score * 2) / 2 };
     }).sort((a, b) => a.n - b.n);
     const s = tasks.reduce((n, t) => n + t.got, 0);
     const max = tasks.reduce((n, t) => n + t.pts, 0);
@@ -367,9 +367,9 @@ function startSession(queue, title, back = '#/', { variant = false } = {}) {
       <section class="finish">
         <div class="finish-icon">📝</div>
         <h1 class="finish-title">${s} из ${max}</h1>
-        <p class="muted">первичных баллов за тестовую часть · ${plural(mins, 'минута', 'минуты', 'минут')}</p>
+        <p class="muted">первичных баллов · ${plural(mins, 'минута', 'минуты', 'минут')}</p>
         <div class="variant-list">${tasks.map(t => `
-          <a class="variant-row ${t.got >= t.pts ? 'ok' : t.got > 0 ? 'mid' : 'bad'}" href="#/topic/task-${t.n}">
+          <a class="variant-row ${t.got >= t.pts ? 'ok' : t.got > 0 ? 'mid' : 'bad'}" href="#/topic/${esc(t.id)}">
             <b>${t.n}</b><span>${esc(t.title)}</span><em>${t.got}/${t.pts}</em></a>`).join('')}</div>
         <p class="muted">Нажми на задание с ошибкой — откроются его прототипы и правила</p>
         <button class="btn primary big" id="done">Готово</button>
