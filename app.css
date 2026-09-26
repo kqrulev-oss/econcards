@@ -173,9 +173,22 @@ input:focus, select:focus, textarea:focus { outline: 2px solid var(--accent); ou
 }
 .next-bar .btn { max-width: 648px; margin: 0 auto; display: flex; }
 
-.finish { text-align: center; padding: 18vh 0 0; }
-.finish-big { font-size: 64px; font-weight: 800; color: var(--accent); }
-.finish .btn { margin-top: 24px; }
+.finish { text-align: center; padding: 8vh 0 0; display: grid; gap: 14px; }
+.finish-icon { font-size: 64px; line-height: 1; animation: pop .45s cubic-bezier(.2, 1.4, .4, 1) both; }
+@keyframes pop { from { transform: scale(.4); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+.finish-title { margin: 0; font-size: 28px; }
+.finish-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.finish-stats div { background: var(--surface); border-radius: 14px; padding: 12px 6px; box-shadow: var(--shadow); }
+.finish-stats b { display: block; font-size: 22px; }
+.finish-stats span { font-size: 13px; color: var(--muted); }
+.finish-wrong { text-align: left; background: var(--surface); border-radius: 14px; padding: 14px 16px; font-size: 15px; box-shadow: var(--shadow); }
+.finish-wrong ul { margin: 8px 0 0; padding-left: 18px; color: var(--muted); }
+.finish-wrong li { margin-bottom: 4px; }
+.finish p { margin: 0; }
+.goal { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 10px; font-size: 14px; color: var(--muted); }
+.goal .bar { height: 8px; background: var(--bg); }
+.goal b { color: var(--text); }
+.goal.done { display: block; text-align: center; color: var(--ok); font-weight: 700; }
 
 /* теория */
 .lesson { background: var(--surface); border-radius: var(--radius); padding: 4px 20px 16px; box-shadow: var(--shadow); line-height: 1.6; }
