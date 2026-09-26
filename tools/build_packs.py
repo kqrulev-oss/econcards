@@ -351,7 +351,7 @@ MATH_DROP = {('t2-p2', 0),   # ответ √34 — не формат кратк
              ('t10-p4', 0)}  # D = 756, корень нецелый
 MATH_FIX = {('t2-p3', 1): {'a': '12'},   # (4;1)·(2;4) = 12, в анализе стояло 16
             ('t7-p5', 0): {'a': '3'}}    # 3⁷/3⁶ = 3, в анализе стояло 1
-MATH_FILES = ['ege-math-gpt', 'ege-math-gpt-6-10']
+MATH_FILES = ['ege-math-gpt', 'ege-math-gpt-6-10', 'ege-math-11-19']  # 11–19: tools/math_11_19.py
 
 
 # ---------- графики для задания 8 (SVG, строятся из формул) ----------
@@ -364,13 +364,23 @@ def _svg_plot(fn, x0, x1, y0, y1, extra='', width=360):
     sy = lambda y: 15 + (y1 - y) * u
     grid = ''.join(f'<line x1="{sx(i):.1f}" y1="{sy(y0):.1f}" x2="{sx(i):.1f}" y2="{sy(y1):.1f}"/>' for i in range(int(x0), int(x1) + 1))
     grid += ''.join(f'<line x1="{sx(x0):.1f}" y1="{sy(j):.1f}" x2="{sx(x1):.1f}" y2="{sy(j):.1f}"/>' for j in range(int(y0), int(y1) + 1))
-    pts = []
+    # Линия рвётся там, где функция уходит за рисунок или не определена (асимптоты)
+    segs, pts = [], []
     n = 400
     for i in range(n + 1):
         x = x0 + (x1 - x0) * i / n
-        y = fn(x)
-        if y0 - 3 <= y <= y1 + 3:
+        try:
+            y = fn(x)
+        except (ZeroDivisionError, ValueError):
+            y = None
+        if y is not None and y0 - 3 <= y <= y1 + 3:
             pts.append(f'{sx(x):.1f},{sy(y):.1f}')
+        elif pts:
+            segs.append(pts)
+            pts = []
+    if pts:
+        segs.append(pts)
+    lines = ''.join(f'<polyline fill="none" stroke="#2F6BFF" stroke-width="2.4" points="{" ".join(s)}"/>' for s in segs)
     axes = (f'<line x1="{sx(x0):.1f}" y1="{sy(0):.1f}" x2="{sx(x1):.1f}" y2="{sy(0):.1f}" stroke="#15181E" stroke-width="1.4" marker-end="url(#a)"/>'
             f'<line x1="{sx(0):.1f}" y1="{sy(y0):.1f}" x2="{sx(0):.1f}" y2="{sy(y1):.1f}" stroke="#15181E" stroke-width="1.4" marker-end="url(#a)"/>'
             f'<text x="{sx(x1) - 10:.1f}" y="{sy(0) - 6:.1f}">x</text><text x="{sx(0) + 6:.1f}" y="{sy(y1) + 10:.1f}">y</text>'
@@ -379,7 +389,7 @@ def _svg_plot(fn, x0, x1, y0, y1, extra='', width=360):
             '<defs><marker id="a" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0L10 5L0 10z"/></marker></defs>'
             f'<rect width="{w}" height="{h}" fill="#fff"/><g stroke="#E3E6EC" stroke-width="1">{grid}</g>{axes}'
             f'<clipPath id="c"><rect x="{sx(x0):.1f}" y="{sy(y1):.1f}" width="{sx(x1) - sx(x0):.1f}" height="{sy(y0) - sy(y1):.1f}"/></clipPath>'
-            f'<g clip-path="url(#c)"><polyline fill="none" stroke="#2F6BFF" stroke-width="2.4" points="{" ".join(pts)}"/>'
+            f'<g clip-path="url(#c)">{lines}'
             f'{extra(sx, sy) if extra else ""}</g></svg>')
 
 
@@ -539,6 +549,9 @@ def math_pack():
                     card.update(k=c['k'], a=c['a'])
                 if c.get('e') and 'e' not in card:
                     card['e'] = c['e']
+                for key in ('o', 'svg'):
+                    if key in c:
+                        card[key] = c[key]
                 if (pr['id'], i) in MATH_GRAPHS:
                     graph_card(card, MATH_GRAPHS[(pr['id'], i)])
                 cards.append(card)
@@ -553,7 +566,7 @@ def math_pack():
         })
     return {
         'id': 'ege-math', 'title': 'ЕГЭ: профильная математика', 'subject': 'Математика',
-        'desc': 'Задания 1–10 по прототипам: геометрия, вероятность, уравнения, выражения, производная, текстовые задачи. Пополняется',
+        'desc': 'Все 19 заданий по прототипам: от геометрии и вероятности до параметров и экономической задачи',
         'color': '#1E9E5A', 'topics': topics, 'theory': theory, 'cards': cards,
     }
 
