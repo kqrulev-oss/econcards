@@ -54,3 +54,37 @@ npx wrangler secret put GEMINI_KEY       # ключ вводится в терм
 - Прогресс: имя ученика, которое он сам ввёл, и сводка — сколько карточек решил, точность по темам, id карточек с ошибками. Сводки хранятся 180 дней.
 
 Смотреть прогресс учеников может только тот, у кого есть ключ набора. Ключ создаётся в браузере репетитора при создании тренажёра и лежит там же, поэтому делайте резервную копию: Студия → «Настройки» → «Скачать набор».
+
+## Telegram-бот: один чат для Claude и Codex
+
+Код — `worker/bot.js`, работает на том же воркере. Вы пишете задачу боту, Gemini
+решает, кому она (Codex — дизайн, Claude — логика и данные, Gemini — просто
+ответить), и спрашивает подтверждение кнопкой. Бот создаёт issue на GitHub с
+`@claude` или `@codex`, агенты делают PR, их ответы и PR приходят в чат.
+Ответ реплаем на сообщение агента уходит ему в тот же issue.
+
+Настройка (один раз):
+
+1. **Бот.** В Telegram откройте @BotFather → `/newbot` → получите токен.
+2. **Токен GitHub.** github.com → Settings → Developer settings → Fine-grained tokens →
+   Generate: Repository access — *Only select repositories* → `econcards`;
+   Permissions: **Issues — Read and write**, **Pull requests — Read-only**.
+3. **Секреты в Cloudflare** (Workers → econcards → Settings → Variables and Secrets,
+   тип *Secret*): `TG_TOKEN` (из п.1), `TG_SECRET` (любая длинная случайная строка),
+   `GH_TOKEN` (из п.2), `GH_SECRET` (другая случайная строка).
+4. Откройте `https://<адрес воркера>/tg/setup?key=<TG_SECRET>` — бот подключится.
+   Напишите боту `/start`: он пришлёт ваш chat id. Добавьте его секретом `TG_OWNER`
+   — теперь бот слушается только вас.
+5. **Вебхук GitHub.** Репозиторий → Settings → Webhooks → Add webhook:
+   Payload URL `https://<адрес воркера>/gh`, Content type `application/json`,
+   Secret — значение `GH_SECRET`, события: *Issue comments*, *Pull requests*,
+   *Pull request reviews*.
+6. **Claude** в репозитории: установить приложение https://github.com/apps/claude и
+   добавить секрет репозитория `CLAUDE_CODE_OAUTH_TOKEN` (подписка Pro/Max; токен
+   даёт команда `claude setup-token` в Claude Code) или `ANTHROPIC_API_KEY`.
+   Workflow уже лежит в `.github/workflows/claude.yml`.
+7. **Codex:** в настройках Codex (chatgpt.com/codex) подключите GitHub-репозиторий
+   `econcards` — тогда он откликается на `@codex` в issue и PR.
+
+Команды: `/claude …`, `/codex …` — отдать без выбора, `/ask …` — спросить Gemini,
+`/status` — открытые задачи.
