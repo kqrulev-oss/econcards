@@ -144,6 +144,42 @@ async function sync(force) {
 
 // ---------- экраны ----------
 
+// Иконки — inline SVG, цвет берут из currentColor
+const ICON = {
+  flame: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3c1 4 5 5 5 10a5 5 0 0 1-10 0c0-3 2-4 2-6 1.5 1 2 2 2 3 0-3 1-5 1-7z"/></svg>',
+  star: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1-4.4-4.3 6.1-.9z"/></svg>',
+  gear: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 0 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 0 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 0 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 0 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>',
+  play: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4v16l13-8z"/></svg>',
+  chevron: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg>',
+  book: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h11a4 4 0 0 1 4 4v10H8a4 4 0 0 1-4-4z"/><path d="M8 10h7M8 14h5"/></svg>',
+};
+
+// Очки: 10 за каждый верный ответ за всё время (считаются из журнала, отдельно не хранятся)
+const POINTS = 10;
+const totalPoints = () => Math.round(Object.values(prog.log).reduce((n, l) => n + (l.ok || 0), 0) * POINTS);
+
+function initials(s) {
+  return (s || '').replace(/[^\p{L}\s]/gu, ' ').trim().split(/\s+/).slice(0, 2).map(w => w[0]).join('').toUpperCase() || 'М';
+}
+
+function streakBadge() {
+  const s = streak();
+  return `<span class="streak-badge${s ? '' : ' off'}" title="${plural(s, 'день', 'дня', 'дней')} подряд">${ICON.flame}<b>${s}</b></span>`;
+}
+
+// Кольцо цели дня
+function goalRing(n, goal) {
+  const c = 2 * Math.PI * 38;
+  const part = Math.min(n, goal) / goal * c;
+  return `<svg class="ring" viewBox="0 0 92 92" aria-hidden="true">
+    <circle cx="46" cy="46" r="38" class="ring-bg"/>
+    <circle cx="46" cy="46" r="38" class="ring-fg" stroke-dasharray="${part.toFixed(1)} ${c.toFixed(1)}" transform="rotate(-90 46 46)"/>
+    <text x="46" y="53" text-anchor="middle">${Math.min(n, goal)}/${goal}</text></svg>`;
+}
+
+// Цвет по точности: зелёный ≥ 80%, жёлтый 60–79%, красный ниже
+const accTone = acc => acc === null ? 'new' : acc >= 0.8 ? 'ok' : acc >= 0.6 ? 'mid' : 'bad';
+
 function brandHeader(sub) {
   const who = pack.tutor ? `<div class="brand-by">${esc(pack.tutor)}</div>` : '';
   return `<header class="top">
@@ -171,22 +207,32 @@ function viewHome() {
     sections.at(-1).items.push(tp);
   }
   const doneToday = today.d > 0 && !queue.length;
+  const s = streak();
+  const n = Math.min(today.d, DAILY_GOAL);
+  const goalText = n >= DAILY_GOAL ? `Выполнена! Серия ${plural(s, 'день', 'дня', 'дней')}`
+    : today.d ? `Ещё ${plural(DAILY_GOAL - n, 'карточка', 'карточки', 'карточек')} — и цель выполнена`
+    : `Начни сегодня — серия станет ${plural(s + 1, 'день', 'дня', 'дней')}`;
+  const first = (prog.name || '').split(/\s+/)[0];
   $app.innerHTML = `
-    ${brandHeader('<a class="icon-btn" href="#/me" aria-label="Профиль">⚙︎</a>')}
-    <section class="hero">
-      <div class="hero-stats">
-        <div><b>${streak()}</b><span>${plural(streak(), 'день', 'дня', 'дней').replace(/^\d+ /, '')} подряд</span></div>
-        <div><b>${today.d}</b><span>карточек сегодня</span></div>
-        <div><b>${due}</b><span>на повторение</span></div>
-      </div>
-      ${goalBar(today.d)}
-      ${doneToday
-        ? '<p class="hero-done">На сегодня всё. Возвращайся завтра — карточки придут, когда начнёшь их забывать.</p>'
-        : `<button class="btn primary big" id="go">${today.d ? 'Продолжить занятие' : 'Начать занятие'} · ${plural(queue.length, 'карточка', 'карточки', 'карточек')}</button>
-           <p class="muted center">Примерно ${Math.max(3, Math.round(queue.length * 0.6))} минут</p>`}
-      ${prog.errs.length ? `<button class="btn ghost" id="errs">Работа над ошибками · ${prog.errs.length}</button>` : ''}
-      ${isExam() ? `<button class="btn ghost" id="variant">📝 Пробный вариант${lastVariant()}</button>` : ''}
+    <header class="top home-top">
+      <span class="avatar" aria-hidden="true">${esc(initials(pack.tutor || pack.title))}</span>
+      <div><div class="brand-by">${esc([pack.tutor, pack.title].filter(Boolean).join(' · '))}</div>
+        <div class="brand-title">${first ? `Привет, ${esc(first)}!` : 'Привет!'}</div></div>
+      ${streakBadge()}
+      <a class="icon-btn" href="#/me" aria-label="Профиль">${ICON.gear}</a>
+    </header>
+    <section class="goal-card">
+      ${goalRing(today.d, DAILY_GOAL)}
+      <div><b>Цель дня</b><span>${goalText}</span></div>
     </section>
+    ${doneToday
+      ? '<p class="hero-done">На сегодня всё. Возвращайся завтра — карточки придут, когда начнёшь их забывать.</p>'
+      : `<button class="btn cta big" id="go">${ICON.play}${today.d ? 'Продолжить' : 'Заниматься'} · ${Math.max(3, Math.round(queue.length * 0.6))} мин</button>
+         <p class="muted center small-note">${plural(queue.length, 'карточка', 'карточки', 'карточек')}${due ? ` · ${due} на повторение` : ''} · ${totalPoints()} очков</p>`}
+    ${prog.errs.length || isExam() ? `<div class="home-actions">
+      ${prog.errs.length ? `<button class="btn" id="errs">Ошибки · ${prog.errs.length}</button>` : ''}
+      ${isExam() ? `<button class="btn" id="variant">Пробный вариант${lastVariant()}</button>` : ''}
+    </div>` : ''}
     ${isExam() ? examGrid() : sections.map(s => `
       <section class="topics">
         ${s.name ? `<h2>${esc(s.name)}</h2>` : ''}
@@ -223,12 +269,11 @@ const shortTitle = t => t.title.replace(/^\d+\.\s*/, '');
 function examGrid() {
   return `<section class="topics"><h2>Задания ЕГЭ</h2><div class="task-grid">${pack.topics.map(tp => {
     const st = topicStats(tp.id);
-    const pct = st.total ? Math.round(st.mastered / st.total * 100) : 0;
-    const state = st.started >= 5 && st.acc !== null && st.acc < 0.6 ? 'weak' : pct >= 80 ? 'done' : st.started ? 'started' : '';
-    return `<a class="task-tile ${state}" href="#/topic/${encodeURIComponent(tp.id)}" style="--p:${pct}%">
-      <b>${tp.n}</b><span>${esc(shortTitle(tp))}</span><i class="task-bar"></i></a>`;
+    const acc = st.started ? st.acc : null;
+    return `<a class="task-tile ${accTone(acc)}" href="#/topic/${encodeURIComponent(tp.id)}" title="${esc(tp.title)}" aria-label="Задание ${tp.n}: ${esc(shortTitle(tp))}">
+      <b>${tp.n}</b><span>${acc === null ? 'новое' : Math.round(acc * 100) + '%'}</span></a>`;
   }).join('')}</div>
-  <p class="muted legend"><span class="dot weak"></span> проседает <span class="dot done"></span> освоено</p></section>`;
+  <p class="muted legend">Точность: <span class="dot ok"></span> 80%+ <span class="dot mid"></span> 60–79% <span class="dot bad"></span> ниже 60%</p></section>`;
 }
 
 // Вариант: по одной карточке на каждое задание с тестовым ответом
@@ -251,27 +296,32 @@ function viewTopic(tid) {
   const lessons = (pack.theory || []).filter(l => l.topic === tid);
   const errs = buildQueue('errors', tid);
   const protos = (tp.protos || []).filter(pr => pack.cards.some(c => c.p === pr.id));
+  const pct = st.total ? Math.round(st.mastered / st.total * 100) : 0;
   $app.innerHTML = `
-    <header class="top"><a class="back" href="#/">←</a><div>
-      ${tp.n ? `<div class="brand-by">Задание ${tp.n} · ${plural(tp.pts, 'балл', 'балла', 'баллов')}</div>` : ''}
-      <div class="brand-title">${esc(tp.n ? shortTitle(tp) : tp.title)}</div></div></header>
+    <header class="top"><a class="back" href="#/" aria-label="Назад">←</a><div>
+      ${tp.n ? `<div class="brand-by">Задание ${tp.n} · ${plural(tp.pts, 'балл', 'балла', 'баллов')}</div>` : ''}</div></header>
+    <section class="topic-hero">
+      <h1>${esc(tp.n ? shortTitle(tp) : tp.title)}</h1>
+      ${st.total ? `<span class="bar big-bar"><i style="width:${pct}%"></i></span>
+        <span class="topic-hero-meta">${st.acc !== null ? `${Math.round(st.acc * 100)}% точность · ` : ''}${st.mastered} из ${st.total} освоено</span>`
+        : '<span class="topic-hero-meta">В этой теме пока только теория</span>'}
+    </section>
+    ${st.total ? `<div class="home-actions">
+      <button class="btn primary" id="train">${protos.length ? 'Тренировать все' : 'Тренировать'}</button>
+      ${errs.length ? `<button class="btn" id="errs">Ошибки · ${errs.length}</button>` : ''}
+    </div>` : ''}
     ${protos.length ? `<section class="topics"><h2>Прототипы</h2>${protos.map(pr => {
       const ps = topicStats(tid, pr.id);
-      const pct = ps.total ? Math.round(ps.mastered / ps.total * 100) : 0;
-      return `<div class="proto">
-        <div class="proto-head"><b>${esc(pr.title)}</b><span class="topic-meta">${ps.mastered}/${ps.total}${ps.acc !== null ? ` · ${Math.round(ps.acc * 100)}%` : ''}</span></div>
-        ${pr.tip ? `<p class="proto-tip">💡 ${esc(pr.tip)}</p>` : ''}
-        <span class="bar"><i style="width:${pct}%"></i></span>
-        <button class="btn small" data-proto="${esc(pr.id)}">Тренировать</button>
-      </div>`;
+      const acc = ps.started ? ps.acc : null;
+      return `<button class="proto" data-proto="${esc(pr.id)}">
+        <span class="acc-badge ${accTone(acc)}">${acc === null ? 'new' : Math.round(acc * 100) + '%'}</span>
+        <span class="proto-body"><b>${esc(pr.title)}</b>${pr.tip ? `<span class="proto-tip">${esc(pr.tip)}</span>` : ''}
+          <span class="proto-meta">${ps.mastered} из ${ps.total} освоено</span></span>
+        ${ICON.chevron}
+      </button>`;
     }).join('')}</section>` : ''}
-    <section class="panel">
-      <p>${st.total ? `Освоено ${st.mastered} из ${st.total}${st.acc !== null ? ` · точность ${Math.round(st.acc * 100)}%` : ''}` : 'В этой теме пока только теория'}</p>
-      ${st.total ? `<button class="btn primary" id="train">${protos.length ? 'Все прототипы вперемешку' : 'Тренировать тему'}</button>` : ''}
-      ${errs.length ? `<button class="btn ghost" id="errs">Ошибки по теме · ${errs.length}</button>` : ''}
-    </section>
     ${lessons.length ? `<section class="topics"><h2>Теория</h2>${lessons.map(l =>
-      `<a class="topic" href="#/lesson/${encodeURIComponent(l.id)}"><span class="topic-title">${esc(l.title)}</span>
+      `<a class="topic lesson-link" href="#/lesson/${encodeURIComponent(l.id)}">${ICON.book}<span class="topic-title">${esc(l.title)}</span>
        <span class="topic-meta">${l.min ? l.min + ' мин' : ''}</span></a>`).join('')}</section>` : ''}`;
   $app.querySelector('#train')?.addEventListener('click', () => startSession(buildQueue('topic', tid), tp.title, `#/topic/${tid}`));
   $app.querySelector('#errs')?.addEventListener('click', () => startSession(errs, 'Ошибки: ' + tp.title, `#/topic/${tid}`));
@@ -294,11 +344,13 @@ function viewLesson(lid) {
   window.scrollTo(0, 0);
 }
 
+const PRAISE = ['Верно!', 'Точно!', 'Отлично!', 'Так держать!', 'В точку!'];
+
 function startSession(queue, title, back = '#/', { variant = false } = {}) {
   if (!queue.length) return toast('Здесь пока нечего повторять');
   const q = queue.slice();
   const requeued = new Set();
-  let i = 0, ok = 0, answered = 0;
+  let i = 0, ok = 0, answered = 0, points = 0;
   const started = Date.now();
   const streakBefore = streak();
   const missed = new Map();
@@ -314,14 +366,21 @@ function startSession(queue, title, back = '#/', { variant = false } = {}) {
         <div class="progress"><i style="width:${Math.round(i / q.length * 100)}%"></i></div>
         <span class="muted">${i + 1}/${q.length}</span>
       </header>
-      <div class="card-topic">${esc(cardLabel(card, title))}</div>
+      <div class="card-topic">${topicsById[card.t]?.n ? `<span class="num-badge">${topicsById[card.t].n}</span>` : ''}<span>${esc(cardLabel(card, title).replace(/^\d+\.\s*/, ''))}</span></div>
       <article class="card"></article>
-      <div class="next-bar" hidden><button class="btn primary big" id="next">Дальше</button></div>`;
+      <div class="next-bar" hidden><div class="verdict"></div><button class="btn primary big" id="next">Дальше</button></div>`;
     const bar = $app.querySelector('.next-bar');
     renderCard(card, $app.querySelector('.card'), score => {
       grade(card, score);
       answered++;
       ok += score;
+      points += score * POINTS;
+      const v = $app.querySelector('.verdict');
+      v.className = `verdict ${score === 1 ? 'ok' : score > 0 ? 'mid' : 'bad'}`;
+      v.innerHTML = variant ? '<span>Ответ записан</span>'
+        : score === 1 ? `<b>+${POINTS}</b><span>${PRAISE[Math.floor(Math.random() * PRAISE.length)]}</span>`
+        : score > 0 ? `<b>+${score * POINTS}</b><span>Почти! Карточка вернётся завтра</span>`
+        : '<span>Не страшно — карточка вернётся в конце и завтра</span>';
       // Ошибку показываем ещё раз в конце занятия, но только один раз
       if (score < 1) missed.set(card.id, card);
       if (variant) results.push({ card, score });
@@ -337,25 +396,27 @@ function startSession(queue, title, back = '#/', { variant = false } = {}) {
     if (variant) return finishVariant();
     const mins = Math.max(1, Math.round((Date.now() - started) / 60000));
     const pct = answered ? Math.round(ok / answered * 100) : 0;
-    const [icon, title] = pct >= 90 ? ['🏆', 'Отлично!'] : pct >= 70 ? ['💪', 'Хорошая работа'] : ['🌱', 'Начало положено'];
     const st = streak();
+    const [icon, title] = st > streakBefore ? [ICON.flame, `Серия ${plural(st, 'день', 'дня', 'дней')}!`]
+      : pct >= 90 ? [ICON.star, 'Отлично!'] : pct >= 70 ? [ICON.star, 'Хорошая работа'] : [ICON.flame, 'Начало положено'];
     const more = back === '#/' ? buildQueue('daily') : [];
     const wrong = [...missed.values()];
     $app.innerHTML = `
       <section class="finish">
+        <div class="confetti" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></div>
         <div class="finish-icon">${icon}</div>
         <h1 class="finish-title">${title}</h1>
+        ${ref.startsWith('t:') && prog.name ? `<p class="finish-sub">${esc(pack.tutor || 'Репетитор')} увидит результат</p>` : ''}
         <div class="finish-stats">
           <div><b>${Math.round(ok)}/${answered}</b><span>верно</span></div>
+          <div><b>+${Math.round(points)}</b><span>очков</span></div>
           <div><b>${mins}</b><span>${plural(mins, 'минута', 'минуты', 'минут').replace(/^\d+ /, '')}</span></div>
-          <div><b>🔥 ${st}</b><span>${st > streakBefore ? 'серия +1' : 'серия'}</span></div>
         </div>
         ${goalBar((prog.log[day()] || { d: 0 }).d)}
-        ${wrong.length ? `<div class="finish-wrong"><b>Вернутся завтра — повторишь:</b><ul>${wrong.slice(0, 5).map(c =>
+        ${wrong.length ? `<div class="finish-wrong"><b>Вернутся завтра</b><ul>${wrong.slice(0, 5).map(c =>
           `<li>${esc(c.q.replace(/\s+/g, ' ').slice(0, 90))}${c.q.length > 90 ? '…' : ''}</li>`).join('')}</ul></div>` : ''}
-        ${ref.startsWith('t:') && prog.name ? '<p class="muted">Результат отправлен репетитору</p>' : ''}
-        ${more.length ? `<button class="btn ghost big" id="more">Ещё ${plural(more.length, 'карточка', 'карточки', 'карточек')}</button>` : ''}
-        ${store.get('zd-remind:' + ref, '') ? '' : '<button class="btn ghost big" id="remind">🔔 Напоминать каждый день в 19:00</button>'}
+        ${more.length ? `<button class="btn big" id="more">Ещё ${plural(more.length, 'карточка', 'карточки', 'карточек')}</button>` : ''}
+        ${store.get('zd-remind:' + ref, '') ? '' : '<button class="btn big" id="remind">Напоминать каждый день в 19:00</button>'}
         <button class="btn primary big" id="done">Готово</button>
       </section>`;
     $app.querySelector('#done').onclick = leave;
@@ -375,13 +436,13 @@ function startSession(queue, title, back = '#/', { variant = false } = {}) {
     save();
     $app.innerHTML = `
       <section class="finish">
-        <div class="finish-icon">📝</div>
+        <div class="finish-icon">${ICON.star}</div>
         <h1 class="finish-title">${s} из ${max}</h1>
-        <p class="muted">первичных баллов · ${plural(mins, 'минута', 'минуты', 'минут')}</p>
+        <p class="finish-sub">первичных баллов · ${plural(mins, 'минута', 'минуты', 'минут')}</p>
         <div class="variant-list">${tasks.map(t => `
           <a class="variant-row ${t.got >= t.pts ? 'ok' : t.got > 0 ? 'mid' : 'bad'}" href="#/topic/${esc(t.id)}">
             <b>${t.n}</b><span>${esc(t.title)}</span><em>${t.got}/${t.pts}</em></a>`).join('')}</div>
-        <p class="muted">Нажми на задание с ошибкой — откроются его прототипы и правила</p>
+        <p class="finish-sub">Нажми на задание с ошибкой — откроются его прототипы и правила</p>
         <button class="btn primary big" id="done">Готово</button>
       </section>`;
     $app.querySelector('#done').onclick = leave;
@@ -441,7 +502,7 @@ function viewMe() {
       <h2>Напоминание</h2>
       <p class="muted">Добавит в календарь телефона ежедневное событие со звуком и ссылкой на тренажёр.</p>
       <div class="row"><input id="remind-time" type="time" value="${esc(store.get('zd-remind-time', '19:00'))}" style="width:130px">
-        <button class="btn" id="remind">🔔 Добавить в календарь</button></div>
+        <button class="btn" id="remind">Добавить в календарь</button></div>
     </section>
     <section class="panel">
       <h2>Прогресс</h2>
