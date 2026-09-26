@@ -165,12 +165,12 @@ function editCard(p, index, onSave) {
       <label class="field"><span>Тема</span><select id="t">${p.topics.map(t => `<option value="${esc(t.id)}" ${t.id === c.t ? 'selected' : ''}>${esc(t.title)}</option>`).join('')}<option value="__new">+ Новая тема…</option></select></label>
       <label class="field"><span>Тип</span><select id="k">${['one', 'many', 'flip', 'open'].map(k => `<option value="${k}" ${k === c.k ? 'selected' : ''}>${KIND_NAMES[k]}</option>`).join('')}</select></label>
     </div>
-    <label class="field"><span>Вопрос или условие</span><textarea id="q" rows="4">${esc(c.q)}</textarea></label>
+    <div class="field"><label for="q">Вопрос или условие</label><textarea id="q" rows="4">${esc(c.q)}</textarea></div>
     <div id="opts" class="field"><span>Варианты — отметьте верные</span>
       <div id="optlist">${opts.map(o => optRow(o, right.has(o.id))).join('')}</div>
       <button class="btn small" id="addopt">+ Вариант</button></div>
-    <label class="field" id="ans"><span id="ans-l">Ответ</span><textarea id="a" rows="4">${esc(c.k === 'flip' || c.k === 'open' ? c.a : '')}</textarea></label>
-    <label class="field"><span>Разбор (необязательно)</span><textarea id="e" rows="3">${esc(c.e || '')}</textarea></label>
+    <div class="field" id="ans"><label for="a" id="ans-l">Ответ</label><textarea id="a" rows="4">${esc(c.k === 'flip' || c.k === 'open' ? c.a : '')}</textarea></div>
+    <div class="field"><label for="e">Разбор (необязательно)</label><textarea id="e" rows="3">${esc(c.e || '')}</textarea></div>
     <div class="row"><button class="btn primary" id="save">Сохранить</button><button class="btn ghost" id="cancel">Отмена</button></div>`);
   const $ = s => box.querySelector(s);
   const sync = () => {
@@ -236,7 +236,7 @@ function viewAdd(p) {
     <section class="panel">
       <h2>Из ваших материалов</h2>
       <p class="muted">Вставьте конспект, правила, разбор задач или свой вариант с решениями. ИИ сделает карточки, а вы проверите их перед добавлением.</p>
-      <label class="field"><span>Материал</span><textarea id="mat" rows="10" placeholder="Например: правила пунктуации при причастном обороте с примерами…"></textarea></label>
+      <div class="field"><label for="mat">Материал</label><textarea id="mat" rows="10" placeholder="Например: правила пунктуации при причастном обороте с примерами…"></textarea></div>
       <div class="row">
         <label class="btn small">Загрузить .txt<input type="file" accept=".txt,.md,.csv" id="file" hidden></label>
         <label class="row inline">Карточек: <input id="count" type="number" min="5" max="40" value="15" style="width:80px"></label>
