@@ -62,13 +62,16 @@ npx wrangler secret put GEMINI_KEY       # ключ вводится в терм
 ответить), и спрашивает подтверждение кнопкой. Бот создаёт issue на GitHub с
 `@claude` или `@codex`, агенты делают PR, их ответы и PR приходят в чат.
 Ответ реплаем на сообщение агента уходит ему в тот же issue.
+Все изменения идут через Claude Code: каждый PR, который открыл не Claude (Codex,
+ChatGPT, правки руками), бот сам отдаёт Claude на проверку, а тот доводит его и
+пишет, можно ли сливать. Сливаете вы.
 
 Настройка (один раз):
 
 1. **Бот.** В Telegram откройте @BotFather → `/newbot` → получите токен.
 2. **Токен GitHub.** github.com → Settings → Developer settings → Fine-grained tokens →
    Generate: Repository access — *Only select repositories* → `econcards`;
-   Permissions: **Issues — Read and write**, **Pull requests — Read-only**.
+   Permissions: **Issues — Read and write**, **Pull requests — Read and write** (чтобы просить Claude проверить PR от Codex).
 3. **Секреты в Cloudflare** (Workers → econcards → Settings → Variables and Secrets,
    тип *Secret*): `TG_TOKEN` (из п.1), `TG_SECRET` (любая длинная случайная строка),
    `GH_TOKEN` (из п.2), `GH_SECRET` (другая случайная строка).
