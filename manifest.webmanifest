@@ -1,32 +1,17 @@
 {
-  "name": "EconCards — олимпиадная экономика",
-  "short_name": "EconCards",
-  "description": "1211 карточек по олимпиадной экономике с разборами и тренажёром. Работает офлайн.",
-  "start_url": "./index.html",
+  "name": "Задачник — тренажёр от репетитора",
+  "short_name": "Задачник",
+  "description": "Карточки на 10 минут в день по материалам вашего репетитора. Работает офлайн.",
+  "start_url": "./",
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#F8F6F1",
-  "theme_color": "#0C0F16",
+  "background_color": "#F4F5F8",
+  "theme_color": "#2F6BFF",
   "lang": "ru",
   "icons": [
-    {
-      "src": "icons/icon-192.png",
-      "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "icons/icon-512.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "icons/icon-512.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "maskable"
-    }
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
   ]
 }
