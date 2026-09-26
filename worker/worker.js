@@ -252,6 +252,8 @@ export default {
     }
     const headers = new Headers(res.headers);
     for (const [k, v] of Object.entries(cors(origin))) headers.set(k, v);
+    // Явная кодировка: иначе браузер, открывший ответ напрямую, показывает кракозябры
+    if ((headers.get('Content-Type') || '').startsWith('application/json')) headers.set('Content-Type', 'application/json; charset=utf-8');
     return new Response(res.body, { status: res.status, headers });
   },
 };
