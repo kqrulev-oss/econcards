@@ -24,6 +24,7 @@ const MAX = 4000;           // обрезаем входы проверок, ч�
 const MAX_MATERIAL = 30000; // материалы репетитора для генерации
 const MAX_PACK = 5e6;       // байт на набор
 const MAX_STATS = 20000;    // байт на сводку ученика
+const MAX_REQUEST_AI = 15e6; // генерация с PDF и фото
 
 const cors = origin => ({
   'Access-Control-Allow-Origin': origin || '*',
@@ -63,12 +64,18 @@ const SYSTEM = {
 };
 for (const task of ['check', 'hint', 'explain', 'similar']) SYSTEM[task] += PLAIN;
 
+// Вложения к генерации: PDF и фото страниц (base64), не больше 10 штук
+const ATTACH_TYPES = ['application/pdf', 'image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif'];
+const attachments = d => (Array.isArray(d.files) ? d.files : [])
+  .filter(f => f && ATTACH_TYPES.includes(f.mime) && typeof f.data === 'string' && f.data.length > 0)
+  .slice(0, 10);
+
 const PROMPT = {
   check: d => `Условие:\n${cut(d.problem)}\n\nЭталонное решение:\n${cut(d.reference)}\n\nРешение ученика:\n${cut(d.answer)}\n\nПроверь решение ученика.`,
   hint: d => `Условие:\n${cut(d.problem)}\n\nЭталонное решение (ученику не показывай):\n${cut(d.reference)}\n\nДай подсказку уровня ${Math.max(1, Math.min(3, Number(d.level) || 1))}.`,
   explain: d => `Условие:\n${cut(d.problem)}\n\nЭталонное решение:\n${cut(d.reference)}\n\nПереобъясни это решение проще.`,
   similar: d => `Задача-образец:\n${cut(d.problem)}\n\nЭталонное решение:\n${cut(d.reference)}\n\nСделай клон: замени ТОЛЬКО числа и реши заново тем же способом.`,
-  generate: d => `Предмет: ${cut(d.subject, 100) || 'не указан'}\nУровень учеников: ${cut(d.level, 100) || 'не указан'}\nСколько карточек: около ${Math.max(5, Math.min(40, Number(d.count) || 15))}\n\nМатериалы:\n${cut(d.material, MAX_MATERIAL)}`,
+  generate: d => `Предмет: ${cut(d.subject, 100) || 'не указан'}\nУровень учеников: ${cut(d.level, 100) || 'не указан'}\nСколько карточек: около ${Math.max(5, Math.min(40, Number(d.count) || 15))}\n\nМатериалы:\n${cut(d.material, MAX_MATERIAL) || '(только во вложениях)'}${attachments(d).length ? `\n\nЕщё ${attachments(d).length} вложени(я) — PDF или фото страниц: прочитай их полностью, включая рукописный текст, таблицы и формулы.` : ''}`,
 };
 
 async function gemini(env, task, body) {
@@ -76,7 +83,10 @@ async function gemini(env, task, body) {
   const json = task === 'generate';
   const payload = {
     systemInstruction: { parts: [{ text: SYSTEM[task] }] },
-    contents: [{ role: 'user', parts: [{ text: PROMPT[task](body) }] }],
+    contents: [{ role: 'user', parts: [
+      { text: PROMPT[task](body) },
+      ...(task === 'generate' ? attachments(body).map(f => ({ inlineData: { mimeType: f.mime, data: f.data } })) : []),
+    ] }],
     generationConfig: {
       temperature: task === 'similar' ? 0.7 : 0.3,
       maxOutputTokens: json ? 16384 : 2048,
@@ -180,7 +190,7 @@ async function handle(req, env) {
 
   // POST /ai и старый вызов POST / из прежнего приложения
   if (req.method === 'POST' && (parts[0] === 'ai' || !parts.length)) {
-    const body = await readJson(req, MAX_MATERIAL + 5000);
+    const body = await readJson(req, MAX_REQUEST_AI);
     if (!SYSTEM[body.task]) throw new HttpError(400, 'Неизвестное действие.');
     await limitAi(env, req);
     const out = await gemini(env, body.task, body);
