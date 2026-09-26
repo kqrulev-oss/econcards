@@ -84,7 +84,7 @@ small { display: block; color: var(--muted); font-size: 13px; line-height: 1.35;
 .btn.bad.chosen { background: var(--bad); color: #fff; }
 .btn.mid.chosen { background: var(--mid); color: #fff; }
 .field { display: block; margin: 0 0 14px; }
-.field > span:first-child { display: block; font-size: 14px; color: var(--muted); margin-bottom: 6px; }
+.field > span:first-child, .field > label:first-child { display: block; font-size: 14px; color: var(--muted); margin-bottom: 6px; }
 input, select, textarea {
   width: 100%; font: inherit; color: var(--text); background: var(--surface);
   border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px;
