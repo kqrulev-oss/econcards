@@ -120,7 +120,9 @@ export function renderCard(card, root, onDone, { imgRoot = './', aiEnabled = !!a
     onDone(score);
   };
 
-  const imgs = (card.img || []).map(src => `<img src="${esc(imgRoot + src)}" alt="" loading="lazy">`).join('');
+  const imgs = (card.img || []).map(src => `<img src="${esc(imgRoot + src)}" alt="" loading="lazy">`).join('')
+    // График из набора — картинкой через data:, чтобы SVG не мог выполнить код
+    + (card.svg ? `<img class="graph" src="data:image/svg+xml;charset=utf-8,${encodeURIComponent(card.svg)}" alt="График к заданию">` : '');
   root.innerHTML = `
     ${card.src ? `<div class="card-src">${esc(card.src)}</div>` : ''}
     <div class="card-q">${text(card.q)}</div>

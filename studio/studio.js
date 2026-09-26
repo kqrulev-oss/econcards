@@ -440,6 +440,32 @@ function weakTopics(p, st) {
     .map(([id, t]) => ({ title: p.topics.find(x => x.id === id)?.title || id, acc: t.acc }));
 }
 
+// «Что разобрать на уроке»: карточки и темы, где ошибается больше всего учеников
+function lessonPlan(p, students) {
+  const byId = Object.fromEntries(p.cards.map(c => [c.id, c]));
+  const cardErr = new Map();
+  for (const s of students) for (const id of new Set(s.stats.errs || [])) {
+    if (byId[id]) cardErr.set(id, [...(cardErr.get(id) || []), s.name]);
+  }
+  const topicWeak = new Map();
+  for (const s of students) for (const w of weakTopics(p, s.stats)) {
+    topicWeak.set(w.title, [...(topicWeak.get(w.title) || []), `${s.name} ${w.acc}%`]);
+  }
+  const cards = [...cardErr.entries()].sort((a, b) => b[1].length - a[1].length).slice(0, 8);
+  const topics = [...topicWeak.entries()].sort((a, b) => b[1].length - a[1].length).slice(0, 5);
+  if (!cards.length && !topics.length) return '';
+  const who = names => names.length > 3 ? `${names.slice(0, 3).join(', ')} и ещё ${names.length - 3}` : names.join(', ');
+  return `<section class="panel plan">
+    <h2>Что разобрать на уроке</h2>
+    ${topics.length ? `<h3>Темы, которые проседают</h3><ul>${topics.map(([t, n]) =>
+      `<li><b>${esc(t)}</b> <span class="muted">— ${esc(who(n))}</span></li>`).join('')}</ul>` : ''}
+    ${cards.length ? `<h3>Задания, где ошибаются чаще всего</h3><ol>${cards.map(([id, n]) =>
+      `<li>${esc(byId[id].q.replace(/\s+/g, ' ').slice(0, 160))}${byId[id].q.length > 160 ? '…' : ''}
+        <span class="plan-who">${plural(n.length, 'ученик', 'ученика', 'учеников')}: ${esc(who(n))}</span></li>`).join('')}</ol>` : ''}
+    <button class="btn small" id="copy-plan">Скопировать план урока</button>
+  </section>`;
+}
+
 function parentReport(p, s) {
   const st = s.stats;
   const acc = st.week.d ? Math.round(st.week.ok / st.week.d * 100) : 0;
@@ -499,10 +525,16 @@ async function viewStudents(p) {
           <td class="nowrap"><button class="btn small" data-err="${i}">Ошибки</button> <button class="btn small" data-rep="${i}">Отчёт</button></td>
         </tr>`;
       }).join('')}</tbody></table></div>
-    <p class="muted">Ученик отправляет прогресс после каждого занятия. «Отчёт» — готовый текст для родителей.</p>`;
+    <p class="muted">Ученик отправляет прогресс после каждого занятия. «Отчёт» — готовый текст для родителей.</p>
+    ${lessonPlan(p, students)}`;
   box.onclick = e => {
     const b = e.target.closest('button');
     if (!b) return;
+    if (b.id === 'copy-plan') {
+      const txt = [...box.querySelectorAll('.plan h3, .plan li')].map(x => (x.tagName === 'H3' ? '\n' : '• ') + x.textContent.replace(/\s+/g, ' ').trim()).join('\n').trim();
+      navigator.clipboard.writeText(`План урока — ${p.title}\n${txt}`).then(() => toast('Скопировано'));
+      return;
+    }
     const s = students[+(b.dataset.err ?? b.dataset.rep)];
     if (b.dataset.rep !== undefined) {
       const txt = parentReport(p, s);
@@ -589,6 +621,14 @@ function viewSettings(p) {
   };
 }
 
+// QR-код ссылки (vendor/qrcode.js, MIT): чёрные модули на белом — читается любой камерой
+function qrSvg(text, cell) {
+  const qr = window.qrcode(0, 'M');
+  qr.addData(text);
+  qr.make();
+  return qr.createSvgTag({ cellSize: cell, margin: 2, scalable: true });
+}
+
 function viewPublish(p) {
   const link = studentLink(p.id);
   const box = shell(p, 'publish', `
@@ -597,6 +637,9 @@ function viewPublish(p) {
         <h2>Ссылка для учеников</h2>
         <div class="row"><input readonly value="${esc(link)}" id="link"><button class="btn" id="copy">Скопировать</button></div>
         <p class="muted">Или код: <b>${p.id}</b> — ученик вводит его на главной.</p>
+        ${window.qrcode ? `<div class="qr-wrap"><div class="qr">${qrSvg(link, 5)}</div>
+          <div><b>QR-код для урока</b><p class="muted">Покажите на экране — ученики наведут камеру телефона и сразу откроют тренажёр.</p>
+          <button class="btn small" id="qr-big">На весь экран</button></div></div>` : ''}
         <div class="row">
           <a class="btn" target="_blank" href="https://t.me/share/url?url=${encodeURIComponent(link)}&text=${encodeURIComponent(`Тренажёр «${p.title}»: занимайся по 10 минут в день`)}">Отправить в Telegram</a>
           <a class="btn ghost" target="_blank" href="${esc(link)}">Открыть как ученик</a>
@@ -614,6 +657,8 @@ function viewPublish(p) {
       </ul>
     </section>`);
   box.querySelector('#copy')?.addEventListener('click', () => navigator.clipboard.writeText(link).then(() => toast('Скопировано')));
+  box.querySelector('#qr-big')?.addEventListener('click', () =>
+    modal(`<div class="qr-big">${qrSvg(link, 12)}<p><b>${esc(p.title)}</b><br><span class="muted">Наведите камеру телефона</span></p></div>`));
   box.querySelector('#pub').onclick = async e => {
     if (!p.cards.length) return toast('Добавьте карточки');
     e.target.disabled = true;
