@@ -445,3 +445,8 @@ input:focus, select:focus, textarea:focus { outline: 2px solid var(--accent); ou
 .variant-row.mid { border-left-color: var(--mid); }
 .variant-row.bad { border-left-color: var(--bad); }
 .variant-row em { font-style: normal; font-weight: 700; }
+.num-row { display: flex; gap: 8px; }
+.num-input { flex: 1; font-size: 20px; font-weight: 600; text-align: center; letter-spacing: .02em; }
+.num-input.ok { border-color: var(--ok); background: var(--ok-bg); }
+.num-input.bad { border-color: var(--bad); background: var(--bad-bg); }
+.num-row .check { margin-top: 0; }

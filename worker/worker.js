@@ -49,6 +49,7 @@ const SYSTEM = {
 - Одна карточка — одна проверяемая мысль. Формулировки короткие и однозначные.
 - Если в материалах есть задачи с решениями — переноси их как карточки типа "open" с полным решением в "a".
 - Для правил, определений и фактов делай "one" (4 варианта, один верный) или "flip" (вопрос → короткий ответ).
+- Если ответ задачи — одно число (целое или конечная десятичная дробь), делай "num": в "a" только число, например "0,35".
 - "many" — только если верных вариантов действительно несколько.
 - Неверные варианты должны быть правдоподобными — типичные ошибки учеников.
 - В "e" коротко объясни, почему ответ верный (1–2 предложения).
@@ -60,6 +61,7 @@ const SYSTEM = {
  "cards":[{"t":"t1","k":"one","q":"…","o":[{"id":"а","t":"…"},{"id":"б","t":"…"},{"id":"в","t":"…"},{"id":"г","t":"…"}],"a":"б","e":"…"},
           {"t":"t1","k":"many","q":"…","o":[…],"a":["а","в"],"e":"…"},
           {"t":"t2","k":"flip","q":"…","a":"…"},
+          {"t":"t2","k":"num","q":"задача с числовым ответом","a":"12","e":"решение"},
           {"t":"t2","k":"open","q":"…","a":"полное решение с ответом"}]}`,
 };
 for (const task of ['check', 'hint', 'explain', 'similar']) SYSTEM[task] += PLAIN;
@@ -136,7 +138,8 @@ function cleanGenerated(raw) {
   const known = new Set(topics.map(t => t.id));
   const cards = [];
   for (const c of Array.isArray(data.cards) ? data.cards : []) {
-    if (!c || !c.q || !['one', 'many', 'flip', 'open'].includes(c.k)) continue;
+    if (!c || !c.q || !['one', 'many', 'flip', 'num', 'open'].includes(c.k)) continue;
+    if (c.k === 'num' && !/^-?\d+([.,]\d+)?$/.test(String(c.a).trim())) c.k = 'flip'; // не число — самопроверка
     const card = { t: known.has(String(c.t)) ? String(c.t) : topics[0]?.id || 't1', k: c.k, q: String(c.q) };
     if (c.k === 'one' || c.k === 'many') {
       const o = (Array.isArray(c.o) ? c.o : []).filter(x => x && x.id && x.t).map(x => ({ id: String(x.id), t: String(x.t) }));
