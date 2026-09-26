@@ -115,6 +115,16 @@ function summary() {
     last: Date.now(), streak: streak(), today: prog.log[t] || { d: 0, ok: 0 }, week,
     // Карточек по дням за 14 дней, от старых к сегодняшнему — для полоски активности у репетитора
     days: Array.from({ length: 14 }, (_, i) => prog.log[t - 13 + i]?.d || 0), day: t,
+    // 8 недель по 7 дней, последняя заканчивается сегодня: {d, ok} — для динамики точности
+    weeks: Array.from({ length: 8 }, (_, i) => {
+      const w = { d: 0, ok: 0 };
+      for (let j = 0; j < 7; j++) {
+        const l = prog.log[t - (7 - i) * 7 - j];
+        if (l?.d) { w.d += l.d; w.ok += l.ok; }
+      }
+      w.ok = Math.round(w.ok * 2) / 2;
+      return w;
+    }),
     total: pack.cards.length, started: states.length, mastered: states.filter(s => s.b >= 3).length,
     topics, errs: prog.errs.slice(0, 15),
   };

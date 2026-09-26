@@ -492,6 +492,34 @@ function activityStrip(st) {
     `<i class="l${level(n)}" title="${i === 13 ? 'сегодня' : `${13 - i} дн. назад`}: ${n}"></i>`).join('')}</div>`;
 }
 
+// Точность по неделям: высота столбика — точность, подпись — сколько карточек
+function weekAcc(w) {
+  return w?.d ? Math.round(w.ok / w.d * 100) : null;
+}
+
+function weeksChart(st) {
+  if (!Array.isArray(st.weeks) || !st.weeks.some(w => w.d)) return '';
+  const cols = st.weeks.map((w, i) => {
+    const acc = weekAcc(w);
+    const tone = acc === null ? '' : acc < 60 ? 'bad' : acc < 80 ? 'mid' : 'ok';
+    const label = i === 7 ? 'эта' : `−${7 - i}`;
+    return `<div class="wk ${tone}" title="${i === 7 ? 'Последние 7 дней' : `${7 - i} нед. назад`}: ${w.d} карточек">
+      <b>${acc === null ? '—' : acc + '%'}</b><span class="wk-bar"><i style="height:${acc ?? 0}%"></i></span>
+      <small>${w.d || ''}</small><em>${label}</em></div>`;
+  }).join('');
+  return `<div class="weeks">${cols}</div><p class="muted small-note">Под столбиком — сколько карточек решено за неделю</p>`;
+}
+
+// Динамика для отчёта: эта неделя против предыдущей активной
+function trend(st) {
+  const ws = (st.weeks || []).filter(w => w.d);
+  if (ws.length < 2) return '';
+  const now = weekAcc(st.weeks.at(-1)), before = weekAcc(ws.at(-2));
+  if (now === null || before === null || !st.weeks.at(-1).d) return '';
+  const diff = now - before;
+  return diff > 0 ? ` (было ${before}%, +${diff})` : diff < 0 ? ` (было ${before}%)` : ' (как и неделей раньше)';
+}
+
 // «Что разобрать на уроке»: карточки и темы, где ошибается больше всего учеников
 function lessonPlan(p, students) {
   const byId = Object.fromEntries(p.cards.map(c => [c.id, c]));
@@ -525,7 +553,7 @@ function parentReport(p, s) {
   return [
     `${s.name} — тренажёр «${p.title}», последние 7 дней:`,
     `• занимался(ась) ${plural(st.week.days, 'день', 'дня', 'дней')} из 7, решено ${plural(st.week.d, 'задание', 'задания', 'заданий')};`,
-    `• точность ${acc}%, серия без пропусков — ${plural(st.streak, 'день', 'дня', 'дней')};`,
+    `• точность ${acc}%${trend(st)}, серия без пропусков — ${plural(st.streak, 'день', 'дня', 'дней')};`,
     `• освоено ${st.mastered} из ${st.total} карточек курса.`,
     weak.length ? `Что подтягиваем на занятиях: ${weak.map(w => w.title.replace(/^\d+\.\s*/, '')).join(', ')}.` : 'Слабых тем сейчас нет — держим темп.',
     p.tutor ? `\n${p.tutor}` : '',
@@ -622,6 +650,7 @@ function studentCard(p, s) {
     </div>
     <h2>Активность за 2 недели</h2>
     <div class="strip-big">${activityStrip(st)}</div>
+    ${weeksChart(st) ? `<h2>Точность по неделям</h2>${weeksChart(st)}` : ''}
     <h2>Темы — от слабых к сильным</h2>
     ${topics.length ? `<div class="stu-topics">${topics.map(t => `
       <div class="stu-topic"><span>${esc(t.title)}</span>
