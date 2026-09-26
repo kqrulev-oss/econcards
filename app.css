@@ -404,3 +404,15 @@ input:focus, select:focus, textarea:focus { outline: 2px solid var(--accent); ou
 .att:empty { display: none; }
 .chip { display: inline-flex; align-items: center; gap: 6px; padding: 5px 6px 5px 10px; border-radius: 999px; background: var(--bg); font-size: 14px; max-width: 100%; }
 .chip button { border: 0; background: transparent; color: var(--muted); cursor: pointer; font-size: 13px; }
+.ld-scene { position: relative; padding-top: 8px; padding-bottom: 24px; }
+.ld-scene img { display: block; width: 100%; height: auto; border-radius: 28px; box-shadow: 0 30px 60px rgba(20, 33, 61, .18); }
+.ld-scene-cap {
+  position: absolute; left: 44px; bottom: 56px; max-width: 360px; background: var(--ld-card); color: var(--ld-ink);
+  border-radius: 18px; padding: 16px 18px; box-shadow: 0 12px 30px rgba(20, 33, 61, .18); display: grid; gap: 4px;
+}
+.ld-scene-cap b { font-size: 18px; }
+.ld-scene-cap span { opacity: .75; line-height: 1.45; }
+@media (max-width: 700px) {
+  .ld-scene img { border-radius: 20px; }
+  .ld-scene-cap { position: relative; left: auto; bottom: auto; max-width: none; margin: -28px 12px 0; }
+}
