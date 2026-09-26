@@ -302,7 +302,66 @@ def stress_pack():
     }
 
 
+# ---------- ЕГЭ: профильная математика ----------
+
+# Правки к анализу GPT (data/source/ege-math-gpt.json). Все ответы проверены
+# вручную; эти карточки GPT сам пометил как ошибочные — убираем или чиним.
+MATH_DROP = {('t2-p2', 0),   # ответ √34 — не формат краткого ответа ЕГЭ
+             ('t4-p1', 0),   # 1/3 — бесконечная дробь
+             ('t5-p5', 1)}   # 2/15 — бесконечная дробь
+MATH_FIX = {('t2-p3', 1): {'a': '12'}}  # (4;1)·(2;4) = 12, в анализе стояло 16
+
+
+def is_number(s):
+    return bool(re.fullmatch(r'-?\d+([.,]\d+)?', str(s).strip()))
+
+
+def math_pack():
+    src = load('ege-math-gpt')
+    topics, theory, cards = [], [], []
+    for task in src:
+        tid = f'm-task-{task["task"]}'
+        protos = []
+        for pr in task['prototypes']:
+            pid = f'm-{pr["id"]}'
+            protos.append({'id': pid, 'title': pr['title'], 'tip': ' → '.join(pr['algorithm'][:3])})
+            theory.append({
+                'id': f'th-{pid}', 'topic': tid, 'title': pr['title'], 'min': 3, 'section': task['title'],
+                'html': (f'<p>{inline(pr["wording"])}</p><div class="steps"><b>Алгоритм</b><ol>'
+                         + ''.join(f'<li>{inline(x)}</li>' for x in pr['algorithm'])
+                         + '</ol></div><div class="warn"><b>Типичные ошибки</b><ul>'
+                         + ''.join(f'<li>{inline(x)}</li>' for x in pr['mistakes']) + '</ul></div>'),
+            })
+            for i, c in enumerate(pr['cards']):
+                if (pr['id'], i) in MATH_DROP:
+                    continue
+                c = {**c, **MATH_FIX.get((pr['id'], i), {})}
+                card = {'id': f'{pid}-{i + 1}', 't': tid, 'p': pid, 'q': c['q']}
+                if c['k'] == 'flip' and is_number(c['a']):
+                    # Краткий ответ ЕГЭ — число: ученик вводит его, приложение проверяет
+                    card.update(k='num', a=str(c['a']).replace('.', ','))
+                else:
+                    card.update(k=c['k'], a=c['a'])
+                if c.get('e'):
+                    card['e'] = c['e']
+                cards.append(card)
+        topics.append({'id': tid, 'title': f'{task["task"]}. {task["title"]}', 'section': 'Задания ЕГЭ',
+                       'n': task['task'], 'pts': task['points'], 'protos': protos})
+        theory.insert(len(theory) - len(task['prototypes']), {
+            'id': f'th-{tid}', 'topic': tid, 'title': f'Что проверяет задание {task["task"]}', 'min': 2,
+            'section': task['title'],
+            'html': f'<p>{inline(task["checks"])}</p><div class="note"><b>Темы кодификатора</b><ul>'
+                    + ''.join(f'<li>{inline(x)}</li>' for x in task['codifier']) + '</ul></div>'
+                    + f'<p class="muted">Балл: {task["points"]} · примерно {task["minutes"]} мин на задание</p>',
+        })
+    return {
+        'id': 'ege-math', 'title': 'ЕГЭ: профильная математика', 'subject': 'Математика',
+        'desc': 'Задания 1–5 по прототипам: планиметрия, векторы, стереометрия, вероятность. Пополняется',
+        'color': '#1E9E5A', 'topics': topics, 'theory': theory, 'cards': cards,
+    }
+
+
 if __name__ == '__main__':
-    index = [write(econ_pack()), write(rus_pack()), write(stress_pack())]
+    index = [write(rus_pack()), write(math_pack()), write(econ_pack()), write(stress_pack())]
     (OUT / 'index.json').write_text(json.dumps(index, ensure_ascii=False, indent=1) + '\n', 'utf-8')
     print('packs/index.json')

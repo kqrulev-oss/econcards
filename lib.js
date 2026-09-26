@@ -88,9 +88,18 @@ export function toast(msg) {
   setTimeout(() => { t.classList.remove('on'); setTimeout(() => t.remove(), 300); }, 2600);
 }
 
+// Сравнение числовых ответов: «0,35», «0.35» и «.35» — одно и то же
+export function sameNumber(a, b) {
+  const norm = x => String(x).trim().replace(/\s+/g, '').replace(',', '.').replace(/^(-?)\./, '$10.');
+  const x = norm(a), y = norm(b);
+  if (x === y) return true;
+  const nx = Number(x), ny = Number(y);
+  return !Number.isNaN(nx) && !Number.isNaN(ny) && Math.abs(nx - ny) < 1e-9;
+}
+
 export const KIND_NAMES = {
   one: 'Один ответ', many: 'Несколько ответов', match: 'Соответствие',
-  flip: 'Вопрос — ответ', open: 'Развёрнутое решение', stress: 'Ударение',
+  flip: 'Вопрос — ответ', open: 'Развёрнутое решение', stress: 'Ударение', num: 'Числовой ответ',
 };
 
 // ---------- карточка ----------
@@ -183,6 +192,27 @@ export function renderCard(card, root, onDone, { imgRoot = './', aiEnabled = !!a
       body.querySelector('.hint').innerHTML = `Правильно: <b>${esc(word)}</b>`;
       finish(+b.dataset.i === target ? 1 : 0);
     });
+  } else if (card.k === 'num') {
+    // Краткий ответ ЕГЭ: число вводится с клавиатуры, запятая и точка равноправны
+    body.innerHTML = `
+      <div class="num-row"><input class="num-input" inputmode="decimal" autocomplete="off" placeholder="Ответ">
+        <button class="btn primary check">Проверить</button></div>
+      <p class="hint">Целое число или десятичная дробь, как в бланке ЕГЭ</p>`;
+    const input = body.querySelector('.num-input');
+    const check = () => {
+      const got = input.value.trim();
+      if (!got) return toast('Введи ответ');
+      const ok = sameNumber(got, card.a);
+      input.disabled = true;
+      input.classList.add(ok ? 'ok' : 'bad');
+      body.querySelector('.check').remove();
+      body.querySelector('.hint').innerHTML = ok ? 'Верно!' : `Правильный ответ: <b>${esc(card.a)}</b>`;
+      finish(ok ? 1 : 0);
+    };
+    body.querySelector('.check').onclick = check;
+    // preventDefault: иначе тот же Enter нажмёт «Дальше», и ученик не увидит результат
+    input.onkeydown = e => { if (e.key === 'Enter') { e.preventDefault(); check(); } };
+    setTimeout(() => input.focus({ preventScroll: true }), 50);
   } else {
     // flip и open: ответ показывается, ученик оценивает себя сам (или с ИИ)
     const open = card.k === 'open';

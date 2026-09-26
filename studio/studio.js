@@ -177,13 +177,13 @@ function editCard(p, index, onSave) {
     <h3>${index === null ? 'Новая карточка' : 'Карточка'}</h3>
     <div class="grid2">
       <label class="field"><span>Тема</span><select id="t">${p.topics.map(t => `<option value="${esc(t.id)}" ${t.id === c.t ? 'selected' : ''}>${esc(t.title)}</option>`).join('')}<option value="__new">+ Новая тема…</option></select></label>
-      <label class="field"><span>Тип</span><select id="k">${['one', 'many', 'flip', 'open'].map(k => `<option value="${k}" ${k === c.k ? 'selected' : ''}>${KIND_NAMES[k]}</option>`).join('')}</select></label>
+      <label class="field"><span>Тип</span><select id="k">${['one', 'many', 'flip', 'num', 'open'].map(k => `<option value="${k}" ${k === c.k ? 'selected' : ''}>${KIND_NAMES[k]}</option>`).join('')}</select></label>
     </div>
     <div class="field"><label for="q">Вопрос или условие</label><textarea id="q" rows="4">${esc(c.q)}</textarea></div>
     <div id="opts" class="field"><span>Варианты — отметьте верные</span>
       <div id="optlist">${opts.map(o => optRow(o, right.has(o.id))).join('')}</div>
       <button class="btn small" id="addopt">+ Вариант</button></div>
-    <div class="field" id="ans"><label for="a" id="ans-l">Ответ</label><textarea id="a" rows="4">${esc(c.k === 'flip' || c.k === 'open' ? c.a : '')}</textarea></div>
+    <div class="field" id="ans"><label for="a" id="ans-l">Ответ</label><textarea id="a" rows="4">${esc(['flip', 'open', 'num'].includes(c.k) ? c.a : '')}</textarea></div>
     <div class="field"><label for="e">Разбор (необязательно)</label><textarea id="e" rows="3">${esc(c.e || '')}</textarea></div>
     <div class="row"><button class="btn primary" id="save">Сохранить</button><button class="btn ghost" id="cancel">Отмена</button></div>`);
   const $ = s => box.querySelector(s);
@@ -191,7 +191,7 @@ function editCard(p, index, onSave) {
     const k = $('#k').value;
     $('#opts').hidden = !(k === 'one' || k === 'many');
     $('#ans').hidden = !$('#opts').hidden;
-    $('#ans-l').textContent = k === 'open' ? 'Эталонное решение с ответом' : 'Ответ';
+    $('#ans-l').textContent = k === 'open' ? 'Эталонное решение с ответом' : k === 'num' ? 'Ответ — число (например, 0,35)' : 'Ответ';
   };
   sync();
   $('#k').onchange = sync;
@@ -228,6 +228,7 @@ function editCard(p, index, onSave) {
     } else {
       card.a = $('#a').value.trim();
       if (!card.a) return toast('Напишите ответ');
+      if (k === 'num' && !/^-?\d+([.,]\d+)?$/.test(card.a)) return toast('Для числового ответа нужно число: 12 или 0,35');
     }
     const e = $('#e').value.trim();
     if (e) card.e = e;
