@@ -348,7 +348,11 @@ function importTopics(p, src, tids) {
   for (const tid of tids) {
     const t = src.topics.find(x => x.id === tid);
     if (!t) continue;
-    if (!p.topics.some(x => x.id === tid)) p.topics.push({ id: tid, title: t.title, section: src.title });
+    if (!p.topics.some(x => x.id === tid)) {
+      // Номер задания, баллы и прототипы переносятся — у учеников будет сетка заданий и пробник
+      const { id, title, n, pts, protos } = t;
+      p.topics.push({ id, title, section: src.title, ...(n ? { n, pts } : {}), ...(protos ? { protos } : {}) });
+    }
     for (const c of src.cards) if (c.t === tid && !have.has(c.id)) { p.cards.push(c); have.add(c.id); n++; }
     for (const l of src.theory || []) if (l.topic === tid && !p.theory.some(x => x.id === l.id)) p.theory.push(l);
   }
@@ -401,7 +405,7 @@ async function drawLibrary(p, box) {
       const n = src.cards.filter(c => c.t === t.id).length;
       const added = n && src.cards.filter(c => c.t === t.id).every(c => have.has(c.id));
       return `<label class="gen-card"><input type="checkbox" data-t="${esc(t.id)}" ${added ? 'disabled checked' : ''}>
-        <span>${esc(t.title)} <span class="muted">· ${plural(n, 'карточка', 'карточки', 'карточек')}${added ? ' · уже добавлена' : ''}</span></span></label>`;
+        <span>${esc(t.title)} <span class="muted">· ${plural(n, 'карточка', 'карточки', 'карточек')}${t.protos ? ` · ${plural(t.protos.length, 'прототип', 'прототипа', 'прототипов')}` : ''}${added ? ' · уже добавлена' : ''}</span></span></label>`;
     }).join('')}</div>
       <button class="btn primary" id="lib-take">Добавить выбранные темы</button>`;
     out.querySelector('#lib-take').onclick = () => {

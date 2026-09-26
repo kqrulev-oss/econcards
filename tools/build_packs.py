@@ -175,6 +175,23 @@ def econ_pack():
 
 # ---------- ЕГЭ: русский язык ----------
 
+def exam_task(x):
+    """Номер задания по действующей спецификации ЕГЭ.
+
+    В банке Сотки карточки заданий 1–3 пронумерованы по старой схеме: стили
+    речи лежат в 1, подбор связующего слова — во 2, лексическое значение — в 3.
+    Раскладываем их по содержанию вопроса, остальные номера совпадают.
+    """
+    n, q, les = x['task'], x['q'].lower(), x.get('les')
+    if n == 1:
+        return 1 if 'на месте пропуска' in q or les in ('RU010', 'RU016') else 3
+    if n == 2:
+        return 2 if les in ('RU001', 'RU015') or 'обозначает' in q else 1
+    if n == 3:
+        return 3 if 'стил' in q or les in ('RU014', 'RU070', 'RU071', 'RU072') else 2
+    return n
+
+
 def rus_pack():
     bank = load('sotka-bank')
     lessons = load('sotka-lessons')
@@ -187,7 +204,7 @@ def rus_pack():
         return (re.sub(r'\s+', ' ', q).strip().lower(), tuple(sorted(o.lower() for o in opts)))
 
     for i, x in enumerate(bank):
-        t = f'task-{x["task"]}'
+        t = f'task-{exam_task(x)}'
         cid = x.get('id') or f'rus-{x["k"]}-{x["task"]}-{i}'
         card = {'id': cid, 't': t, 'q': x['q']}
         if x['k'] == 'mc':
@@ -225,7 +242,22 @@ def rus_pack():
         added += 1
     print(f'  ЕГЭ: из EconCards добавлено {added} карточек, которых не было в Сотке')
 
-    topics = [{'id': f'task-{e["n"]}', 'title': f'{e["n"]}. {e["title"]}', 'section': 'Задания ЕГЭ'} for e in exam]
+    topics = [{'id': f'task-{e["n"]}', 'title': f'{e["n"]}. {e["title"]}', 'section': 'Задания ЕГЭ',
+               'n': e['n'], 'pts': e['pts']} for e in exam]
+    # Прототипы внутри заданий (tools/classify_prototypes.py): подтипы и привязка карточек
+    proto_file = SRC / 'ege-rus-prototypes.json'
+    if proto_file.exists():
+        protos = json.loads(proto_file.read_text('utf-8'))
+        for t in topics:
+            info = protos.get(str(t['n']))
+            if info:
+                t['protos'] = info['prototypes']
+        assign = {cid: pid for info in protos.values() for cid, pid in info['assign'].items()}
+        for c in cards:
+            if c['id'] in assign:
+                c['p'] = assign[c['id']]
+        print(f'  прототипы: {sum(len(t.get("protos", [])) for t in topics)} в {sum(1 for t in topics if t.get("protos"))} заданиях, '
+              f'карточек с прототипом {sum(1 for c in cards if "p" in c)} из {len(cards)}')
     lesson_topic = {}
     for e in exam:
         for l in e['lessons']:
