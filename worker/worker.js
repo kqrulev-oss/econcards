@@ -237,6 +237,9 @@ async function handle(req, env) {
 
 export default {
   async fetch(req, env) {
+    // Когда сервер развёрнут вместе с сайтом (wrangler.jsonc в корне), сюда же
+    // приходят запросы к библиотеке packs/*.json — это статика, отдаём как есть
+    if (env.ASSETS && new URL(req.url).pathname.endsWith('.json')) return env.ASSETS.fetch(req);
     const origin = req.headers.get('Origin');
     if (req.method === 'OPTIONS') return new Response(null, { headers: cors(origin) });
     let res;

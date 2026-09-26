@@ -1,0 +1,17 @@
+// Cloudflare разворачивает весь репозиторий как один Worker: сайт (статика)
+// и сервер (worker/worker.js) на одном адресе. Сервер получает только
+// запросы к /ai и /packs/*, всё остальное — файлы сайта.
+// Имя совпадает с проектом в Cloudflare, иначе сборка не пройдёт.
+{
+  "name": "econcards",
+  "main": "worker/worker.js",
+  "compatibility_date": "2026-09-01",
+  "assets": {
+    "directory": ".",
+    "binding": "ASSETS",
+    "run_worker_first": ["/ai", "/packs/*"]
+  },
+  // Хранилище: если в панели уже привязано DB — используется оно, иначе создаётся
+  "kv_namespaces": [{ "binding": "DB" }],
+  "vars": { "DAILY_LIMIT": "60" }
+}
