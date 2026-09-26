@@ -82,12 +82,13 @@ ChatGPT, правки руками), бот сам отдаёт Claude на пр
    Payload URL `https://<адрес воркера>/gh`, Content type `application/json`,
    Secret — значение `GH_SECRET`, события: *Issue comments*, *Pull requests*,
    *Pull request reviews*.
-6. **Claude** в репозитории: установить приложение https://github.com/apps/claude и
-   добавить секрет репозитория `CLAUDE_CODE_OAUTH_TOKEN` (подписка Pro/Max; токен
-   даёт команда `claude setup-token` в Claude Code) или `ANTHROPIC_API_KEY`.
-   Workflow уже лежит в `.github/workflows/claude.yml`.
-7. **Codex:** в настройках Codex (chatgpt.com/codex) подключите GitHub-репозиторий
-   `econcards` — тогда он откликается на `@codex` в issue и PR.
+6. **Режим работы.** По умолчанию бот — пульт задач: пишет issue с пометкой
+   `[Claude]` или `[Codex]`. Задачи Claude выполняет Claude Code в приложении
+   (напишите ему «возьми задачи из бота»), ТЗ для Codex бот присылает текстом —
+   его можно вставить в ChatGPT. Если позже подключите агентов к GitHub
+   (приложение Claude + workflow с `anthropics/claude-code-action`, Codex на
+   chatgpt.com/codex), добавьте переменную `AGENTS_ON_GITHUB=1` — бот начнёт
+   звать их через `@claude` / `@codex` и отдавать чужие PR Claude на проверку.
 
 Команды: `/claude …`, `/codex …` — отдать без выбора, `/ask …` — спросить Gemini,
 `/status` — открытые задачи.

@@ -37,6 +37,9 @@ const ROUTER = `Ты диспетчер задач в проекте «Межд�
 Верни ТОЛЬКО JSON: {"agent":"claude|codex|gemini","why":"коротко, почему этот агент","title":"заголовок задачи до 70 символов","brief":"понятное ТЗ для агента по-русски: что сделать, где, как проверить; напомни следовать AGENTS.md","answer":"только для gemini: ответ пользователю простым текстом"}`;
 
 const cut = (s, n) => String(s || '').slice(0, n);
+// AGENTS_ON_GITHUB=1 — Claude и Codex подключены к GitHub и сами берут задачи по @упоминанию.
+// Иначе (по умолчанию) бот — пульт задач: пишет issue, а выполняет их Claude в приложении.
+const live = env => env.AGENTS_ON_GITHUB === '1';
 const repo = env => env.GH_REPO || 'kqrulev-oss/econcards';
 
 // ---------- Telegram ----------
@@ -78,8 +81,8 @@ async function gh(env, path, body, method = body ? 'POST' : 'GET') {
 
 async function createTask(env, agent, title, brief) {
   const issue = await gh(env, '/issues', {
-    title: cut(title, 120) || 'Задача из Telegram',
-    body: `${brief}\n\n@${agent} возьми, пожалуйста, эту задачу. Работай по правилам AGENTS.md, результат — PR.${agent === 'codex' ? ' Не сливай PR сам: все изменения проходят через Claude Code, он проверит и доведёт.' : ''}\n\n${MARK}`,
+    title: `[${AGENTS[agent]}] ${cut(title, 110) || 'Задача из Telegram'}`,
+    body: !live(env) ? `${brief}\n\nИсполнитель: ${AGENTS[agent]}. Работать по правилам AGENTS.md, результат — PR; все изменения проходят через Claude Code.\n\n${MARK}` : `${brief}\n\n@${agent} возьми, пожалуйста, эту задачу. Работай по правилам AGENTS.md, результат — PR.${agent === 'codex' ? ' Не сливай PR сам: все изменения проходят через Claude Code, он проверит и доведёт.' : ''}\n\n${MARK}`,
   });
   await env.DB.put(`gh:agent:${issue.number}`, agent, { expirationTtl: TTL });
   return issue;
@@ -137,8 +140,8 @@ async function onMessage(env, msg) {
   const num = replyTo && await env.DB.get(`tg:msg:${replyTo}`);
   if (num && !cmd.startsWith('/')) {
     const agent = await env.DB.get(`gh:agent:${num}`) || 'claude';
-    await gh(env, `/issues/${num}/comments`, { body: `@${agent} ${text}\n\n${MARK}` });
-    return say(env, `Передал ${AGENTS[agent]} в задачу #${num}.`, { reply_to_message_id: msg.message_id });
+    await gh(env, `/issues/${num}/comments`, { body: `${live(env) ? '@' + agent + ' ' : ''}${text}\n\n${MARK}` });
+    return say(env, `${live(env) ? 'Передал ' + AGENTS[agent] : 'Добавил комментарий'} в задачу #${num}.`, { reply_to_message_id: msg.message_id });
   }
 
   if (cmd === '/status') {
@@ -183,7 +186,11 @@ async function onCallback(env, q) {
   if (act === 'no') return done('Отменено.');
   if (!AGENTS[agent] || agent === 'gemini') return done();
   const issue = await createTask(env, agent, saved.title, saved.brief);
-  const m = await say(env, `Задача #${issue.number} отдана ${AGENTS[agent]}.\n${issue.html_url}\nОтветы агента будут приходить сюда.`);
+  const m = await say(env, live(env)
+    ? `Задача #${issue.number} отдана ${AGENTS[agent]}.\n${issue.html_url}\nОтветы агента будут приходить сюда.`
+    : agent === 'codex'
+      ? `Задача #${issue.number} для Codex записана.\n${issue.html_url}\n\nСкопируйте ТЗ ниже в ChatGPT/Codex, а готовый результат (PR или архив) передайте Claude на проверку.\n\n${cut(saved.brief, 3000)}`
+      : `Задача #${issue.number} для Claude записана.\n${issue.html_url}\n\nНапишите Claude в приложении: «возьми задачи из бота» — он выполнит все открытые.`);
   if (m.result) await env.DB.put(`tg:msg:${m.result.message_id}`, String(issue.number), { expirationTtl: TTL });
   return done();
 }
@@ -222,6 +229,9 @@ async function onGithub(env, event, p) {
     const pr = p.pull_request;
     // Всё, что сделал не Claude (Codex, ChatGPT, правки руками), сначала проверяет Claude Code
     const fromClaude = /claude/i.test(pr.user?.login || '') || (pr.head?.ref || '').startsWith('claude/');
+    if (!live(env) && p.action !== 'closed' && !fromClaude) {
+      return forward(env, pr.number, `🆕 PR от ${who(pr.user?.login)}: #${pr.number} ${pr.title}\n${pr.html_url}\n\nПопросите Claude в приложении проверить его перед слиянием.`);
+    }
     if (['opened', 'ready_for_review'].includes(p.action) && !pr.draft && !fromClaude && !await env.DB.get(`gh:review:${pr.number}`)) {
       await env.DB.put(`gh:review:${pr.number}`, '1', { expirationTtl: TTL });
       await env.DB.put(`gh:agent:${pr.number}`, 'claude', { expirationTtl: TTL });
