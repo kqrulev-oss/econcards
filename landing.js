@@ -3,6 +3,7 @@
 // ссылке ?t=… и сразу открывают тренажёр.
 
 const STUDIO = 'studio/';
+const TG = 'https://t.me/trwqxp';
 
 const phone = `
   <div class="ld-phone">
@@ -50,6 +51,7 @@ export function renderLanding(root, library) {
   <header class="ld-nav">
     <a class="ld-logo" href="./"><span class="ld-mark">М</span>Между уроками</a>
     <nav><a href="#how">Как это работает</a><a href="#faq">Вопросы</a></nav>
+    <a class="ld-nav-tg" href="${TG}" target="_blank" rel="noopener" aria-label="Написать в Telegram">✈️</a>
     <a class="ld-nav-cta" href="${STUDIO}">Войти в студию</a>
   </header>
 
@@ -121,8 +123,11 @@ export function renderLanding(root, library) {
 
   <section class="ld-final">
     <h2>Соберите первый тренажёр сегодня</h2>
-    <p>15&nbsp;минут — и&nbsp;ученики получат ссылку.</p>
-    <a class="ld-btn primary" href="${STUDIO}">Собрать тренажёр</a>
+    <p>15&nbsp;минут — и&nbsp;ученики получат ссылку. Есть вопросы или хотите, чтобы тренажёр собрали за&nbsp;вас? Напишите.</p>
+    <div class="ld-cta center-cta">
+      <a class="ld-btn primary" href="${STUDIO}">Собрать тренажёр</a>
+      <a class="ld-btn tg" href="${TG}" target="_blank" rel="noopener">✈️ Написать в&nbsp;Telegram</a>
+    </div>
   </section>
 
   <footer class="ld-foot">
@@ -131,7 +136,7 @@ export function renderLanding(root, library) {
       <span class="row"><input id="code" placeholder="Код от репетитора" autocapitalize="off"><button class="ld-btn primary small" id="join">Открыть</button></span>
       <a href="#/library">Открытые наборы для самостоятельной подготовки</a>
     </div>
-    <p class="ld-copy">Между уроками · тренажёр для учеников репетитора</p>
+    <p class="ld-copy">Между уроками · тренажёр для учеников репетитора · <a href="${TG}" target="_blank" rel="noopener">Telegram @trwqxp</a></p>
   </footer>`;
 
   const join = () => {

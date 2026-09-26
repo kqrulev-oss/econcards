@@ -465,3 +465,12 @@ input:focus, select:focus, textarea:focus { outline: 2px solid var(--accent); ou
 .strip i.l1 { background: color-mix(in srgb, var(--ok) 35%, var(--line)); }
 .strip i.l2 { background: color-mix(in srgb, var(--ok) 70%, var(--line)); }
 .strip i.l3 { background: var(--ok); }
+.ld-nav-tg { display: grid; place-items: center; width: 40px; height: 40px; border-radius: 12px; background: var(--ld-card); font-size: 18px; }
+@media (max-width: 760px) { .ld-nav-tg { margin-left: auto; } .ld-nav .ld-nav-cta { margin-left: 0; } }
+.center-cta { justify-content: center; }
+.ld-btn.tg { background: #2AABEE; border-color: #2AABEE; color: #fff; }
+.ld-final .ld-btn:not(.primary):not(.tg) { color: var(--ld-ink); }
+.ld-copy a { color: inherit; text-decoration: underline; }
+.ld-logo, .ld-nav-cta { white-space: nowrap; }
+@media (max-width: 420px) { .ld-nav { gap: 10px; } .ld-logo { font-size: 17px; } .ld-nav-cta { padding: 8px 12px; font-size: 14px; } }
+.ld-nav-tg { flex: none; }
