@@ -7,6 +7,7 @@ const $app = document.getElementById('app');
 const INTERVALS = [0, 1, 3, 7, 14, 30, 60]; // дни до повтора по «коробкам»
 const SESSION = 20;
 const NEW_DEFAULT = 10;
+const DAILY_GOAL = 10; // карточек в день, чтобы день засчитался в цель
 
 let ref = null;   // 'econ-olymp' или 't:<id>' для набора репетитора
 let pack = null;
@@ -139,6 +140,13 @@ function brandHeader(sub) {
   </header>`;
 }
 
+function goalBar(done) {
+  const n = Math.min(done, DAILY_GOAL);
+  return n >= DAILY_GOAL
+    ? '<div class="goal done">✓ Цель дня выполнена</div>'
+    : `<div class="goal"><span>Цель дня</span><span class="bar"><i style="width:${n / DAILY_GOAL * 100}%"></i></span><b>${n}/${DAILY_GOAL}</b></div>`;
+}
+
 function viewHome() {
   const t = day();
   const queue = buildQueue('daily');
@@ -159,6 +167,7 @@ function viewHome() {
         <div><b>${today.d}</b><span>карточек сегодня</span></div>
         <div><b>${due}</b><span>на повторение</span></div>
       </div>
+      ${goalBar(today.d)}
       ${doneToday
         ? '<p class="hero-done">На сегодня всё. Возвращайся завтра — карточки придут, когда начнёшь их забывать.</p>'
         : `<button class="btn primary big" id="go">${today.d ? 'Продолжить занятие' : 'Начать занятие'} · ${plural(queue.length, 'карточка', 'карточки', 'карточек')}</button>
@@ -222,6 +231,8 @@ function startSession(queue, title, back = '#/') {
   const requeued = new Set();
   let i = 0, ok = 0, answered = 0;
   const started = Date.now();
+  const streakBefore = streak();
+  const missed = new Map();
   const leave = () => { location.hash = back; route(); };
 
   const next = () => {
@@ -242,6 +253,7 @@ function startSession(queue, title, back = '#/') {
       answered++;
       ok += score;
       // Ошибку показываем ещё раз в конце занятия, но только один раз
+      if (score < 1) missed.set(card.id, card);
       if (score < 1 && !requeued.has(card.id)) { requeued.add(card.id); q.push(card); }
       bar.hidden = false;
       bar.querySelector('#next').focus({ preventScroll: true });
@@ -253,15 +265,28 @@ function startSession(queue, title, back = '#/') {
   const finishSession = () => {
     const mins = Math.max(1, Math.round((Date.now() - started) / 60000));
     const pct = answered ? Math.round(ok / answered * 100) : 0;
+    const [icon, title] = pct >= 90 ? ['🏆', 'Отлично!'] : pct >= 70 ? ['💪', 'Хорошая работа'] : ['🌱', 'Начало положено'];
+    const st = streak();
+    const more = back === '#/' ? buildQueue('daily') : [];
+    const wrong = [...missed.values()];
     $app.innerHTML = `
       <section class="finish">
-        <div class="finish-big">${pct}%</div>
-        <p>${plural(answered, 'ответ', 'ответа', 'ответов')} за ${plural(mins, 'минуту', 'минуты', 'минут')}</p>
-        <p class="muted">Серия: ${plural(streak(), 'день', 'дня', 'дней')}</p>
+        <div class="finish-icon">${icon}</div>
+        <h1 class="finish-title">${title}</h1>
+        <div class="finish-stats">
+          <div><b>${Math.round(ok)}/${answered}</b><span>верно</span></div>
+          <div><b>${mins}</b><span>${plural(mins, 'минута', 'минуты', 'минут').replace(/^\d+ /, '')}</span></div>
+          <div><b>🔥 ${st}</b><span>${st > streakBefore ? 'серия +1' : 'серия'}</span></div>
+        </div>
+        ${goalBar((prog.log[day()] || { d: 0 }).d)}
+        ${wrong.length ? `<div class="finish-wrong"><b>Вернутся завтра — повторишь:</b><ul>${wrong.slice(0, 5).map(c =>
+          `<li>${esc(c.q.replace(/\s+/g, ' ').slice(0, 90))}${c.q.length > 90 ? '…' : ''}</li>`).join('')}</ul></div>` : ''}
         ${ref.startsWith('t:') && prog.name ? '<p class="muted">Результат отправлен репетитору</p>' : ''}
+        ${more.length ? `<button class="btn ghost big" id="more">Ещё ${plural(more.length, 'карточка', 'карточки', 'карточек')}</button>` : ''}
         <button class="btn primary big" id="done">Готово</button>
       </section>`;
     $app.querySelector('#done').onclick = leave;
+    $app.querySelector('#more')?.addEventListener('click', () => startSession(more, title, back));
     sync(true);
   };
   next();
