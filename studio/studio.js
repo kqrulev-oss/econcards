@@ -440,6 +440,17 @@ function weakTopics(p, st) {
     .map(([id, t]) => ({ title: p.topics.find(x => x.id === id)?.title || id, acc: t.acc }));
 }
 
+// 14 квадратиков по дням: пустой — не занимался, чем темнее — тем больше карточек.
+// Сводка сдвигается на дни, прошедшие с её отправки, чтобы последний квадрат был «сегодня».
+function activityStrip(st) {
+  if (!Array.isArray(st.days)) return '';
+  const shift = Math.max(0, Math.min(14, day() - (st.day ?? day())));
+  const days = [...st.days.slice(shift), ...Array(shift).fill(0)];
+  const level = n => n === 0 ? 0 : n < 5 ? 1 : n < 15 ? 2 : 3;
+  return `<div class="strip" title="Карточек по дням за 2 недели">${days.map((n, i) =>
+    `<i class="l${level(n)}" title="${i === 13 ? 'сегодня' : `${13 - i} дн. назад`}: ${n}"></i>`).join('')}</div>`;
+}
+
 // «Что разобрать на уроке»: карточки и темы, где ошибается больше всего учеников
 function lessonPlan(p, students) {
   const byId = Object.fromEntries(p.cards.map(c => [c.id, c]));
@@ -517,7 +528,7 @@ async function viewStudents(p) {
           <td><b>${esc(s.name)}</b></td>
           <td class="${Date.now() - s.at > 3 * 864e5 ? 'late' : ''}">${ago(s.at)}</td>
           <td>${todayDone || '—'}</td>
-          <td>${st.week?.d || 0} <span class="muted">· ${st.week?.days || 0} дн.</span></td>
+          <td>${st.week?.d || 0} <span class="muted">· ${st.week?.days || 0} дн.</span>${activityStrip(st)}</td>
           <td>${acc === null ? '—' : `<span class="${acc < 60 ? 'late' : ''}">${acc}%</span>`}</td>
           <td>${st.streak || 0}</td>
           <td>${st.mastered}/${st.total}</td>
