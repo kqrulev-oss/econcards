@@ -316,6 +316,155 @@ MATH_FIX = {('t2-p3', 1): {'a': '12'},   # (4;1)·(2;4) = 12, в анализе 
 MATH_FILES = ['ege-math-gpt', 'ege-math-gpt-6-10']
 
 
+# ---------- графики для задания 8 (SVG, строятся из формул) ----------
+
+def _svg_plot(fn, x0, x1, y0, y1, extra='', width=360):
+    """График на квадратной клетчатой сетке, как в КИМ: fn — функция, оси подписаны."""
+    u = (width - 40) / (x1 - x0)
+    w, h = width, (y1 - y0) * u + 30
+    sx = lambda x: 20 + (x - x0) * u
+    sy = lambda y: 15 + (y1 - y) * u
+    grid = ''.join(f'<line x1="{sx(i):.1f}" y1="{sy(y0):.1f}" x2="{sx(i):.1f}" y2="{sy(y1):.1f}"/>' for i in range(int(x0), int(x1) + 1))
+    grid += ''.join(f'<line x1="{sx(x0):.1f}" y1="{sy(j):.1f}" x2="{sx(x1):.1f}" y2="{sy(j):.1f}"/>' for j in range(int(y0), int(y1) + 1))
+    pts = []
+    n = 400
+    for i in range(n + 1):
+        x = x0 + (x1 - x0) * i / n
+        y = fn(x)
+        if y0 - 3 <= y <= y1 + 3:
+            pts.append(f'{sx(x):.1f},{sy(y):.1f}')
+    axes = (f'<line x1="{sx(x0):.1f}" y1="{sy(0):.1f}" x2="{sx(x1):.1f}" y2="{sy(0):.1f}" stroke="#15181E" stroke-width="1.4" marker-end="url(#a)"/>'
+            f'<line x1="{sx(0):.1f}" y1="{sy(y0):.1f}" x2="{sx(0):.1f}" y2="{sy(y1):.1f}" stroke="#15181E" stroke-width="1.4" marker-end="url(#a)"/>'
+            f'<text x="{sx(x1) - 10:.1f}" y="{sy(0) - 6:.1f}">x</text><text x="{sx(0) + 6:.1f}" y="{sy(y1) + 10:.1f}">y</text>'
+            f'<text x="{sx(1) - 3:.1f}" y="{sy(0) + 14:.1f}">1</text><text x="{sx(0) - 12:.1f}" y="{sy(1) + 4:.1f}">1</text>')
+    return (f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {w} {h}" font-family="Arial" font-size="12" fill="#15181E">'
+            '<defs><marker id="a" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0L10 5L0 10z"/></marker></defs>'
+            f'<rect width="{w}" height="{h}" fill="#fff"/><g stroke="#E3E6EC" stroke-width="1">{grid}</g>{axes}'
+            f'<clipPath id="c"><rect x="{sx(x0):.1f}" y="{sy(y1):.1f}" width="{sx(x1) - sx(x0):.1f}" height="{sy(y0) - sy(y1):.1f}"/></clipPath>'
+            f'<g clip-path="url(#c)"><polyline fill="none" stroke="#2F6BFF" stroke-width="2.4" points="{" ".join(pts)}"/>'
+            f'{extra(sx, sy) if extra else ""}</g></svg>')
+
+
+def _spline(xs, ys):
+    """Монотонная кубическая интерполяция (PCHIP, Fritsch–Carlson): гладкая и
+    без выбросов между точками — график не пересекает ось там, где не должен."""
+    n = len(xs) - 1
+    h = [xs[i + 1] - xs[i] for i in range(n)]
+    dl = [(ys[i + 1] - ys[i]) / h[i] for i in range(n)]
+    m = [dl[0]] + [0.0] * (n - 1) + [dl[-1]]
+    for i in range(1, n):
+        if dl[i - 1] * dl[i] > 0:
+            w1, w2 = 2 * h[i] + h[i - 1], h[i] + 2 * h[i - 1]
+            m[i] = (w1 + w2) / (w1 / dl[i - 1] + w2 / dl[i])
+
+    def f(x):
+        j = max(0, min(n - 1, next((i for i in range(n) if x <= xs[i + 1]), n - 1)))
+        t = (x - xs[j]) / h[j]
+        h00, h10, h01, h11 = 2 * t**3 - 3 * t**2 + 1, t**3 - 2 * t**2 + t, -2 * t**3 + 3 * t**2, t**3 - t**2
+        return h00 * ys[j] + h10 * h[j] * m[j] + h01 * ys[j + 1] + h11 * h[j] * m[j + 1]
+    return f
+
+
+def derivative_graph(zeros, double, sign, x0, x1):
+    """Гладкий график f′(x): нули в zeros (смена знака) и double (касание оси),
+    знаки на промежутках — как у sign·∏(x − z)·∏(x − d)²."""
+    raw = lambda x: sign * _prod(x - z for z in zeros) * _prod((x - d) ** 2 for d in double)
+    cuts = sorted(zeros + double)
+    bounds = [x0] + cuts + [x1]
+    heights = [2.4, 1.6, 2.9, 1.9, 2.6, 1.7]
+    xs, ys = [x0], [None]
+    for i, (a, b) in enumerate(zip(bounds, bounds[1:])):
+        sg = 1 if raw((a + b) / 2) > 0 else -1
+        amp = heights[i % len(heights)] * (0.6 if (a in double or b in double) else 1)
+        if i == 0:
+            ys[0] = sg * min(3.6, amp + 1.2)
+        xs.append((a + b) / 2)
+        ys.append(sg * amp)
+        if b in double:
+            # Касание оси: подходим плавно и остаёмся на своей стороне
+            xs += [b - 0.7, b, b + 0.7]
+            ys += [sg * 0.6, sg * 0.02, sg * 0.6]
+        else:
+            xs.append(b)
+            ys.append(0 if b != x1 else sg * min(3.6, amp + 1.2))
+    fn = _spline(xs, ys)
+    return fn, _svg_plot(fn, x0, x1, -4, 4)
+
+
+def _prod(it):
+    r = 1
+    for v in it:
+        r *= v
+    return r
+
+
+def tangent_graph(p1, p2):
+    """График функции и касательной через две узловые точки (p1, p2)."""
+    k = (p2[1] - p1[1]) / (p2[0] - p1[0])
+    line = lambda x: p1[1] + k * (x - p1[0])
+    xt = (p1[0] + p2[0]) / 2 + 0.5
+    fn = lambda x: line(x) - 0.35 * (x - xt) ** 2
+    xs = [p1[0], p2[0]]
+    ys = [p1[1], p2[1]]
+    x0, x1 = min(xs + [0]) - 2, max(xs + [0]) + 3
+    y0, y1 = min(ys + [0]) - 2, max(ys + [0]) + 2
+
+    def extra(sx, sy):
+        tl = f'<line x1="{sx(x0):.1f}" y1="{sy(line(x0)):.1f}" x2="{sx(x1):.1f}" y2="{sy(line(x1)):.1f}" stroke="#E4572E" stroke-width="2"/>'
+        dots = ''.join(f'<circle cx="{sx(x):.1f}" cy="{sy(y):.1f}" r="4" fill="#E4572E"/>' for x, y in (p1, p2))
+        touch = f'<circle cx="{sx(xt):.1f}" cy="{sy(line(xt)):.1f}" r="3.5" fill="#15181E"/><text x="{sx(xt) - 6:.1f}" y="{sy(y0) - 4:.1f}">x₀</text>'
+        guide = f'<line x1="{sx(xt):.1f}" y1="{sy(line(xt)):.1f}" x2="{sx(xt):.1f}" y2="{sy(y0):.1f}" stroke="#15181E" stroke-dasharray="3 3"/>'
+        return tl + guide + dots + touch
+    return fn, _svg_plot(fn, x0, x1, y0, y1, extra)
+
+
+# Карточки задания 8: (прототип, номер) → формулировка как в КИМ и график.
+# Знаки производной считаются из формулы, а не переписываются вручную.
+MAX_Q = 'На рисунке изображён график y = f′(x) — производной функции f(x), определённой на интервале ({a}; {b}). Найдите количество точек {kind} функции f(x) на этом интервале.'
+TAN_Q = 'На рисунке изображены график функции y = f(x) и касательная к нему в точке с абсциссой x₀. Найдите значение производной функции f(x) в точке x₀.'
+# Для касательных координаты в условии не нужны — берём компактные узлы с тем же наклоном
+MATH_GRAPHS = {
+    ('t8-p1', 0): ('tan', (-1, -2), (1, 2)),
+    ('t8-p1', 1): ('tan', (-2, 3), (0, -1)),
+    ('t8-p1', 2): ('tan', (-3, -1), (1, 0)),
+    ('t8-p2', 0): ('der', 'максимума', [-4, -1, 2, 5], [], 1, -6, 6),
+    ('t8-p2', 1): ('der', 'максимума', [-3, 4], [0], -1, -5, 6),
+    ('t8-p2', 2): ('der', 'максимума', [1, 3, 6], [8], -1, 0, 9),
+    ('t8-p3', 0): ('der', 'минимума', [-5, -2, 1, 4], [], -1, -6, 5),
+    ('t8-p3', 1): ('der', 'минимума', [-2, 5], [2], 1, -4, 7),
+    ('t8-p3', 2): ('der', 'минимума', [1, 7], [4], -1, 0, 8),
+}
+
+
+def extrema_count(fn, a, b, kind):
+    """Считает смены знака производной на (a; b): максимум + → −, минимум − → +."""
+    xs = [a + (b - a) * i / 4000 for i in range(1, 4000)]
+    signs = [1 if fn(x) > 1e-9 else -1 if fn(x) < -1e-9 else 0 for x in xs]
+    signs = [v for v in signs if v]
+    changes = list(zip(signs, signs[1:]))
+    return sum(1 for s1, s2 in changes if (s1, s2) == ((1, -1) if kind == 'максимума' else (-1, 1)))
+
+
+def graph_card(card, spec):
+    if spec[0] == 'tan':
+        _, p1, p2 = spec
+        _, svg = tangent_graph(p1, p2)
+        k = (p2[1] - p1[1]) / (p2[0] - p1[0])
+        assert abs(k - float(card['a'].replace(',', '.'))) < 1e-9, (card['id'], k, card['a'])
+        card['q'] = TAN_Q
+    else:
+        _, kind, zeros, double, sign, a, b = spec
+        fn, svg = derivative_graph(zeros, double, sign, a, b)
+        got = extrema_count(fn, a, b, kind)
+        assert str(got) == card['a'], (card['id'], got, card['a'])
+        # Сплайн не должен давать лишних нулей: смен знака столько же, сколько простых корней
+        xs = [a + (b - a) * i / 4000 for i in range(1, 4000)]
+        sg = [v for v in (1 if fn(x) > 1e-6 else -1 if fn(x) < -1e-6 else 0 for x in xs) if v]
+        assert sum(1 for p, q in zip(sg, sg[1:]) if p != q) == len(zeros), (card['id'], 'лишние нули')
+        card['q'] = MAX_Q.format(a=a, b=b, kind=kind)
+    card['svg'] = svg
+
+
 def is_number(s):
     return bool(re.fullmatch(r'-?\d+([.,]\d+)?', str(s).strip()))
 
@@ -350,8 +499,10 @@ def math_pack():
                     card.update(k='num', a=final.group(1).replace('.', ','), e=c['a'])
                 else:
                     card.update(k=c['k'], a=c['a'])
-                if c.get('e'):
+                if c.get('e') and 'e' not in card:
                     card['e'] = c['e']
+                if (pr['id'], i) in MATH_GRAPHS:
+                    graph_card(card, MATH_GRAPHS[(pr['id'], i)])
                 cards.append(card)
         topics.append({'id': tid, 'title': f'{task["task"]}. {task["title"]}', 'section': 'Задания ЕГЭ',
                        'n': task['task'], 'pts': task['points'], 'protos': protos})
