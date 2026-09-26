@@ -5,16 +5,22 @@
 «2» — неверно. В набор попадает только ответ, который ФИПИ признал верным.
 
   • выбор ответа — перебираем варианты, пока ФИПИ не скажет «верно»;
-  • краткий ответ — кандидаты из файла (--candidates) или от Gemini (GEMINI_KEY),
-    каждый проверяется на сайте; решение Gemini к подтверждённому ответу
-    становится разбором карточки;
-  • развёрнутый ответ ФИПИ не проверяет — с --solutions Gemini пишет решение-образец
-    (в карточке помечено как решение ИИ).
+  • краткий ответ — кандидаты из файлов (--candidates, например ответы ChatGPT)
+    или от Gemini (GEMINI_KEY), каждый проверяется на сайте; решение к ответу,
+    который ФИПИ подтвердил, становится разбором карточки;
+  • развёрнутый ответ ФИПИ не проверяет — решение-образец берём из файла или
+    от Gemini (--solutions), в карточке оно помечено как решение ИИ.
 
 Запуск (ключ только из окружения, в файлы не пишется):
   python3 tools/fipi_answers.py                     # все скачанные предметы ЕГЭ, только выбор ответа
   GEMINI_KEY=… python3 tools/fipi_answers.py physics --ai
-  python3 tools/fipi_answers.py math_prof --candidates my.json   # {"40B442": ["29"], …}
+
+С ChatGPT (или любым другим чатом): выгрузить пачку заданий, отдать чату, проверить ответы.
+  python3 tools/fipi_answers.py physics --export 0 > batch.json         # пачка №0, 40 заданий
+  python3 tools/fipi_answers.py physics --export 0 --kind full --batch 10   # развёрнутые — пачками поменьше
+  python3 tools/fipi_answers.py physics --candidates gpt-*.json
+Файл кандидатов: {qid: ["ответ", "запасной"]} или {qid: {"a": [...], "e": "решение", "sol": "решение"}};
+  e — решение к первому ответу из a, sol — решение развёрнутого задания. Обёртка ```json не мешает.
 
 Результат — data/source/fipi/<exam>-<предмет>-answers.json:
   {qid: {"a": "29", "any": 1?, "e": "решение"?, "no": ["неверные попытки"]?, "sol": "решение ИИ"?}}
@@ -118,18 +124,66 @@ class Checker:
             return r
 
 
-def solve_subject(exam, key, args, gem_key):
+def load_candidates(paths):
+    """Ответы и решения из файлов: {qid: [ответы]} или {qid: {"a": …, "e": "…", "sol": "…"}}.
+    Возвращает {qid: [попытка, …]} — по попытке на файл, решение остаётся при своих ответах."""
+    out = {}
+    for path in paths or []:
+        raw = Path(path).read_text('utf-8').strip()
+        raw = re.sub(r'^```\w*\s*|\s*```$', '', raw)  # чаты любят заворачивать JSON в ```json
+        try:
+            items = json.loads(raw)
+        except json.JSONDecodeError as e:
+            sys.exit(f'{path}: не JSON ({e}). Попросите чат вернуть только JSON-объект.')
+        for qid, v in items.items():
+            v = v if isinstance(v, dict) else {'a': v}
+            a = v.get('a') or []
+            att = {'a': [str(x) for x in (a if isinstance(a, list) else [a]) if str(x).strip()]}
+            for k in ('e', 'sol'):
+                if str(v.get(k) or '').strip():
+                    att[k] = str(v[k]).strip()
+            out.setdefault(qid.strip().upper(), []).append(att)
+    return out
+
+
+def load_subject(exam, key):
     src = OUT / f'{exam}-{key}.json'
     if not src.exists():
-        print(f'{exam}-{key}: нет {src.relative_to(ROOT)}, сначала tools/fipi_bank.py')
-        return
-    data = json.loads(src.read_text('utf-8'))
+        sys.exit(f'{exam}-{key}: нет {src.relative_to(ROOT)}, сначала tools/fipi_bank.py')
     out = OUT / f'{exam}-{key}-answers.json'
-    answers = json.loads(out.read_text('utf-8')) if out.exists() else {}
-    cands = json.loads(Path(args.candidates).read_text('utf-8')) if args.candidates else {}
+    return json.loads(src.read_text('utf-8')), out, json.loads(out.read_text('utf-8')) if out.exists() else {}
+
+
+def export(exam, key, batch, size, kinds):
+    """Пачка заданий для чата: без ответа или без решения, без картинок (чат их не видит)."""
+    data, _, answers = load_subject(exam, key)
+    items = []
+    for t in data['tasks']:
+        rec = answers.get(t['id'], {})
+        if t.get('media') or t.get('img') or t['kind'] not in kinds:
+            continue
+        if t['kind'] == 'full' and rec.get('sol') or t['kind'] != 'full' and 'a' in rec and 'e' in rec:
+            continue
+        if t['kind'] == 'select' and not t.get('opts'):
+            continue
+        item = {'id': t['id'], 'type': t['kind'], 'text': t['text']}
+        if t['kind'] == 'select':
+            item['options'] = [{'id': o['id'], 'text': o['text']} for o in t['opts']]
+        if rec.get('no'):
+            item['wrong'] = rec['no']  # ФИПИ уже сказал «неверно» — чат не должен их повторять
+        items.append(item)
+    pages = -(-len(items) // size)
+    print(f'{exam}-{key}: заданий для чата {len(items)}, пачек по {size}: {pages}' +
+          (f', это пачка {batch}' if batch < pages else ' — такой пачки нет'), file=sys.stderr)
+    print(json.dumps(items[batch * size:(batch + 1) * size], ensure_ascii=False, indent=1))
+
+
+def solve_subject(exam, key, args, gem_key):
+    data, out, answers = load_subject(exam, key)
+    cands = load_candidates(args.candidates)
     checker = Checker(exam, key, args.insecure)
     lock = threading.RLock()  # ответы меняются из нескольких потоков
-    stats = {'select': 0, 'short': 0, 'full': 0, 'miss': 0}
+    stats = {'select': 0, 'short': 0, 'full': 0, 'miss': 0, 'e': 0}
     done = [0]
 
     def save():
@@ -150,47 +204,72 @@ def solve_subject(exam, key, args, gem_key):
                 answers[t['id']] = rec
 
     def _try(t, tries, extra, rec):
-        for a in tries:
-            a = norm(a)
-            if not a or a in rec.get('no', []):
-                continue
-            r = checker.check(t['guid'], a)
-            if r == '3':
-                rec.pop('no', None)
-                rec['a'] = a
-                if extra:
-                    rec.update(extra)
-                # Ответ-набор цифр («запишите номера…»): если ФИПИ принимает перестановку, порядок не важен
-                if (re.fullmatch(r'\d{2,}', a) and len(set(a)) == len(a) and re.search(r'цифр|номер', t['text'], re.I)
-                        and checker.check(t['guid'], a[::-1]) == '3'):
-                    rec['any'] = 1
-                return True
-            if r == '2':
-                rec.setdefault('no', []).append(a)
+        for i, cand in enumerate(tries):
+            # Слово — как прислали, затем строчными и заглавными: неизвестно, важен ли ФИПИ регистр
+            for a in dict.fromkeys([norm(cand), norm(cand).lower(), norm(cand).upper()]):
+                if not a or a in rec.get('no', []):
+                    continue
+                r = checker.check(t['guid'], a)
+                if r == '3':
+                    rec.pop('no', None)
+                    rec['a'] = a
+                    if extra and i == 0:  # решение написано к первому ответу, к запасному оно не подходит
+                        rec.update(extra)
+                    # Ответ-набор цифр («запишите номера…»): если ФИПИ принимает перестановку, порядок не важен
+                    if (re.fullmatch(r'\d{2,}', a) and len(set(a)) == len(a) and re.search(r'цифр|номер', t['text'], re.I)
+                            and checker.check(t['guid'], a[::-1]) == '3'):
+                        rec['any'] = 1
+                    return True
+                if r == '2':
+                    rec.setdefault('no', []).append(a)
         return False
 
-    todo = [t for t in data['tasks'] if not t.get('media') and 'a' not in answers.get(t['id'], {})]
+    todo = [t for t in data['tasks'] if not t.get('media') and ('a' not in answers.get(t['id'], {}) or t['id'] in cands)]
     if args.limit:
         todo = todo[:args.limit]
 
+    def ex(att):
+        return {'e': att['e']} if att.get('e') else None
+
+    def attach(t, atts):
+        """Решение к уже подтверждённому ответу — если оно написано к этому же ответу."""
+        with lock:
+            known = answers.get(t['id'], {})
+            att = next((x for x in atts if x.get('e') and x['a'] and norm(x['a'][0]).lower() == known.get('a', '').lower()), None)
+            if att and 'a' in known and 'e' not in known:
+                known['e'] = att['e']
+                stats['e'] += 1
+
     def run(t):
-        if t['kind'] == 'select' and t.get('opts'):
-            if verify(t, [o['id'] for o in t['opts']]):
+        atts = cands.get(t['id'], [])
+        known = answers.get(t['id'], {})
+        if 'a' in known:
+            pass  # ответ уже подтверждён — ниже только решение к нему (attach)
+        elif t['kind'] == 'select' and t.get('opts'):
+            ids = [o['id'] for o in t['opts']]
+            # Сначала варианты, которые назвал чат (с их решениями), потом остальные подряд
+            ok = any(verify(t, [a for a in map(norm, x['a']) if a in ids][:1], ex(x)) for x in atts)
+            if ok or verify(t, ids):
                 stats['select'] += 1
         elif t['kind'] == 'short':
-            ok = verify(t, cands.get(t['id'], []))
+            ok = any(verify(t, x['a'], ex(x)) for x in atts)
             if not ok and args.ai and gem_key:
                 r = gemini(gem_key, SOLVE.format(exam='ЕГЭ' if exam == 'ege' else 'ОГЭ', subject=data['title']), t, args.model)
                 if r and r.get('answer'):
                     ok = verify(t, [r['answer']] + list(r.get('alt') or [])[:2],
                                 {'e': r['solution'].strip()} if r.get('solution') else None)
-            stats['short' if ok else 'miss'] += 1
-        elif t['kind'] == 'full' and args.solutions and gem_key and not answers.get(t['id'], {}).get('sol'):
-            r = gemini(gem_key, WRITE.format(subject=data['title']), t, args.model)
-            if r and r.get('solution'):
+            if ok or atts or args.ai:
+                stats['short' if ok else 'miss'] += 1  # miss — ни один кандидат не подошёл
+        elif t['kind'] == 'full' and not known.get('sol'):
+            sol = next((x['sol'] for x in atts if x.get('sol')), None)
+            if not sol and args.solutions and gem_key:
+                r = gemini(gem_key, WRITE.format(subject=data['title']), t, args.model)
+                sol = r and (r.get('solution') or '').strip()
+            if sol:
                 with lock:
-                    answers.setdefault(t['id'], {})['sol'] = r['solution'].strip()
+                    answers.setdefault(t['id'], {})['sol'] = sol
                     stats['full'] += 1
+        attach(t, atts)
         with lock:
             done[0] += 1
             if done[0] % 20 == 0:
@@ -215,11 +294,19 @@ def main():
     ap.add_argument('--exam', choices=['ege', 'oge'], default='ege')
     ap.add_argument('--ai', action='store_true', help='кандидаты кратких ответов от Gemini (нужен GEMINI_KEY)')
     ap.add_argument('--solutions', action='store_true', help='решения-образцы к развёрнутым заданиям (Gemini)')
-    ap.add_argument('--candidates', help='JSON {qid: [ответы]} — свои кандидаты для проверки')
+    ap.add_argument('--candidates', nargs='+', help='файлы с ответами и решениями (например, от ChatGPT)')
+    ap.add_argument('--export', type=int, metavar='N', help='вывести пачку №N заданий для чата и выйти (без сети)')
+    ap.add_argument('--batch', type=int, default=40, help='заданий в пачке для --export')
+    ap.add_argument('--kind', default='short,select', help='какие задания выгружать: short,select,full')
     ap.add_argument('--model', help='модель Gemini вместо списка по умолчанию')
     ap.add_argument('--limit', type=int, default=0, help='не больше N заданий на предмет (для пробы)')
     ap.add_argument('--insecure', action='store_true', help='не проверять сертификат ФИПИ')
     args = ap.parse_args()
+    if args.export is not None:
+        if len(args.subjects) != 1:
+            sys.exit('Для --export укажите один предмет, например: physics --export 0')
+        export(args.exam, args.subjects[0], args.export, args.batch, set(args.kind.split(',')))
+        return
     gem_key = os.environ.get('GEMINI_KEY')
     if (args.ai or args.solutions) and not gem_key:
         sys.exit('Для --ai и --solutions нужен GEMINI_KEY в окружении')
