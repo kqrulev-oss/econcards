@@ -378,7 +378,7 @@ input:focus, select:focus, textarea:focus { outline: 2px solid var(--accent); ou
 .ld-steps b { font-size: 18px; }
 .ld-steps p { margin: 8px 0 0; opacity: .75; }
 
-.ld-features { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.ld-features { display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px 32px; }
 @media (max-width: 800px) { .ld-features { grid-template-columns: 1fr; } }
 .ld-feature { border-top: 3px solid var(--ld-sun); padding-top: 14px; }
 .ld-feature p { opacity: .75; margin: 0; }
@@ -416,3 +416,32 @@ input:focus, select:focus, textarea:focus { outline: 2px solid var(--accent); ou
   .ld-scene img { border-radius: 20px; }
   .ld-scene-cap { position: relative; left: auto; bottom: auto; max-width: none; margin: -28px 12px 0; }
 }
+
+/* ---------- каталог заданий ЕГЭ ---------- */
+.task-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(98px, 1fr)); gap: 8px; }
+.task-tile {
+  position: relative; display: grid; align-content: start; gap: 2px; min-height: 92px; padding: 10px 10px 14px;
+  background: var(--surface); color: var(--text); border-radius: 14px; box-shadow: var(--shadow); border: 1.5px solid transparent; overflow: hidden;
+}
+.task-tile b { font-size: 22px; line-height: 1.1; }
+.task-tile span { font-size: 12px; line-height: 1.25; color: var(--muted); display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.task-bar { position: absolute; left: 0; bottom: 0; height: 4px; width: var(--p); background: var(--accent); }
+.task-tile.weak { border-color: var(--bad); }
+.task-tile.weak b { color: var(--bad); }
+.task-tile.done { border-color: var(--ok); }
+.task-tile.done .task-bar { background: var(--ok); }
+.legend { font-size: 13px; display: flex; align-items: center; gap: 6px; margin: 10px 4px 0; }
+.legend .dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; margin-left: 8px; }
+.legend .dot:first-child { margin-left: 0; }
+.dot.weak { background: var(--bad); }
+.dot.done { background: var(--ok); }
+.proto { background: var(--surface); border-radius: 14px; padding: 14px; margin-bottom: 8px; box-shadow: var(--shadow); display: grid; gap: 8px; }
+.proto-head { display: flex; justify-content: space-between; gap: 10px; align-items: baseline; }
+.proto-tip { margin: 0; font-size: 14px; color: var(--muted); line-height: 1.45; }
+.proto .btn { justify-self: start; }
+.variant-list { display: grid; gap: 6px; text-align: left; }
+.variant-row { display: grid; grid-template-columns: 34px 1fr auto; gap: 8px; align-items: center; background: var(--surface); color: var(--text); border-radius: 12px; padding: 9px 12px; border-left: 4px solid var(--line); }
+.variant-row.ok { border-left-color: var(--ok); }
+.variant-row.mid { border-left-color: var(--mid); }
+.variant-row.bad { border-left-color: var(--bad); }
+.variant-row em { font-style: normal; font-weight: 700; }

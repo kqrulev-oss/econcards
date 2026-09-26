@@ -53,8 +53,8 @@ function streak() {
   return n;
 }
 
-function topicStats(tid) {
-  const cards = pack.cards.filter(c => c.t === tid);
+function topicStats(tid, pid) {
+  const cards = pack.cards.filter(c => c.t === tid && (!pid || c.p === pid));
   let started = 0, mastered = 0, seen = 0, wrong = 0;
   for (const c of cards) {
     const s = prog.cards[c.id];
@@ -81,11 +81,11 @@ function shuffle(a) {
   return a;
 }
 
-function buildQueue(mode, tid) {
-  const pool = tid ? pack.cards.filter(c => c.t === tid) : pack.cards;
+function buildQueue(mode, tid, pid) {
+  const pool = pack.cards.filter(c => (!tid || c.t === tid) && (!pid || c.p === pid));
   if (mode === 'errors') {
     const byId = Object.fromEntries(pack.cards.map(c => [c.id, c]));
-    return prog.errs.map(id => byId[id]).filter(c => c && (!tid || c.t === tid)).slice(0, SESSION);
+    return prog.errs.map(id => byId[id]).filter(c => c && (!tid || c.t === tid) && (!pid || c.p === pid)).slice(0, SESSION);
   }
   const due = dueCards(pool).slice(0, SESSION);
   const newToday = prog.log[day()]?.n || 0;
@@ -173,8 +173,9 @@ function viewHome() {
         : `<button class="btn primary big" id="go">${today.d ? 'Продолжить занятие' : 'Начать занятие'} · ${plural(queue.length, 'карточка', 'карточки', 'карточек')}</button>
            <p class="muted center">Примерно ${Math.max(3, Math.round(queue.length * 0.6))} минут</p>`}
       ${prog.errs.length ? `<button class="btn ghost" id="errs">Работа над ошибками · ${prog.errs.length}</button>` : ''}
+      ${isExam() ? `<button class="btn ghost" id="variant">📝 Пробный вариант${lastVariant()}</button>` : ''}
     </section>
-    ${sections.map(s => `
+    ${isExam() ? examGrid() : sections.map(s => `
       <section class="topics">
         ${s.name ? `<h2>${esc(s.name)}</h2>` : ''}
         ${s.items.map(tp => {
@@ -190,6 +191,45 @@ function viewHome() {
     <footer class="foot"><a href="#/library">Другие наборы</a></footer>`;
   $app.querySelector('#go')?.addEventListener('click', () => startSession(queue, 'Занятие'));
   $app.querySelector('#errs')?.addEventListener('click', () => startSession(buildQueue('errors'), 'Работа над ошибками'));
+  $app.querySelector('#variant')?.addEventListener('click', () => startSession(buildVariant(), 'Пробный вариант', '#/', { variant: true }));
+}
+
+// ---------- каталог заданий экзамена ----------
+
+// Подпись над карточкой: номер задания и прототип, если они есть
+function cardLabel(card, fallback) {
+  const t = topicsById[card.t];
+  if (!t) return fallback;
+  const pr = card.p && (t.protos || []).find(x => x.id === card.p);
+  return pr ? `${t.n ? t.n + '. ' : ''}${pr.title}` : t.title;
+}
+
+// Набор-экзамен: темы пронумерованы как задания (у ЕГЭ по русскому — 1–27)
+const isExam = () => pack.topics.some(t => t.n);
+const shortTitle = t => t.title.replace(/^\d+\.\s*/, '');
+
+function examGrid() {
+  return `<section class="topics"><h2>Задания ЕГЭ</h2><div class="task-grid">${pack.topics.map(tp => {
+    const st = topicStats(tp.id);
+    const pct = st.total ? Math.round(st.mastered / st.total * 100) : 0;
+    const state = st.started >= 5 && st.acc !== null && st.acc < 0.6 ? 'weak' : pct >= 80 ? 'done' : st.started ? 'started' : '';
+    return `<a class="task-tile ${state}" href="#/topic/${encodeURIComponent(tp.id)}" style="--p:${pct}%">
+      <b>${tp.n}</b><span>${esc(shortTitle(tp))}</span><i class="task-bar"></i></a>`;
+  }).join('')}</div>
+  <p class="muted legend"><span class="dot weak"></span> проседает <span class="dot done"></span> освоено</p></section>`;
+}
+
+// Вариант: по одной карточке на каждое задание с тестовым ответом
+function buildVariant() {
+  return pack.topics.filter(t => t.n && t.pts < 10).map(t => {
+    const pool = pack.cards.filter(c => c.t === t.id && c.k !== 'flip');
+    return pool.length ? pool[Math.floor(Math.random() * pool.length)] : null;
+  }).filter(Boolean);
+}
+
+function lastVariant() {
+  const v = (prog.variants || []).at(-1);
+  return v ? ` · прошлый ${v.s}/${v.max}` : '';
 }
 
 function viewTopic(tid) {
@@ -198,11 +238,24 @@ function viewTopic(tid) {
   const st = topicStats(tid);
   const lessons = (pack.theory || []).filter(l => l.topic === tid);
   const errs = buildQueue('errors', tid);
+  const protos = (tp.protos || []).filter(pr => pack.cards.some(c => c.p === pr.id));
   $app.innerHTML = `
-    <header class="top"><a class="back" href="#/">←</a><div class="brand-title">${esc(tp.title)}</div></header>
+    <header class="top"><a class="back" href="#/">←</a><div>
+      ${tp.n ? `<div class="brand-by">Задание ${tp.n} · ${plural(tp.pts, 'балл', 'балла', 'баллов')}</div>` : ''}
+      <div class="brand-title">${esc(tp.n ? shortTitle(tp) : tp.title)}</div></div></header>
+    ${protos.length ? `<section class="topics"><h2>Прототипы</h2>${protos.map(pr => {
+      const ps = topicStats(tid, pr.id);
+      const pct = ps.total ? Math.round(ps.mastered / ps.total * 100) : 0;
+      return `<div class="proto">
+        <div class="proto-head"><b>${esc(pr.title)}</b><span class="topic-meta">${ps.mastered}/${ps.total}${ps.acc !== null ? ` · ${Math.round(ps.acc * 100)}%` : ''}</span></div>
+        ${pr.tip ? `<p class="proto-tip">💡 ${esc(pr.tip)}</p>` : ''}
+        <span class="bar"><i style="width:${pct}%"></i></span>
+        <button class="btn small" data-proto="${esc(pr.id)}">Тренировать</button>
+      </div>`;
+    }).join('')}</section>` : ''}
     <section class="panel">
       <p>${st.total ? `Освоено ${st.mastered} из ${st.total}${st.acc !== null ? ` · точность ${Math.round(st.acc * 100)}%` : ''}` : 'В этой теме пока только теория'}</p>
-      ${st.total ? '<button class="btn primary" id="train">Тренировать тему</button>' : ''}
+      ${st.total ? `<button class="btn primary" id="train">${protos.length ? 'Все прототипы вперемешку' : 'Тренировать тему'}</button>` : ''}
       ${errs.length ? `<button class="btn ghost" id="errs">Ошибки по теме · ${errs.length}</button>` : ''}
     </section>
     ${lessons.length ? `<section class="topics"><h2>Теория</h2>${lessons.map(l =>
@@ -210,6 +263,10 @@ function viewTopic(tid) {
        <span class="topic-meta">${l.min ? l.min + ' мин' : ''}</span></a>`).join('')}</section>` : ''}`;
   $app.querySelector('#train')?.addEventListener('click', () => startSession(buildQueue('topic', tid), tp.title, `#/topic/${tid}`));
   $app.querySelector('#errs')?.addEventListener('click', () => startSession(errs, 'Ошибки: ' + tp.title, `#/topic/${tid}`));
+  $app.querySelectorAll('[data-proto]').forEach(b => b.onclick = () => {
+    const pr = protos.find(x => x.id === b.dataset.proto);
+    startSession(buildQueue('topic', tid, pr.id), pr.title, `#/topic/${tid}`);
+  });
 }
 
 function viewLesson(lid) {
@@ -225,7 +282,7 @@ function viewLesson(lid) {
   window.scrollTo(0, 0);
 }
 
-function startSession(queue, title, back = '#/') {
+function startSession(queue, title, back = '#/', { variant = false } = {}) {
   if (!queue.length) return toast('Здесь пока нечего повторять');
   const q = queue.slice();
   const requeued = new Set();
@@ -233,6 +290,7 @@ function startSession(queue, title, back = '#/') {
   const started = Date.now();
   const streakBefore = streak();
   const missed = new Map();
+  const results = [];
   const leave = () => { location.hash = back; route(); };
 
   const next = () => {
@@ -244,7 +302,7 @@ function startSession(queue, title, back = '#/') {
         <div class="progress"><i style="width:${Math.round(i / q.length * 100)}%"></i></div>
         <span class="muted">${i + 1}/${q.length}</span>
       </header>
-      <div class="card-topic">${esc(topicsById[card.t]?.title || title)}</div>
+      <div class="card-topic">${esc(cardLabel(card, title))}</div>
       <article class="card"></article>
       <div class="next-bar" hidden><button class="btn primary big" id="next">Дальше</button></div>`;
     const bar = $app.querySelector('.next-bar');
@@ -254,7 +312,8 @@ function startSession(queue, title, back = '#/') {
       ok += score;
       // Ошибку показываем ещё раз в конце занятия, но только один раз
       if (score < 1) missed.set(card.id, card);
-      if (score < 1 && !requeued.has(card.id)) { requeued.add(card.id); q.push(card); }
+      if (variant) results.push({ card, score });
+      else if (score < 1 && !requeued.has(card.id)) { requeued.add(card.id); q.push(card); }
       bar.hidden = false;
       bar.querySelector('#next').focus({ preventScroll: true });
     });
@@ -263,6 +322,7 @@ function startSession(queue, title, back = '#/') {
   };
 
   const finishSession = () => {
+    if (variant) return finishVariant();
     const mins = Math.max(1, Math.round((Date.now() - started) / 60000));
     const pct = answered ? Math.round(ok / answered * 100) : 0;
     const [icon, title] = pct >= 90 ? ['🏆', 'Отлично!'] : pct >= 70 ? ['💪', 'Хорошая работа'] : ['🌱', 'Начало положено'];
@@ -287,6 +347,30 @@ function startSession(queue, title, back = '#/') {
       </section>`;
     $app.querySelector('#done').onclick = leave;
     $app.querySelector('#more')?.addEventListener('click', () => startSession(more, title, back));
+    sync(true);
+  };
+  const finishVariant = () => {
+    const tasks = results.map(({ card, score }) => {
+      const t = topicsById[card.t];
+      return { n: t.n, title: shortTitle(t), pts: t.pts, got: Math.round(t.pts * score * 2) / 2 };
+    }).sort((a, b) => a.n - b.n);
+    const s = tasks.reduce((n, t) => n + t.got, 0);
+    const max = tasks.reduce((n, t) => n + t.pts, 0);
+    const mins = Math.max(1, Math.round((Date.now() - started) / 60000));
+    prog.variants = [...(prog.variants || []), { at: Date.now(), s, max, mins }].slice(-20);
+    save();
+    $app.innerHTML = `
+      <section class="finish">
+        <div class="finish-icon">📝</div>
+        <h1 class="finish-title">${s} из ${max}</h1>
+        <p class="muted">первичных баллов за тестовую часть · ${plural(mins, 'минута', 'минуты', 'минут')}</p>
+        <div class="variant-list">${tasks.map(t => `
+          <a class="variant-row ${t.got >= t.pts ? 'ok' : t.got > 0 ? 'mid' : 'bad'}" href="#/topic/task-${t.n}">
+            <b>${t.n}</b><span>${esc(t.title)}</span><em>${t.got}/${t.pts}</em></a>`).join('')}</div>
+        <p class="muted">Нажми на задание с ошибкой — откроются его прототипы и правила</p>
+        <button class="btn primary big" id="done">Готово</button>
+      </section>`;
+    $app.querySelector('#done').onclick = leave;
     sync(true);
   };
   next();
