@@ -1,4 +1,4 @@
-# Сервер Задачника (Cloudflare Worker)
+# Сервер «Между уроками» (Cloudflare Worker)
 
 Один маленький Worker делает три вещи:
 
