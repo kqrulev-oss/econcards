@@ -2,10 +2,11 @@
    Сеть → кэш: при наличии сети всегда свежая версия, без сети — из кэша.
    Наборы и картинки кэшируются по мере открытия. Запросы к серверу ИИ
    (другой домен) не трогаем. При смене состава файлов поднимай версию. */
-const CACHE = 'zadachnik-v14';
+const CACHE = 'zadachnik-v15';
 const ASSETS = [
   './', './index.html', './app.css', './app.js', './lib.js', './landing.js', './config.js', './manifest.webmanifest',
-  './packs/index.json', './icons/icon-192.png', './icons/icon-512.png', './icons/apple-touch-icon.png',
+  './packs/index.json',
+  './fonts/nunito-cyrillic.woff2', './fonts/nunito-latin.woff2', './fonts/unbounded-cyrillic.woff2', './fonts/unbounded-latin.woff2', './icons/icon-192.png', './icons/icon-512.png', './icons/apple-touch-icon.png',
 ];
 
 self.addEventListener('install', e => {

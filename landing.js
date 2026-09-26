@@ -4,25 +4,30 @@
 
 const STUDIO = 'studio/';
 const TG = 'https://t.me/trwqxp';
+const FLAME = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3c1 4 5 5 5 10a5 5 0 0 1-10 0c0-3 2-4 2-6 1.5 1 2 2 2 3 0-3 1-5 1-7z"/></svg>';
+const ICONS = {
+  inbox: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 13l2-8h12l2 8v6H4z"/><path d="M4 13h5l1 2h4l1-2h5"/></svg>',
+  phone: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h4l2 5-3 2a11 11 0 0 0 5 5l2-3 5 2v4a2 2 0 0 1-2 2A17 17 0 0 1 3 6a2 2 0 0 1 2-2z"/></svg>',
+  clock: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>',
+};
 
 const phone = `
   <div class="ld-phone">
     <div class="ld-phone-top">
-      <span class="ld-phone-x">✕</span>
       <span class="ld-phone-bar"><i style="width:40%"></i></span>
       <span class="ld-phone-n">4/10</span>
     </div>
-    <div class="ld-phone-topic">15. Н и НН</div>
+    <div class="ld-phone-topic"><span>15</span> Н и НН</div>
     <div class="ld-phone-card">
       <p>Сколько Н пишется в слове?</p>
       <p class="ld-phone-word">серебря_ый</p>
-      <button class="ld-opt" data-ok="1"><b>а</b> н</button>
-      <button class="ld-opt"><b>б</b> нн</button>
+      <div class="ld-opts"><button class="ld-opt" data-ok="1">н</button><button class="ld-opt">нн</button></div>
       <div class="ld-phone-exp" hidden><b>Разбор.</b> Суффикс -ЯН- → одна Н: серебряный.</div>
-      <p class="ld-phone-hint">👆 Попробуйте ответить</p>
+      <p class="ld-phone-hint">Попробуйте ответить</p>
     </div>
-    <div class="ld-phone-btn">Дальше</div>
   </div>`;
+
+const sticker = `<div class="ld-sticker" aria-hidden="true">${FLAME}<b>серия 6 дней</b></div>`;
 
 const report = `
   <div class="ld-report" aria-hidden="true">
@@ -51,22 +56,22 @@ export function renderLanding(root, library) {
   <header class="ld-nav">
     <a class="ld-logo" href="./"><span class="ld-mark">М</span>Между уроками</a>
     <nav><a href="#how">Как это работает</a><a href="#faq">Вопросы</a></nav>
-    <a class="ld-nav-tg" href="${TG}" target="_blank" rel="noopener" aria-label="Написать в Telegram">✈️</a>
+    <a class="ld-nav-tg" href="${TG}" target="_blank" rel="noopener" aria-label="Написать в Telegram"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 4L3 11l6 2 2 6 3-4 5 4z"/><path d="M9 13l8-6"/></svg></a>
     <a class="ld-nav-cta" href="${STUDIO}">Войти в студию</a>
   </header>
 
   <section class="ld-hero">
     <div class="ld-hero-text">
       <p class="ld-kicker">Для репетиторов</p>
-      <h1>Ученики занимаются между уроками. А вы&nbsp;видите, как.</h1>
-      <p class="ld-lead">Соберите тренажёр из своих материалов за&nbsp;15&nbsp;минут. Ученики решают по&nbsp;10&nbsp;минут в&nbsp;день, а вы знаете, кто занимался, где ошибки и&nbsp;что разобрать на&nbsp;уроке.</p>
+      <h1>Домашка, от&nbsp;которой не&nbsp;сбегают</h1>
+      <p class="ld-lead">Соберите тренажёр из своих материалов за&nbsp;15&nbsp;минут. Серии, цель дня и&nbsp;очки возвращают учеников к&nbsp;карточкам, а&nbsp;вы видите, кто занимался, где ошибки и&nbsp;что разобрать на&nbsp;уроке.</p>
       <div class="ld-cta">
         <a class="ld-btn primary" href="${STUDIO}">Собрать тренажёр</a>
-        <a class="ld-btn" href="?p=ege-rus">Посмотреть глазами ученика</a>
+        <a class="ld-btn" href="?p=ege-rus">Попробовать</a>
       </div>
       <p class="ld-note">Бесплатно для первых репетиторов · без установки · работает с&nbsp;телефона</p>
     </div>
-    <div class="ld-hero-art">${phone}${report}</div>
+    <div class="ld-hero-art"><span class="ld-blob" aria-hidden="true"></span>${phone}${sticker}${report}</div>
   </section>
 
   <section class="ld-scene">
@@ -78,14 +83,14 @@ export function renderLanding(root, library) {
   <section class="ld-pains">
     <h2>Знакомо?</h2>
     <div class="ld-grid3">
-      <article><span class="ld-emoji">📭</span><h3>Домашку делают в&nbsp;последний вечер</h3><p>Неделю тишина, а&nbsp;перед уроком — всё за&nbsp;час. Через месяц половина забыта.</p></article>
-      <article><span class="ld-emoji">📞</span><h3>Родители спрашивают, есть ли прогресс</h3><p>А&nbsp;показать нечего, кроме ощущений. Оплата продлевается на&nbsp;доверии.</p></article>
-      <article><span class="ld-emoji">⏳</span><h3>Урок уходит на&nbsp;повторение</h3><p>Вместо нового материала — снова правила, которые проходили три недели назад.</p></article>
+      <article><span class="ld-ico">${ICONS.inbox}</span><h3>Домашку делают в&nbsp;последний вечер</h3><p>Неделю тишина, а&nbsp;перед уроком — всё за&nbsp;час. Через месяц половина забыта.</p></article>
+      <article><span class="ld-ico">${ICONS.phone}</span><h3>Родители спрашивают, есть ли прогресс</h3><p>А&nbsp;показать нечего, кроме ощущений. Оплата продлевается на&nbsp;доверии.</p></article>
+      <article><span class="ld-ico">${ICONS.clock}</span><h3>Урок уходит на&nbsp;повторение</h3><p>Вместо нового материала — снова правила, которые проходили три недели назад.</p></article>
     </div>
   </section>
 
   <section class="ld-how" id="how">
-    <h2>Как это работает</h2>
+    <h2>Три шага — и&nbsp;ученики в&nbsp;игре</h2>
     <ol class="ld-steps">
       <li><b>Добавьте материалы</b><p>Вставьте конспект, правила или задачи с&nbsp;решениями — ИИ сделает карточки, вы проверите их перед добавлением. Или возьмите готовые из&nbsp;библиотеки: больше ${rounded}&nbsp;заданий ЕГЭ и&nbsp;олимпиад с&nbsp;разборами.</p></li>
       <li><b>Отправьте ссылку ученикам</b><p>В&nbsp;Telegram или WhatsApp. Ничего устанавливать не&nbsp;нужно. Карточки возвращаются к&nbsp;ученику ровно тогда, когда он начинает их забывать.</p></li>
@@ -126,7 +131,7 @@ export function renderLanding(root, library) {
     <p>15&nbsp;минут — и&nbsp;ученики получат ссылку. Есть вопросы или хотите, чтобы тренажёр собрали за&nbsp;вас? Напишите.</p>
     <div class="ld-cta center-cta">
       <a class="ld-btn primary" href="${STUDIO}">Собрать тренажёр</a>
-      <a class="ld-btn tg" href="${TG}" target="_blank" rel="noopener">✈️ Написать в&nbsp;Telegram</a>
+      <a class="ld-btn tg" href="${TG}" target="_blank" rel="noopener">Написать в&nbsp;Telegram</a>
     </div>
   </section>
 
@@ -150,7 +155,8 @@ export function renderLanding(root, library) {
     opts.forEach(x => { x.disabled = true; if (x.dataset.ok) x.classList.add('ok'); });
     if (!o.dataset.ok) o.classList.add('bad');
     root.querySelector('.ld-phone-exp').hidden = false;
-    root.querySelector('.ld-phone-hint').textContent = o.dataset.ok ? 'Верно! Так ученик занимается каждый день' : 'Ошибка вернётся завтра — и репетитор её увидит';
+    root.querySelector('.ld-phone-hint').textContent = o.dataset.ok ? '+10 · Верно! Так ученик занимается каждый день' : 'Ошибка вернётся завтра — и репетитор её увидит';
+    root.querySelector('.ld-phone-hint').classList.add(o.dataset.ok ? 'ok' : 'bad');
   });
   root.querySelector('#code').onkeydown = e => e.key === 'Enter' && join();
 }
