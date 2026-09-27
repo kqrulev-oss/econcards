@@ -1394,6 +1394,2303 @@
     "enwiki",
     "wikidata"
    ]
+  },
+  {
+   "date": "1695–1696",
+   "event": "Азовские походы Петра I",
+   "persons": [
+    "Пётр I",
+    "Франц Лефорт"
+   ],
+   "process": "Внешняя политика Петра I",
+   "codifier": "3.2",
+   "wiki": "Азовские походы",
+   "sources": [
+    "https://ru.wikipedia.org/wiki/%D0%90%D0%B7%D0%BE%D0%B2%D1%81%D0%BA%D0%B8%D0%B5_%D0%BF%D0%BE%D1%85%D0%BE%D0%B4%D1%8B_%D0%9F%D0%B5%D1%82%D1%80%D0%B0_I",
+    "https://en.wikipedia.org/wiki/Azov_campaigns_(1695%E2%80%931696)",
+    "https://www.wikidata.org/wiki/Q1763834"
+   ],
+   "checked": true,
+   "verified_by": [
+    "ruwiki",
+    "enwiki",
+    "wikidata"
+   ]
+  },
+  {
+   "date": "1697–1698",
+   "event": "Великое посольство",
+   "persons": [
+    "Пётр I",
+    "Франц Лефорт",
+    "Фёдор Головин"
+   ],
+   "process": "Внешняя политика Петра I",
+   "codifier": "3.2",
+   "wiki": "Великое посольство",
+   "sources": [
+    "https://ru.wikipedia.org/wiki/%D0%92%D0%B5%D0%BB%D0%B8%D0%BA%D0%BE%D0%B5_%D0%BF%D0%BE%D1%81%D0%BE%D0%BB%D1%8C%D1%81%D1%82%D0%B2%D0%BE",
+    "https://en.wikipedia.org/wiki/Grand_Embassy_of_Peter_the_Great",
+    "https://www.wikidata.org/wiki/Q1510976"
+   ],
+   "checked": true,
+   "verified_by": [
+    "ruwiki",
+    "enwiki",
+    "wikidata"
+   ]
+  },
+  {
+   "date": "1700–1721",
+   "event": "Северная война",
+   "persons": [
+    "Пётр I",
+    "Карл XII"
+   ],
+   "process": "Внешняя политика Петра I",
+   "codifier": "3.2",
+   "wiki": "Северная война",
+   "sources": [
+    "https://ru.wikipedia.org/wiki/%D0%A1%D0%B5%D0%B2%D0%B5%D1%80%D0%BD%D0%B0%D1%8F_%D0%B2%D0%BE%D0%B9%D0%BD%D0%B0",
+    "https://en.wikipedia.org/wiki/Great_Northern_War",
+    "https://www.wikidata.org/wiki/Q151616"
+   ],
+   "checked": true,
+   "verified_by": [
+    "ruwiki",
+    "enwiki",
+    "wikidata"
+   ]
+  },
+  {
+   "date": "1700",
+   "event": "Поражение под Нарвой",
+   "persons": [
+    "Пётр I",
+    "Карл XII"
+   ],
+   "process": "Внешняя политика Петра I",
+   "codifier": "3.2",
+   "wiki": "Битва при Нарве",
+   "sources": [],
+   "checked": false,
+   "verified_by": [],
+   "check_note": "статья ru не найдена",
+   "wiki_en": "Battle of Narva (1700)"
+  },
+  {
+   "date": "1703",
+   "event": "Основание Санкт-Петербурга",
+   "persons": [
+    "Пётр I"
+   ],
+   "process": "Преобразования Петра I",
+   "codifier": "3.1",
+   "wiki": "История Санкт-Петербурга",
+   "sources": [
+    "https://ru.wikipedia.org/wiki/%D0%98%D1%81%D1%82%D0%BE%D1%80%D0%B8%D1%8F_%D0%A1%D0%B0%D0%BD%D0%BA%D1%82-%D0%9F%D0%B5%D1%82%D0%B5%D1%80%D0%B1%D1%83%D1%80%D0%B3%D0%B0",
+    "https://en.wikipedia.org/wiki/History_of_Saint_Petersburg"
+   ],
+   "checked": true,
+   "verified_by": [
+    "ruwiki",
+    "enwiki"
+   ]
+  },
+  {
+   "date": "1708",
+   "event": "Битва при Лесной",
+   "persons": [
+    "Пётр I",
+    "Адам Левенгаупт"
+   ],
+   "process": "Внешняя политика Петра I",
+   "codifier": "3.2",
+   "wiki": "Битва при Лесной",
+   "sources": [
+    "https://ru.wikipedia.org/wiki/%D0%91%D0%B8%D1%82%D0%B2%D0%B0_%D0%BF%D1%80%D0%B8_%D0%9B%D0%B5%D1%81%D0%BD%D0%BE%D0%B9",
+    "https://en.wikipedia.org/wiki/Battle_of_Lesnaya",
+    "https://www.wikidata.org/wiki/Q166015"
+   ],
+   "checked": true,
+   "verified_by": [
+    "ruwiki",
+    "enwiki",
+    "wikidata"
+   ]
+  },
+  {
+   "date": "1708",
+   "event": "Губернская реформа Петра I",
+   "persons": [
+    "Пётр I"
+   ],
+   "process": "Преобразования Петра I",
+   "codifier": "3.1",
+   "wiki": "Губернская реформа Петра I",
+   "sources": [
+    "https://ru.wikipedia.org/wiki/%D0%93%D1%83%D0%B1%D0%B5%D1%80%D0%BD%D1%81%D0%BA%D0%B0%D1%8F_%D1%80%D0%B5%D1%84%D0%BE%D1%80%D0%BC%D0%B0_%D0%9F%D0%B5%D1%82%D1%80%D0%B0_I",
+    "https://www.wikidata.org/wiki/Q4329290"
+   ],
+   "checked": true,
+   "verified_by": [
+    "ruwiki",
+    "wikidata"
+   ]
+  },
+  {
+   "date": "1709",
+   "event": "Полтавская битва",
+   "persons": [
+    "Пётр I",
+    "Карл XII",
+    "Александр Меншиков"
+   ],
+   "process": "Внешняя политика Петра I",
+   "codifier": "3.2",
+   "wiki": "Полтавская битва",
+   "sources": [
+    "https://ru.wikipedia.org/wiki/%D0%9F%D0%BE%D0%BB%D1%82%D0%B0%D0%B2%D1%81%D0%BA%D0%B0%D1%8F_%D0%B1%D0%B8%D1%82%D0%B2%D0%B0",
+    "https://en.wikipedia.org/wiki/Battle_of_Poltava",
+    "https://www.wikidata.org/wiki/Q152486"
+   ],
+   "checked": true,
+   "verified_by": [
+    "ruwiki",
+    "enwiki",
+    "wikidata"
+   ]
+  },
+  {
+   "date": "1711",
+   "event": "Учреждение Правительствующего сената",
+   "persons": [
+    "Пётр I"
+   ],
+   "process": "Преобразования Петра I",
+   "codifier": "3.1",
+   "wiki": "Правительствующий сенат",
+   "sources": [
+    "https://ru.wikipedia.org/wiki/%D0%9F%D1%80%D0%B0%D0%B2%D0%B8%D1%82%D0%B5%D0%BB%D1%8C%D1%81%D1%82%D0%B2%D1%83%D1%8E%D1%89%D0%B8%D0%B9_%D1%81%D0%B5%D0%BD%D0%B0%D1%82",
+    "https://en.wikipedia.org/wiki/Governing_Senate"
+   ],
+   "checked": true,
+   "verified_by": [
+    "ruwiki",
+    "enwiki"
+   ]
+  },
+  {
+   "date": "1711",
+   "event": "Прутский поход",
+   "persons": [
+    "Пётр I"
+   ],
+   "process": "Внешняя политика Петра I",
+   "codifier": "3.2",
+   "wiki": "Прутский поход",
+   "sources": [
+    "https://ru.wikipedia.org/wiki/%D0%9F%D1%80%D1%83%D1%82%D1%81%D0%BA%D0%B8%D0%B9_%D0%BF%D0%BE%D1%85%D0%BE%D0%B4",
+    "https://www.wikidata.org/wiki/Q2389310"
+   ],
+   "checked": true,
+   "verified_by": [
+    "ruwiki",
+    "wikidata"
+   ]
+  },
+  {
+   "date": "1714",
+   "event": "Гангутское сражение",
+   "persons": [
+    "Пётр I",
+    "Фёдор Апраксин"
+   ],
+   "process": "Внешняя политика Петра I",
+   "codifier": "3.2",
+   "wiki": "Гангутское сражение",
+   "sources": [
+    "https://ru.wikipedia.org/wiki/%D0%93%D0%B0%D0%BD%D0%B3%D1%83%D1%82%D1%81%D0%BA%D0%BE%D0%B5_%D1%81%D1%80%D0%B0%D0%B6%D0%B5%D0%BD%D0%B8%D0%B5",
+    "https://en.wikipedia.org/wiki/Battle_of_Gangut",
+    "https://www.wikidata.org/wiki/Q681712"
+   ],
+   "checked": true,
+   "verified_by": [
+    "ruwiki",
+    "enwiki",
+    "wikidata"
+   ]
+  },
+  {
+   "date": "1714",
+   "event": "Указ о единонаследии",
+   "persons": [
+    "Пётр I"
+   ],
+   "process": "Преобразования Петра I",
+   "codifier": "3.1",
+   "wiki": "Указ о единонаследии",
+   "sources": [
+    "https://ru.wikipedia.org/wiki/%D0%A3%D0%BA%D0%B0%D0%B7_%D0%BE_%D0%B5%D0%B4%D0%B8%D0%BD%D0%BE%D0%BD%D0%B0%D1%81%D0%BB%D0%B5%D0%B4%D0%B8%D0%B8",
+    "https://www.wikidata.org/wiki/Q4470310"
+   ],
+   "checked": true,
+   "verified_by": [
+    "ruwiki",
+    "wikidata"
+   ]
+  },
+  {
+   "date": "1720",
+   "event": "Гренгамское сражение",
+   "persons": [
+    "Михаил Голицын"
+   ],
+   "process": "Внешняя политика Петра I",
+   "codifier": "3.2",
+   "wiki": "Гренгамское сражение",
+   "sources": [
+    "https://ru.wikipedia.org/wiki/%D0%A1%D1%80%D0%B0%D0%B6%D0%B5%D0%BD%D0%B8%D0%B5_%D0%BF%D1%80%D0%B8_%D0%93%D1%80%D0%B5%D0%BD%D0%B3%D0%B0%D0%BC%D0%B5",
+    "https://en.wikipedia.org/wiki/Battle_of_Grengam",
+    "https://www.wikidata.org/wiki/Q338370"
+   ],
+   "checked": true,
+   "verified_by": [
+    "ruwiki",
+    "enwiki",
+    "wikidata"
+   ]
+  },
+  {
+   "date": "1721",
+   "event": "Ништадтский мир, провозглашение России империей",
+   "persons": [
+    "Пётр I"
+   ],
+   "process": "Внешняя политика Петра I",
+   "codifier": "3.2",
+   "wiki": "Ништадтский мирный договор",
+   "sources": [
+    "https://ru.wikipedia.org/wiki/%D0%9D%D0%B8%D1%88%D1%82%D0%B0%D0%B4%D1%82%D1%81%D0%BA%D0%B8%D0%B9_%D0%BC%D0%B8%D1%80%D0%BD%D1%8B%D0%B9_%D0%B4%D0%BE%D0%B3%D0%BE%D0%B2%D0%BE%D1%80",
+    "https://en.wikipedia.org/wiki/Treaty_of_Nystad",
+    "https://www.wikidata.org/wiki/Q153286"
+   ],
+   "checked": true,
+   "verified_by": [
+    "ruwiki",
+    "enwiki",
+    "wikidata"
+   ]
+  },
+  {
+   "date": "1721",
+   "event": "Учреждение Святейшего синода",
+   "persons": [
+    "Пётр I",
+    "Феофан Прокопович"
+   ],
+   "process": "Преобразования Петра I",
+   "codifier": "3.1",
+   "wiki": "Святейший правительствующий синод",
+   "sources": [
+    "https://ru.wikipedia.org/wiki/%D0%A1%D0%B2%D1%8F%D1%82%D0%B5%D0%B9%D1%88%D0%B8%D0%B9_%D0%BF%D1%80%D0%B0%D0%B2%D0%B8%D1%82%D0%B5%D0%BB%D1%8C%D1%81%D1%82%D0%B2%D1%83%D1%8E%D1%89%D0%B8%D0%B9_%D1%81%D0%B8%D0%BD%D0%BE%D0%B4",
+    "https://en.wikipedia.org/wiki/Most_Holy_Synod",
+    "https://www.wikidata.org/wiki/Q2492984"
+   ],
+   "checked": true,
+   "verified_by": [
+    "ruwiki",
+    "enwiki",
+    "wikidata"
+   ]
+  },
+  {
+   "date": "1722",
+   "event": "Табель о рангах",
+   "persons": [
+    "Пётр I"
+   ],
+   "process": "Преобразования Петра I",
+   "codifier": "3.1",
+   "wiki": "Табель о рангах",
+   "sources": [
+    "https://ru.wikipedia.org/wiki/%D0%A2%D0%B0%D0%B1%D0%B5%D0%BB%D1%8C_%D0%BE_%D1%80%D0%B0%D0%BD%D0%B3%D0%B0%D1%85",
+    "https://en.wikipedia.org/wiki/Table_of_Ranks",
+    "https://www.wikidata.org/wiki/Q929093"
+   ],
+   "checked": true,
+   "verified_by": [
+    "ruwiki",
+    "enwiki",
+    "wikidata"
+   ]
+  },
+  {
+   "date": "1722",
+   "event": "Указ о престолонаследии",
+   "persons": [
+    "Пётр I"
+   ],
+   "process": "Преобразования Петра I",
+   "codifier": "3.1",
+   "wiki": "Указ о престолонаследии (1722)",
+   "sources": [
+    "https://ru.wikipedia.org/wiki/%D0%A3%D0%BA%D0%B0%D0%B7_%D0%BE_%D0%BF%D1%80%D0%B5%D1%81%D1%82%D0%BE%D0%BB%D0%BE%D0%BD%D0%B0%D1%81%D0%BB%D0%B5%D0%B4%D0%B8%D0%B8_(1722)"
+   ],
+   "checked": false,
+   "verified_by": [
+    "ruwiki"
+   ]
+  },
+  {
+   "date": "1722–1723",
+   "event": "Персидский поход Петра I",
+   "persons": [
+    "Пётр I"
+   ],
+   "process": "Внешняя политика Петра I",
+   "codifier": "3.2",
+   "wiki": "Персидский поход (1722—1723)",
+   "sources": [
+    "https://ru.wikipedia.org/wiki/%D0%9F%D0%B5%D1%80%D1%81%D0%B8%D0%B4%D1%81%D0%BA%D0%B8%D0%B9_%D0%BF%D0%BE%D1%85%D0%BE%D0%B4_(1722%E2%80%941723)",
+    "https://en.wikipedia.org/wiki/Russo-Persian_War_(1722%E2%80%931723)",
+    "https://www.wikidata.org/wiki/Q1418582"
+   ],
+   "checked": true,
+   "verified_by": [
+    "ruwiki",
+    "enwiki",
+    "wikidata"
+   ]
+  },
+  {
+   "date": "1724",
+   "event": "Указ об учреждении Академии наук",
+   "persons": [
+    "Пётр I"
+   ],
+   "process": "Культура петровской эпохи",
+   "codifier": "3.8",
+   "wiki": "Петербургская академия наук",
+   "sources": [
+    "https://ru.wikipedia.org/wiki/%D0%9F%D0%B5%D1%82%D0%B5%D1%80%D0%B1%D1%83%D1%80%D0%B3%D1%81%D0%BA%D0%B0%D1%8F_%D0%B0%D0%BA%D0%B0%D0%B4%D0%B5%D0%BC%D0%B8%D1%8F_%D0%BD%D0%B0%D1%83%D0%BA",
+    "https://en.wikipedia.org/wiki/Russian_Academy_of_Sciences",
+    "https://www.wikidata.org/wiki/Q4345832"
+   ],
+   "checked": true,
+   "verified_by": [
+    "ruwiki",
+    "enwiki",
+    "wikidata"
+   ]
+  },
+  {
+   "date": "1730",
+   "event": "«Кондиции» верховников, воцарение Анны Иоанновны",
+   "persons": [
+    "Анна Иоанновна",
+    "Дмитрий Голицын"
+   ],
+   "process": "Эпоха дворцовых переворотов",
+   "codifier": "3.3",
+   "wiki": "Кондиции",
+   "sources": [
+    "https://ru.wikipedia.org/wiki/%D0%9A%D0%BE%D0%BD%D0%B4%D0%B8%D1%86%D0%B8%D0%B8",
+    "https://en.wikipedia.org/wiki/Conditions_(Russia)",
+    "https://www.wikidata.org/wiki/Q4230506"
+   ],
+   "checked": true,
+   "verified_by": [
+    "ruwiki",
+    "enwiki",
+    "wikidata"
+   ]
+  },
+  {
+   "date": "1741",
+   "event": "Дворцовый переворот, воцарение Елизаветы Петровны",
+   "persons": [
+    "Елизавета Петровна"
+   ],
+   "process": "Эпоха дворцовых переворотов",
+   "codifier": "3.3",
+   "wiki": "Дворцовый переворот 1741 года",
+   "sources": [
+    "https://ru.wikipedia.org/wiki/%D0%94%D0%B2%D0%BE%D1%80%D1%86%D0%BE%D0%B2%D1%8B%D0%B9_%D0%BF%D0%B5%D1%80%D0%B5%D0%B2%D0%BE%D1%80%D0%BE%D1%82_1741_%D0%B3%D0%BE%D0%B4%D0%B0",
+    "https://www.wikidata.org/wiki/Q4156071"
+   ],
+   "checked": true,
+   "verified_by": [
+    "ruwiki",
+    "wikidata"
+   ]
+  },
+  {
+   "date": "1755",
+   "event": "Основание Московского университета",
+   "persons": [
+    "Михаил Ломоносов",
+    "Иван Шувалов"
+   ],
+   "process": "Культура России XVIII в.",
+   "codifier": "3.8",
+   "wiki": "Московский государственный университет имени М. В. Ломоносова",
+   "sources": [
+    "https://ru.wikipedia.org/wiki/%D0%9C%D0%BE%D1%81%D0%BA%D0%BE%D0%B2%D1%81%D0%BA%D0%B8%D0%B9_%D0%B3%D0%BE%D1%81%D1%83%D0%B4%D0%B0%D1%80%D1%81%D1%82%D0%B2%D0%B5%D0%BD%D0%BD%D1%8B%D0%B9_%D1%83%D0%BD%D0%B8%D0%B2%D0%B5%D1%80%D1%81%D0%B8%D1%82%D0%B5%D1%82",
+    "https://en.wikipedia.org/wiki/Moscow_State_University",
+    "https://www.wikidata.org/wiki/Q13164"
+   ],
+   "checked": true,
+   "verified_by": [
+    "ruwiki",
+    "enwiki",
+    "wikidata"
+   ]
+  },
+  {
+   "date": "1756–1763",
+   "event": "Семилетняя война",
+   "persons": [
+    "Елизавета Петровна",
+    "Фридрих II",
+    "Пётр Салтыков"
+   ],
+   "process": "Эпоха дворцовых переворотов",
+   "codifier": "3.3",
+   "wiki": "Семилетняя война",
+   "sources": [
+    "https://ru.wikipedia.org/wiki/%D0%A1%D0%B5%D0%BC%D0%B8%D0%BB%D0%B5%D1%82%D0%BD%D1%8F%D1%8F_%D0%B2%D0%BE%D0%B9%D0%BD%D0%B0",
+    "https://en.wikipedia.org/wiki/Seven_Years'_War",
+    "https://www.wikidata.org/wiki/Q33143"
+   ],
+   "checked": true,
+   "verified_by": [
+    "ruwiki",
+    "enwiki",
+    "wikidata"
+   ]
+  },
+  {
+   "date": "1759",
+   "event": "Сражение при Кунерсдорфе",
+   "persons": [
+    "Пётр Салтыков",
+    "Фридрих II"
+   ],
+   "process": "Эпоха дворцовых переворотов",
+   "codifier": "3.3",
+   "wiki": "Сражение при Кунерсдорфе",
+   "sources": [
+    "https://ru.wikipedia.org/wiki/%D0%9A%D1%83%D0%BD%D0%B5%D1%80%D1%81%D0%B4%D0%BE%D1%80%D1%84%D1%81%D0%BA%D0%BE%D0%B5_%D1%81%D1%80%D0%B0%D0%B6%D0%B5%D0%BD%D0%B8%D0%B5",
+    "https://en.wikipedia.org/wiki/Battle_of_Kunersdorf",
+    "https://www.wikidata.org/wiki/Q170400"
+   ],
+   "checked": true,
+   "verified_by": [
+    "ruwiki",
+    "enwiki",
+    "wikidata"
+   ]
+  },
+  {
+   "date": "1762",
+   "event": "Манифест о вольности дворянства",
+   "persons": [
+    "Пётр III"
+   ],
+   "process": "Эпоха дворцовых переворотов",
+   "codifier": "3.3",
+   "wiki": "Манифест о вольности дворянства",
+   "sources": [
+    "https://ru.wikipedia.org/wiki/%D0%9C%D0%B0%D0%BD%D0%B8%D1%84%D0%B5%D1%81%D1%82_%D0%BE_%D0%B2%D0%BE%D0%BB%D1%8C%D0%BD%D0%BE%D1%81%D1%82%D0%B8_%D0%B4%D0%B2%D0%BE%D1%80%D1%8F%D0%BD%D1%81%D1%82%D0%B2%D0%B0"
+   ],
+   "checked": false,
+   "verified_by": [
+    "ruwiki"
+   ]
+  },
+  {
+   "date": "1762",
+   "event": "Дворцовый переворот, воцарение Екатерины II",
+   "persons": [
+    "Екатерина II",
+    "Григорий Орлов"
+   ],
+   "process": "Эпоха дворцовых переворотов",
+   "codifier": "3.3",
+   "wiki": "Дворцовый переворот 1762 года",
+   "sources": [
+    "https://ru.wikipedia.org/wiki/%D0%94%D0%B2%D0%BE%D1%80%D1%86%D0%BE%D0%B2%D1%8B%D0%B9_%D0%BF%D0%B5%D1%80%D0%B5%D0%B2%D0%BE%D1%80%D0%BE%D1%82_1762_%D0%B3%D0%BE%D0%B4%D0%B0",
+    "https://www.wikidata.org/wiki/Q4156075"
+   ],
+   "checked": true,
+   "verified_by": [
+    "ruwiki",
+    "wikidata"
+   ]
+  },
+  {
+   "date": "1764",
+   "event": "Основание Смольного института благородных девиц",
+   "persons": [
+    "Екатерина II",
+    "Иван Бецкой"
+   ],
+   "process": "Культура России XVIII в.",
+   "codifier": "3.8",
+   "wiki": "Смольный институт благородных девиц",
+   "sources": [
+    "https://ru.wikipedia.org/wiki/%D0%A1%D0%BC%D0%BE%D0%BB%D1%8C%D0%BD%D1%8B%D0%B9_%D0%B8%D0%BD%D1%81%D1%82%D0%B8%D1%82%D1%83%D1%82_%D0%B1%D0%BB%D0%B0%D0%B3%D0%BE%D1%80%D0%BE%D0%B4%D0%BD%D1%8B%D1%85_%D0%B4%D0%B5%D0%B2%D0%B8%D1%86",
+    "https://en.wikipedia.org/wiki/Smolny_Institute_of_Noble_Maidens",
+    "https://www.wikidata.org/wiki/Q4425093"
+   ],
+   "checked": true,
+   "verified_by": [
+    "ruwiki",
+    "enwiki",
+    "wikidata"
+   ]
+  },
+  {
+   "date": "1767",
+   "event": "Созыв Уложенной комиссии",
+   "persons": [
+    "Екатерина II"
+   ],
+   "process": "Просвещённый абсолютизм",
+   "codifier": "3.4",
+   "wiki": "Уложенная комиссия",
+   "sources": [
+    "https://ru.wikipedia.org/wiki/%D0%A3%D0%BB%D0%BE%D0%B6%D0%B5%D0%BD%D0%BD%D0%B0%D1%8F_%D0%BA%D0%BE%D0%BC%D0%B8%D1%81%D1%81%D0%B8%D1%8F",
+    "https://www.wikidata.org/wiki/Q4474809"
+   ],
+   "checked": true,
+   "verified_by": [
+    "ruwiki",
+    "wikidata"
+   ]
+  },
+  {
+   "date": "1768–1774",
+   "event": "Русско-турецкая война",
+   "persons": [
+    "Екатерина II",
+    "Пётр Румянцев",
+    "Алексей Орлов"
+   ],
+   "process": "Внешняя политика Екатерины II",
+   "codifier": "3.5",
+   "wiki": "Русско-турецкая война (1768—1774)",
+   "sources": [
+    "https://ru.wikipedia.org/wiki/%D0%A0%D1%83%D1%81%D1%81%D0%BA%D0%BE-%D1%82%D1%83%D1%80%D0%B5%D1%86%D0%BA%D0%B0%D1%8F_%D0%B2%D0%BE%D0%B9%D0%BD%D0%B0_(1768%E2%80%941774)",
+    "https://en.wikipedia.org/wiki/Russo-Turkish_War_(1768%E2%80%931774)",
+    "https://www.wikidata.org/wiki/Q123070"
+   ],
+   "checked": true,
+   "verified_by": [
+    "ruwiki",
+    "enwiki",
+    "wikidata"
+   ]
+  },
+  {
+   "date": "1770",
+   "event": "Чесменское сражение",
+   "persons": [
+    "Алексей Орлов",
+    "Григорий Спиридов"
+   ],
+   "process": "Внешняя политика Екатерины II",
+   "codifier": "3.5",
+   "wiki": "Чесменское сражение",
+   "sources": [
+    "https://ru.wikipedia.org/wiki/%D0%A7%D0%B5%D1%81%D0%BC%D0%B5%D0%BD%D1%81%D0%BA%D0%BE%D0%B5_%D1%81%D1%80%D0%B0%D0%B6%D0%B5%D0%BD%D0%B8%D0%B5",
+    "https://en.wikipedia.org/wiki/Battle_of_Chesma",
+    "https://www.wikidata.org/wiki/Q1620408"
+   ],
+   "checked": true,
+   "verified_by": [
+    "ruwiki",
+    "enwiki",
+    "wikidata"
+   ]
+  },
+  {
+   "date": "1774",
+   "event": "Кючук-Кайнарджийский мир",
+   "persons": [
+    "Пётр Румянцев"
+   ],
+   "process": "Внешняя политика Екатерины II",
+   "codifier": "3.5",
+   "wiki": "Кючук-Кайнарджийский мирный договор",
+   "sources": [
+    "https://ru.wikipedia.org/wiki/%D0%9A%D1%8E%D1%87%D1%83%D0%BA-%D0%9A%D0%B0%D0%B9%D0%BD%D0%B0%D1%80%D0%B4%D0%B6%D0%B8%D0%B9%D1%81%D0%BA%D0%B8%D0%B9_%D0%BC%D0%B8%D1%80",
+    "https://en.wikipedia.org/wiki/Treaty_of_K%C3%BC%C3%A7%C3%BCk_Kaynarca",
+    "https://www.wikidata.org/wiki/Q123227"
+   ],
+   "checked": true,
+   "verified_by": [
+    "ruwiki",
+    "enwiki",
+    "wikidata"
+   ]
+  },
+  {
+   "date": "1773–1775",
+   "event": "Восстание Емельяна Пугачёва",
+   "persons": [
+    "Емельян Пугачёв",
+    "Екатерина II"
+   ],
+   "process": "Просвещённый абсолютизм",
+   "codifier": "3.4",
+   "wiki": "Восстание Пугачёва",
+   "sources": [
+    "https://ru.wikipedia.org/wiki/%D0%92%D0%BE%D1%81%D1%81%D1%82%D0%B0%D0%BD%D0%B8%D0%B5_%D0%9F%D1%83%D0%B3%D0%B0%D1%87%D1%91%D0%B2%D0%B0",
+    "https://en.wikipedia.org/wiki/Pugachev's_Rebellion",
+    "https://www.wikidata.org/wiki/Q154100"
+   ],
+   "checked": true,
+   "verified_by": [
+    "ruwiki",
+    "enwiki",
+    "wikidata"
+   ]
+  },
+  {
+   "date": "1775",
+   "event": "Губернская реформа Екатерины II",
+   "persons": [
+    "Екатерина II"
+   ],
+   "process": "Просвещённый абсолютизм",
+   "codifier": "3.4",
+   "wiki": "Губернская реформа Екатерины II",
+   "sources": [
+    "https://ru.wikipedia.org/wiki/%D0%93%D1%83%D0%B1%D0%B5%D1%80%D0%BD%D1%81%D0%BA%D0%B0%D1%8F_%D1%80%D0%B5%D1%84%D0%BE%D1%80%D0%BC%D0%B0_%D0%95%D0%BA%D0%B0%D1%82%D0%B5%D1%80%D0%B8%D0%BD%D1%8B_II"
+   ],
+   "checked": false,
+   "verified_by": [
+    "ruwiki"
+   ]
+  },
+  {
+   "date": "1783",
+   "event": "Присоединение Крыма к России",
+   "persons": [
+    "Екатерина II",
+    "Григорий Потёмкин"
+   ],
+   "process": "Внешняя политика Екатерины II",
+   "codifier": "3.5",
+   "wiki": "Присоединение Крыма к Российской империи",
+   "sources": [
+    "https://ru.wikipedia.org/wiki/%D0%9F%D1%80%D0%B8%D1%81%D0%BE%D0%B5%D0%B4%D0%B8%D0%BD%D0%B5%D0%BD%D0%B8%D0%B5_%D0%9A%D1%80%D1%8B%D0%BC%D0%B0_%D0%BA_%D0%A0%D0%BE%D1%81%D1%81%D0%B8%D0%B9%D1%81%D0%BA%D0%BE%D0%B9_%D0%B8%D0%BC%D0%BF%D0%B5%D1%80%D0%B8%D0%B8",
+    "https://en.wikipedia.org/wiki/1783_Russian_annexation_of_Crimea",
+    "https://www.wikidata.org/wiki/Q18408564"
+   ],
+   "checked": true,
+   "verified_by": [
+    "ruwiki",
+    "enwiki",
+    "wikidata"
+   ]
+  },
+  {
+   "date": "1783",
+   "event": "Георгиевский трактат с Картли-Кахетинским царством",
+   "persons": [
+    "Екатерина II",
+    "Ираклий II"
+   ],
+   "process": "Внешняя политика Екатерины II",
+   "codifier": "3.5",
+   "wiki": "Георгиевский трактат",
+   "sources": [
+    "https://ru.wikipedia.org/wiki/%D0%93%D0%B5%D0%BE%D1%80%D0%B3%D0%B8%D0%B5%D0%B2%D1%81%D0%BA%D0%B8%D0%B9_%D1%82%D1%80%D0%B0%D0%BA%D1%82%D0%B0%D1%82",
+    "https://en.wikipedia.org/wiki/Treaty_of_Georgievsk",
+    "https://www.wikidata.org/wiki/Q525997"
+   ],
+   "checked": true,
+   "verified_by": [
+    "ruwiki",
+    "enwiki",
+    "wikidata"
+   ]
+  },
+  {
+   "date": "1785",
+   "event": "Жалованные грамоты дворянству и городам",
+   "persons": [
+    "Екатерина II"
+   ],
+   "process": "Просвещённый абсолютизм",
+   "codifier": "3.4",
+   "wiki": "Жалованная грамота дворянству",
+   "sources": [
+    "https://ru.wikipedia.org/wiki/%D0%96%D0%B0%D0%BB%D0%BE%D0%B2%D0%B0%D0%BD%D0%BD%D0%B0%D1%8F_%D0%B3%D1%80%D0%B0%D0%BC%D0%BE%D1%82%D0%B0_%D0%B4%D0%B2%D0%BE%D1%80%D1%8F%D0%BD%D1%81%D1%82%D0%B2%D1%83",
+    "https://en.wikipedia.org/wiki/Charter_to_the_Gentry",
+    "https://www.wikidata.org/wiki/Q4147671"
+   ],
+   "checked": true,
+   "verified_by": [
+    "ruwiki",
+    "enwiki",
+    "wikidata"
+   ]
+  },
+  {
+   "date": "1787–1791",
+   "event": "Русско-турецкая война",
+   "persons": [
+    "Александр Суворов",
+    "Фёдор Ушаков",
+    "Григорий Потёмкин"
+   ],
+   "process": "Внешняя политика Екатерины II",
+   "codifier": "3.5",
+   "wiki": "Русско-турецкая война (1787—1791)",
+   "sources": [
+    "https://ru.wikipedia.org/wiki/%D0%A0%D1%83%D1%81%D1%81%D0%BA%D0%BE-%D1%82%D1%83%D1%80%D0%B5%D1%86%D0%BA%D0%B0%D1%8F_%D0%B2%D0%BE%D0%B9%D0%BD%D0%B0_(1787%E2%80%941791)",
+    "https://en.wikipedia.org/wiki/Russo-Turkish_War_(1787%E2%80%931792)"
+   ],
+   "checked": true,
+   "verified_by": [
+    "ruwiki",
+    "enwiki"
+   ]
+  },
+  {
+   "date": "1790",
+   "event": "Взятие Измаила",
+   "persons": [
+    "Александр Суворов"
+   ],
+   "process": "Внешняя политика Екатерины II",
+   "codifier": "3.5",
+   "wiki": "Штурм Измаила",
+   "sources": [
+    "https://ru.wikipedia.org/wiki/%D0%A8%D1%82%D1%83%D1%80%D0%BC_%D0%98%D0%B7%D0%BC%D0%B0%D0%B8%D0%BB%D0%B0",
+    "https://en.wikipedia.org/wiki/Siege_of_Izmail",
+    "https://www.wikidata.org/wiki/Q2372093"
+   ],
+   "checked": true,
+   "verified_by": [
+    "ruwiki",
+    "enwiki",
+    "wikidata"
+   ]
+  },
+  {
+   "date": "1790",
+   "event": "Издание «Путешествия из Петербурга в Москву»",
+   "persons": [
+    "Александр Радищев"
+   ],
+   "process": "Культура России XVIII в.",
+   "codifier": "3.8",
+   "wiki": "Путешествие из Петербурга в Москву",
+   "sources": [
+    "https://ru.wikipedia.org/wiki/%D0%9F%D1%83%D1%82%D0%B5%D1%88%D0%B5%D1%81%D1%82%D0%B2%D0%B8%D0%B5_%D0%B8%D0%B7_%D0%9F%D0%B5%D1%82%D0%B5%D1%80%D0%B1%D1%83%D1%80%D0%B3%D0%B0_%D0%B2_%D0%9C%D0%BE%D1%81%D0%BA%D0%B2%D1%83",
+    "https://en.wikipedia.org/wiki/Journey_from_St._Petersburg_to_Moscow",
+    "https://www.wikidata.org/wiki/Q2492498"
+   ],
+   "checked": true,
+   "verified_by": [
+    "ruwiki",
+    "enwiki",
+    "wikidata"
+   ]
+  },
+  {
+   "date": "1791",
+   "event": "Ясский мир",
+   "persons": [
+    "Екатерина II"
+   ],
+   "process": "Внешняя политика Екатерины II",
+   "codifier": "3.5",
+   "wiki": "Ясский мирный договор",
+   "sources": [
+    "https://ru.wikipedia.org/wiki/%D0%AF%D1%81%D1%81%D0%BA%D0%B8%D0%B9_%D0%BC%D0%B8%D1%80%D0%BD%D1%8B%D0%B9_%D0%B4%D0%BE%D0%B3%D0%BE%D0%B2%D0%BE%D1%80",
+    "https://en.wikipedia.org/wiki/Treaty_of_Jassy"
+   ],
+   "checked": true,
+   "verified_by": [
+    "ruwiki",
+    "enwiki"
+   ]
+  },
+  {
+   "date": "1772–1795",
+   "event": "Разделы Речи Посполитой",
+   "persons": [
+    "Екатерина II"
+   ],
+   "process": "Внешняя политика Екатерины II",
+   "codifier": "3.5",
+   "wiki": "Разделы Речи Посполитой",
+   "sources": [
+    "https://ru.wikipedia.org/wiki/%D0%A0%D0%B0%D0%B7%D0%B4%D0%B5%D0%BB%D1%8B_%D0%A0%D0%B5%D1%87%D0%B8_%D0%9F%D0%BE%D1%81%D0%BF%D0%BE%D0%BB%D0%B8%D1%82%D0%BE%D0%B9",
+    "https://en.wikipedia.org/wiki/Partitions_of_Poland"
+   ],
+   "checked": true,
+   "verified_by": [
+    "ruwiki",
+    "enwiki"
+   ]
+  },
+  {
+   "date": "1797",
+   "event": "Манифест о трёхдневной барщине",
+   "persons": [
+    "Павел I"
+   ],
+   "process": "Правление Павла I",
+   "codifier": "3.7",
+   "wiki": "Манифест о трёхдневной барщине",
+   "sources": [
+    "https://ru.wikipedia.org/wiki/%D0%9C%D0%B0%D0%BD%D0%B8%D1%84%D0%B5%D1%81%D1%82_%D0%BE_%D1%82%D1%80%D1%91%D1%85%D0%B4%D0%BD%D0%B5%D0%B2%D0%BD%D0%BE%D0%B9_%D0%B1%D0%B0%D1%80%D1%89%D0%B8%D0%BD%D0%B5",
+    "https://en.wikipedia.org/wiki/Manifesto_of_three-day_corvee",
+    "https://www.wikidata.org/wiki/Q4280482"
+   ],
+   "checked": true,
+   "verified_by": [
+    "ruwiki",
+    "enwiki",
+    "wikidata"
+   ]
+  },
+  {
+   "date": "1799",
+   "event": "Итальянский и Швейцарский походы Суворова",
+   "persons": [
+    "Александр Суворов",
+    "Павел I"
+   ],
+   "process": "Правление Павла I",
+   "codifier": "3.7",
+   "wiki": "Швейцарский поход Суворова",
+   "sources": [
+    "https://ru.wikipedia.org/wiki/%D0%A8%D0%B2%D0%B5%D0%B9%D1%86%D0%B0%D1%80%D1%81%D0%BA%D0%B8%D0%B9_%D0%BF%D0%BE%D1%85%D0%BE%D0%B4_%D0%A1%D1%83%D0%B2%D0%BE%D1%80%D0%BE%D0%B2%D0%B0",
+    "https://en.wikipedia.org/wiki/Suvorov's_Swiss_campaign",
+    "https://www.wikidata.org/wiki/Q3558438"
+   ],
+   "checked": true,
+   "verified_by": [
+    "ruwiki",
+    "enwiki",
+    "wikidata"
+   ]
+  },
+  {
+   "date": "1801",
+   "event": "Убийство Павла I, воцарение Александра I",
+   "persons": [
+    "Павел I",
+    "Александр I",
+    "Пётр Пален"
+   ],
+   "process": "Правление Павла I",
+   "codifier": "3.7",
+   "wiki": "Убийство Павла I",
+   "sources": [
+    "https://ru.wikipedia.org/wiki/%D0%A3%D0%B1%D0%B8%D0%B9%D1%81%D1%82%D0%B2%D0%BE_%D0%9F%D0%B0%D0%B2%D0%BB%D0%B0_I",
+    "https://www.wikidata.org/wiki/Q4468595"
+   ],
+   "checked": true,
+   "verified_by": [
+    "ruwiki",
+    "wikidata"
+   ]
+  },
+  {
+   "date": "1802",
+   "event": "Министерская реформа",
+   "persons": [
+    "Александр I"
+   ],
+   "process": "Реформы Александра I",
+   "codifier": "4.1",
+   "wiki": "Министерская реформа",
+   "sources": [
+    "https://ru.wikipedia.org/wiki/%D0%9C%D0%B8%D0%BD%D0%B8%D1%81%D1%82%D0%B5%D1%80%D1%81%D0%BA%D0%B0%D1%8F_%D1%80%D0%B5%D1%84%D0%BE%D1%80%D0%BC%D0%B0",
+    "https://en.wikipedia.org/wiki/Ministerial_reform_in_the_Russian_Empire"
+   ],
+   "checked": true,
+   "verified_by": [
+    "ruwiki",
+    "enwiki"
+   ]
+  },
+  {
+   "date": "1803",
+   "event": "Указ о вольных хлебопашцах",
+   "persons": [
+    "Александр I"
+   ],
+   "process": "Реформы Александра I",
+   "codifier": "4.1",
+   "wiki": "Указ о вольных хлебопашцах",
+   "sources": [
+    "https://ru.wikipedia.org/wiki/%D0%A3%D0%BA%D0%B0%D0%B7_%D0%BE_%D0%B2%D0%BE%D0%BB%D1%8C%D0%BD%D1%8B%D1%85_%D1%85%D0%BB%D0%B5%D0%B1%D0%BE%D0%BF%D0%B0%D1%88%D1%86%D0%B0%D1%85"
+   ],
+   "checked": false,
+   "verified_by": [
+    "ruwiki"
+   ]
+  },
+  {
+   "date": "1805",
+   "event": "Сражение под Аустерлицем",
+   "persons": [
+    "Александр I",
+    "Михаил Кутузов",
+    "Наполеон I"
+   ],
+   "process": "Внешняя политика Александра I",
+   "codifier": "4.2",
+   "wiki": "Битва под Аустерлицем",
+   "sources": [
+    "https://ru.wikipedia.org/wiki/%D0%91%D0%B8%D1%82%D0%B2%D0%B0_%D0%BF%D0%BE%D0%B4_%D0%90%D1%83%D1%81%D1%82%D0%B5%D1%80%D0%BB%D0%B8%D1%86%D0%B5%D0%BC",
+    "https://en.wikipedia.org/wiki/Battle_of_Austerlitz",
+    "https://www.wikidata.org/wiki/Q134114"
+   ],
+   "checked": true,
+   "verified_by": [
+    "ruwiki",
+    "enwiki",
+    "wikidata"
+   ]
+  },
+  {
+   "date": "1807",
+   "event": "Тильзитский мир",
+   "persons": [
+    "Александр I",
+    "Наполеон I"
+   ],
+   "process": "Внешняя политика Александра I",
+   "codifier": "4.2",
+   "wiki": "Тильзитский мир",
+   "sources": [
+    "https://ru.wikipedia.org/wiki/%D0%A2%D0%B8%D0%BB%D1%8C%D0%B7%D0%B8%D1%82%D1%81%D0%BA%D0%B8%D0%B9_%D0%BC%D0%B8%D1%80",
+    "https://en.wikipedia.org/wiki/Treaties_of_Tilsit",
+    "https://www.wikidata.org/wiki/Q154596"
+   ],
+   "checked": true,
+   "verified_by": [
+    "ruwiki",
+    "enwiki",
+    "wikidata"
+   ]
+  },
+  {
+   "date": "1809",
+   "event": "Фридрихсгамский мир, присоединение Финляндии",
+   "persons": [
+    "Александр I"
+   ],
+   "process": "Внешняя политика Александра I",
+   "codifier": "4.2",
+   "wiki": "Фридрихсгамский мирный договор",
+   "sources": [
+    "https://ru.wikipedia.org/wiki/%D0%A4%D1%80%D0%B8%D0%B4%D1%80%D0%B8%D1%85%D1%81%D0%B3%D0%B0%D0%BC%D1%81%D0%BA%D0%B8%D0%B9_%D0%BC%D0%B8%D1%80%D0%BD%D1%8B%D0%B9_%D0%B4%D0%BE%D0%B3%D0%BE%D0%B2%D0%BE%D1%80",
+    "https://en.wikipedia.org/wiki/Treaty_of_Fredrikshamn",
+    "https://www.wikidata.org/wiki/Q1130792"
+   ],
+   "checked": true,
+   "verified_by": [
+    "ruwiki",
+    "enwiki",
+    "wikidata"
+   ]
+  },
+  {
+   "date": "1810",
+   "event": "Учреждение Государственного совета",
+   "persons": [
+    "Александр I",
+    "Михаил Сперанский"
+   ],
+   "process": "Реформы Александра I",
+   "codifier": "4.1",
+   "wiki": "Государственный совет Российской империи",
+   "sources": [
+    "https://ru.wikipedia.org/wiki/%D0%93%D0%BE%D1%81%D1%83%D0%B4%D0%B0%D1%80%D1%81%D1%82%D0%B2%D0%B5%D0%BD%D0%BD%D1%8B%D0%B9_%D1%81%D0%BE%D0%B2%D0%B5%D1%82_%D0%A0%D0%BE%D1%81%D1%81%D0%B8%D0%B9%D1%81%D0%BA%D0%BE%D0%B9_%D0%B8%D0%BC%D0%BF%D0%B5%D1%80%D0%B8%D0%B8",
+    "https://en.wikipedia.org/wiki/State_Council_(Russian_Empire)",
+    "https://www.wikidata.org/wiki/Q1165836"
+   ],
+   "checked": true,
+   "verified_by": [
+    "ruwiki",
+    "enwiki",
+    "wikidata"
+   ]
+  },
+  {
+   "date": "1811",
+   "event": "Открытие Царскосельского лицея",
+   "persons": [
+    "Александр I"
+   ],
+   "process": "Культура первой половины XIX в.",
+   "codifier": "4.5",
+   "wiki": "Императорский Царскосельский лицей",
+   "sources": [
+    "https://ru.wikipedia.org/wiki/%D0%98%D0%BC%D0%BF%D0%B5%D1%80%D0%B0%D1%82%D0%BE%D1%80%D1%81%D0%BA%D0%B8%D0%B9_%D0%A6%D0%B0%D1%80%D1%81%D0%BA%D0%BE%D1%81%D0%B5%D0%BB%D1%8C%D1%81%D0%BA%D0%B8%D0%B9_%D0%BB%D0%B8%D1%86%D0%B5%D0%B9",
+    "https://en.wikipedia.org/wiki/Tsarskoye_Selo_Lyceum",
+    "https://www.wikidata.org/wiki/Q775909"
+   ],
+   "checked": true,
+   "verified_by": [
+    "ruwiki",
+    "enwiki",
+    "wikidata"
+   ]
+  },
+  {
+   "date": "1812",
+   "event": "Бухарестский мир с Османской империей",
+   "persons": [
+    "Михаил Кутузов"
+   ],
+   "process": "Внешняя политика Александра I",
+   "codifier": "4.2",
+   "wiki": "Бухарестский мирный договор (1812)",
+   "sources": [
+    "https://ru.wikipedia.org/wiki/%D0%91%D1%83%D1%85%D0%B0%D1%80%D0%B5%D1%81%D1%82%D1%81%D0%BA%D0%B8%D0%B9_%D0%BC%D0%B8%D1%80%D0%BD%D1%8B%D0%B9_%D0%B4%D0%BE%D0%B3%D0%BE%D0%B2%D0%BE%D1%80_(1812)",
+    "https://en.wikipedia.org/wiki/Treaty_of_Bucharest_(1812)",
+    "https://www.wikidata.org/wiki/Q849286"
+   ],
+   "checked": true,
+   "verified_by": [
+    "ruwiki",
+    "enwiki",
+    "wikidata"
+   ]
+  },
+  {
+   "date": "1812",
+   "event": "Отечественная война 1812 года",
+   "persons": [
+    "Александр I",
+    "Михаил Кутузов",
+    "Михаил Барклай-де-Толли",
+    "Наполеон I"
+   ],
+   "process": "Отечественная война 1812 г.",
+   "codifier": "4.2",
+   "wiki": "Отечественная война 1812 года",
+   "sources": [
+    "https://ru.wikipedia.org/wiki/%D0%9E%D1%82%D0%B5%D1%87%D0%B5%D1%81%D1%82%D0%B2%D0%B5%D0%BD%D0%BD%D0%B0%D1%8F_%D0%B2%D0%BE%D0%B9%D0%BD%D0%B0_1812_%D0%B3%D0%BE%D0%B4%D0%B0",
+    "https://en.wikipedia.org/wiki/French_invasion_of_Russia",
+    "https://www.wikidata.org/wiki/Q179250"
+   ],
+   "checked": true,
+   "verified_by": [
+    "ruwiki",
+    "enwiki",
+    "wikidata"
+   ]
+  },
+  {
+   "date": "1812",
+   "event": "Бородинское сражение",
+   "persons": [
+    "Михаил Кутузов",
+    "Пётр Багратион",
+    "Наполеон I"
+   ],
+   "process": "Отечественная война 1812 г.",
+   "codifier": "4.2",
+   "wiki": "Бородинское сражение",
+   "sources": [
+    "https://ru.wikipedia.org/wiki/%D0%91%D0%BE%D1%80%D0%BE%D0%B4%D0%B8%D0%BD%D1%81%D0%BA%D0%BE%D0%B5_%D1%81%D1%80%D0%B0%D0%B6%D0%B5%D0%BD%D0%B8%D0%B5",
+    "https://en.wikipedia.org/wiki/Battle_of_Borodino",
+    "https://www.wikidata.org/wiki/Q184320"
+   ],
+   "checked": true,
+   "verified_by": [
+    "ruwiki",
+    "enwiki",
+    "wikidata"
+   ]
+  },
+  {
+   "date": "1813",
+   "event": "«Битва народов» под Лейпцигом",
+   "persons": [
+    "Александр I",
+    "Наполеон I"
+   ],
+   "process": "Заграничные походы русской армии",
+   "codifier": "4.2",
+   "wiki": "Битва под Лейпцигом",
+   "sources": [
+    "https://ru.wikipedia.org/wiki/%D0%91%D0%B8%D1%82%D0%B2%D0%B0_%D0%BD%D0%B0%D1%80%D0%BE%D0%B4%D0%BE%D0%B2",
+    "https://en.wikipedia.org/wiki/Battle_of_Leipzig",
+    "https://www.wikidata.org/wiki/Q151005"
+   ],
+   "checked": true,
+   "verified_by": [
+    "ruwiki",
+    "enwiki",
+    "wikidata"
+   ]
+  },
+  {
+   "date": "1814–1815",
+   "event": "Венский конгресс",
+   "persons": [
+    "Александр I",
+    "Клеменс Меттерних"
+   ],
+   "process": "Внешняя политика Александра I",
+   "codifier": "4.2",
+   "wiki": "Венский конгресс",
+   "sources": [
+    "https://ru.wikipedia.org/wiki/%D0%92%D0%B5%D0%BD%D1%81%D0%BA%D0%B8%D0%B9_%D0%BA%D0%BE%D0%BD%D0%B3%D1%80%D0%B5%D1%81%D1%81",
+    "https://en.wikipedia.org/wiki/Congress_of_Vienna",
+    "https://www.wikidata.org/wiki/Q46362"
+   ],
+   "checked": true,
+   "verified_by": [
+    "ruwiki",
+    "enwiki",
+    "wikidata"
+   ]
+  },
+  {
+   "date": "1815",
+   "event": "Создание Священного союза",
+   "persons": [
+    "Александр I"
+   ],
+   "process": "Внешняя политика Александра I",
+   "codifier": "4.2",
+   "wiki": "Священный союз",
+   "sources": [
+    "https://ru.wikipedia.org/wiki/%D0%A1%D0%B2%D1%8F%D1%89%D0%B5%D0%BD%D0%BD%D1%8B%D0%B9_%D1%81%D0%BE%D1%8E%D0%B7",
+    "https://en.wikipedia.org/wiki/Holy_Alliance",
+    "https://www.wikidata.org/wiki/Q154640"
+   ],
+   "checked": true,
+   "verified_by": [
+    "ruwiki",
+    "enwiki",
+    "wikidata"
+   ]
+  },
+  {
+   "date": "1816",
+   "event": "Создание «Союза спасения»",
+   "persons": [
+    "Александр Муравьёв",
+    "Павел Пестель"
+   ],
+   "process": "Движение декабристов",
+   "codifier": "4.1",
+   "wiki": "Союз спасения",
+   "sources": [
+    "https://ru.wikipedia.org/wiki/%D0%A1%D0%BE%D1%8E%D0%B7_%D1%81%D0%BF%D0%B0%D1%81%D0%B5%D0%BD%D0%B8%D1%8F",
+    "https://en.wikipedia.org/wiki/Union_of_Salvation",
+    "https://www.wikidata.org/wiki/Q2492075"
+   ],
+   "checked": true,
+   "verified_by": [
+    "ruwiki",
+    "enwiki",
+    "wikidata"
+   ]
+  },
+  {
+   "date": "1825",
+   "event": "Восстание декабристов на Сенатской площади",
+   "persons": [
+    "Сергей Трубецкой",
+    "Кондратий Рылеев",
+    "Николай I"
+   ],
+   "process": "Движение декабристов",
+   "codifier": "4.3",
+   "wiki": "Восстание декабристов",
+   "sources": [
+    "https://ru.wikipedia.org/wiki/%D0%92%D0%BE%D1%81%D1%81%D1%82%D0%B0%D0%BD%D0%B8%D0%B5_%D0%B4%D0%B5%D0%BA%D0%B0%D0%B1%D1%80%D0%B8%D1%81%D1%82%D0%BE%D0%B2",
+    "https://en.wikipedia.org/wiki/Decembrist_revolt",
+    "https://www.wikidata.org/wiki/Q126306"
+   ],
+   "checked": true,
+   "verified_by": [
+    "ruwiki",
+    "enwiki",
+    "wikidata"
+   ]
+  },
+  {
+   "date": "1826",
+   "event": "Создание Третьего отделения",
+   "persons": [
+    "Николай I",
+    "Александр Бенкендорф"
+   ],
+   "process": "Внутренняя политика Николая I",
+   "codifier": "4.3",
+   "wiki": "Третье отделение",
+   "sources": [],
+   "checked": false,
+   "verified_by": [],
+   "check_note": "статья ru не найдена"
+  },
+  {
+   "date": "1828",
+   "event": "Туркманчайский мир с Персией",
+   "persons": [
+    "Иван Паскевич",
+    "Александр Грибоедов"
+   ],
+   "process": "Внешняя политика Николая I",
+   "codifier": "4.4",
+   "wiki": "Туркманчайский мирный договор",
+   "sources": [
+    "https://ru.wikipedia.org/wiki/%D0%A2%D1%83%D1%80%D0%BA%D0%BC%D0%B0%D0%BD%D1%87%D0%B0%D0%B9%D1%81%D0%BA%D0%B8%D0%B9_%D0%BC%D0%B8%D1%80%D0%BD%D1%8B%D0%B9_%D0%B4%D0%BE%D0%B3%D0%BE%D0%B2%D0%BE%D1%80",
+    "https://en.wikipedia.org/wiki/Treaty_of_Turkmenchay",
+    "https://www.wikidata.org/wiki/Q875512"
+   ],
+   "checked": true,
+   "verified_by": [
+    "ruwiki",
+    "enwiki",
+    "wikidata"
+   ]
+  },
+  {
+   "date": "1830–1831",
+   "event": "Польское восстание",
+   "persons": [
+    "Николай I",
+    "Иван Паскевич"
+   ],
+   "process": "Внешняя политика Николая I",
+   "codifier": "4.4",
+   "wiki": "Польское восстание (1830—1831)",
+   "sources": [
+    "https://ru.wikipedia.org/wiki/%D0%9F%D0%BE%D0%BB%D1%8C%D1%81%D0%BA%D0%BE%D0%B5_%D0%B2%D0%BE%D1%81%D1%81%D1%82%D0%B0%D0%BD%D0%B8%D0%B5_(1830%E2%80%941831)",
+    "https://en.wikipedia.org/wiki/November_Uprising",
+    "https://www.wikidata.org/wiki/Q462964"
+   ],
+   "checked": true,
+   "verified_by": [
+    "ruwiki",
+    "enwiki",
+    "wikidata"
+   ]
+  },
+  {
+   "date": "1832",
+   "event": "Свод законов Российской империи",
+   "persons": [
+    "Михаил Сперанский",
+    "Николай I"
+   ],
+   "process": "Внутренняя политика Николая I",
+   "codifier": "4.3",
+   "wiki": "Свод законов Российской империи",
+   "sources": [
+    "https://ru.wikipedia.org/wiki/%D0%A1%D0%B2%D0%BE%D0%B4_%D0%B7%D0%B0%D0%BA%D0%BE%D0%BD%D0%BE%D0%B2_%D0%A0%D0%BE%D1%81%D1%81%D0%B8%D0%B9%D1%81%D0%BA%D0%BE%D0%B9_%D0%B8%D0%BC%D0%BF%D0%B5%D1%80%D0%B8%D0%B8",
+    "https://www.wikidata.org/wiki/Q4411198"
+   ],
+   "checked": true,
+   "verified_by": [
+    "ruwiki",
+    "wikidata"
+   ]
+  },
+  {
+   "date": "1836",
+   "event": "Премьера оперы «Жизнь за царя»",
+   "persons": [
+    "Михаил Глинка"
+   ],
+   "process": "Культура первой половины XIX в.",
+   "codifier": "4.5",
+   "wiki": "Жизнь за царя",
+   "sources": [
+    "https://ru.wikipedia.org/wiki/%D0%96%D0%B8%D0%B7%D0%BD%D1%8C_%D0%B7%D0%B0_%D1%86%D0%B0%D1%80%D1%8F",
+    "https://en.wikipedia.org/wiki/A_Life_for_the_Tsar",
+    "https://www.wikidata.org/wiki/Q94737"
+   ],
+   "checked": true,
+   "verified_by": [
+    "ruwiki",
+    "enwiki",
+    "wikidata"
+   ]
+  },
+  {
+   "date": "1837",
+   "event": "Открытие Царскосельской железной дороги",
+   "persons": [
+    "Николай I",
+    "Франц Антон фон Герстнер"
+   ],
+   "process": "Внутренняя политика Николая I",
+   "codifier": "4.3",
+   "wiki": "Царскосельская железная дорога",
+   "sources": [
+    "https://ru.wikipedia.org/wiki/%D0%A6%D0%B0%D1%80%D1%81%D0%BA%D0%BE%D1%81%D0%B5%D0%BB%D1%8C%D1%81%D0%BA%D0%B0%D1%8F_%D0%B6%D0%B5%D0%BB%D0%B5%D0%B7%D0%BD%D0%B0%D1%8F_%D0%B4%D0%BE%D1%80%D0%BE%D0%B3%D0%B0",
+    "https://en.wikipedia.org/wiki/Tsarskoye_Selo_Railway",
+    "https://www.wikidata.org/wiki/Q148083"
+   ],
+   "checked": true,
+   "verified_by": [
+    "ruwiki",
+    "enwiki",
+    "wikidata"
+   ]
+  },
+  {
+   "date": "1842",
+   "event": "Указ об обязанных крестьянах",
+   "persons": [
+    "Николай I",
+    "Павел Киселёв"
+   ],
+   "process": "Внутренняя политика Николая I",
+   "codifier": "4.3",
+   "wiki": "Обязанные крестьяне",
+   "sources": [],
+   "checked": false,
+   "verified_by": [],
+   "check_note": "статья ru не найдена"
+  },
+  {
+   "date": "1853",
+   "event": "Синопское сражение",
+   "persons": [
+    "Павел Нахимов"
+   ],
+   "process": "Крымская война",
+   "codifier": "4.4",
+   "wiki": "Синопское сражение",
+   "sources": [
+    "https://ru.wikipedia.org/wiki/%D0%A1%D0%B8%D0%BD%D0%BE%D0%BF%D1%81%D0%BA%D0%BE%D0%B5_%D1%81%D1%80%D0%B0%D0%B6%D0%B5%D0%BD%D0%B8%D0%B5",
+    "https://en.wikipedia.org/wiki/Battle_of_Sinop",
+    "https://www.wikidata.org/wiki/Q427958"
+   ],
+   "checked": true,
+   "verified_by": [
+    "ruwiki",
+    "enwiki",
+    "wikidata"
+   ]
+  },
+  {
+   "date": "1853–1856",
+   "event": "Крымская война",
+   "persons": [
+    "Николай I",
+    "Павел Нахимов",
+    "Владимир Корнилов"
+   ],
+   "process": "Крымская война",
+   "codifier": "4.4",
+   "wiki": "Крымская война",
+   "sources": [
+    "https://ru.wikipedia.org/wiki/%D0%9A%D1%80%D1%8B%D0%BC%D1%81%D0%BA%D0%B0%D1%8F_%D0%B2%D0%BE%D0%B9%D0%BD%D0%B0",
+    "https://en.wikipedia.org/wiki/Crimean_War",
+    "https://www.wikidata.org/wiki/Q254106"
+   ],
+   "checked": true,
+   "verified_by": [
+    "ruwiki",
+    "enwiki",
+    "wikidata"
+   ]
+  },
+  {
+   "date": "1854–1855",
+   "event": "Оборона Севастополя",
+   "persons": [
+    "Павел Нахимов",
+    "Владимир Корнилов",
+    "Эдуард Тотлебен"
+   ],
+   "process": "Крымская война",
+   "codifier": "4.4",
+   "wiki": "Оборона Севастополя (1854—1855)",
+   "sources": [
+    "https://ru.wikipedia.org/wiki/%D0%9E%D0%B1%D0%BE%D1%80%D0%BE%D0%BD%D0%B0_%D0%A1%D0%B5%D0%B2%D0%B0%D1%81%D1%82%D0%BE%D0%BF%D0%BE%D0%BB%D1%8F_(1854%E2%80%941855)",
+    "https://en.wikipedia.org/wiki/Siege_of_Sevastopol_(1854%E2%80%931855)",
+    "https://www.wikidata.org/wiki/Q815216"
+   ],
+   "checked": true,
+   "verified_by": [
+    "ruwiki",
+    "enwiki",
+    "wikidata"
+   ]
+  },
+  {
+   "date": "1856",
+   "event": "Парижский мир",
+   "persons": [
+    "Александр II",
+    "Алексей Орлов"
+   ],
+   "process": "Крымская война",
+   "codifier": "4.4",
+   "wiki": "Парижский мирный договор (1856)",
+   "sources": [
+    "https://ru.wikipedia.org/wiki/%D0%9F%D0%B0%D1%80%D0%B8%D0%B6%D1%81%D0%BA%D0%B8%D0%B9_%D0%BC%D0%B8%D1%80%D0%BD%D1%8B%D0%B9_%D0%B4%D0%BE%D0%B3%D0%BE%D0%B2%D0%BE%D1%80_(1856)",
+    "https://en.wikipedia.org/wiki/Treaty_of_Paris_(1856)",
+    "https://www.wikidata.org/wiki/Q319260"
+   ],
+   "checked": true,
+   "verified_by": [
+    "ruwiki",
+    "enwiki",
+    "wikidata"
+   ]
+  },
+  {
+   "date": "1858",
+   "event": "Айгунский договор с Китаем",
+   "persons": [
+    "Николай Муравьёв-Амурский"
+   ],
+   "process": "Внешняя политика Александра II",
+   "codifier": "4.8",
+   "wiki": "Айгунский договор",
+   "sources": [
+    "https://ru.wikipedia.org/wiki/%D0%90%D0%B9%D0%B3%D1%83%D0%BD%D1%81%D0%BA%D0%B8%D0%B9_%D0%B4%D0%BE%D0%B3%D0%BE%D0%B2%D0%BE%D1%80",
+    "https://en.wikipedia.org/wiki/Treaty_of_Aigun",
+    "https://www.wikidata.org/wiki/Q618292"
+   ],
+   "checked": true,
+   "verified_by": [
+    "ruwiki",
+    "enwiki",
+    "wikidata"
+   ]
+  },
+  {
+   "date": "1860",
+   "event": "Пекинский договор с Китаем",
+   "persons": [
+    "Николай Игнатьев"
+   ],
+   "process": "Внешняя политика Александра II",
+   "codifier": "4.8",
+   "wiki": "Пекинский договор (1860)",
+   "sources": [
+    "https://ru.wikipedia.org/wiki/%D0%9F%D0%B5%D0%BA%D0%B8%D0%BD%D1%81%D0%BA%D0%B8%D0%B9_%D0%B4%D0%BE%D0%B3%D0%BE%D0%B2%D0%BE%D1%80"
+   ],
+   "checked": false,
+   "verified_by": [
+    "ruwiki"
+   ],
+   "wiki_en": "Convention of Peking"
+  },
+  {
+   "date": "1861",
+   "event": "Отмена крепостного права",
+   "persons": [
+    "Александр II",
+    "Николай Милютин",
+    "Яков Ростовцев"
+   ],
+   "process": "Великие реформы",
+   "codifier": "4.6",
+   "wiki": "Крестьянская реформа в России",
+   "sources": [
+    "https://ru.wikipedia.org/wiki/%D0%9E%D1%82%D0%BC%D0%B5%D0%BD%D0%B0_%D0%BA%D1%80%D0%B5%D0%BF%D0%BE%D1%81%D1%82%D0%BD%D0%BE%D0%B3%D0%BE_%D0%BF%D1%80%D0%B0%D0%B2%D0%B0_%D0%B2_%D0%A0%D0%BE%D1%81%D1%81%D0%B8%D0%B8",
+    "https://en.wikipedia.org/wiki/Emancipation_reform_of_1861",
+    "https://www.wikidata.org/wiki/Q1192212"
+   ],
+   "checked": true,
+   "verified_by": [
+    "ruwiki",
+    "enwiki",
+    "wikidata"
+   ]
+  },
+  {
+   "date": "1863–1864",
+   "event": "Польское восстание",
+   "persons": [
+    "Александр II"
+   ],
+   "process": "Великие реформы",
+   "codifier": "4.6",
+   "wiki": "Польское восстание (1863—1864)",
+   "sources": [
+    "https://ru.wikipedia.org/wiki/%D0%9F%D0%BE%D0%BB%D1%8C%D1%81%D0%BA%D0%BE%D0%B5_%D0%B2%D0%BE%D1%81%D1%81%D1%82%D0%B0%D0%BD%D0%B8%D0%B5_(1863%E2%80%941864)",
+    "https://en.wikipedia.org/wiki/January_Uprising",
+    "https://www.wikidata.org/wiki/Q473670"
+   ],
+   "checked": true,
+   "verified_by": [
+    "ruwiki",
+    "enwiki",
+    "wikidata"
+   ]
+  },
+  {
+   "date": "1864",
+   "event": "Земская реформа",
+   "persons": [
+    "Александр II"
+   ],
+   "process": "Великие реформы",
+   "codifier": "4.6",
+   "wiki": "Земская реформа",
+   "sources": [
+    "https://ru.wikipedia.org/wiki/%D0%97%D0%B5%D0%BC%D1%81%D0%BA%D0%B0%D1%8F_%D1%80%D0%B5%D1%84%D0%BE%D1%80%D0%BC%D0%B0"
+   ],
+   "checked": false,
+   "verified_by": [
+    "ruwiki"
+   ],
+   "wiki_en": "Zemstvo"
+  },
+  {
+   "date": "1864",
+   "event": "Судебная реформа",
+   "persons": [
+    "Александр II",
+    "Сергей Зарудный"
+   ],
+   "process": "Великие реформы",
+   "codifier": "4.6",
+   "wiki": "Судебная реформа 1864 года",
+   "sources": [
+    "https://ru.wikipedia.org/wiki/%D0%A1%D1%83%D0%B4%D0%B5%D0%B1%D0%BD%D0%B0%D1%8F_%D1%80%D0%B5%D1%84%D0%BE%D1%80%D0%BC%D0%B0_%D0%90%D0%BB%D0%B5%D0%BA%D1%81%D0%B0%D0%BD%D0%B4%D1%80%D0%B0_II",
+    "https://en.wikipedia.org/wiki/Judicial_reform_of_Alexander_II",
+    "https://www.wikidata.org/wiki/Q2040503"
+   ],
+   "checked": true,
+   "verified_by": [
+    "ruwiki",
+    "enwiki",
+    "wikidata"
+   ]
+  },
+  {
+   "date": "1865",
+   "event": "Взятие Ташкента",
+   "persons": [
+    "Михаил Черняев"
+   ],
+   "process": "Внешняя политика Александра II",
+   "codifier": "4.8",
+   "wiki": "Взятие Ташкента (1865)",
+   "sources": [
+    "https://ru.wikipedia.org/wiki/%D0%92%D0%B7%D1%8F%D1%82%D0%B8%D0%B5_%D0%A2%D0%B0%D1%88%D0%BA%D0%B5%D0%BD%D1%82%D0%B0"
+   ],
+   "checked": false,
+   "verified_by": [
+    "ruwiki"
+   ],
+   "check_note": "нет элемента Викиданных"
+  },
+  {
+   "date": "1867",
+   "event": "Продажа Аляски США",
+   "persons": [
+    "Александр II",
+    "Эдуард Стекль"
+   ],
+   "process": "Внешняя политика Александра II",
+   "codifier": "4.8",
+   "wiki": "Продажа Аляски",
+   "sources": [
+    "https://ru.wikipedia.org/wiki/%D0%9F%D1%80%D0%BE%D0%B4%D0%B0%D0%B6%D0%B0_%D0%90%D0%BB%D1%8F%D1%81%D0%BA%D0%B8",
+    "https://en.wikipedia.org/wiki/Alaska_Purchase",
+    "https://www.wikidata.org/wiki/Q309029"
+   ],
+   "checked": true,
+   "verified_by": [
+    "ruwiki",
+    "enwiki",
+    "wikidata"
+   ]
+  },
+  {
+   "date": "1869",
+   "event": "Периодический закон химических элементов",
+   "persons": [
+    "Дмитрий Менделеев"
+   ],
+   "process": "Культура второй половины XIX в.",
+   "codifier": "4.11",
+   "wiki": "Периодический закон",
+   "sources": [
+    "https://ru.wikipedia.org/wiki/%D0%9F%D0%B5%D1%80%D0%B8%D0%BE%D0%B4%D0%B8%D1%87%D0%B5%D1%81%D0%BA%D0%B8%D0%B9_%D0%B7%D0%B0%D0%BA%D0%BE%D0%BD"
+   ],
+   "checked": false,
+   "verified_by": [
+    "ruwiki"
+   ],
+   "wiki_en": "Periodic table"
+  },
+  {
+   "date": "1870",
+   "event": "Городская реформа",
+   "persons": [
+    "Александр II"
+   ],
+   "process": "Великие реформы",
+   "codifier": "4.6",
+   "wiki": "Городская реформа Александра II",
+   "sources": [],
+   "checked": false,
+   "verified_by": [],
+   "check_note": "статья ru не найдена"
+  },
+  {
+   "date": "1870",
+   "event": "Создание Товарищества передвижных художественных выставок",
+   "persons": [
+    "Иван Крамской",
+    "Василий Перов"
+   ],
+   "process": "Культура второй половины XIX в.",
+   "codifier": "4.11",
+   "wiki": "Товарищество передвижных художественных выставок",
+   "sources": [
+    "https://ru.wikipedia.org/wiki/%D0%9F%D0%B5%D1%80%D0%B5%D0%B4%D0%B2%D0%B8%D0%B6%D0%BD%D0%B8%D0%BA%D0%B8",
+    "https://en.wikipedia.org/wiki/Peredvizhniki"
+   ],
+   "checked": true,
+   "verified_by": [
+    "ruwiki",
+    "enwiki"
+   ]
+  },
+  {
+   "date": "1874",
+   "event": "Военная реформа: всесословная воинская повинность",
+   "persons": [
+    "Александр II",
+    "Дмитрий Милютин"
+   ],
+   "process": "Великие реформы",
+   "codifier": "4.6",
+   "wiki": "Военные реформы Александра II",
+   "sources": [
+    "https://ru.wikipedia.org/wiki/%D0%92%D0%BE%D0%B5%D0%BD%D0%BD%D1%8B%D0%B5_%D1%80%D0%B5%D1%84%D0%BE%D1%80%D0%BC%D1%8B_%D0%90%D0%BB%D0%B5%D0%BA%D1%81%D0%B0%D0%BD%D0%B4%D1%80%D0%B0_II",
+    "https://www.wikidata.org/wiki/Q4114379"
+   ],
+   "checked": true,
+   "verified_by": [
+    "ruwiki",
+    "wikidata"
+   ]
+  },
+  {
+   "date": "1874",
+   "event": "«Хождение в народ»",
+   "persons": [],
+   "process": "Общественное движение при Александре II",
+   "codifier": "4.7",
+   "wiki": "Хождение в народ",
+   "sources": [
+    "https://ru.wikipedia.org/wiki/%D0%A5%D0%BE%D0%B6%D0%B4%D0%B5%D0%BD%D0%B8%D0%B5_%D0%B2_%D0%BD%D0%B0%D1%80%D0%BE%D0%B4",
+    "https://en.wikipedia.org/wiki/Going_to_the_People"
+   ],
+   "checked": true,
+   "verified_by": [
+    "ruwiki",
+    "enwiki"
+   ]
+  },
+  {
+   "date": "1876",
+   "event": "Создание организации «Земля и воля»",
+   "persons": [
+    "Георгий Плеханов",
+    "Марк Натансон"
+   ],
+   "process": "Общественное движение при Александре II",
+   "codifier": "4.7",
+   "wiki": "Земля и воля",
+   "sources": [],
+   "checked": false,
+   "verified_by": [],
+   "check_note": "статья ru не найдена"
+  },
+  {
+   "date": "1877–1878",
+   "event": "Русско-турецкая война",
+   "persons": [
+    "Александр II",
+    "Иосиф Гурко",
+    "Михаил Скобелев"
+   ],
+   "process": "Внешняя политика Александра II",
+   "codifier": "4.8",
+   "wiki": "Русско-турецкая война (1877—1878)",
+   "sources": [
+    "https://ru.wikipedia.org/wiki/%D0%A0%D1%83%D1%81%D1%81%D0%BA%D0%BE-%D1%82%D1%83%D1%80%D0%B5%D1%86%D0%BA%D0%B0%D1%8F_%D0%B2%D0%BE%D0%B9%D0%BD%D0%B0_(1877%E2%80%941878)",
+    "https://en.wikipedia.org/wiki/Russo-Turkish_War_(1877%E2%80%931878)",
+    "https://www.wikidata.org/wiki/Q174205"
+   ],
+   "checked": true,
+   "verified_by": [
+    "ruwiki",
+    "enwiki",
+    "wikidata"
+   ]
+  },
+  {
+   "date": "1878",
+   "event": "Сан-Стефанский мир и Берлинский конгресс",
+   "persons": [
+    "Александр Горчаков",
+    "Отто фон Бисмарк"
+   ],
+   "process": "Внешняя политика Александра II",
+   "codifier": "4.8",
+   "wiki": "Берлинский конгресс",
+   "sources": [
+    "https://ru.wikipedia.org/wiki/%D0%91%D0%B5%D1%80%D0%BB%D0%B8%D0%BD%D1%81%D0%BA%D0%B8%D0%B9_%D0%BA%D0%BE%D0%BD%D0%B3%D1%80%D0%B5%D1%81%D1%81",
+    "https://en.wikipedia.org/wiki/Congress_of_Berlin",
+    "https://www.wikidata.org/wiki/Q151423"
+   ],
+   "checked": true,
+   "verified_by": [
+    "ruwiki",
+    "enwiki",
+    "wikidata"
+   ]
+  },
+  {
+   "date": "1879",
+   "event": "Создание «Народной воли»",
+   "persons": [
+    "Андрей Желябов",
+    "Софья Перовская"
+   ],
+   "process": "Общественное движение при Александре II",
+   "codifier": "4.7",
+   "wiki": "Народная воля",
+   "sources": [
+    "https://ru.wikipedia.org/wiki/%D0%9D%D0%B0%D1%80%D0%BE%D0%B4%D0%BD%D0%B0%D1%8F_%D0%B2%D0%BE%D0%BB%D1%8F",
+    "https://en.wikipedia.org/wiki/Narodnaya_Volya",
+    "https://www.wikidata.org/wiki/Q787001"
+   ],
+   "checked": true,
+   "verified_by": [
+    "ruwiki",
+    "enwiki",
+    "wikidata"
+   ]
+  },
+  {
+   "date": "1881",
+   "event": "Убийство Александра II народовольцами",
+   "persons": [
+    "Александр II",
+    "Софья Перовская",
+    "Игнатий Гриневицкий"
+   ],
+   "process": "Общественное движение при Александре II",
+   "codifier": "4.7",
+   "wiki": "Убийство Александра II",
+   "sources": [
+    "https://ru.wikipedia.org/wiki/%D0%A3%D0%B1%D0%B8%D0%B9%D1%81%D1%82%D0%B2%D0%BE_%D0%90%D0%BB%D0%B5%D0%BA%D1%81%D0%B0%D0%BD%D0%B4%D1%80%D0%B0_II",
+    "https://en.wikipedia.org/wiki/Assassination_of_Alexander_II_of_Russia",
+    "https://www.wikidata.org/wiki/Q10858948"
+   ],
+   "checked": true,
+   "verified_by": [
+    "ruwiki",
+    "enwiki",
+    "wikidata"
+   ]
+  },
+  {
+   "date": "1881",
+   "event": "Манифест о незыблемости самодержавия",
+   "persons": [
+    "Александр III",
+    "Константин Победоносцев"
+   ],
+   "process": "Контрреформы Александра III",
+   "codifier": "4.9",
+   "wiki": "Манифест о незыблемости самодержавия",
+   "sources": [
+    "https://ru.wikipedia.org/wiki/%D0%9C%D0%B0%D0%BD%D0%B8%D1%84%D0%B5%D1%81%D1%82_%D0%BE_%D0%BD%D0%B5%D0%B7%D1%8B%D0%B1%D0%BB%D0%B5%D0%BC%D0%BE%D1%81%D1%82%D0%B8_%D1%81%D0%B0%D0%BC%D0%BE%D0%B4%D0%B5%D1%80%D0%B6%D0%B0%D0%B2%D0%B8%D1%8F",
+    "https://en.wikipedia.org/wiki/Manifesto_on_Unshakable_Autocracy",
+    "https://www.wikidata.org/wiki/Q3285938"
+   ],
+   "checked": true,
+   "verified_by": [
+    "ruwiki",
+    "enwiki",
+    "wikidata"
+   ]
+  },
+  {
+   "date": "1882",
+   "event": "Основание Крестьянского поземельного банка",
+   "persons": [
+    "Николай Бунге"
+   ],
+   "process": "Контрреформы Александра III",
+   "codifier": "4.9",
+   "wiki": "Крестьянский поземельный банк",
+   "sources": [
+    "https://ru.wikipedia.org/wiki/%D0%9A%D1%80%D0%B5%D1%81%D1%82%D1%8C%D1%8F%D0%BD%D1%81%D0%BA%D0%B8%D0%B9_%D0%BF%D0%BE%D0%B7%D0%B5%D0%BC%D0%B5%D0%BB%D1%8C%D0%BD%D1%8B%D0%B9_%D0%B1%D0%B0%D0%BD%D0%BA",
+    "https://en.wikipedia.org/wiki/Peasants'_Land_Bank",
+    "https://www.wikidata.org/wiki/Q2625327"
+   ],
+   "checked": true,
+   "verified_by": [
+    "ruwiki",
+    "enwiki",
+    "wikidata"
+   ]
+  },
+  {
+   "date": "1883",
+   "event": "Создание группы «Освобождение труда»",
+   "persons": [
+    "Георгий Плеханов"
+   ],
+   "process": "Общественное движение при Александре III",
+   "codifier": "4.9",
+   "wiki": "Освобождение труда",
+   "sources": [
+    "https://ru.wikipedia.org/wiki/%D0%9E%D1%81%D0%B2%D0%BE%D0%B1%D0%BE%D0%B6%D0%B4%D0%B5%D0%BD%D0%B8%D0%B5_%D1%82%D1%80%D1%83%D0%B4%D0%B0",
+    "https://en.wikipedia.org/wiki/Emancipation_of_Labour",
+    "https://www.wikidata.org/wiki/Q2414103"
+   ],
+   "checked": true,
+   "verified_by": [
+    "ruwiki",
+    "enwiki",
+    "wikidata"
+   ]
+  },
+  {
+   "date": "1885",
+   "event": "Морозовская стачка",
+   "persons": [],
+   "process": "Рабочее движение",
+   "codifier": "4.9",
+   "wiki": "Морозовская стачка",
+   "sources": [
+    "https://ru.wikipedia.org/wiki/%D0%9C%D0%BE%D1%80%D0%BE%D0%B7%D0%BE%D0%B2%D1%81%D0%BA%D0%B0%D1%8F_%D1%81%D1%82%D0%B0%D1%87%D0%BA%D0%B0",
+    "https://www.wikidata.org/wiki/Q1727754"
+   ],
+   "checked": true,
+   "verified_by": [
+    "ruwiki",
+    "wikidata"
+   ]
+  },
+  {
+   "date": "1887",
+   "event": "Циркуляр «о кухаркиных детях»",
+   "persons": [
+    "Иван Делянов"
+   ],
+   "process": "Контрреформы Александра III",
+   "codifier": "4.9",
+   "wiki": "Циркуляр о кухаркиных детях",
+   "sources": [
+    "https://ru.wikipedia.org/wiki/%D0%9E_%D1%81%D0%BE%D0%BA%D1%80%D0%B0%D1%89%D0%B5%D0%BD%D0%B8%D0%B8_%D0%B3%D0%B8%D0%BC%D0%BD%D0%B0%D0%B7%D0%B8%D1%87%D0%B5%D1%81%D0%BA%D0%BE%D0%B3%D0%BE_%D0%BE%D0%B1%D1%80%D0%B0%D0%B7%D0%BE%D0%B2%D0%B0%D0%BD%D0%B8%D1%8F"
+   ],
+   "checked": false,
+   "verified_by": [
+    "ruwiki"
+   ]
+  },
+  {
+   "date": "1889",
+   "event": "Введение института земских начальников",
+   "persons": [
+    "Александр III"
+   ],
+   "process": "Контрреформы Александра III",
+   "codifier": "4.9",
+   "wiki": "Земский начальник",
+   "sources": [
+    "https://ru.wikipedia.org/wiki/%D0%97%D0%B5%D0%BC%D1%81%D0%BA%D0%B8%D0%B9_%D0%BD%D0%B0%D1%87%D0%B0%D0%BB%D1%8C%D0%BD%D0%B8%D0%BA",
+    "https://en.wikipedia.org/wiki/Land_Captain_(Russian_Empire)"
+   ],
+   "checked": true,
+   "verified_by": [
+    "ruwiki",
+    "enwiki"
+   ]
+  },
+  {
+   "date": "1891–1894",
+   "event": "Оформление русско-французского союза",
+   "persons": [
+    "Александр III"
+   ],
+   "process": "Внешняя политика Александра III",
+   "codifier": "4.10",
+   "wiki": "Франко-русский союз",
+   "sources": [
+    "https://ru.wikipedia.org/wiki/%D0%A4%D1%80%D0%B0%D0%BD%D0%BA%D0%BE-%D1%80%D1%83%D1%81%D1%81%D0%BA%D0%B8%D0%B9_%D1%81%D0%BE%D1%8E%D0%B7",
+    "https://en.wikipedia.org/wiki/Franco-Russian_Alliance"
+   ],
+   "checked": true,
+   "verified_by": [
+    "ruwiki",
+    "enwiki"
+   ]
+  },
+  {
+   "date": "1891",
+   "event": "Начало строительства Транссибирской магистрали",
+   "persons": [
+    "Александр III",
+    "Сергей Витте"
+   ],
+   "process": "Модернизация России",
+   "codifier": "4.12",
+   "wiki": "Транссибирская магистраль",
+   "sources": [
+    "https://ru.wikipedia.org/wiki/%D0%A2%D1%80%D0%B0%D0%BD%D1%81%D1%81%D0%B8%D0%B1%D0%B8%D1%80%D1%81%D0%BA%D0%B0%D1%8F_%D0%BC%D0%B0%D0%B3%D0%B8%D1%81%D1%82%D1%80%D0%B0%D0%BB%D1%8C",
+    "https://en.wikipedia.org/wiki/Trans-Siberian_Railway"
+   ],
+   "checked": true,
+   "verified_by": [
+    "ruwiki",
+    "enwiki"
+   ]
+  },
+  {
+   "date": "1897",
+   "event": "Денежная реформа Витте, золотой рубль",
+   "persons": [
+    "Сергей Витте"
+   ],
+   "process": "Модернизация России",
+   "codifier": "4.12",
+   "wiki": "Денежная реформа Витте",
+   "sources": [
+    "https://ru.wikipedia.org/wiki/%D0%94%D0%B5%D0%BD%D0%B5%D0%B6%D0%BD%D0%B0%D1%8F_%D1%80%D0%B5%D1%84%D0%BE%D1%80%D0%BC%D0%B0_%D0%B2_%D0%A0%D0%BE%D1%81%D1%81%D0%B8%D0%B8_1895%E2%80%941897_%D0%B3%D0%BE%D0%B4%D0%BE%D0%B2",
+    "https://www.wikidata.org/wiki/Q4157878"
+   ],
+   "checked": true,
+   "verified_by": [
+    "ruwiki",
+    "wikidata"
+   ]
+  },
+  {
+   "date": "1897",
+   "event": "Первая всеобщая перепись населения Российской империи",
+   "persons": [
+    "Пётр Семёнов-Тян-Шанский"
+   ],
+   "process": "Модернизация России",
+   "codifier": "4.12",
+   "wiki": "Перепись населения Российской империи (1897)",
+   "sources": [],
+   "checked": false,
+   "verified_by": [],
+   "check_note": "статья ru не найдена"
+  },
+  {
+   "date": "1898",
+   "event": "Открытие Московского Художественного театра",
+   "persons": [
+    "Константин Станиславский",
+    "Владимир Немирович-Данченко"
+   ],
+   "process": "Серебряный век",
+   "codifier": "4.16",
+   "wiki": "Московский Художественный театр",
+   "sources": [
+    "https://ru.wikipedia.org/wiki/%D0%9C%D0%BE%D1%81%D0%BA%D0%BE%D0%B2%D1%81%D0%BA%D0%B8%D0%B9_%D0%A5%D1%83%D0%B4%D0%BE%D0%B6%D0%B5%D1%81%D1%82%D0%B2%D0%B5%D0%BD%D0%BD%D1%8B%D0%B9_%D1%82%D0%B5%D0%B0%D1%82%D1%80",
+    "https://en.wikipedia.org/wiki/Moscow_Art_Theatre",
+    "https://www.wikidata.org/wiki/Q840812"
+   ],
+   "checked": true,
+   "verified_by": [
+    "ruwiki",
+    "enwiki",
+    "wikidata"
+   ]
+  },
+  {
+   "date": "1898",
+   "event": "I съезд РСДРП",
+   "persons": [],
+   "process": "Общественное движение начала XX в.",
+   "codifier": "4.12",
+   "wiki": "I съезд РСДРП",
+   "sources": [
+    "https://ru.wikipedia.org/wiki/I_%D1%81%D1%8A%D0%B5%D0%B7%D0%B4_%D0%A0%D0%A1%D0%94%D0%A0%D0%9F",
+    "https://en.wikipedia.org/wiki/1st_Congress_of_the_Russian_Social_Democratic_Labour_Party",
+    "https://www.wikidata.org/wiki/Q1964957"
+   ],
+   "checked": true,
+   "verified_by": [
+    "ruwiki",
+    "enwiki",
+    "wikidata"
+   ]
+  },
+  {
+   "date": "1904–1905",
+   "event": "Русско-японская война",
+   "persons": [
+    "Николай II",
+    "Алексей Куропаткин"
+   ],
+   "process": "Россия в системе международных отношений",
+   "codifier": "4.13",
+   "wiki": "Русско-японская война",
+   "sources": [
+    "https://ru.wikipedia.org/wiki/%D0%A0%D1%83%D1%81%D1%81%D0%BA%D0%BE-%D1%8F%D0%BF%D0%BE%D0%BD%D1%81%D0%BA%D0%B0%D1%8F_%D0%B2%D0%BE%D0%B9%D0%BD%D0%B0",
+    "https://en.wikipedia.org/wiki/Russo-Japanese_War",
+    "https://www.wikidata.org/wiki/Q159950"
+   ],
+   "checked": true,
+   "verified_by": [
+    "ruwiki",
+    "enwiki",
+    "wikidata"
+   ]
+  },
+  {
+   "date": "1905",
+   "event": "Цусимское сражение",
+   "persons": [
+    "Зиновий Рожественский",
+    "Хэйхатиро Того"
+   ],
+   "process": "Россия в системе международных отношений",
+   "codifier": "4.13",
+   "wiki": "Цусимское сражение",
+   "sources": [
+    "https://ru.wikipedia.org/wiki/%D0%A6%D1%83%D1%81%D0%B8%D0%BC%D1%81%D0%BA%D0%BE%D0%B5_%D1%81%D1%80%D0%B0%D0%B6%D0%B5%D0%BD%D0%B8%D0%B5",
+    "https://en.wikipedia.org/wiki/Battle_of_Tsushima",
+    "https://www.wikidata.org/wiki/Q208127"
+   ],
+   "checked": true,
+   "verified_by": [
+    "ruwiki",
+    "enwiki",
+    "wikidata"
+   ]
+  },
+  {
+   "date": "1905",
+   "event": "Портсмутский мир",
+   "persons": [
+    "Сергей Витте"
+   ],
+   "process": "Россия в системе международных отношений",
+   "codifier": "4.13",
+   "wiki": "Портсмутский мирный договор",
+   "sources": [
+    "https://ru.wikipedia.org/wiki/%D0%9F%D0%BE%D1%80%D1%82%D1%81%D0%BC%D1%83%D1%82%D1%81%D0%BA%D0%B8%D0%B9_%D0%BC%D0%B8%D1%80%D0%BD%D1%8B%D0%B9_%D0%B4%D0%BE%D0%B3%D0%BE%D0%B2%D0%BE%D1%80",
+    "https://en.wikipedia.org/wiki/Treaty_of_Portsmouth",
+    "https://www.wikidata.org/wiki/Q548067"
+   ],
+   "checked": true,
+   "verified_by": [
+    "ruwiki",
+    "enwiki",
+    "wikidata"
+   ]
+  },
+  {
+   "date": "1905",
+   "event": "Кровавое воскресенье",
+   "persons": [
+    "Георгий Гапон",
+    "Николай II"
+   ],
+   "process": "Первая российская революция",
+   "codifier": "4.14",
+   "wiki": "Кровавое воскресенье (1905)",
+   "sources": [
+    "https://ru.wikipedia.org/wiki/%D0%9A%D1%80%D0%BE%D0%B2%D0%B0%D0%B2%D0%BE%D0%B5_%D0%B2%D0%BE%D1%81%D0%BA%D1%80%D0%B5%D1%81%D0%B5%D0%BD%D1%8C%D0%B5",
+    "https://en.wikipedia.org/wiki/Bloody_Sunday_(1905)",
+    "https://www.wikidata.org/wiki/Q185642"
+   ],
+   "checked": true,
+   "verified_by": [
+    "ruwiki",
+    "enwiki",
+    "wikidata"
+   ]
+  },
+  {
+   "date": "1905",
+   "event": "Манифест 17 октября",
+   "persons": [
+    "Николай II",
+    "Сергей Витте"
+   ],
+   "process": "Первая российская революция",
+   "codifier": "4.14",
+   "wiki": "Манифест 17 октября",
+   "sources": [
+    "https://ru.wikipedia.org/wiki/%D0%9C%D0%B0%D0%BD%D0%B8%D1%84%D0%B5%D1%81%D1%82_17_%D0%BE%D0%BA%D1%82%D1%8F%D0%B1%D1%80%D1%8F_1905_%D0%B3%D0%BE%D0%B4%D0%B0",
+    "https://en.wikipedia.org/wiki/October_Manifesto",
+    "https://www.wikidata.org/wiki/Q109878"
+   ],
+   "checked": true,
+   "verified_by": [
+    "ruwiki",
+    "enwiki",
+    "wikidata"
+   ]
+  },
+  {
+   "date": "1905–1907",
+   "event": "Первая российская революция",
+   "persons": [
+    "Николай II"
+   ],
+   "process": "Первая российская революция",
+   "codifier": "4.14",
+   "wiki": "Революция 1905—1907 годов в России",
+   "sources": [
+    "https://ru.wikipedia.org/wiki/%D0%A0%D0%B5%D0%B2%D0%BE%D0%BB%D1%8E%D1%86%D0%B8%D1%8F_1905%E2%80%941907_%D0%B3%D0%BE%D0%B4%D0%BE%D0%B2_%D0%B2_%D0%A0%D0%BE%D1%81%D1%81%D0%B8%D0%B8",
+    "https://en.wikipedia.org/wiki/Russian_Revolution_of_1905",
+    "https://www.wikidata.org/wiki/Q184928"
+   ],
+   "checked": true,
+   "verified_by": [
+    "ruwiki",
+    "enwiki",
+    "wikidata"
+   ]
+  },
+  {
+   "date": "1906",
+   "event": "Начало работы I Государственной думы",
+   "persons": [
+    "Сергей Муромцев"
+   ],
+   "process": "Начало парламентаризма",
+   "codifier": "4.15",
+   "wiki": "Государственная дума Российской империи I созыва",
+   "sources": [
+    "https://ru.wikipedia.org/wiki/%D0%93%D0%BE%D1%81%D1%83%D0%B4%D0%B0%D1%80%D1%81%D1%82%D0%B2%D0%B5%D0%BD%D0%BD%D0%B0%D1%8F_%D0%B4%D1%83%D0%BC%D0%B0_%D0%A0%D0%BE%D1%81%D1%81%D0%B8%D0%B9%D1%81%D0%BA%D0%BE%D0%B9_%D0%B8%D0%BC%D0%BF%D0%B5%D1%80%D0%B8%D0%B8_I_%D1%81%D0%BE%D0%B7%D1%8B%D0%B2%D0%B0"
+   ],
+   "checked": false,
+   "verified_by": [
+    "ruwiki"
+   ],
+   "wiki_en": "State Duma (Russian Empire)"
+  },
+  {
+   "date": "1906",
+   "event": "Начало Столыпинской аграрной реформы",
+   "persons": [
+    "Пётр Столыпин"
+   ],
+   "process": "Начало парламентаризма",
+   "codifier": "4.15",
+   "wiki": "Столыпинская аграрная реформа",
+   "sources": [
+    "https://ru.wikipedia.org/wiki/%D0%A1%D1%82%D0%BE%D0%BB%D1%8B%D0%BF%D0%B8%D0%BD%D1%81%D0%BA%D0%B0%D1%8F_%D0%B0%D0%B3%D1%80%D0%B0%D1%80%D0%BD%D0%B0%D1%8F_%D1%80%D0%B5%D1%84%D0%BE%D1%80%D0%BC%D0%B0",
+    "https://en.wikipedia.org/wiki/Stolypin_reform",
+    "https://www.wikidata.org/wiki/Q2221926"
+   ],
+   "checked": true,
+   "verified_by": [
+    "ruwiki",
+    "enwiki",
+    "wikidata"
+   ]
+  },
+  {
+   "date": "1907",
+   "event": "Третьеиюньский переворот",
+   "persons": [
+    "Николай II",
+    "Пётр Столыпин"
+   ],
+   "process": "Начало парламентаризма",
+   "codifier": "4.15",
+   "wiki": "Третьеиюньский переворот",
+   "sources": [
+    "https://ru.wikipedia.org/wiki/%D0%A2%D1%80%D0%B5%D1%82%D1%8C%D0%B5%D0%B8%D1%8E%D0%BD%D1%8C%D1%81%D0%BA%D0%B8%D0%B9_%D0%BF%D0%B5%D1%80%D0%B5%D0%B2%D0%BE%D1%80%D0%BE%D1%82",
+    "https://en.wikipedia.org/wiki/Coup_of_June_1907",
+    "https://www.wikidata.org/wiki/Q4462585"
+   ],
+   "checked": true,
+   "verified_by": [
+    "ruwiki",
+    "enwiki",
+    "wikidata"
+   ]
+  },
+  {
+   "date": "1907",
+   "event": "Англо-русское соглашение, оформление Антанты",
+   "persons": [
+    "Александр Извольский"
+   ],
+   "process": "Россия в системе международных отношений",
+   "codifier": "4.13",
+   "wiki": "Англо-русское соглашение (1907)",
+   "sources": [
+    "https://ru.wikipedia.org/wiki/%D0%90%D0%BD%D0%B3%D0%BB%D0%BE-%D1%80%D1%83%D1%81%D1%81%D0%BA%D0%BE%D0%B5_%D1%81%D0%BE%D0%B3%D0%BB%D0%B0%D1%88%D0%B5%D0%BD%D0%B8%D0%B5_(1907)",
+    "https://en.wikipedia.org/wiki/Anglo-Russian_Convention",
+    "https://www.wikidata.org/wiki/Q1129893"
+   ],
+   "checked": true,
+   "verified_by": [
+    "ruwiki",
+    "enwiki",
+    "wikidata"
+   ]
+  },
+  {
+   "date": "1911",
+   "event": "Убийство П.А. Столыпина",
+   "persons": [
+    "Пётр Столыпин",
+    "Дмитрий Богров"
+   ],
+   "process": "Начало парламентаризма",
+   "codifier": "4.15",
+   "wiki": "Убийство Столыпина",
+   "sources": [
+    "https://ru.wikipedia.org/wiki/%D0%A3%D0%B1%D0%B8%D0%B9%D1%81%D1%82%D0%B2%D0%BE_%D0%9F%D0%B5%D1%82%D1%80%D0%B0_%D0%A1%D1%82%D0%BE%D0%BB%D1%8B%D0%BF%D0%B8%D0%BD%D0%B0",
+    "https://www.wikidata.org/wiki/Q4468601"
+   ],
+   "checked": true,
+   "verified_by": [
+    "ruwiki",
+    "wikidata"
+   ]
+  },
+  {
+   "date": "1912",
+   "event": "Ленский расстрел",
+   "persons": [],
+   "process": "Рабочее движение",
+   "codifier": "4.15",
+   "wiki": "Ленский расстрел",
+   "sources": [
+    "https://ru.wikipedia.org/wiki/%D0%9B%D0%B5%D0%BD%D1%81%D0%BA%D0%B8%D0%B9_%D1%80%D0%B0%D1%81%D1%81%D1%82%D1%80%D0%B5%D0%BB",
+    "https://en.wikipedia.org/wiki/Lena_massacre",
+    "https://www.wikidata.org/wiki/Q578858"
+   ],
+   "checked": true,
+   "verified_by": [
+    "ruwiki",
+    "enwiki",
+    "wikidata"
+   ]
   }
  ]
 }
