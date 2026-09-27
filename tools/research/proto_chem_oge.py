@@ -2296,7 +2296,7 @@ def g13_ions(rng):
     items = shuffled(rng, right + rng.sample(wrong, 3))
     o = opts([f'{n} моль {t}' for n, t in items])
     a_ = ids_of([items.index(x) for x in right])
-    q = (f'Укажите, какие ионы и в каком количестве образуются в растворе при полной диссоциации 1 моль {gen(f)}. '
+    q = (f'Какие ионы и в каком количестве образуются при полной диссоциации в водном растворе 1 моль {gen(f)}? '
          'Запишите номера выбранных ответов.')
     e = f'{disp(f)} = {nc if nc > 1 else ""}{ct} + {na if na > 1 else ""}{at}: {nc} моль {ct} и {na} моль {at}. Ответ: {"".join(a_)}.'
     return pcard('ch-oge-13-ions-of-salt', q, a_, e, k='many', o=o, p={'f': f, 'opts': items})
@@ -2334,7 +2334,7 @@ def g13_count(rng):
     a = ids_of([i for i, f in enumerate(items) if f in good])
     txt = {'ions': f'{val} моль ионов', 'cat': f'{val} моль катионов', 'an': f'{val} моль анионов'}.get(what) or \
         f'{val[0]} моль катионов и {val[1]} моль анионов'
-    q = f'При полной диссоциации 1 моль каких двух из представленных веществ образуется {txt}? Запишите номера выбранных ответов.'
+    q = f'Выберите два вещества, при полной диссоциации 1 моль каждого из которых в растворе образуется {txt}. Запишите номера выбранных ответов.'
     e = '; '.join(f'{disp(f)}: {_ions13(f)[0][1]} + {_ions13(f)[1][1]}' for f in items) + f'. Ответ: {"".join(a)}.'
     return pcard('ch-oge-13-count-ions', q, a, e, k='many', o=o, p={'items': items, 'what': what, 'val': val})
 
@@ -2408,6 +2408,8 @@ def _ion_events(a, b):
         return None
     if ia[0] == ib[0] or ia[1] == ib[1]:
         return frozenset()
+    if 'HNO3' in (a, b) and ({ia[1], ib[1]} & {'S', 'SO3', 'I', 'Br'} or {ia[0], ib[0]} & {'Fe2'}):
+        return None
     ev = set()
     for c, an in ((ia[0], ib[1]), (ib[0], ia[1])):
         t = _prod_obs(c, an)
@@ -2581,8 +2583,8 @@ def _gen14(rng, pid, names):
     ans = ids_of([items.index(f) for f in right])
     eqt = ionic_eq_text(tgt)
     if names:
-        q = ('Из предложенного перечня выберите названия двух веществ, взаимодействию которых в растворе соответствует '
-             f'сокращённое ионное уравнение реакции\n{eqt}\nЗапишите номера выбранных ответов.')
+        q = ('Выберите два вещества, при взаимодействии которых в водном растворе протекает реакция, выраженная '
+             f'сокращённым ионным уравнением\n{eqt}\nЗапишите номера выбранных ответов.')
     else:
         q = ('Выберите два исходных вещества, взаимодействию которых соответствует сокращённое ионное уравнение реакции\n'
              f'{eqt}\nЗапишите номера выбранных ответов.')
@@ -2669,8 +2671,6 @@ def g14_ions(rng):
         pairs = [(c, a) for c in cats for a in ans if _prod_obs(c, a)]
         good = [(c, a) for c, a in pairs if (_prod_obs(c, a) or '').startswith('газ' if want == 'газ' else 'осадок')
                 and not (want == 'газ' and False)]
-        if want == 'осадок':
-            good = [(c, a) for c, a in good if c != 'H']
         amb = [(c, a) for c in cats for a in ans if _prod_obs(c, a) is None]
         if len(good) == 1 and not amb and not ((want == 'газ') and any(
                 (_prod_obs(c, a) or '').startswith('осадок') and c == 'H' for c, a in pairs)):
