@@ -3633,7 +3633,9 @@ REAG21 = ['H2O', 'O2', 'H2', 'Cl2', 'HCl', 'H2SO4', 'HNO3', 'H3PO4', 'NaOH', 'KO
           'FeCl2', 'NaCl', 'KCl']
 NODE21 = sorted(f for f, r in SUB.items() if r.get('cls') in ('оксид', 'основание', 'амфотерный гидроксид', 'кислота', 'соль',
                                                               'простое вещество', 'водородное соединение')
-                and f not in EXOTIC and f not in ('Na2O2', 'KO2', 'Fe3O4', 'NH3·H2O', 'H2O', 'O2', 'H2', 'CH3COOH',
+                and f not in EXOTIC and not r.get('org') and r.get('sub') not in ('кислая', 'основная')
+                and f not in ('HNO2', 'N2O3', 'N2O', 'NO', 'P2O3', 'HF', 'H2SO3', 'H2CO3', 'HClO4', 'Cl2O7', 'NCl3', 'PH3',
+                              'CrO3', 'Mn2O7', 'BeO', 'SrO', 'MnO', 'Cr2O3') and f not in ('Na2O2', 'KO2', 'Fe3O4', 'NH3·H2O', 'H2O', 'O2', 'H2', 'CH3COOH',
                                                   'H2O2', 'Hg', 'HgO', 'Ag2O', 'NaAlO2', 'KAlO2', 'Na2ZnO2', 'K2ZnO2',
                                                   'Ca(AlO2)2', 'SiO', 'Cu2O', 'O3', 'HClO', 'KClO3', 'NaClO', 'Ca(ClO)2',
                                                   'KMnO4', 'K2MnO4', 'MnO2', 'I2', 'HI')

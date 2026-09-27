@@ -791,7 +791,7 @@ def g_sublevel(rng):
         else:
             pool = [s for s in ION_POOL if s != ref[0]]
             f = lambda s: counts(s, ion_q(s))[sub]
-            q = f'Укажите два элемента ряда, которым соответствуют ионы, имеющие столько же {SUB_GEN[sub]}, сколько и {pn}.'
+            q = f'Укажите два элемента ряда, простые ионы которых содержат столько же {SUB_GEN[sub]}, сколько и {pn}.'
         pred = lambda s: f(s) == v
         items = pick_row(rng, [s for s in pool if pred(s)], [s for s in pool if not pred(s)])
         p['ref'] = list(ref)
@@ -1843,7 +1843,7 @@ def bond_q(rng, b, exam):
                            f'связью.'])
     acc = {'i': 'ионную', 'p': 'ковалентную полярную', 'n': 'ковалентную неполярную', 'm': 'металлическую'}[b]
     return rng.choice([f'Из предложенного перечня выберите два вещества с {ins} связью.',
-                       f'Из предложенного перечня выберите два вещества, содержащие {acc} связь.'])
+                       f'Из предложенного перечня выберите два вещества, содержащие {acc} химическую связь.'])
 
 
 def _bond_gen(pid, exam, letters):
