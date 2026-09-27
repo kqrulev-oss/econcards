@@ -2824,50 +2824,7 @@ def _solve15_role(p):
 R15 = [r for r in D.REACTIONS if 1 <= len(r['lhs']) <= 3 and not any(x in EXOTIC for x in r['lhs'] + r['rhs'])]
 
 
-@proto('ch-oge-15-element-role', 'ОГЭ', 15, 'Свойство, которое элемент проявляет в реакции (окислитель / восстановитель)',
-       invariant='три схемы реакций с участием одного элемента; для каждой указать, окислителем или восстановителем он '
-                 'является (или и тем, и другим, или не меняет степень окисления)',
-       varies='элемент (N, S, Cl, Fe, P, C, Br, Mn, Cu, H), реакции школьного курса',
-       answer_rule='понижает степень окисления — окислитель; повышает — восстановитель; не меняет — не проявляет свойств',
-       mistakes=['азот в NH4Cl + NaOH считают окислителем', 'хлор в Cl2 + NaOH — только окислитель',
-                 'в реакциях обмена ищут окислитель'],
-       solve=_solve15_role, kind='param', kes=['5.3'],
-       fidelity=F(MATCH3 + ' (4 варианта)', 'формат КИМ ОГЭ прошлых лет (задание на окислительно-восстановительные '
-                  'свойства элемента); проверяет умение 2027 «определять окислитель и восстановитель»', 'Б', 4,
-                  'реакции школьного курса из базы: HNO3 с металлами, NH3 + O2, H2S + SO2, Cl2 + H2O',
-                  'роль элемента в реакции обмена и диспропорционирования', ['5.3'], SC1))
-def g15_role(rng):
-    el = rng.choice(['N', 'S', 'Cl', 'Fe', 'P', 'C', 'Br', 'Cu', 'H'])
-    by = {}
-    for r in R15:
-        if el not in {e for f in r['lhs'] for e in parse_formula(f)}:
-            continue
-        k = el_role(r, el)
-        if k is not None:
-            by.setdefault(k, []).append(r)
-    ks = [k for k in by if by[k]]
-    if len(ks) < 2:
-        raise Retry
-    roles = [rng.choice(ks) for _ in range(3)]
-    if len(set(roles)) == 1:
-        raise Retry
-    chosen = []
-    for k in roles:
-        cand = [r for r in by[k] if r not in chosen]
-        if not cand:
-            raise Retry
-        chosen.append(rng.choice(cand))
-    order = list(range(4))
-    o = match_opts([' + '.join(disp(x) for x in r['lhs']) + ' → ' + ' + '.join(disp(x) for x in r['rhs']) for r in chosen],
-                   [ROLE_T[k] for k in order])
-    a_ = {LET[i]: str(order.index(k) + 1) for i, k in enumerate(roles)}
-    q = (f'Установите соответствие между схемой реакции и свойством, которое проявляет {ROLE_EL[el]} в этой реакции: '
-         'к каждой позиции, обозначенной буквой, подберите соответствующую позицию, обозначенную цифрой.' + END_M)
-    eqs = [(r['lhs'], r['rhs'], *balance(r['lhs'], r['rhs'])) for r in chosen]
-    e = ' '.join(f'{LET[i]}) {eq_text(eq)}: {ROLE_T[k]}.' for i, (eq, k) in enumerate(zip(eqs, roles))) + \
-        ' Ответ: ' + ''.join(a_[x] for x in LET[:3]) + '.'
-    return pcard('ch-oge-15-element-role', q, a_, e, k='match', o=o, eqs=eqs,
-                 p={'el': el, 'rx': [[r['lhs'], r['rhs']] for r in chosen], 'order': order})
+# Прототип «свойство элемента в реакции» (формат прошлых лет) удалён: в демо 2027 и банке №15 такого формата нет.
 
 
 # ================================================================= 16. Безопасность, лаборатория, смеси
@@ -3087,7 +3044,31 @@ def obs17_db(s, r):
     return obs_db(s, r)
 
 
-R17_SOL = [f for f in SOL_EL if f not in ('HI', 'HBr')] + ['Cu', 'Zn']
+R17_SOL = [f for f in SOL_EL if f not in ('HI', 'HBr')]
+AMPH_PREC = {'Zn(OH)2', 'Al(OH)3'}
+
+
+def vis(t, r):
+    """Что видит ученик: осадок — только цвет (оттенки белого не различаем, AgBr/AgI — «жёлтый»), газ — цвет и запах;
+    амфотерный гидроксид с щёлочью — осадок, растворимый в избытке. None — если описать нельзя."""
+    if t is None:
+        return None
+    out = set()
+    for x in t:
+        k, _, v = x.partition(':')
+        if k == 'осадок':
+            col = D.PRECIP_COLOR.get(v)
+            if not col:
+                return None
+            col = 'белый' if col.startswith('белый') else ('жёлтый' if 'жёлт' in col else col)
+            if v in AMPH_PREC and r in ('NaOH', 'KOH'):
+                col += ', растворим в избытке щёлочи'
+            out.add('осадок:' + col)
+        elif k == 'газ':
+            out.add('газ:' + ' '.join(D.GASES[v]))
+        else:
+            out.add(x)
+    return frozenset(out)
 SOLID17 = [('Al', 'Mg'), ('Zn', 'Cu'), ('Mg', 'Cu'), ('Fe', 'Cu'), ('Al', 'Cu'), ('Zn', 'Ag'), ('Al(OH)3', 'Mg(OH)2'),
            ('Zn(OH)2', 'Mg(OH)2'), ('Zn(OH)2', 'Cu(OH)2'), ('Al(OH)3', 'Cu(OH)2'), ('CaCO3', 'BaSO4'), ('MgCO3', 'BaSO4'),
            ('BaCO3', 'BaSO4'), ('MgO', 'ZnO'), ('MgO', 'Al2O3'), ('CuO', 'MgO'), ('CuO', 'ZnO'), ('CaCO3', 'AgCl'),
@@ -3095,7 +3076,8 @@ SOLID17 = [('Al', 'Mg'), ('Zn', 'Cu'), ('Mg', 'Cu'), ('Fe', 'Cu'), ('Al', 'Cu'),
 
 
 def _dist(s1, s2, r, fn):
-    o1, o2 = fn(s1, r), fn(s2, r)
+    """Различает ли реактив r вещества s1 и s2: видимые наблюдения должны быть РАЗНЫМИ."""
+    o1, o2 = vis(fn(s1, r), r), vis(fn(s2, r), r)
     if o1 is None or o2 is None:
         return None
     return o1 != o2
@@ -3183,12 +3165,12 @@ def _gen17(rng, pid, mode):
         r = opts4[ans_idx[i]]
         oa, ob = obs17c(a, r), obs17c(b, r)
         rt = {'фенолфталеин': 'фенолфталеина', 'лакмус': 'лакмуса', 'метилоранж': 'метилоранжа'}.get(r) or disp(r)
-        parts.append(f'{LET[i]}) при добавлении {rt}: {disp(a)} — {_obs_words(oa)}, {disp(b)} — {_obs_words(ob)}.')
+        parts.append(f'{LET[i]}) при добавлении {rt}: {disp(a)} — {_obs_words(oa, r)}, {disp(b)} — {_obs_words(ob, r)}.')
     e = ' '.join(parts) + ' Ответ: ' + ''.join(ans[x] for x in LET[:3]) + '.'
     return pcard(pid, q, ans, e, k='match', o=o, p={'pairs': pairs, 'reagents': opts4})
 
 
-def _obs_words(t):
+def _obs_words(t, r=None):
     t = set(t)
     if t == {'нет'}:
         return 'нет видимых изменений'
@@ -3201,7 +3183,8 @@ def _obs_words(t):
                       'жёлтый': 'жёлтая окраска'}[v])
         elif k == 'осадок':
             col = D.PRECIP_COLOR.get(v)
-            w.append(f'осадок {pretty(v)}' + (f' ({col})' if col else ''))
+            w.append(f'осадок {pretty(v)}' + (f' ({col})' if col else '') +
+                     (', растворяется в избытке щёлочи' if v in AMPH_PREC and r in ('NaOH', 'KOH') else ''))
         elif k == 'газ':
             w.append(f'газ {pretty(v)}')
         elif k == 'растворение':
@@ -3823,6 +3806,9 @@ def g21_x(rng):
     pos = 1 if rng.random() < 0.7 else 2
     x = chain[pos]
     E = edges21()
+    # единственность: среди ВСЕХ веществ базы X подходит только одно
+    if [f for f in NODE21 if (chain[pos - 1], f) in E and (f, chain[pos + 1]) in E] != [x]:
+        raise Retry
     cands = [f for f in NODE21 if el in parse_formula(f) and f not in chain and
              not ((chain[pos - 1], f) in E and (f, chain[pos + 1]) in E)]
     if len(cands) < 3:
@@ -3867,7 +3853,8 @@ def _solve21r(p):
 def g21_reag(rng):
     chain, el = _chain21(rng)
     E = edges21()
-    pools = [sorted(E[(chain[i], chain[i + 1])]) for i in range(3)]
+    Em = edges21('my')
+    pools = [sorted(Em[(chain[i], chain[i + 1])]) for i in range(3)]
     for _ in range(30):
         pick = [rng.choice(p) for p in pools]
         if len(set(pick)) < 3:

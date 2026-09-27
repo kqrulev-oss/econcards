@@ -1553,6 +1553,8 @@ def export_protos(rows, examples):
         if m['fn'] is not None:
             c = examples.get(m['id'])
             ex = {k: c[k] for k in ('k', 'q', 'o', 'a', 'e') if k in c} if c else None
+            if ex is not None and c.get('gen', {}).get('steps'):
+                ex['steps'] = c['gen']['steps']
             gen = {'kind': m['kind'], 'fn': f'tools/research/{m["fn"].__module__}.py:{m["gen"]}'}
             cap = r['cap']
         else:
@@ -1633,7 +1635,8 @@ def main():
                     cards = []
                 else:
                     cards, _, _ = sample_unique(m, random.Random(f'review-{args.seed}-{pid}'), 5)
-                    cards = [{k: c[k] for k in ('k', 'q', 'o', 'a', 'e') if k in c} for c in cards]
+                    cards = [dict({k: c[k] for k in ('k', 'q', 'o', 'a', 'e') if k in c},
+                                  **({'steps': c['gen']['steps']} if c.get('gen', {}).get('steps') else {})) for c in cards]
                 f.write(json.dumps({'proto': meta, 'cards': cards}, ensure_ascii=False) + '\n')
         print('записано', args.review_sample)
         return
