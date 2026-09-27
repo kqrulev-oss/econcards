@@ -105,7 +105,7 @@ function render(resume = null) {
 async function main() {
   // Вернулись из Telegram (страница могла перезагрузиться) — продолжаем ждать здесь же
   const pend = store.get('zd-tg-pending', null);
-  if (pend && !signedIn() && Date.now() - pend.at < 600e3) {
+  if (pend && !signedIn() && Date.now() - pend.at < 600e3 && !/^#login/.test(location.hash)) {
     if (ROLES[pend.role]) role = pend.role;
     return render(pend);
   }

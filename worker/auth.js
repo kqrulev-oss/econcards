@@ -166,7 +166,11 @@ const form = o => new URLSearchParams(Object.entries(o).filter(([, v]) => v != n
 async function postForm(url, body, headers = {}) {
   const r = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded', ...headers }, body: form(body) });
   const data = await r.json().catch(() => ({}));
-  if (!r.ok || data.error) throw new AuthError(502, 'Провайдер не подтвердил вход. Попробуйте ещё раз.');
+  if (!r.ok || data.error) {
+    // В логах Cloudflare видно, что именно не так (например, неверный Client secret)
+    console.error('oauth token', url, r.status, data.error, data.error_description);
+    throw new AuthError(502, 'Провайдер не подтвердил вход. Попробуйте ещё раз.');
+  }
   return data;
 }
 
@@ -333,7 +337,7 @@ export async function handleAuth(req, env, parts) {
       const url = new URL(req.url);
       const q = Object.fromEntries(url.searchParams);
       const saved = /^[a-z0-9]{32}$/.test(q.state || '') && await env.DB.get(`oauth:${q.state}`, 'json');
-      if (!saved || saved.p !== b) return Response.redirect(`${url.origin}/?login_error=expired`, 302);
+      if (!saved || saved.p !== b) return Response.redirect(`${url.origin}/login.html#login_error=expired`, 302);
       await env.DB.delete(`oauth:${q.state}`);
       if (!q.code) return Response.redirect(`${saved.back}#login_error=cancelled`, 302);
       try {
@@ -342,7 +346,8 @@ export async function handleAuth(req, env, parts) {
         const ticket = randomId(32);
         await env.DB.put(`ticket:${ticket}`, JSON.stringify(res), { expirationTtl: 120 });
         return Response.redirect(`${saved.back}#login=${ticket}`, 302);
-      } catch {
+      } catch (err) {
+        console.error('oauth callback', b, err?.message);
         return Response.redirect(`${saved.back}#login_error=failed`, 302);
       }
     }
