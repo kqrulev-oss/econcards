@@ -1,6 +1,6 @@
 // Студия репетитора: собрать набор из своих материалов (через ИИ) или из
 // библиотеки, опубликовать ссылку для учеников и смотреть их прогресс.
-import { signedIn, account, loginDialog, logout, refreshAccount, addRole, finishRedirectLogin } from '../account.js';
+import { signedIn, account, loginDialog, logout, refreshAccount, addRole, finishRedirectLogin, finishPayment, payDialog, planOf, daysLeft, dateRu } from '../account.js';
 import { store, api, apiBase, ai, loadPack, loadLibrary, renderCard, esc, text, day, uid, plural, el, toast, modal, KIND_NAMES } from '../lib.js';
 
 const $app = document.getElementById('app');
@@ -68,7 +68,17 @@ function accountBar() {
   return `<span class="acct-name">${esc(a?.name || a?.email || 'Аккаунт')}</span>${cloudBadge()}<button class="btn small" id="logout">Выйти</button>`;
 }
 
+// Тариф репетитора: пробный / оплачен / бесплатный с лимитами
+function tariffPanel() {
+  if (!signedIn()) return '';
+  const st = planOf('tutor');
+  if (st.paidUntil > Date.now()) return `<section class="panel plan ok">Тариф оплачен до <b>${dateRu(st.paidUntil)}</b>. <button class="link-btn" id="pay">Продлить</button></section>`;
+  if (st.trialEnd > Date.now()) return `<section class="panel plan trial"><b>Пробный период: осталось ${plural(daysLeft(st.trialEnd), 'день', 'дня', 'дней')}</b> — всё без ограничений. <button class="link-btn" id="pay">Тарифы</button></section>`;
+  return `<section class="panel plan free"><b>Бесплатный тариф:</b> 1 тренажёр и до 3 учеников в нём. Без ограничений — по подписке. <button class="btn small primary" id="pay">Оплатить</button></section>`;
+}
+
 function bindAccount(root) {
+  root.querySelector('#pay')?.addEventListener('click', () => payDialog({ product: 'tutor' }));
   root.querySelector('#login')?.addEventListener('click', () => loginDialog({
     role: 'tutor',
     why: 'Тренажёры, ключи и ученики сохранятся в аккаунте — не пропадут при очистке браузера и откроются с любого устройства.',
@@ -143,6 +153,7 @@ function viewList() {
     <header class="top"><div><div class="brand-title">Студия · Между уроками</div>
       <div class="brand-by">Тренажёр для ваших учеников за 15 минут</div></div>
       <div class="acct-bar">${accountBar()}</div></header>
+    ${tariffPanel()}
     ${signedIn() ? '' : `<section class="panel login-hint"><b>Войдите, чтобы ничего не потерять.</b> Сейчас тренажёры и доступ к ученикам хранятся только в этом браузере. С аккаунтом они сохраняются в облаке и открываются с телефона и компьютера. <button class="link-btn" id="login2">Войти через Telegram</button></section>`}
     <section class="panel steps-intro">
       <ol>
@@ -847,6 +858,11 @@ function viewPublish(p) {
     modal(`<div class="qr-big">${qrSvg(link, 12)}<p><b>${esc(p.title)}</b><br><span class="muted">Наведите камеру телефона</span></p></div>`));
   box.querySelector('#pub').onclick = async e => {
     if (!p.cards.length) return toast('Добавьте карточки');
+    // Новый тренажёр публикуется из аккаунта — так ключи и ученики не потеряются
+    if (!p.published && !signedIn()) return loginDialog({
+      role: 'tutor', why: 'Чтобы опубликовать тренажёр, войдите: ключи и ученики сохранятся в аккаунте. Первые 14 дней — всё без ограничений.',
+      onDone: async () => { await addRole('tutor'); await syncCloud(); toast('Готово — теперь нажмите «Опубликовать»'); },
+    });
     e.target.disabled = true;
     try {
       const { edited, published, ...data } = p;
@@ -861,6 +877,7 @@ function viewPublish(p) {
     } catch (err) {
       toast(err.message);
       e.target.disabled = false;
+      if (err.status === 402) payDialog({ product: 'tutor' });
     }
   };
 }
@@ -881,5 +898,7 @@ window.addEventListener('storage', e => { if (e.key === 'zd-studio') { db = { de
 route();
 finishRedirectLogin().then(async done => {
   if (done) { await addRole('tutor'); setCloud('saving'); }
+  await finishPayment();
+  if (signedIn()) await refreshAccount(); // свежий статус тарифа
   syncCloud();
 });

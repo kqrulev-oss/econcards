@@ -9,7 +9,7 @@
   "assets": {
     "directory": ".",
     "binding": "ASSETS",
-    "run_worker_first": ["/ai", "/packs/*", "/tg", "/tg/*", "/gh", "/auth/*", "/me", "/me/*"]
+    "run_worker_first": ["/ai", "/packs/*", "/tg", "/tg/*", "/gh", "/auth/*", "/me", "/me/*", "/pay/*"]
   },
   // Хранилище: если в панели уже привязано DB — используется оно, иначе создаётся
   "kv_namespaces": [{ "binding": "DB" }],

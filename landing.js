@@ -2,6 +2,8 @@
 // ученика и что видит репетитор. Ученики сюда не попадают — они приходят по
 // ссылке ?t=… и сразу открывают тренажёр.
 
+import { getPrices } from './account.js';
+
 const STUDIO = 'studio/';
 const TG = 'https://t.me/trwqxp';
 const FLAME = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3c1 4 5 5 5 10a5 5 0 0 1-10 0c0-3 2-4 2-6 1.5 1 2 2 2 3 0-3 1-5 1-7z"/></svg>';
@@ -55,7 +57,7 @@ export function renderLanding(root, library) {
   root.innerHTML = `
   <header class="ld-nav">
     <a class="ld-logo" href="./"><span class="ld-mark">М</span>Между уроками</a>
-    <nav><a href="#how">Как это работает</a><a href="#faq">Вопросы</a></nav>
+    <nav><a href="#how">Как это работает</a><a href="#prices">Тарифы</a><a href="#faq">Вопросы</a></nav>
     <a class="ld-nav-tg" href="${TG}" target="_blank" rel="noopener" aria-label="Написать в Telegram"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 4L3 11l6 2 2 6 3-4 5 4z"/><path d="M9 13l8-6"/></svg></a>
     <a class="ld-nav-cta" href="${STUDIO}">Войти в студию</a>
   </header>
@@ -69,7 +71,7 @@ export function renderLanding(root, library) {
         <a class="ld-btn primary" href="${STUDIO}">Собрать тренажёр</a>
         <a class="ld-btn" href="?p=ege-rus">Попробовать</a>
       </div>
-      <p class="ld-note">Бесплатно для первых репетиторов · без установки · работает с&nbsp;телефона</p>
+      <p class="ld-note">14 дней бесплатно · без установки · работает с&nbsp;телефона</p>
     </div>
     <div class="ld-hero-art">
       <span class="ld-blob" aria-hidden="true"></span>
@@ -138,6 +140,37 @@ export function renderLanding(root, library) {
     </div>
   </section>
 
+  <section class="ld-prices" id="prices">
+    <h2>Тарифы</h2>
+    <div class="ld-price-grid">
+      <article class="ld-price main">
+        <h3>Репетитору</h3>
+        <div class="sum"><span data-price="tutor-1">790</span> ₽ <small>в месяц</small></div>
+        <ul>
+          <li>Первые <span data-trial="tutor">14</span> дней — всё бесплатно</li>
+          <li>Сколько угодно тренажёров и учеников</li>
+          <li>Ваши ученики получают всю библиотеку ЕГЭ</li>
+          <li>Отчёты родителям, план урока, ИИ</li>
+        </ul>
+        <p>Бесплатно навсегда: 1 тренажёр и до 3 учеников. За 3 месяца — <span data-price="tutor-3">1990</span> ₽.</p>
+        <a class="ld-btn primary" href="${STUDIO}">Попробовать бесплатно</a>
+      </article>
+      <article class="ld-price">
+        <h3>Ученику и родителям</h3>
+        <div class="sum"><span data-price="lib-1">390</span> ₽ <small>в месяц</small></div>
+        <ul>
+          <li>Первые <span data-trial="lib">7</span> дней — полный доступ</li>
+          <li>Все задания ЕГЭ по русскому и профильной математике</li>
+          <li>Все прототипы, разборы, пробные варианты</li>
+          <li>Кабинет родителя: прогресс ребёнка</li>
+        </ul>
+        <p>Бесплатно: теория и 2 прототипа в каждом задании. За 3 месяца — <span data-price="lib-3">990</span> ₽.</p>
+        <a class="ld-btn" href="?p=ege-rus">Начать заниматься</a>
+      </article>
+    </div>
+    <p class="ld-price-note">Оплата картой или через СБП, без автосписаний. <a href="offer.html">Оферта</a> · <a href="privacy.html">Персональные данные</a></p>
+  </section>
+
   <section class="ld-faq" id="faq">
     <h2>Вопросы</h2>
     <details><summary>Какие предметы подходят?</summary><p>Любые, где есть правила, термины и&nbsp;задачи: тренажёр собирается из&nbsp;ваших материалов. Готовая библиотека: ЕГЭ по&nbsp;русскому языку (все задания), профильная математика (все 19 заданий) и&nbsp;олимпиадная экономика.</p></details>
@@ -171,6 +204,11 @@ export function renderLanding(root, library) {
     if (c) location.search = '?t=' + encodeURIComponent(c);
   };
   root.querySelector('#join').onclick = join;
+  // Цены и пробные периоды — с сервера (их можно менять без правки сайта)
+  getPrices().then(pr => {
+    root.querySelectorAll('[data-price]').forEach(n => { const [k, m] = n.dataset.price.split('-'); if (pr[k]?.[m]) n.textContent = pr[k][m]; });
+    root.querySelectorAll('[data-trial]').forEach(n => { if (pr.trial?.[n.dataset.trial]) n.textContent = pr.trial[n.dataset.trial]; });
+  });
   // Живой пример карточки: ответ, подсветка и разбор — как у ученика
   const opts = [...root.querySelectorAll('.ld-opt')];
   opts.forEach(o => o.onclick = () => {

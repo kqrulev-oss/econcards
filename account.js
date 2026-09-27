@@ -152,3 +152,66 @@ export async function loginDialog({ why = '', onDone, role = '' } = {}) {
     input.onkeydown = ev => ev.key === 'Enter' && send();
   });
 }
+
+// ---------- тарифы и оплата ----------
+
+const DAY = 86400e3;
+export const planOf = (product, acct = account()) => acct?.status?.[product] || { active: false, until: 0, trialEnd: 0, paidUntil: 0 };
+export const daysLeft = until => Math.max(0, Math.ceil((until - Date.now()) / DAY));
+export const dateRu = t => new Date(t).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' });
+
+let pricesCache;
+export async function getPrices() {
+  if (!pricesCache) {
+    pricesCache = api('/pay/prices').catch(() => ({ enabled: false, trial: { tutor: 14, lib: 7 }, free: { packs: 1, students: 3 },
+      tutor: { 1: 790, 3: 1990 }, lib: { 1: 390, 3: 990 } }));
+  }
+  return pricesCache;
+}
+
+const PRODUCT = {
+  tutor: { title: 'Студия репетитора', what: 'Без ограничений: сколько угодно тренажёров и учеников, а ваши ученики получают всю библиотеку ЕГЭ бесплатно.' },
+  lib: { title: 'Библиотека ЕГЭ', what: 'Все задания ЕГЭ по русскому и профильной математике со всеми прототипами, разборами и пробными вариантами.' },
+};
+
+/* Окно оплаты. forAcct/forName — родитель платит за ребёнка. */
+export async function payDialog({ product, forAcct = null, forName = '' }) {
+  if (!signedIn()) return loginDialog({ role: product === 'tutor' ? 'tutor' : 'student', why: 'Сначала войдите — доступ привяжется к аккаунту.', onDone: () => payDialog({ product, forAcct, forName }) });
+  const pr = await getPrices();
+  const info = PRODUCT[product];
+  const { box } = modal(`
+    <h3>${esc(info.title)}${forName ? ` для ${esc(forName)}` : ''}</h3>
+    <p>${esc(info.what)}</p>
+    ${pr.enabled ? `
+      <div class="pay-options">
+        <button class="pay-opt" data-m="1"><b>${pr[product][1]} ₽</b><span>1 месяц</span></button>
+        <button class="pay-opt best" data-m="3"><b>${pr[product][3]} ₽</b><span>3 месяца · выгоднее на ${Math.round((1 - pr[product][3] / (pr[product][1] * 3)) * 100)}%</span></button>
+      </div>
+      <p class="muted small-note">Оплата картой или через СБП на странице ЮKassa. Без автосписаний — продлеваете сами, мы напомним. <a href="${new URL('offer.html', import.meta.url)}" target="_blank" rel="noopener">Оферта</a></p>`
+    : `<p class="panel warn-box">Онлайн-оплата скоро появится. Сейчас напишите в Telegram <a href="https://t.me/trwqxp" target="_blank" rel="noopener">@trwqxp</a> — включим доступ вручную.</p>`}`);
+  box.querySelectorAll('[data-m]').forEach(b => b.addEventListener('click', async () => {
+    b.disabled = true;
+    try {
+      sessionStorage.setItem('zd-pay-after', location.hash);
+      const { url } = await api('/pay/create', { method: 'POST', body: { product, months: Number(b.dataset.m), forAcct, back: location.href.split('#')[0] } });
+      location.href = url;
+    } catch (err) { toast(err.message); b.disabled = false; }
+  }));
+}
+
+// Возврат со страницы оплаты: ?paid=<ref> → проверяем платёж и обновляем доступ
+export async function finishPayment() {
+  const params = new URLSearchParams(location.search);
+  const ref = params.get('paid');
+  if (!ref) return null;
+  params.delete('paid');
+  const after = sessionStorage.getItem('zd-pay-after') || location.hash;
+  sessionStorage.removeItem('zd-pay-after');
+  history.replaceState(null, '', location.pathname + (params.toString() ? '?' + params : '') + after);
+  try {
+    const r = await api(`/pay/status?id=${encodeURIComponent(ref)}`);
+    if (r.status === 'succeeded') { toast('Оплата прошла — доступ открыт. Спасибо!'); await refreshAccount(); return true; }
+    toast(r.status === 'pending' ? 'Платёж ещё обрабатывается — доступ откроется автоматически.' : 'Оплата не завершена.');
+  } catch (err) { toast(err.message); }
+  return false;
+}

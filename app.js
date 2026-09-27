@@ -2,7 +2,7 @@
 // темы с теорией, работа над ошибками и отправка прогресса репетитору.
 import { store, api, apiBase, loadPack, loadLibrary, renderCard, esc, text, day, uid, plural, el, toast, modal } from './lib.js';
 import { renderLanding } from './landing.js';
-import { signedIn, account, loginDialog, logout, addRole, finishRedirectLogin } from './account.js';
+import { signedIn, account, loginDialog, logout, addRole, finishRedirectLogin, finishPayment, payDialog, planOf } from './account.js';
 
 const $app = document.getElementById('app');
 const INTERVALS = [0, 1, 3, 7, 14, 30, 60]; // дни до повтора по «коробкам»
@@ -268,6 +268,7 @@ function viewHome() {
       ${prog.errs.length ? `<button class="btn" id="errs">Ошибки · ${prog.errs.length}</button>` : ''}
       ${isExam() ? `<button class="btn" id="variant">Пробный вариант${lastVariant()}</button>` : ''}
     </div>` : ''}
+    ${unlockBlock()}
     ${isExam() ? examGrid() : sections.map(s => `
       <section class="topics">
         ${s.name ? `<h2>${esc(s.name)}</h2>` : ''}
@@ -282,9 +283,32 @@ function viewHome() {
         }).join('')}
       </section>`).join('')}
     <footer class="foot"><a href="#/library">Другие наборы</a> · <a href="./?about">Для репетиторов</a></footer>`;
+  bindUnlock();
   $app.querySelector('#go')?.addEventListener('click', () => startSession(queue, 'Занятие'));
   $app.querySelector('#errs')?.addEventListener('click', () => startSession(buildQueue('errors'), 'Работа над ошибками'));
   $app.querySelector('#variant')?.addEventListener('click', () => startSession(buildVariant(), 'Пробный вариант', '#/', { variant: true }));
+}
+
+// ---------- доступ к библиотеке ----------
+
+// Без доступа сервер отдаёт часть библиотеки (pack.limited) — предлагаем открыть всё
+function unlockBlock(short) {
+  if (!pack.limited) return '';
+  const trialFree = !signedIn() || !planOf('lib').trialEnd;
+  if (short) return `<p class="locked">Остальные прототипы — в полном доступе. <button class="link-btn unlock">${trialFree ? 'Открыть бесплатно' : 'Открыть'}</button></p>`;
+  return `<section class="paywall">
+    <b>Открыто ${pack.limited.shown} из ${pack.limited.total} заданий</b>
+    <span>${trialFree ? 'Все прототипы, разборы и пробные варианты — первые 7 дней бесплатно.' : 'Все прототипы, разборы и пробные варианты по подписке.'}</span>
+    <button class="btn cta unlock">${trialFree ? 'Открыть бесплатно' : 'Открыть полный доступ'}</button>
+  </section>`;
+}
+
+function bindUnlock() {
+  $app.querySelectorAll('.unlock').forEach(b => b.addEventListener('click', () => {
+    if (!signedIn()) return loginDialog({ role: 'student', why: 'Войдите — и откроется пробный период с полным доступом.', onDone: async () => { await addRole('student'); location.reload(); } });
+    if (!planOf('lib').trialEnd) return addRole('student').then(() => location.reload());
+    payDialog({ product: 'lib' });
+  }));
 }
 
 // ---------- каталог заданий экзамена ----------
@@ -354,10 +378,11 @@ function viewTopic(tid) {
           <span class="proto-meta">${ps.mastered} из ${ps.total} освоено</span></span>
         ${ICON.chevron}
       </button>`;
-    }).join('')}</section>` : ''}
+    }).join('')}${(tp.protos || []).length > protos.length ? unlockBlock(true) : ''}</section>` : ''}
     ${lessons.length ? `<section class="topics"><h2>Теория</h2>${lessons.map(l =>
       `<a class="topic lesson-link" href="#/lesson/${encodeURIComponent(l.id)}">${ICON.book}<span class="topic-title">${esc(l.title)}</span>
        <span class="topic-meta">${l.min ? l.min + ' мин' : ''}</span></a>`).join('')}</section>` : ''}`;
+  bindUnlock();
   $app.querySelector('#train')?.addEventListener('click', () => startSession(buildQueue('topic', tid), tp.title, `#/topic/${tid}`));
   $app.querySelector('#errs')?.addEventListener('click', () => startSession(errs, 'Ошибки: ' + tp.title, `#/topic/${tid}`));
   $app.querySelectorAll('[data-proto]').forEach(b => b.onclick = () => {
@@ -560,7 +585,7 @@ function viewMe() {
   $app.querySelector('#login')?.addEventListener('click', () => loginDialog({
     role: 'student',
     why: 'Прогресс, серия и ошибки сохранятся в аккаунте.',
-    onDone: async () => { await addRole('student'); await pullProg(); sync(true); viewMe(); },
+    onDone: async () => { await addRole('student'); await pullProg(); sync(true); if (pack.limited) location.reload(); else viewMe(); },
   }));
   $app.querySelector('#logout')?.addEventListener('click', async () => { await logout(); viewMe(); });
   $app.querySelector('#pcode')?.addEventListener('click', async () => {
@@ -684,6 +709,7 @@ function applyBrand() {
 async function init() {
   const redirected = await finishRedirectLogin(); // вернулись от Яндекса/VK/Google
   if (redirected?.role) await addRole(redirected.role);
+  await finishPayment(); // вернулись с оплаты — пакет ниже загрузится уже полным
   const params = new URLSearchParams(location.search);
   const recent = store.get('zd-recent', []);
   // ?about — лендинг для репетиторов даже у тех, кто уже занимается в каком-то наборе

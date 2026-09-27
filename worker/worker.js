@@ -6,6 +6,7 @@
    PUT  /packs/:id                сохранить набор (X-Key; первый PUT задаёт ключ)
    POST /packs/:id/progress       ученик присылает сводку прогресса
    GET  /packs/:id/progress       репетитор смотрит учеников (X-Key)
+   /pay/*                         тарифы и оплата ЮKassa (worker/billing.js)
    /auth/*, /me/*                 аккаунты: вход, облачная копия (worker/auth.js)
    /tg, /tg/setup, /gh            Telegram-бот для задач Claude и Codex (worker/bot.js)
 
@@ -18,7 +19,8 @@
    ============================================================ */
 
 import { handleBot } from './bot.js';
-import { handleAuth, sessionAccount, parentCode } from './auth.js';
+import { handleAuth, sessionAccount, parentCode, planStatus, saveAccount, getAccount } from './auth.js';
+import { handleBilling, checkPublish, checkNewStudent, trimLibrary, LIB_PACKS } from './billing.js';
 
 // «-latest» — псевдонимы Google на актуальную модель: конкретные версии
 // закрывают для новых ключей (так случилось с gemini-2.5-flash)
@@ -201,6 +203,7 @@ async function handle(req, env) {
   if (!env.DB) throw new HttpError(500, 'На сервере не подключено хранилище DB (KV).');
 
   if (parts[0] === 'auth' || parts[0] === 'me') return handleAuth(req, env, parts);
+  if (parts[0] === 'pay') return handleBilling(req, env, parts);
 
   // POST /ai и старый вызов POST / из прежнего приложения
   if (req.method === 'POST' && (parts[0] === 'ai' || !parts.length)) {
@@ -226,6 +229,7 @@ async function handle(req, env) {
     if (key.length < 16) throw new HttpError(400, 'Нужен ключ репетитора.');
     const owner = await env.DB.get(`owner:${id}`);
     if (owner && owner !== await sha256(key)) throw new HttpError(403, 'Этот код уже занят другим набором.');
+    const acct = await checkPublish(env, req, id, !owner);
     const pack = await readJson(req, MAX_PACK);
     if (!pack.title || !Array.isArray(pack.cards) || !Array.isArray(pack.topics)) throw new HttpError(400, 'Набор без названия, тем или карточек.');
     pack.id = id;
@@ -233,8 +237,7 @@ async function handle(req, env) {
     if (!owner) await env.DB.put(`owner:${id}`, await sha256(key));
     await env.DB.put(`pack:${id}`, JSON.stringify(pack));
     // Репетитор вошёл в аккаунт — набор привязывается к нему (доступ с любого устройства)
-    const acct = await sessionAccount(env, req);
-    if (acct) await env.DB.put(`packacct:${id}`, acct.id);
+    if (acct && !owner) await env.DB.put(`packacct:${id}`, acct.id);
     return { ok: true, id, updated: pack.updated };
   }
 
@@ -242,8 +245,17 @@ async function handle(req, env) {
     if (!await env.DB.get(`owner:${id}`)) throw new HttpError(404, 'Набор не найден.');
     const { sid, name, stats } = await readJson(req, MAX_STATS);
     if (!/^[a-z0-9]{6,20}$/.test(sid || '') || !name) throw new HttpError(400, 'Нет имени ученика.');
-    // Ученик вошёл в аккаунт — запоминаем, чтобы репетитор мог выдать код для родителя
+    // Новый ученик сверх бесплатного лимита репетитора не добавляется
+    const known = await env.DB.get(`prog:${id}:${sid}`);
+    const tutor = known ? null : await checkNewStudent(env, id);
+    // Ученик вошёл в аккаунт — запоминаем, чтобы репетитор мог выдать код для родителя;
+    // у репетитора с тарифом ученики получают и библиотеку ЕГЭ
     const acct = await sessionAccount(env, req);
+    const owner = acct && await env.DB.get(`packacct:${id}`);
+    if (owner) {
+      const st = tutor || planStatus(await getAccount(env, owner), 'tutor');
+      if (st.active && (acct.plans?.libVia || 0) < st.until) { acct.plans ||= {}; acct.plans.libVia = st.until; await saveAccount(env, acct); }
+    }
     await env.DB.put(`prog:${id}:${sid}`, JSON.stringify({ sid, name: cut(name, 80), stats, at: Date.now(), acct: acct?.id }),
       { expirationTtl: 60 * 60 * 24 * 180 });
     return { ok: true };
@@ -283,7 +295,15 @@ export default {
     }
     // Когда сервер развёрнут вместе с сайтом (wrangler.jsonc в корне), сюда же
     // приходят запросы к библиотеке packs/*.json — это статика, отдаём как есть
-    if (env.ASSETS && new URL(req.url).pathname.endsWith('.json')) return env.ASSETS.fetch(req);
+    if (env.ASSETS && path.endsWith('.json')) {
+      const res = await env.ASSETS.fetch(req);
+      // Библиотека ЕГЭ: полная — с доступом (пробный, оплата, репетитор с тарифом), иначе бесплатная часть
+      const lib = /^\/packs\/([a-z-]+)\.json$/.exec(path);
+      if (!lib || !LIB_PACKS.includes(lib[1]) || !res.ok) return res;
+      const acct = env.DB && await sessionAccount(env, req).catch(() => null);
+      if (acct && planStatus(acct, 'lib').active) return res;
+      return Response.json(trimLibrary(await res.json()), { headers: { 'Cache-Control': 'no-store' } });
+    }
     const origin = req.headers.get('Origin');
     if (req.method === 'OPTIONS') return new Response(null, { headers: cors(origin) });
     let res;
