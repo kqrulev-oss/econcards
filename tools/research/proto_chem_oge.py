@@ -2188,3 +2188,501 @@ def g12_gas(rng):
                      'окраска раствора по катиону'))
 def g12_solid(rng):
     return _gen12(rng, 'ch-oge-12-solids', 'solid', lambda a, b, ob: a in INSOL12 + METAL12 or b in INSOL12 + METAL12)
+
+
+# ================================================================= ионы: запись и независимый разбор формул (13, 14)
+
+SUPD = str.maketrans('0123456789+-', '⁰¹²³⁴⁵⁶⁷⁸⁹⁺⁻')
+ION_F = {'NH4': 'NH4', 'Fe2': 'Fe', 'Fe3': 'Fe'}
+
+
+def ion_txt(key, anion=False):
+    if anion:
+        f, q = (D.ANIONS[key][0], -D.ANIONS[key][1]) if key in D.ANIONS else ({'NO2': 'NO2'}[key], -1)
+    elif key == 'H':
+        f, q = 'H', 1
+    else:
+        f, q = D.CATIONS[key][0], D.CATIONS[key][1]
+    ch = ('' if abs(q) == 1 else str(abs(q))) + ('+' if q > 0 else '-')
+    return pretty(f) + ch.translate(SUPD)
+
+
+ANION_Q = {'Cl': 1, 'Br': 1, 'I': 1, 'F': 1, 'NO3': 1, 'NO2': 1, 'OH': 1, 'SO4': 2, 'SO3': 2, 'S': 2, 'CO3': 2, 'SiO3': 2,
+           'PO4': 3}
+
+
+def dissociate(f):
+    """Независимый разбор формулы электролита на ионы: [(катион, число, заряд), (анион, число, заряд)]."""
+    m = re.match(r'^(\(NH4\)|NH4|[A-Z][a-z]?)(\d*)(.*)$', f)
+    cat, nc, rest = m.group(1).strip('()'), int(m.group(2) or 1), m.group(3)
+    m2 = re.match(r'^\((.+)\)(\d+)$', rest)
+    if m2:
+        an, na = m2.group(1), int(m2.group(2))
+    else:
+        m3 = re.match(r'^([A-Z][a-z]?)(\d+)$', rest)
+        if m3 and m3.group(1) in ANION_Q:
+            an, na = m3.group(1), int(m3.group(2))
+        else:
+            an, na = rest, 1
+    qa = ANION_Q[an]
+    qc = Fr(qa * na, nc)
+    return [(cat, nc, qc), (an, na, -qa)]
+
+
+def ion_key_txt(sym, q):
+    ch = ('' if abs(q) == 1 else str(abs(q))) + ('+' if q > 0 else '-')
+    return pretty(sym) + ch.translate(SUPD)
+
+
+# ================================================================= 13. Электролитическая диссоциация
+
+SALTS13 = [f for f in COMMON_SALTS if SALT[f][2] == 'р' and f not in EXOTIC] + ['Al2(SO4)3', 'Fe2(SO4)3', 'Cr2(SO4)3',
+                                                                                'Cr(NO3)3', 'CrCl3']
+SALTS13 = [f for f in dict.fromkeys(SALTS13) if f in SALT or f in ('Cr2(SO4)3', 'Cr(NO3)3', 'CrCl3')]
+EL13 = SALTS13 + ['HCl', 'HNO3', 'H2SO4', 'HBr', 'HI', 'NaOH', 'KOH', 'LiOH', 'Ba(OH)2']
+ION_SWAP_AN = {'SO4': 'SO3', 'SO3': 'SO4', 'S': 'SO4', 'NO3': 'NO2', 'CO3': 'SO3', 'PO4': 'SO4', 'Cl': 'Br', 'Br': 'Cl',
+               'I': 'Cl', 'SiO3': 'CO3'}
+
+
+def _ions13(f):
+    """Генератор: ионы из базы (SALT/ACID/ALK) → [(ключ, число, текст)]."""
+    if f in SALT:
+        c, a, _ = SALT[f]
+        cq, aq = D.CATIONS[c][1], D.ANIONS[a][1]
+        from math import gcd
+        g = gcd(cq, aq)
+        return [(c, aq // g, ion_txt(c)), (a, cq // g, ion_txt(a, True))]
+    if f in ACID:
+        a = ACID[f]
+        return [('H', D.ANIONS[a][1], ion_txt('H')), (a, 1, ion_txt(a, True))]
+    if f in ALK:
+        c = ALK[f]
+        return [(c, 1, ion_txt(c)), ('OH', D.CATIONS[c][1], ion_txt('OH', True))]
+    d = dissociate(f)
+    return [(d[0][0], d[0][1], ion_key_txt(d[0][0], d[0][2])), (d[1][0], d[1][1], ion_key_txt(d[1][0], d[1][2]))]
+
+
+def _solve13_ions(p):
+    d = dissociate(p['f'])
+    have = {(n, ion_key_txt(sym, q)) for sym, n, q in d}
+    return ids_of([i for i, (n, t) in enumerate(p['opts']) if (n, t) in have])
+
+
+_F13 = lambda scale, trap: F(MANY2, 'как в демоверсии 2027 №13 и банке: «Укажите, какие ионы и в каком количестве '
+                            'образуются …», «При полной диссоциации 1 моль каких двух веществ …»', 'Б', 5, scale, trap,
+                            ['5.4'], SC1M)
+
+
+@proto('ch-oge-13-ions-of-salt', 'ОГЭ', 13, 'Какие ионы и в каком количестве образуются при диссоциации 1 моль соли',
+       invariant='1 моль соли; из пяти вариантов «n моль иона» выбрать два верных (катион и анион)',
+       varies='соль (нитраты, сульфаты, хлориды, фосфаты Al, Fe, Cu, Mg, Ca, Na, K, NH4 …), отвлекающие ионы',
+       answer_rule='число катионов = индекс металла, число анионов = индекс кислотного остатка; заряд иона — по валентности',
+       mistakes=['Fe3+ путают с Fe2+', 'сульфат-ион путают с сульфит-ионом', 'число ионов берут из индекса кислорода'],
+       solve=_solve13_ions, kind='param', kes=['5.4'],
+       fidelity=_F13('как в демоверсии 2027 (нитрат алюминия) и банке (хлорид железа(III), сульфид калия, сульфат меди(II))',
+                     'количество и заряд ионов, сульфат/сульфит'))
+def g13_ions(rng):
+    f = rng.choice([x for x in SALTS13 if x in SALT])
+    (c, nc, ct), (a, na, at) = _ions13(f)
+    right = [(nc, ct), (na, at)]
+    wrong = {(na, ct), (nc, at), (1, ct) if nc != 1 else (2, ct), (1, at) if na != 1 else (2, at)}
+    if c in ('Fe2', 'Fe3'):
+        wrong.add((nc, ion_txt('Fe3' if c == 'Fe2' else 'Fe2')))
+    if a in ION_SWAP_AN:
+        wrong.add((na, ion_txt(ION_SWAP_AN[a], True)))
+    wrong = [w for w in wrong if w not in right]
+    if len(wrong) < 3:
+        raise Retry
+    items = shuffled(rng, right + rng.sample(wrong, 3))
+    o = opts([f'{n} моль {t}' for n, t in items])
+    a_ = ids_of([items.index(x) for x in right])
+    q = (f'Укажите, какие ионы и в каком количестве образуются в растворе при полной диссоциации 1 моль {gen(f)}. '
+         'Запишите номера выбранных ответов.')
+    e = f'{disp(f)} = {nc if nc > 1 else ""}{ct} + {na if na > 1 else ""}{at}: {nc} моль {ct} и {na} моль {at}. Ответ: {"".join(a_)}.'
+    return pcard('ch-oge-13-ions-of-salt', q, a_, e, k='many', o=o, p={'f': f, 'opts': items})
+
+
+def _count13(f, what):
+    d = dissociate(f)
+    nc, na = d[0][1], d[1][1]
+    return {'ions': nc + na, 'cat': nc, 'an': na, 'both': (nc, na)}[what]
+
+
+def _solve13_count(p):
+    return ids_of([i for i, f in enumerate(p['items']) if _count13(f, p['what']) == p['val']])
+
+
+@proto('ch-oge-13-count-ions', 'ОГЭ', 13, 'При диссоциации 1 моль каких веществ образуется N моль ионов (катионов, анионов)',
+       invariant='пять веществ (формулы или названия); выбрать два, при диссоциации 1 моль которых образуется заданное '
+                 'число моль ионов / катионов / анионов',
+       varies='вопрос (всего ионов, катионов, анионов, «n катионов и m анионов»), число, вещества',
+       answer_rule='уравнение диссоциации: число катионов и анионов — по индексам в формуле',
+       mistakes=['считают атомы кислорода', 'для сульфата алюминия получают 2 иона', 'путают катионы и анионы'],
+       solve=_solve13_count, kind='param', kes=['5.4'],
+       fidelity=_F13('как в банке: «3 моль ионов», «2 моль катионов», «1 моль катионов и 1 моль анионов»; соли, кислоты, '
+                     'щёлочи', 'катионы/анионы, индексы'))
+def g13_count(rng):
+    what = rng.choice(['ions', 'ions', 'cat', 'an', 'both'])
+    pool = EL13
+    vals = Counter(_count13_gen(f, what) for f in pool)
+    val = rng.choice([v for v, n in vals.items() if n >= 2])
+    good = [f for f in pool if _count13_gen(f, what) == val]
+    bad = [f for f in pool if _count13_gen(f, what) != val]
+    items = shuffled(rng, rng.sample(good, 2) + rng.sample(bad, 3))
+    names = rng.random() < 0.5
+    o = opts([name(f) if names else disp(f) for f in items])
+    a = ids_of([i for i, f in enumerate(items) if f in good])
+    txt = {'ions': f'{val} моль ионов', 'cat': f'{val} моль катионов', 'an': f'{val} моль анионов'}.get(what) or \
+        f'{val[0]} моль катионов и {val[1]} моль анионов'
+    q = f'При полной диссоциации 1 моль каких двух из представленных веществ образуется {txt}? Запишите номера выбранных ответов.'
+    e = '; '.join(f'{disp(f)}: {_ions13(f)[0][1]} + {_ions13(f)[1][1]}' for f in items) + f'. Ответ: {"".join(a)}.'
+    return pcard('ch-oge-13-count-ions', q, a, e, k='many', o=o, p={'items': items, 'what': what, 'val': val})
+
+
+def _count13_gen(f, what):
+    (_, nc, _), (_, na, _) = _ions13(f)
+    return {'ions': nc + na, 'cat': nc, 'an': na, 'both': (nc, na)}[what]
+
+
+WEAK13 = ['HNO2', 'H2S', 'H2SO3', 'H2CO3', 'HF', 'CH3COOH', 'NH3·H2O']
+STRONG13 = ['HCl', 'HNO3', 'H2SO4', 'HBr', 'HI', 'HClO4', 'NaOH', 'KOH', 'LiOH', 'Ba(OH)2', 'NaCl', 'KNO3', 'CuSO4',
+            'MgCl2', 'Na2SO4', 'K2CO3', 'Na3PO4', 'NH4Cl', 'ZnSO4', 'AlCl3', 'Ca(NO3)2', 'FeCl3', 'Na2SiO3', 'K2S']
+NONEL13 = ['O2', 'N2', 'S', 'P', 'CO', 'NO', 'N2O', 'SiO2', 'CuO', 'Fe2O3', 'Al2O3', 'C2H5OH', 'C12H22O11', 'C6H12O6', 'CH4',
+           'H2']
+
+
+def el_class(f):
+    """Независимая классификация: сильный / слабый / неэлектролит — по классу вещества (правила 9 кл.)."""
+    c = classify(f) if f not in ('NH3·H2O', 'CH3COOH', 'C2H5OH', 'C12H22O11', 'C6H12O6') else {'особое'}
+    if f in ('NH3·H2O', 'CH3COOH'):
+        return 'слабый'
+    if 'простое вещество' in c or 'оксид' in c or f in ('C2H5OH', 'C12H22O11', 'C6H12O6', 'CH4'):
+        return 'неэлектролит'
+    if 'кислота' in c:
+        return 'сильный' if f in ('HCl', 'HBr', 'HI', 'HNO3', 'H2SO4', 'HClO4') else 'слабый'
+    if 'щёлочь' in c or 'соль' in c:
+        return 'сильный'
+    return '?'
+
+
+def _solve13_el(p):
+    return ids_of([i for i, f in enumerate(p['items']) if (el_class(f) in p['want'])])
+
+
+@proto('ch-oge-13-electrolytes', 'ОГЭ', 13, 'Сильные и слабые электролиты, неэлектролиты',
+       invariant='пять веществ; выбрать два слабых электролита / два сильных / два неэлектролита / два электролита',
+       varies='вопрос и вещества (кислоты, щёлочи, соли, оксиды, простые вещества, органические вещества)',
+       answer_rule='сильные: HCl, HBr, HI, HNO3, H2SO4, HClO4, щёлочи, растворимые соли; слабые: H2S, HNO2, H2SO3, H2CO3, '
+                   'HF, CH3COOH, NH3·H2O; неэлектролиты: оксиды, простые вещества, спирт, сахар, глюкоза',
+       mistakes=['H2S считают сильной кислотой', 'оксиды считают электролитами', 'сахар — электролит'],
+       solve=_solve13_el, kind='dict', kes=['5.4'],
+       fidelity=_F13('как в банке: «два слабых электролита», «два неэлектролита», «два электролита»',
+                     'сила кислот, оксиды — неэлектролиты'))
+def g13_el(rng):
+    want = rng.choice(['слабый', 'неэлектролит', 'сильный', 'электролит'])
+    pools = {'слабый': WEAK13, 'сильный': STRONG13, 'неэлектролит': NONEL13}
+    if want == 'электролит':
+        good_pool, bad_pool, wset = WEAK13 + STRONG13, NONEL13, {'слабый', 'сильный'}
+    else:
+        good_pool = pools[want]
+        bad_pool = [f for k, v in pools.items() if k != want for f in v]
+        wset = {want}
+    items = shuffled(rng, rng.sample(good_pool, 2) + rng.sample(bad_pool, 3))
+    names = rng.random() < 0.5 and all(f in SUB for f in items)
+    o = opts([name(f) if names else disp(f) for f in items])
+    a = ids_of([i for i, f in enumerate(items) if f in good_pool])
+    word = {'слабый': 'два слабых электролита', 'сильный': 'два сильных электролита', 'неэлектролит': 'два неэлектролита',
+            'электролит': 'два электролита'}[want]
+    q = f'Из предложенного перечня веществ выберите {word}. Запишите номера выбранных ответов.'
+    e = '; '.join(f'{disp(f)} — {el_class(f)}' for f in items) + f'. Ответ: {"".join(a)}.'
+    return pcard('ch-oge-13-electrolytes', q, a, e, k='many', o=o, p={'items': items, 'want': sorted(wset)})
+
+
+# ================================================================= 14. Реакции ионного обмена: сокращённое ионное уравнение
+
+def _ion_events(a, b):
+    """Генератор: какие пары ионов связываются при сливании растворов a и b; None — одно из веществ не сильный
+    растворимый электролит (в сокращённом уравнении осталось бы в молекулярном виде)."""
+    ia, ib = _ions(a), _ions(b)
+    if not ia or not ib or a in ('H3PO4',) or b in ('H3PO4',):
+        return None
+    if ia[0] == ib[0] or ia[1] == ib[1]:
+        return frozenset()
+    ev = set()
+    for c, an in ((ia[0], ib[1]), (ib[0], ia[1])):
+        t = _prod_obs(c, an)
+        if t is None:
+            return None
+        if t or (c, an) == ('H', 'OH'):
+            ev.add((c, an))
+    return frozenset(ev)
+
+
+# цели: (катион, анион) → (левая часть {ион: коэфф.}, правая часть {частица: коэфф.})
+def _target(c, a):
+    if (c, a) == ('H', 'OH'):
+        return ({'H+': 1, 'OH-': 1}, {'H2O': 1})
+    if c == 'H':
+        if a == 'SiO3':
+            return ({'H+': 2, 'SiO3 2-': 1}, {'H2SiO3': 1})
+        g = GAS_OF[a]
+        return ({'H+': 2, f'{a} 2-': 1}, {g: 1} if a == 'S' else {g: 1, 'H2O': 1})
+    if (c, a) == ('NH4', 'OH'):
+        return ({'NH4+': 1, 'OH-': 1}, {'NH3': 1, 'H2O': 1})
+    cq, aq = D.CATIONS[c][1], D.ANIONS[a][1]
+    from math import gcd
+    g = gcd(cq, aq)
+    f = D._salt_formula(c, a) if a != 'OH' else [x for x, k in {**BINS, **BAMP}.items() if k == c][0]
+    sym_c = D.CATIONS[c][0]
+    return ({f'{sym_c}{cq if cq > 1 else ""}+': aq // g, f'{a} {aq if aq > 1 else ""}-'.replace(' -', '-'): cq // g}, {f: 1})
+
+
+def ionic_eq_text(t):
+    lhs, rhs = t
+
+    def sp(s):
+        m = re.match(r'^(.+?)\s?(\d?)([+-])$', s)
+        if not m:
+            return pretty(s)
+        return pretty(m.group(1)) + (m.group(2) + m.group(3)).translate(SUPD)
+    side = lambda d: ' + '.join((f'{k}' if k > 1 else '') + sp(s) for s, k in d.items())
+    return f'{side(lhs)} = {side(rhs)}'
+
+
+TARGETS14 = [('H', 'OH'), ('H', 'CO3'), ('H', 'SO3'), ('H', 'S'), ('H', 'SiO3'), ('NH4', 'OH'), ('Ba', 'SO4'),
+             ('Ba', 'CO3'), ('Ca', 'CO3'), ('Ag', 'Cl'), ('Ag', 'Br'), ('Ag', 'I'), ('Ag', 'PO4'), ('Ba', 'PO4'),
+             ('Ca', 'PO4'), ('Mg', 'OH'), ('Cu', 'OH'), ('Fe2', 'OH'), ('Fe3', 'OH'), ('Al', 'OH'), ('Zn', 'OH'),
+             ('Cu', 'S'), ('Zn', 'S'), ('Fe2', 'S'), ('Mg', 'CO3'), ('Zn', 'CO3'), ('Ba', 'SO3'), ('Ca', 'SO3'),
+             ('Mg', 'PO4'), ('Zn', 'PO4')]
+DIST14_EXTRA = ['BaCO3', 'CaCO3', 'BaSO4', 'AgCl', 'Mg(OH)2', 'Cu(OH)2', 'Fe(OH)3', 'Al(OH)3', 'Zn(OH)2', 'CuS', 'FeS',
+                'ZnS', 'Ca3(PO4)2', 'H2S', 'H2SiO3', 'CO2', 'SO2', 'NH3', 'H3PO4', 'MgO', 'CuO', 'CaO', 'BaO', 'ZnO',
+                'Al2O3', 'Fe2O3', 'Ba', 'Ca', 'Zn', 'Mg', 'Cu', 'Fe', 'Al', 'H2O', 'MgCO3', 'Ag2O']
+
+
+def _providers(ion_key, is_anion):
+    out = []
+    for f in SOL_EL:
+        i = _ions(f)
+        if i and (i[1] if is_anion else i[0]) == ion_key and f not in EXOTIC:
+            out.append(f)
+    return out
+
+
+def net_ionic_db(a, b):
+    """solve: найти реакцию заново по реагентам в базе, записать полное ионное уравнение (сильные растворимые
+    электролиты — на ионы) и сократить одинаковые ионы. Возвращает (левая часть, правая часть) или None."""
+    ps = products_db([a, b], '')
+    if ps is None:
+        return None
+    r = [x for x in chemdb.load()['reactions'] if frozenset(x['rhs']) == ps and set(x['lhs']) == {a, b}]
+    if not r:
+        return None
+    r = r[0]
+    left, right = Counter(), Counter()
+    for side, fs, ks in ((left, r['lhs'], r['k'][0]), (right, r['rhs'], r['k'][1])):
+        for f, k in zip(fs, ks):
+            parts = _split_strong(f)
+            if parts is None:
+                side[f] += k
+            else:
+                for sp, n in parts:
+                    side[sp] += n * k
+    for s in list(left):
+        common = min(left[s], right.get(s, 0))
+        left[s] -= common
+        right[s] -= common
+    left = {s: n for s, n in left.items() if n}
+    right = {s: n for s, n in right.items() if n}
+    from math import gcd
+    g = 0
+    for v in list(left.values()) + list(right.values()):
+        g = gcd(g, v)
+    return ({s: n // g for s, n in left.items()}, {s: n // g for s, n in right.items()})
+
+
+STRONG_ACIDS = {'HCl': [('H+', 1), ('Cl-', 1)], 'HBr': [('H+', 1), ('Br-', 1)], 'HI': [('H+', 1), ('I-', 1)],
+                'HNO3': [('H+', 1), ('NO3-', 1)], 'H2SO4': [('H+', 2), ('SO4 2-', 1)]}
+
+
+def _split_strong(f):
+    """Сильный растворимый электролит → ионы (для записи полного ионного уравнения); иначе None."""
+    if f in STRONG_ACIDS:
+        return STRONG_ACIDS[f]
+    if f in ('NaOH', 'KOH', 'LiOH', 'Ba(OH)2', 'Ca(OH)2'):
+        d = dissociate(f)
+    elif re.match(r'^(\(NH4\)|NH4|[A-Z][a-z]?)', f) and parse_formula(f).keys() - {'H', 'O'} and f not in (
+            'H2O', 'H2S', 'H2SiO3', 'H3PO4', 'CO2', 'SO2', 'NH3'):
+        try:
+            d = dissociate(f)
+        except Exception:  # noqa: BLE001
+            return None
+        cat = {'NH4': 'NH4'}.get(d[0][0], d[0][0])
+        key_c = {('Fe', 2): 'Fe2', ('Fe', 3): 'Fe3'}.get((cat, d[0][2]), cat)
+        if D.SOL.get((key_c, d[1][0])) != 'р':
+            return None
+    else:
+        return None
+    (c, nc, qc), (a, na, qa) = d
+    cs = f'{c}{qc if qc > 1 else ""}+'
+    as_ = f'{a} {abs(qa) if abs(qa) > 1 else ""}-'.replace(' -', '-')
+    return [(cs, nc), (as_, na)]
+
+
+def _solve14(p):
+    tgt = (p['t'][0], p['t'][1])
+    items = p['items']
+    hits = []
+    for i in range(len(items)):
+        for j in range(i + 1, len(items)):
+            ne = net_ionic_db(items[i], items[j])
+            if ne == tgt:
+                hits.append((i, j))
+    if len(hits) != 1:
+        return f'пар с этим уравнением: {hits}'
+    return ids_of(list(hits[0]))
+
+
+def _gen14(rng, pid, names):
+    c, a = rng.choice(TARGETS14)
+    tgt = _target(c, a)
+    pc_ = _providers(c, False)
+    pa_ = _providers(a, True)
+    right = None
+    for _ in range(30):
+        x, y = rng.choice(pc_), rng.choice(pa_)
+        if x != y and _ion_events(x, y) == frozenset({(c, a)}):
+            right = [x, y]
+            break
+    if not right:
+        raise Retry
+    # отвлекающие: нерастворимые/слабые/простые вещества с теми же ионами, «лишние» соли
+    cands = [f for f in DIST14_EXTRA + SOL_EL if f not in right and (not names or f in SUB)]
+    for _ in range(50):
+        dist = rng.sample(cands, 4)
+        items = right + dist
+        ok = True
+        for i in range(6):
+            for j in range(i + 1, 6):
+                if (i, j) == (0, 1):
+                    continue
+                ev = _ion_events(items[i], items[j])
+                if ev == frozenset({(c, a)}):
+                    ok = False
+        # хотя бы один отвлекающий содержит «нужный» ион в нерастворимом/молекулярном виде
+        related = [f for f in dist if f in DIST14_EXTRA and any(e in parse_formula(f) for e in
+                                                               (set(parse_formula(right[0])) | set(parse_formula(right[1])))
+                                                               - {'H', 'O'})]
+        if ok and related:
+            break
+    else:
+        raise Retry
+    items = shuffled(rng, items)
+    o = opts([name(f) if names else disp(f) for f in items])
+    ans = ids_of([items.index(f) for f in right])
+    eqt = ionic_eq_text(tgt)
+    if names:
+        q = ('Из предложенного перечня выберите названия двух веществ, взаимодействию которых в растворе соответствует '
+             f'сокращённое ионное уравнение реакции\n{eqt}\nЗапишите номера выбранных ответов.')
+    else:
+        q = ('Выберите два исходных вещества, взаимодействию которых соответствует сокращённое ионное уравнение реакции\n'
+             f'{eqt}\nЗапишите номера выбранных ответов.')
+    eq = _eq_of(right[0], right[1])
+    e = (f'{disp(right[0])} и {disp(right[1])} — растворимые сильные электролиты: ' +
+         (eq_text(eq) + '; ' if eq else '') + f'сокращённое уравнение {eqt}. Остальные вещества — нерастворимые, '
+         'слабые электролиты или дают другое уравнение.' + f' Ответ: {"".join(ans)}.')
+    return pcard(pid, q, ans, e, k='many', o=o, p={'items': items, 't': [tgt[0], tgt[1]]}, eqs=[eq] if eq else None)
+
+
+_F14 = lambda scale: F(MANY2, 'как в демоверсии 2027 №14: «…выберите названия двух веществ, взаимодействию которых '
+                       'в растворе соответствует сокращённое ионное уравнение»; шесть вариантов', 'Б', 3, scale,
+                       'нерастворимое вещество или слабый электролит с тем же ионом; пара, дающая «лишний» осадок/воду',
+                       ['5.5'], SC1M)
+
+
+@proto('ch-oge-14-reactants', 'ОГЭ', 14, 'Сокращённое ионное уравнение → два исходных вещества (формулы)',
+       invariant='сокращённое ионное уравнение и шесть формул; выбрать два вещества, дающих именно это уравнение',
+       varies='уравнение (осадок, газ, вода), вещества-источники ионов, отвлекающие (нерастворимые, слабые, металлы, '
+              'оксиды, соли с «лишним» ионом)',
+       answer_rule='оба вещества — растворимые сильные электролиты, содержащие нужные ионы; другие их ионы не должны '
+                   'давать осадок, газ или воду',
+       mistakes=['берут нерастворимую соль (BaCO3, CaCO3)', 'берут Ba(OH)2 + H2SO4 для Ba2+ + SO4 2−',
+                 'берут слабую кислоту H2S или металл'],
+       solve=_solve14, kind='param', kes=['5.5'],
+       fidelity=_F14('как в банке: «H+ + OH− = H2O», «CO3 2− + 2H+», «Al3+ + 3OH−», «Ba2+ + SO4 2−»'))
+def g14_formulas(rng):
+    return _gen14(rng, 'ch-oge-14-reactants', False)
+
+
+@proto('ch-oge-14-names', 'ОГЭ', 14, 'Сокращённое ионное уравнение → два исходных вещества (названия)',
+       invariant='сокращённое ионное уравнение и шесть названий веществ; выбрать два',
+       varies='как в ch-oge-14-reactants',
+       answer_rule='как в ch-oge-14-reactants; дополнительно — узнать вещество по названию',
+       mistakes=['оксид бария вместо хлорида бария', 'карбонат кальция вместо карбоната натрия'],
+       solve=_solve14, kind='param', kes=['5.5'],
+       fidelity=_F14('как в демоверсии 2027: «серная кислота, гидроксид бария, сульфат магния, оксид бария, барий, сульфат калия»'))
+def g14_names(rng):
+    return _gen14(rng, 'ch-oge-14-names', True)
+
+
+ION_CAT14 = ['H', 'NH4', 'Na', 'K', 'Li', 'Ba', 'Ca', 'Mg', 'Zn', 'Cu', 'Fe2', 'Fe3', 'Al', 'Ag']
+ION_AN14 = ['OH', 'Cl', 'Br', 'I', 'NO3', 'SO4', 'SO3', 'S', 'CO3', 'PO4', 'SiO3']
+
+
+def _ion_pair_kind(c, a):
+    """solve: что даёт пара ионов — 'газ', 'осадок', 'вода' или '' (по таблице растворимости и списку газов)."""
+    if c == 'H':
+        if a == 'OH':
+            return 'вода'
+        if a in ('CO3', 'SO3', 'S'):
+            return 'газ'
+        return 'осадок' if a == 'SiO3' else ''
+    if (c, a) == ('NH4', 'OH'):
+        return 'газ'
+    s = D.SOL.get((c, a))
+    return 'осадок' if s == 'н' else ('' if s == 'р' else '?')
+
+
+def _solve14_ions(p):
+    items = p['items']
+    hits = []
+    for i, (ki, ti) in enumerate(items):
+        for j, (kj, tj) in enumerate(items):
+            if ti == 'c' and tj == 'a' and _ion_pair_kind(ki, kj) == p['want']:
+                hits.append(tuple(sorted((i, j))))
+    return ids_of(list(hits[0])) if len(hits) == 1 else f'пар: {hits}'
+
+
+@proto('ch-oge-14-ion-pairs', 'ОГЭ', 14, 'Два иона, взаимодействие которых даёт газ (осадок, воду)',
+       invariant='шесть ионов; выбрать два, взаимодействие которых сопровождается выделением газа (образованием осадка)',
+       varies='вопрос (газ / осадок), ионы',
+       answer_rule='газ: H+ с CO3 2−, SO3 2−, S2−; NH4+ с OH−; осадок — по таблице растворимости',
+       mistakes=['H+ + SO4 2− «даёт газ»', 'Na+ + OH− «даёт осадок»'],
+       solve=_solve14_ions, kind='param', kes=['5.5'],
+       fidelity=F(MANY2, 'как в банке: «Выберите два иона, взаимодействие которых сопровождается выделением газа / '
+                  'образованием осадка»; шесть ионов', 'Б', 3, 'ионы банка: H+, Ca2+, Na+, OH−, S2−, PO4 3−, NH4+, SO3 2−',
+                  'ионы-«соседи», не дающие газа/осадка', ['5.5'], SC1M))
+def g14_ions(rng):
+    want = rng.choice(['газ', 'газ', 'осадок'])
+    for _ in range(60):
+        cats = rng.sample(ION_CAT14, 3)
+        ans = rng.sample(ION_AN14, 3)
+        pairs = [(c, a) for c in cats for a in ans if _prod_obs(c, a)]
+        good = [(c, a) for c, a in pairs if (_prod_obs(c, a) or '').startswith('газ' if want == 'газ' else 'осадок')
+                and not (want == 'газ' and False)]
+        if want == 'осадок':
+            good = [(c, a) for c, a in good if c != 'H']
+        amb = [(c, a) for c in cats for a in ans if _prod_obs(c, a) is None]
+        if len(good) == 1 and not amb and not ((want == 'газ') and any(
+                (_prod_obs(c, a) or '').startswith('осадок') and c == 'H' for c, a in pairs)):
+            break
+    else:
+        raise Retry
+    items = shuffled(rng, [(c, 'c') for c in cats] + [(a, 'a') for a in ans])
+    o = opts([ion_txt(k, t == 'a') for k, t in items])
+    c, a = good[0]
+    res = ids_of([items.index((c, 'c')), items.index((a, 'a'))])
+    q = (f'Выберите два иона, взаимодействие которых сопровождается '
+         f'{"выделением газа" if want == "газ" else "образованием осадка"}. Запишите номера выбранных ответов.')
+    e = f'{ion_txt(c)} + {ion_txt(a, True)} → {_prod_obs(c, a).split(":")[1]}. Ответ: {"".join(res)}.'
+    return pcard('ch-oge-14-ion-pairs', q, res, e, k='many', o=o,
+                 p={'items': [[k, t] for k, t in items], 'want': want})

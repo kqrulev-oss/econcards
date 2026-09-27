@@ -43,7 +43,7 @@ def nm(f, rng=None, triv=0.4):
 
 
 def vw(f):
-    return SUB[f]['view']
+    return SUB[f].get('view') or pretty(f)
 
 
 def pf(f):
@@ -1609,7 +1609,10 @@ def _gen_two_rk(pid, rng, pool):
     if len(b_real) >= 3 and rng.random() < 0.6:
         bb = rng.sample(b_real, 3)
     else:
-        bb = rng.sample(b_real, min(2, len(b_real))) + rng.sample(b_inert, 3 - min(2, len(b_real)))
+        k = min(2, len(b_real))
+        if len(b_inert) < 3 - k:
+            raise Retry
+        bb = rng.sample(b_real, k) + rng.sample(b_inert, 3 - k)
     rks = rng.sample(g, 2) + bb
     rng.shuffle(rks)
     names = [_rk_text(rng, rk) for rk in rks]
@@ -2219,7 +2222,7 @@ def g14_fixed(rng):
     uniq = list(dict.fromkeys(prods))
     conf = set()
     for f in uniq:
-        conf.update(g for g in ORG if (brutto(g) == brutto(f) or SUB[g]['hom'] == SUB[f]['hom']) and g != f
+        conf.update(g for g in ORG if (brutto(g) == brutto(f) or SUB[g]['hom'] == SUB[f].get('hom')) and g != f
                     and g not in _POOL10_SKIP and parse_formula(g).get('C', 0) <= 8)
     conf -= set(uniq)
     if len(conf) < 6 - len(uniq):

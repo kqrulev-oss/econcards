@@ -2231,3 +2231,1216 @@ def g23_table(rng):
                     'как в банке', 'коэффициенты', ['1.8', '5.1'], '2 балла, 1 балл при одной ошибке'))
 def g23_letters(rng):
     return _g23(rng, 'ch-ege-23-letters', rng.random() < 0.6, letters=True)
+
+
+# ======================================================================= ЕГЭ 34. Комбинированные расчётные задачи
+# Ответ — число (итог решения, обычно массовая доля в %, до десятых). В КИМ № 34 оценивается ход решения (4 балла);
+# в тренажёре проверяем итоговое число, уравнения и шаги — в объяснении.
+
+def _gw(f):
+    return D.GEN.get(f, (pretty(f), 'm'))[0]
+
+
+def _sol_mass(n, f, w):
+    """Масса раствора, содержащего n моль вещества f при массовой доле w (%)."""
+    return n * M(f) * 100 / Fr(w)
+
+
+def _nice_sol(rng, n, f, ws=(5, 8, 10, 12, 15, 16, 20, 24, 25, 30, 40)):
+    """Подобрать массовую долю так, чтобы масса раствора была «круглой» (≤ 1 знака после запятой)."""
+    cand = [w for w in ws if nice(_sol_mass(n, f, w), 1)]
+    if not cand:
+        raise Retry
+    w = pick(rng, cand)
+    return w, _sol_mass(n, f, w)
+
+
+EL34 = {  # соль: (реакция электролиза раствора, металл/основание, газ на аноде, газ на катоде)
+    'CuSO4': (['CuSO4', 'H2O'], ['Cu', 'O2', 'H2SO4'], 'O2', None),
+    'Cu(NO3)2': (['Cu(NO3)2', 'H2O'], ['Cu', 'O2', 'HNO3'], 'O2', None),
+    'AgNO3': (['AgNO3', 'H2O'], ['Ag', 'O2', 'HNO3'], 'O2', None),
+    'NaCl': (['NaCl', 'H2O'], ['NaOH', 'H2', 'Cl2'], 'Cl2', 'H2'),
+    'KCl': (['KCl', 'H2O'], ['KOH', 'H2', 'Cl2'], 'Cl2', 'H2'),
+    'CuCl2': (['CuCl2'], ['Cu', 'Cl2'], 'Cl2', None),
+}
+LEAVE = {'Cu', 'Ag', 'O2', 'H2', 'Cl2'}  # уходят из раствора при электролизе
+
+
+def _el_state(salt, n0, x):
+    """Состав раствора после электролиза x моль соли: {вещество: моль}, потеря массы раствора."""
+    lhs, rhs, _, _ = EL34[salt]
+    k = coef(lhs, rhs)
+    comp = {salt: n0 - x}
+    loss = Fr(0)
+    for f in rhs:
+        amt = x * Fr(k[f], k[salt])
+        if f in LEAVE:
+            loss += amt * M(f)
+        else:
+            comp[f] = comp.get(f, 0) + amt
+    return comp, loss
+
+
+def _solve_34_el(p):
+    """Независимый пересчёт через ионный баланс раствора."""
+    salt, n0, x = p['salt'], Fr(p['n0']), Fr(p['x'])
+    m0 = Fr(p['m0'])
+    # масса, ушедшая из раствора (металл/водород на катоде + газ на аноде) — по числу электронов
+    e = {'CuSO4': 2, 'Cu(NO3)2': 2, 'CuCl2': 2, 'AgNO3': 1, 'NaCl': 1, 'KCl': 1}[salt] * x   # моль электронов
+    cat = {'CuSO4': Mi('Cu') / 2, 'Cu(NO3)2': Mi('Cu') / 2, 'CuCl2': Mi('Cu') / 2, 'AgNO3': Mi('Ag'),
+           'NaCl': Mi('H'), 'KCl': Mi('H')}[salt]
+    an = Mi('O') / 2 if salt in ('CuSO4', 'Cu(NO3)2', 'AgNO3') else Mi('Cl')
+    m_after = m0 - e * cat - e * an
+    H = e if salt in ('CuSO4', 'Cu(NO3)2', 'AgNO3') else 0            # моль H⁺ в растворе
+    OH = e if salt in ('NaCl', 'KCl') else 0                         # моль OH⁻
+    metal_ion = (n0 - x) if salt in ('CuSO4', 'Cu(NO3)2', 'CuCl2', 'AgNO3') else 0
+    r, nr = p['reag'], Fr(p['nr'])
+    mr = Fr(p['mr'])
+    if p['mode'] == 'portion':
+        f = Fr(p['mp']) / m_after
+        need = {'NaOH': H * f + 2 * metal_ion * f if salt != 'AgNO3' else None,
+                'NaCl': metal_ion * f, 'CuSO4': OH * f / 2}[r]
+        return rs(need * Mi(r) * 100 / Fr(p['wr']), 1)
+    if r == 'NaOH':                                                   # нейтрализация, затем осаждение гидроксида
+        used = H + (2 if salt != 'AgNO3' else 1) * metal_ion
+        left = {'NaOH': nr - used}
+        ppt = metal_ion * Mi('Cu(OH)2')
+        gas = 0
+    elif r == 'Na2CO3':
+        gas = nr * Mi('CO2')
+        ppt = 0
+        left = {'H2SO4': (H - 2 * nr) / 2, 'HNO3': H - 2 * nr, salt: metal_ion}
+    elif r == 'NaCl':
+        ppt = metal_ion * Mi('AgCl')
+        gas = 0
+        left = {'NaCl': nr - metal_ion, 'HNO3': H}
+    else:  # CuSO4 к щелочному раствору
+        ppt = nr * Mi('Cu(OH)2')
+        gas = 0
+        left = {'NaOH' if salt == 'NaCl' else 'KOH': OH - 2 * nr, salt: n0 - x}
+    total = m_after + mr - ppt - gas
+    t = p['target']
+    return rs(left[t] * Mi(t) / total * 100, 1)
+
+
+@proto('ch-ege-34-electro', 'ЕГЭ', 34, 'Электролиз раствора соли, затем реакция с другим раствором',
+       invariant='по объёму газа или уменьшению массы находят количество разложившейся соли; масса раствора после '
+                 'электролиза = исходная − (металл/H₂ на катоде + газ на аноде); затем реакция с добавленным раствором, '
+                 'масса конечного раствора за вычетом осадка/газа',
+       varies='соль (CuSO₄, Cu(NO₃)₂, AgNO₃, NaCl, KCl, CuCl₂), способ остановки (газ на аноде/катоде, убыль массы), '
+              'второй реагент (NaOH, Na₂CO₃, NaCl, CuSO₄), что найти (доля вещества или масса раствора для порции)',
+       answer_rule='массовая доля (%) или масса раствора (г), округление до десятых',
+       mistakes=['не вычли из массы раствора выделившиеся на электродах вещества', 'не учли, что щёлочь сначала '
+                 'нейтрализует кислоту', 'не вычли массу осадка или газа'],
+       solve=_solve_34_el, kes=['1.13', '5.4', '5.6', '5.7'],
+       fidelity=fid('в КИМ — развёрнутое решение (4 балла); в тренажёре — итоговое число с точностью до десятых',
+                    'как задания банка № 34 «Для проведения электролиза (на инертных электродах) взяли …» — '
+                    'формулировка своя, те же шаги', 'В', 22, 'массы растворов 100–700 г, доли 10–40 %, газы 1–7 л — как в банке',
+                    'масса раствора после электролиза; порядок реакций (кислота раньше соли)', ['1.13', '5.4', '5.6', '5.7'],
+                    '4 балла в КИМ (за шаги), в тренажёре — число'))
+def g34_electro(rng):
+    salt = pick(rng, list(EL34))
+    lhs, rhs, an, cat = EL34[salt]
+    k = coef(lhs, rhs)
+    n0 = Fr(rng.choice(range(4, 21)), 20)          # 0,2–1 моль
+    x = n0 * Fr(rng.choice([1, 2, 3, 4]), 5)
+    w0, m0 = _nice_sol(rng, n0, salt, (10, 12, 15, 16, 20, 25, 30, 40))
+    comp, loss = _el_state(salt, n0, x)
+    m_after = m0 - loss
+    stops = [('an', f'на аноде выделилось {ru(x * Fr(k[an], k[salt]) * VM)} л (н.у.) газа')]
+    if cat:
+        stops.append(('cat', f'на катоде собрали {ru(x * Fr(k[cat], k[salt]) * VM)} л (н.у.) газа'))
+    if nice(loss, 2):
+        stops.append(('mass', f'масса раствора уменьшилась на {ru(loss)} г'))
+    stop = pick(rng, stops)
+    if not nice(x * Fr(k[an], k[salt]) * VM, 3):
+        raise Retry
+    name = _gw(salt)
+    metal_ion = n0 - x if salt in ('CuSO4', 'Cu(NO3)2', 'CuCl2', 'AgNO3') else 0
+    H = x * (2 if salt in ('CuSO4', 'Cu(NO3)2') else 1) if salt in ('CuSO4', 'Cu(NO3)2', 'AgNO3') else 0
+    OH = x if salt in ('NaCl', 'KCl') else 0
+    mode = 'final' if rng.random() < 0.8 else 'portion'
+    if salt in ('CuSO4', 'Cu(NO3)2', 'CuCl2'):
+        reag = 'NaOH' if salt == 'CuCl2' or rng.random() < 0.6 else 'Na2CO3'
+    elif salt == 'AgNO3':
+        reag = 'NaCl'
+    else:
+        reag = 'CuSO4'
+    if mode == 'portion' and reag == 'Na2CO3':
+        reag = 'NaOH'
+    if mode == 'portion':
+        frac = Fr(1, rng.choice([2, 4, 5, 10]))
+        mp = m_after * frac
+        if not nice(mp, 2):
+            raise Retry
+        need = {'NaOH': H * frac + 2 * metal_ion * frac, 'NaCl': metal_ion * frac, 'CuSO4': OH * frac / 2}[reag]
+        wr = pick(rng, [5, 8, 10, 15, 20, 25])
+        ans_v = need * M(reag) * 100 / wr
+        ans = rnd(ans_v, 1)
+        purpose = {'NaOH': 'полного осаждения ионов меди', 'NaCl': 'полного осаждения ионов серебра',
+                   'CuSO4': 'полного связывания щёлочи в осадок'}[reag]
+        q = (f'Раствор {name} массой {ru(m0)} г с массовой долей соли {w0} % подвергли электролизу с инертными '
+             f'электродами. Когда {stop[1]}, ток отключили. Из полученного раствора взяли порцию массой {ru(mp)} г. '
+             f'Рассчитайте массу {wr} %-ного раствора {_gw(reag)}, которая потребуется для {purpose} в этой порции. '
+             f'(Запишите число с точностью до десятых.)')
+        p = dict(salt=salt, n0=str(n0), x=str(x), m0=str(m0), reag=reag, nr='0', mr='0', mode='portion', mp=str(mp),
+                 wr=wr, target='')
+        e = f'Разложилось {fmt(x, 3)} моль соли; масса раствора после электролиза {fmt(m_after, 2)} г; в порции ' \
+            f'{fmt(frac, 3)} часть веществ; n({pretty(reag)}) = {fmt(need, 4)} моль ⇒ m(р-ра) ≈ {ans} г.'
+        wrong = W([need * M(reag), ans_v * 2 if reag == 'CuSO4' else ans_v / 2, need * M(reag) * 100 / wr / frac], 1)
+    else:
+        if reag == 'NaOH':
+            used = H + (2 if salt != 'AgNO3' else 1) * metal_ion
+            nr = used + Fr(rng.choice(range(1, 11)), 20)
+        elif reag == 'Na2CO3':
+            nr = H / 2 * Fr(rng.choice([1, 2, 3, 4]), 5)
+        elif reag == 'NaCl':
+            nr = metal_ion + Fr(rng.choice(range(1, 11)), 20)
+        else:
+            nr = OH / 2 * Fr(rng.choice([1, 2, 3, 4]), 5)
+        if nr <= 0:
+            raise Retry
+        wr, mr = _nice_sol(rng, nr, reag)
+        if reag == 'NaOH':
+            targets = ['NaOH']
+        elif reag == 'Na2CO3':
+            targets = [salt, 'H2SO4' if salt == 'CuSO4' else 'HNO3']
+        elif reag == 'NaCl':
+            targets = ['NaCl', 'HNO3']
+        else:
+            targets = ['NaOH' if salt == 'NaCl' else 'KOH', salt]
+        target = pick(rng, targets)
+        p = dict(salt=salt, n0=str(n0), x=str(x), m0=str(m0), reag=reag, nr=str(nr), mr=str(mr), mode='final',
+                 target=target)
+        ans = _solve_34_el(p)
+        num_ = Fr(ans.replace(',', '.'))
+        guard(Fr(_ans_exact_el(p)), 1)
+        if num_ <= 0:
+            raise Retry
+        q = (f'Раствор {name} массой {ru(m0)} г с массовой долей соли {w0} % подвергли электролизу с инертными '
+             f'электродами. Когда {stop[1]}, ток отключили. К оставшемуся раствору прилили {ru(mr)} г {wr} %-ного '
+             f'раствора {_gw(reag)}. Рассчитайте массовую долю {_gw(target)} в образовавшемся растворе. '
+             f'(Запишите число с точностью до десятых.)')
+        e = f'Разложилось {fmt(x, 3)} моль {pretty(salt)}; масса раствора после электролиза {fmt(m_after, 2)} г; ' \
+            f'далее реакция с {pretty(reag)} ({fmt(nr, 3)} моль), из раствора уходят осадок/газ ⇒ ω ≈ {ans} %.'
+        exact = Fr(_ans_exact_el(p))
+        wrong = W([exact * m_after / m0, exact * (m_after + mr) / (m0 + mr), exact * 2], 1)
+    eqs = [eqp(lhs, rhs)[1]]
+    return pcard('ch-ege-34-electro', q, ans, e, p=p, wrong=wrong, eqs=eqs)
+
+
+def _ans_exact_el(p):
+    """Точное значение ответа (для отбраковки у границы округления) — через тот же баланс, без округления."""
+    salt, n0, x = p['salt'], Fr(p['n0']), Fr(p['x'])
+    comp, loss = _el_state(salt, n0, x)
+    m_after = Fr(p['m0']) - loss
+    reag, nr, mr = p['reag'], Fr(p['nr']), Fr(p['mr'])
+    H = comp.get('H2SO4', 0) * 2 + comp.get('HNO3', 0)
+    metal_ion = comp[salt] if salt in ('CuSO4', 'Cu(NO3)2', 'CuCl2', 'AgNO3') else 0
+    if reag == 'NaOH':
+        used = H + (2 if salt != 'AgNO3' else 1) * metal_ion
+        left, lost = {'NaOH': nr - used}, metal_ion * M('Cu(OH)2')
+    elif reag == 'Na2CO3':
+        left = {salt: metal_ion, 'H2SO4': comp.get('H2SO4', 0) - nr, 'HNO3': comp.get('HNO3', 0) - 2 * nr}
+        lost = nr * M('CO2')
+    elif reag == 'NaCl':
+        left, lost = {'NaCl': nr - metal_ion, 'HNO3': comp.get('HNO3', 0)}, metal_ion * M('AgCl')
+    else:
+        base = 'NaOH' if salt == 'NaCl' else 'KOH'
+        left, lost = {base: comp[base] - 2 * nr, salt: comp[salt]}, nr * M('Cu(OH)2')
+    t = p['target']
+    return left[t] * M(t) / (m_after + mr - lost) * 100
+
+
+DEC34 = {  # соль: (твёрдый продукт, газы [(ф, моль на моль соли)], реагент для остатка, растворяется ли весь остаток)
+    'CaCO3': ('CaO', [('CO2', 1)], 'HCl'), 'MgCO3': ('MgO', [('CO2', 1)], 'HCl'), 'BaCO3': ('BaO', [('CO2', 1)], 'HCl'),
+    'KClO3': ('KCl', [('O2', Fr(3, 2))], 'AgNO3'), 'AgNO3': ('Ag', [('NO2', 1), ('O2', Fr(1, 2))], 'HCl'),
+    'Cu(NO3)2': ('CuO', [('NO2', 2), ('O2', Fr(1, 2))], 'NaOH'), 'Mg(NO3)2': ('MgO', [('NO2', 2), ('O2', Fr(1, 2))], 'NaOH'),
+    'NaHCO3': ('Na2CO3', [('CO2', Fr(1, 2)), ('H2O', Fr(1, 2))], 'HCl'),
+}
+
+
+def _dec_result(salt, x, r, reag, nr, water, mres):
+    """Масса и состав конечного раствора после обработки остатка (x — разложилось, r — осталось соли)."""
+    solid, gases, _ = DEC34[salt]
+    s_k = Fr(parse_formula(salt).get({'CaCO3': 'Ca', 'MgCO3': 'Mg', 'BaCO3': 'Ba', 'KClO3': 'K', 'AgNO3': 'Ag',
+                                      'Cu(NO3)2': 'Cu', 'Mg(NO3)2': 'Mg', 'NaHCO3': 'Na'}[salt], 1),
+             parse_formula(solid).get({'CaCO3': 'Ca', 'MgCO3': 'Mg', 'BaCO3': 'Ba', 'KClO3': 'K', 'AgNO3': 'Ag',
+                                       'Cu(NO3)2': 'Cu', 'Mg(NO3)2': 'Mg', 'NaHCO3': 'Na'}[salt], 1))
+    n_solid = x * s_k
+    mr_sol = Fr(0)
+    left, gone = {}, Fr(0)
+    if salt in ('CaCO3', 'MgCO3', 'BaCO3'):
+        cl = {'CaCO3': 'CaCl2', 'MgCO3': 'MgCl2', 'BaCO3': 'BaCl2'}[salt]
+        need = 2 * (n_solid + r)
+        left = {'HCl': nr - need, cl: n_solid + r}
+        gone = r * M('CO2')
+        m_in = mres
+    elif salt == 'NaHCO3':
+        need = 2 * n_solid + r
+        left = {'HCl': nr - need, 'NaCl': 2 * n_solid + r}
+        gone = (n_solid + r) * M('CO2')
+        m_in = mres
+    elif salt == 'KClO3':
+        left = {'AgNO3': nr - n_solid, 'KNO3': n_solid, 'KClO3': r}
+        gone = n_solid * M('AgCl')
+        m_in = mres
+    elif salt == 'AgNO3':
+        left = {'HCl': nr - r, 'HNO3': r}
+        gone = r * M('AgCl')
+        m_in = r * M('AgNO3') + water          # серебро не растворяется
+    else:
+        hyd = {'Cu(NO3)2': 'Cu(OH)2', 'Mg(NO3)2': 'Mg(OH)2'}[salt]
+        left = {'NaOH': nr - 2 * r, 'NaNO3': 2 * r}
+        gone = r * M(hyd)
+        m_in = r * M(salt) + water             # оксид металла в раствор не переходит
+    return left, m_in - gone
+
+
+def _solve_34_dec(p):
+    """Пересчёт от данных условия: n(газа) → x; масса остатка → r; далее баланс раствора."""
+    salt = p['salt']
+    solid, gases, reag = DEC34[salt]
+    per = sum(Fr(g[1]) for g in gases if g[0] != 'H2O')
+    mres = Fr(p['mres'])
+    if salt == 'NaHCO3':
+        x = (Fr(p['m0']) - mres) / (Mi('CO2') / 2 + Mi('H2O') / 2)
+    else:
+        x = Fr(p['V']) / VM / per
+    solid_per = Fr(1, 2) if salt == 'NaHCO3' else 1
+    r = (mres - x * solid_per * Mi(solid)) / Mi(salt)
+    left, msol = _dec_result(salt, x, r, reag, Fr(p['nr']), Fr(p['water']), mres)
+    total = msol + Fr(p['mr']) + Fr(p['water']) * (0 if salt in ('AgNO3', 'Cu(NO3)2', 'Mg(NO3)2') else 1)
+    t = p['target']
+    return rs(left[t] * Mi(t) / total * 100, 1)
+
+
+@proto('ch-ege-34-decomp', 'ЕГЭ', 34, 'Частичное термическое разложение соли, затем реакция остатка с раствором',
+       invariant='по объёму газов (или убыли массы) находят разложившуюся часть, по массе остатка — неразложившуюся; '
+                 'остаток реагирует с раствором; масса конечного раствора = остаток (растворимая часть) + вода + раствор '
+                 '− осадок − газ',
+       varies='соль (CaCO₃, MgCO₃, BaCO₃, NaHCO₃, KClO₃, AgNO₃, Cu(NO₃)₂, Mg(NO₃)₂), реагент (HCl, AgNO₃, NaOH), '
+              'что найти (доля кислоты/щёлочи/соли)',
+       answer_rule='массовая доля вещества в конечном растворе, %, до десятых',
+       mistakes=['считают, что разложилась вся соль', 'не учитывают газ из неразложившегося карбоната',
+                 'включают нерастворимый оксид/металл в массу раствора'],
+       solve=_solve_34_dec, kes=['5.4', '5.6', '5.7'],
+       fidelity=fid('в КИМ — развёрнутое решение; в тренажёре — число, % до десятых', 'как задания банка № 34 «При '
+                    'нагревании образца … часть вещества разложилась …» — формулировка своя', 'В', 22,
+                    'газ 1–10 л, остаток 10–100 г, растворы 50–400 г', 'смесь в остатке; нерастворимые компоненты',
+                    ['5.4', '5.6', '5.7'], '4 балла в КИМ'))
+def g34_decomp(rng):
+    salt = pick(rng, list(DEC34))
+    solid, gases, reag = DEC34[salt]
+    x = Fr(rng.choice(range(2, 21)), 20)
+    r = Fr(rng.choice(range(1, 17)), 20)
+    solid_per = Fr(1, 2) if salt == 'NaHCO3' else 1
+    mres = x * solid_per * M(solid) + r * M(salt)
+    if not nice(mres, 2):
+        raise Retry
+    per = sum(Fr(g[1]) for g in gases if g[0] != 'H2O')
+    V = x * per * VM
+    m0 = (x + r) * M(salt)
+    water = Fr(rng.choice([0, 50, 100, 150, 200])) if salt in ('AgNO3', 'Cu(NO3)2', 'Mg(NO3)2') else Fr(0)
+    if salt in ('AgNO3', 'Cu(NO3)2', 'Mg(NO3)2') and water == 0:
+        water = Fr(100)
+    n_solid = x * solid_per
+    need = {'HCl': (2 * (n_solid + r) if salt != 'NaHCO3' else 2 * n_solid + r) if salt != 'AgNO3' else r,
+            'AgNO3': n_solid, 'NaOH': 2 * r}[reag]
+    nr = need + Fr(rng.choice(range(1, 13)), 20)
+    wr, mr = _nice_sol(rng, nr, reag)
+    targets = {'HCl': ['HCl', {'CaCO3': 'CaCl2', 'MgCO3': 'MgCl2', 'BaCO3': 'BaCl2', 'NaHCO3': 'NaCl', 'AgNO3': 'HNO3'}[salt]],
+               'AgNO3': ['AgNO3', 'KNO3'], 'NaOH': ['NaOH', 'NaNO3']}[reag]
+    target = pick(rng, targets)
+    p = dict(salt=salt, V=str(V), mres=str(mres), m0=str(m0), nr=str(nr), mr=str(mr), water=str(water), target=target)
+    left, msol = _dec_result(salt, x, r, reag, nr, water, mres)
+    total = msol + mr + (0 if salt in ('AgNO3', 'Cu(NO3)2', 'Mg(NO3)2') else water)
+    exact = left[target] * M(target) / total * 100
+    if exact <= 0:
+        raise Retry
+    ans = rnd(exact, 1)
+    sname = _gw(salt)
+    if salt == 'NaHCO3':
+        s1 = f'Образец гидрокарбоната натрия массой {ru(m0)} г нагревали, пока его масса не уменьшилась до {ru(mres)} г.'
+    else:
+        gas_w = 'смеси газов' if len(gases) > 1 else 'газа'
+        cat = ' в присутствии катализатора' if salt == 'KClO3' else ''
+        s1 = f'Порцию {sname} нагревали{cat} до тех пор, пока не выделилось {ru(V)} л (в пересчёте на н.у.) {gas_w}; ' \
+             f'масса твёрдого остатка составила {ru(mres)} г.'
+    wtxt = f'к нему прилили {ru(water)} мл воды, а затем ' if salt in ('AgNO3', 'Cu(NO3)2', 'Mg(NO3)2') else ''
+    s2 = f'Остаток поместили в колбу, {wtxt}добавили {ru(mr)} г {wr} %-ного раствора {_gw(reag)}.'
+    q = f'{s1} {s2} Рассчитайте массовую долю {_gw(target)} в образовавшемся растворе. (Запишите число с точностью до десятых.)'
+    e = f'Разложилось {fmt(x, 3)} моль {pretty(salt)}, осталось {fmt(r, 3)} моль; остаток прореагировал с ' \
+        f'{fmt(nr, 3)} моль {pretty(reag)}; масса раствора {fmt(total, 2)} г ⇒ ω ≈ {ans} %.'
+    wrong = W([exact * total / (total + (r * M("CO2") if salt in ("CaCO3", "MgCO3", "BaCO3") else 20)),
+               left[target] * M(target) / (mres + mr + water) * 100, exact * 2], 1)
+    eqs = [eqp([salt], [solid] + [g for g, _ in gases])[1]]
+    return pcard('ch-ege-34-decomp', q, ans, e, p=p, wrong=wrong, eqs=eqs)
+
+
+ATOM34 = [  # (X, Y, кислота, соль, элементы отношения)
+    ('Zn', 'ZnCO3', 'H2SO4', 'ZnSO4', ('Zn', 'O')), ('Mg', 'MgCO3', 'HCl', 'MgCl2', ('Mg', 'O')),
+    ('Ca', 'CaCO3', 'HCl', 'CaCl2', ('Ca', 'O')), ('MgO', 'MgCO3', 'HCl', 'MgCl2', ('O', 'Mg')),
+    ('Na2CO3', 'NaHCO3', 'HCl', 'NaCl', ('Na', 'C')), ('Al', 'Al2O3', 'HCl', 'AlCl3', ('Al', 'O')),
+    ('Fe', 'FeO', 'H2SO4', 'FeSO4', ('Fe', 'O')), ('K2CO3', 'KHCO3', 'HNO3', 'KNO3', ('K', 'C')),
+    ('CaO', 'CaCO3', 'HNO3', 'Ca(NO3)2', ('O', 'Ca')), ('Zn', 'ZnO', 'HCl', 'ZnCl2', ('Zn', 'O')),
+]
+ATOM_G = {'Zn': 'цинка', 'O': 'кислорода', 'Mg': 'магния', 'Ca': 'кальция', 'C': 'углерода', 'Na': 'натрия',
+          'Al': 'алюминия', 'Fe': 'железа', 'K': 'калия', 'H': 'водорода'}
+NAME34 = {'Zn': 'цинк', 'ZnCO3': 'карбонат цинка', 'Mg': 'магний', 'MgCO3': 'карбонат магния', 'Ca': 'кальций',
+          'CaCO3': 'карбонат кальция', 'MgO': 'оксид магния', 'Na2CO3': 'карбонат натрия', 'NaHCO3': 'гидрокарбонат натрия',
+          'Al': 'алюминий', 'Al2O3': 'оксид алюминия', 'Fe': 'железо', 'FeO': 'оксид железа(II)', 'K2CO3': 'карбонат калия',
+          'KHCO3': 'гидрокарбонат калия', 'CaO': 'оксид кальция', 'ZnO': 'оксид цинка'}
+
+
+def _acid_rx(s, acid, salt):
+    """Уравнение взаимодействия компонента смеси с кислотой (продукты подбираем по составу)."""
+    el = parse_formula(s)
+    prods = [salt]
+    if 'C' in el:
+        prods.append('CO2')
+    if 'O' in el or 'H' in el:
+        prods.append('H2O')
+    if 'O' not in el:
+        prods.append('H2')
+    if s in ('Na2CO3', 'K2CO3', 'NaHCO3', 'KHCO3', 'ZnCO3', 'MgCO3', 'CaCO3', 'MgO', 'CaO', 'ZnO', 'Al2O3', 'FeO'):
+        prods = [p_ for p_ in prods if p_ != 'H2']
+    return [s, acid], prods
+
+
+def _solve_34_atoms(p):
+    X, Y, acid, salt = p['X'], p['Y'], p['acid'], p['salt']
+    e1, e2 = p['els']
+    a1, a2 = Fr(p['ratio'][0]), Fr(p['ratio'][1])
+    cx, cy = parse_formula(X), parse_formula(Y)
+    # a·(cx[e1]·a2 − cx[e2]·a1) = b·(cy[e2]·a1 − cy[e1]·a2); m = a·M(X) + b·M(Y)
+    kx = cx.get(e1, 0) * a2 - cx.get(e2, 0) * a1
+    ky = cy.get(e2, 0) * a1 - cy.get(e1, 0) * a2
+    t = Fr(ky, kx) if kx else None            # a = t·b
+    m = Fr(p['m'])
+    b = m / (t * Mi(X) + Mi(Y))
+    a = t * b
+    # газы и соль по уравнениям
+    gas_m, salt_n, acid_used = Fr(0), Fr(0), Fr(0)
+    for s, n in ((X, a), (Y, b)):
+        lhs, rhs = _acid_rx(s, acid, salt)
+        k = coef(lhs, rhs)
+        for g in ('H2', 'CO2'):
+            if g in rhs:
+                gas_m += n * Fr(k[g], k[s]) * Mi(g)
+        salt_n += n * Fr(k[salt], k[s])
+        acid_used += n * Fr(k[acid], k[s])
+    total = m + Fr(p['ms']) - gas_m
+    if p['target'] == 'salt':
+        return rs(salt_n * Mi(salt) / total * 100, 1)
+    return rs((Fr(p['ms']) * Fr(p['ws']) / 100 - acid_used * Mi(acid)) / total * 100, 1)
+
+
+@proto('ch-ege-34-atoms', 'ЕГЭ', 34, 'Смесь веществ с заданным соотношением числа атомов, растворение в кислоте',
+       invariant='из отношения числа атомов двух элементов и массы смеси составляют систему и находят количества '
+                 'компонентов; затем реакции с кислотой, масса раствора за вычетом газов',
+       varies='смесь (Zn + ZnCO₃, Mg + MgCO₃, MgO + MgCO₃, Na₂CO₃ + NaHCO₃, Al + Al₂O₃, Fe + FeO …), отношение атомов, '
+              'кислота, что найти (доля соли или оставшейся кислоты)',
+       answer_rule='массовая доля, %, до десятых',
+       mistakes=['атомное отношение перепутали с мольным отношением веществ', 'не вычли массу выделившихся газов',
+                 'забыли, что кислота была в избытке'],
+       solve=_solve_34_atoms, kes=['5.4', '5.6', '5.7'],
+       fidelity=fid('в КИМ — развёрнутое решение; в тренажёре — число, %', 'как задания банка № 34 «Смесь …, в которой '
+                    'соотношение числа атомов … равно …, растворили в …» — формулировка своя', 'В', 22,
+                    'массы смесей 5–80 г, растворы кислот 100–800 г', 'система уравнений по атомам', ['5.4', '5.6', '5.7'],
+                    '4 балла в КИМ'))
+def g34_atoms(rng):
+    X, Y, acid, salt, (e1, e2) = pick(rng, ATOM34)
+    a = Fr(rng.choice(range(1, 13)), 20)
+    b = Fr(rng.choice(range(1, 13)), 20)
+    cx, cy = parse_formula(X), parse_formula(Y)
+    n1 = a * cx.get(e1, 0) + b * cy.get(e1, 0)
+    n2 = a * cx.get(e2, 0) + b * cy.get(e2, 0)
+    ratio = n1 / n2
+    if ratio.numerator > 20 or ratio.denominator > 20 or ratio == 1:
+        raise Retry
+    m = a * M(X) + b * M(Y)
+    if not nice(m, 2):
+        raise Retry
+    need = Fr(0)
+    gas_m, salt_n = Fr(0), Fr(0)
+    eqs = []
+    for s, n in ((X, a), (Y, b)):
+        lhs, rhs = _acid_rx(s, acid, salt)
+        k = coef(lhs, rhs)
+        eqs.append(eqp(lhs, rhs)[1])
+        need += n * Fr(k[acid], k[s])
+        salt_n += n * Fr(k[salt], k[s])
+        for g in ('H2', 'CO2'):
+            if g in rhs:
+                gas_m += n * Fr(k[g], k[s]) * M(g)
+    nacid = need + Fr(rng.choice(range(1, 21)), 20)
+    ws, ms = _nice_sol(rng, nacid, acid, (5, 8, 10, 12, 15, 20, 25))
+    target = rng.choice(['salt', 'salt', 'acid'])
+    total = m + ms - gas_m
+    exact = (salt_n * M(salt) if target == 'salt' else (nacid - need) * M(acid)) / total * 100
+    ans = rnd(exact, 1)
+    rt = f'{ratio.numerator} : {ratio.denominator}'
+    q = (f'Смесь, состоящая из {NAME34[X].split()[0] if False else NAME34[X]}а'[:0] +
+         f'Имеется смесь веществ {pretty(X)} и {pretty(Y)} ({NAME34[X]} и {NAME34[Y]}) массой {ru(m)} г, в которой '
+         f'число атомов {ATOM_G[e1]} относится к числу атомов {ATOM_G[e2]} как {rt}. Смесь полностью растворили в '
+         f'{ru(ms)} г {ws} %-ного раствора {_gw(acid)}. Рассчитайте массовую долю '
+         f'{_gw(salt) if target == "salt" else _gw(acid)} в образовавшемся растворе. (Запишите число с точностью до десятых.)')
+    e = f'Пусть n({pretty(X)}) = a, n({pretty(Y)}) = b: отношение атомов даёт a : b = {fmt(a / b, 3)}, масса смеси — ' \
+        f'a = {fmt(a, 3)}, b = {fmt(b, 3)} моль. Масса раствора = {ru(m)} + {ru(ms)} − m(газов) = {fmt(total, 2)} г ⇒ ω ≈ {ans} %.'
+    wrong = W([exact * total / (m + ms), exact * total / ms, exact / 2], 1)
+    p = dict(X=X, Y=Y, acid=acid, salt=salt, els=[e1, e2], ratio=[ratio.numerator, ratio.denominator], m=str(m),
+             ms=str(ms), ws=ws, target=target)
+    return pcard('ch-ege-34-atoms', q, ans, e, p=p, wrong=wrong, eqs=eqs)
+
+
+HYD34_METALS = [('Fe', 'железных опилок', 'FeSO4'), ('Zn', 'цинковой пыли', 'ZnSO4'), ('Mg', 'магниевой стружки', 'MgSO4')]
+
+
+def _solve_34_hyd(p):
+    n0 = Fr(p['mh']) / Mi('CuSO4·5H2O')
+    S0 = n0 * Mi('CuSO4') * 100 / Fr(p['w1'])
+    met, msalt = p['metal'], p['msalt']
+    nM = Fr(p['mM']) / Mi(met)
+    nA = Fr(p['mA']) * Fr(p['wA']) / 100 / Mi('H2SO4')
+    rest = nM - n0
+    react = min(rest, nA)
+    total = S0 + (n0 + react) * Mi(met) - n0 * Mi('Cu') + Fr(p['mA']) - react * Mi('H2')
+    if p['target'] == 'salt':
+        return rs((n0 + react) * Mi(msalt) / total * 100, 1)
+    return rs((nA - react) * Mi('H2SO4') / total * 100, 1)
+
+
+@proto('ch-ege-34-hydrate', 'ЕГЭ', 34, 'Раствор кристаллогидрата, вытеснение металла, затем кислота',
+       invariant='n(соли) = n(кристаллогидрата); масса раствора по заданной доле; металл вытесняет медь (избыток металла '
+                 'затем растворяется в кислоте); масса раствора: + растворившийся металл − медь − водород + раствор кислоты',
+       varies='металл (Fe, Zn, Mg), массы купороса и металла, доля исходного раствора, раствор серной кислоты (избыток или '
+              'недостаток), что найти (доля соли или кислоты)',
+       answer_rule='массовая доля, %, до десятых',
+       mistakes=['массу кристаллогидрата приняли за массу соли', 'не учли, что медь выпадает из раствора',
+                 'не прибавили массу растворившегося металла'],
+       solve=_solve_34_hyd, kes=['1.11', '5.4', '5.6', '5.7'],
+       fidelity=fid('в КИМ — развёрнутое решение; в тренажёре — число, %', 'как задание банка № 34 «Медный купорос '
+                    'массой … растворили в воде и получили раствор с массовой долей соли …» — формулировка своя', 'В', 22,
+                    'купорос 10–60 г, металл 3–20 г, кислота 50–300 г', 'медь не входит в раствор; избыток металла',
+                    ['1.11', '5.4', '5.6', '5.7'], '4 балла в КИМ'))
+def g34_hydrate(rng):
+    met, mtxt, msalt = pick(rng, HYD34_METALS)
+    n0 = Fr(rng.choice(range(2, 13)), 40)             # 0,05–0,3 моль
+    mh = n0 * M('CuSO4·5H2O')
+    w1 = pick(rng, [5, 8, 10, 12, 16, 20])
+    S0 = n0 * M('CuSO4') * 100 / w1
+    if S0 <= mh or not nice(S0, 2):
+        raise Retry
+    nM = n0 + Fr(rng.choice(range(1, 9)), 40)
+    mM = nM * M(met)
+    if not nice(mM, 2):
+        raise Retry
+    rest = nM - n0
+    nA = rest * Fr(rng.choice([1, 2, 3, 4, 6, 8]), 4)
+    wA, mA = _nice_sol(rng, nA, 'H2SO4', (5, 9.8, 10, 19.6, 20, 24.5))
+    target = 'salt' if nA <= rest or rng.random() < 0.6 else 'acid'
+    p = dict(mh=str(mh), w1=w1, metal=met, msalt=msalt, mM=str(mM), mA=str(mA), wA=str(wA), target=target)
+    react = min(rest, nA)
+    total = S0 + (n0 + react) * M(met) - n0 * M('Cu') + mA - react * M('H2')
+    exact = ((n0 + react) * M(msalt) if target == 'salt' else (nA - react) * M('H2SO4')) / total * 100
+    ans = rnd(exact, 1)
+    q = (f'Медный купорос (CuSO₄·5H₂O) массой {ru(mh)} г растворили в воде и получили раствор, массовая доля сульфата '
+         f'меди(II) в котором равна {w1} %. В раствор внесли {ru(mM)} г {mtxt}; после окончания реакции к смеси прилили '
+         f'{ru(mA)} г раствора серной кислоты с массовой долей {ru(wA)} %. Рассчитайте массовую долю '
+         f'{_gw(msalt) if target == "salt" else "серной кислоты"} в конечном растворе. (Запишите число с точностью до десятых.)')
+    e = f'n(CuSO₄) = {fmt(n0, 3)} моль; m(р-ра) = {fmt(S0, 2)} г; {pretty(met)} ({fmt(nM, 3)} моль) вытесняет медь, остаток ' \
+        f'{fmt(rest, 3)} моль реагирует с кислотой ({fmt(nA, 3)} моль) ⇒ ω ≈ {ans} %.'
+    wrong = W([exact * total / (total + n0 * M('Cu')), (n0 + react) * M(msalt) / (mh + mA + mM) * 100 if target == 'salt'
+               else exact * 2, exact / 2], 1)
+    eqs = [eqp([met, 'CuSO4'], [msalt, 'Cu'])[1], eqp([met, 'H2SO4'], [msalt, 'H2'])[1]]
+    return pcard('ch-ege-34-hydrate', q, ans, e, p=p, wrong=wrong, eqs=eqs)
+
+
+SOLUB34 = {  # соль: (растворимости, г на 100 г воды, при разных температурах; реакции с реагентом: (реагент, продукт в р-ре, осадок/газ))
+    'Na2CO3': ([Fr(218, 10), Fr(307, 10), Fr(397, 10)], [('HCl', 'NaCl', 'CO2'), ('CaCl2', 'NaCl', 'CaCO3')]),
+    'CuSO4': ([Fr(207, 10), Fr(25), Fr(285, 10)], [('NaOH', 'Na2SO4', 'Cu(OH)2')]),
+    'BaCl2': ([Fr(358, 10), Fr(381, 10), Fr(408, 10)], [('Na2SO4', 'NaCl', 'BaSO4')]),
+    'MgSO4': ([Fr(351, 10), Fr(389, 10), Fr(445, 10)], [('KOH', 'K2SO4', 'Mg(OH)2')]),
+    'AgNO3': ([Fr(216), Fr(256), Fr(300)], [('NaCl', 'NaNO3', 'AgCl')]),
+    'K2CO3': ([Fr(111), Fr(114), Fr(117)], [('HNO3', 'KNO3', 'CO2')]),
+}
+
+
+def _solve_34_solub(p):
+    S, W = Fr(p['S']), Fr(p['W'])
+    sat = W * (100 + S) / 100
+    ns = Fr(p['mp']) * S / (100 + S) / Mi(p['salt'])
+    lhs, rhs = [p['salt'], p['reag']], [p['prod'], p['out']] + (['H2O'] if p['out'] == 'CO2' else [])
+    if p['salt'] in ('Na2CO3', 'BaCl2', 'CuSO4', 'MgSO4', 'AgNO3') and p['out'] != 'CO2':
+        rhs = [p['out'], p['prod']]
+    k = coef(lhs, rhs)
+    out_m = ns * Fr(k[p['out']], k[p['salt']]) * Mi(p['out'])
+    total = Fr(p['mp']) + Fr(p['mr']) - out_m
+    nr = Fr(p['mr']) * Fr(p['wr']) / 100 / Mi(p['reag'])
+    if p['target'] == 'prod':
+        return rs(ns * Fr(k[p['prod']], k[p['salt']]) * Mi(p['prod']) / total * 100, 1)
+    return rs((nr - ns * Fr(k[p['reag']], k[p['salt']])) * Mi(p['reag']) / total * 100, 1)
+
+
+@proto('ch-ege-34-solub', 'ЕГЭ', 34, 'Насыщенный раствор (растворимость), порция раствора и реакция',
+       invariant='в насыщенном растворе m(соли) : m(воды) = S : 100; масса соли в порции = m(порции)·S/(100 + S); далее '
+                 'реакция с раствором реагента, масса раствора без осадка/газа',
+       varies='соль и её растворимость, масса воды для приготовления, доля отобранной порции, реагент, что найти',
+       answer_rule='массовая доля, %, до десятых',
+       mistakes=['приняли растворимость за массовую долю', 'не вычли осадок или газ', 'посчитали всю соль, а не порцию'],
+       solve=_solve_34_solub, kes=['1.11', '5.6', '5.7'],
+       fidelity=fid('в КИМ — развёрнутое решение; в тренажёре — число, %', 'как задания банка № 34 «Растворимость … при '
+                    'некоторой температуре составляет … г на 100 г воды …» — формулировка своя', 'В', 22,
+                    'растворимости справочные (20–40 °C), вода 100–400 г', 'растворимость ≠ массовая доля',
+                    ['1.11', '5.6', '5.7'], '4 балла в КИМ'))
+def g34_solub(rng):
+    salt = pick(rng, list(SOLUB34))
+    Ss, rx = SOLUB34[salt]
+    S = pick(rng, Ss)
+    reag, prod, out = pick(rng, rx)
+    W = Fr(rng.choice(range(100, 401, 50)))
+    sat = W * (100 + S) / 100
+    frac = Fr(1, rng.choice([2, 3, 4, 5]))
+    mp = sat * frac
+    if not nice(mp, 2):
+        raise Retry
+    ns = mp * S / (100 + S) / M(salt)
+    lhs = [salt, reag]
+    rhs = [prod, out] + (['H2O'] if out == 'CO2' else [])
+    k = coef(lhs, rhs)
+    need = ns * Fr(k[reag], k[salt])
+    nr = need * Fr(rng.choice([11, 12, 13, 15, 16, 18, 20]), 10)
+    wr = pick(rng, [5, 8, 10, 12, 15, 20, 25])
+    mr = nr * M(reag) * 100 / wr
+    mr = Fr(math.ceil(mr))
+    nr = mr * wr / 100 / M(reag)
+    target = rng.choice(['prod', 'prod', 'reag'])
+    out_m = ns * Fr(k[out], k[salt]) * M(out)
+    total = mp + mr - out_m
+    exact = (ns * Fr(k[prod], k[salt]) * M(prod) if target == 'prod' else (nr - need) * M(reag)) / total * 100
+    ans = rnd(exact, 1)
+    part = {Fr(1, 2): 'половину', Fr(1, 3): 'третью часть', Fr(1, 4): 'четверть', Fr(1, 5): 'пятую часть'}[frac]
+    q = (f'Растворимость {_gw(salt)} при некоторой температуре равна {ru(S)} г на 100 г воды. При этой температуре '
+         f'приготовили насыщенный раствор, использовав {ru(W)} г воды. {cap(part)} полученного раствора ({ru(mp)} г) '
+         f'смешали с {ru(mr)} г {wr} %-ного раствора {_gw(reag)}. Рассчитайте массовую долю '
+         f'{_gw(prod) if target == "prod" else _gw(reag)} в образовавшемся растворе. (Запишите число с точностью до десятых.)')
+    e = f'm({pretty(salt)}) в порции = {ru(mp)}·{ru(S)}/(100 + {ru(S)}) ⇒ n = {fmt(ns, 4)} моль; реакция с {pretty(reag)}, ' \
+        f'из раствора уходит {pretty(out)} ({fmt(out_m, 2)} г) ⇒ ω ≈ {ans} %.'
+    wrong = W([exact * total / (mp + mr), exact * (100 + S) / 100, exact * 2], 1)
+    p = dict(salt=salt, reag=reag, prod=prod, out=out, S=str(S), W=str(W), mp=str(mp), mr=str(mr), wr=wr, target=target)
+    return pcard('ch-ege-34-solub', q, ans, e, p=p, wrong=wrong, eq=eqp(lhs, rhs)[1])
+
+
+def _solve_34_oleum(p):
+    m, pr = Fr(p['m']), Fr(p['p'])
+    n = m * (100 - pr) / 100 / Mi('H2SO4') + m * pr / 100 / Mi('SO3')
+    W = Fr(p['W'])
+    if p['mode'] == 'acid':
+        return rs(n * Mi('H2SO4') / (m + W) * 100, 1)
+    nr = Fr(p['mr']) * Fr(p['wr']) / 100 / Mi(p['reag'])
+    if p['reag'] == 'KOH':
+        total = m + W + Fr(p['mr'])
+        val = n * Mi('K2SO4') if p['target'] == 'K2SO4' else (nr - 2 * n) * Mi('KOH')
+        return rs(val / total * 100, 1)
+    total = m + W + Fr(p['mr']) - n * Mi('BaSO4')
+    val = 2 * n * Mi('HCl') if p['target'] == 'HCl' else (nr - n) * Mi('BaCl2')
+    return rs(val / total * 100, 1)
+
+
+@proto('ch-ege-34-oleum', 'ЕГЭ', 34, 'Олеум: растворение в воде и дальнейшая реакция',
+       invariant='олеум = H₂SO₄ + SO₃; SO₃ + H₂O = H₂SO₄; n(H₂SO₄) общее; масса раствора = олеум + вода (+ раствор '
+                 'реагента − осадок)',
+       varies='масса олеума и доля свободного SO₃, масса воды, второй раствор (KOH, BaCl₂), что найти',
+       answer_rule='массовая доля, %, до десятых',
+       mistakes=['не учли серную кислоту из SO₃', 'посчитали массу SO₃ как массу H₂SO₄', 'не вычли осадок BaSO₄'],
+       solve=_solve_34_oleum, kes=['5.4', '5.6', '5.7'],
+       fidelity=fid('в КИМ — развёрнутое решение; в тренажёре — число, %', 'как задание демоверсии 2027 № 34 (олеум + '
+                    'раствор хлорида бария) — прямая задача, формулировка своя', 'В', 22, 'олеум 5–60 г, SO₃ 10–40 %, '
+                    'растворы 100–500 г', 'SO₃ даёт дополнительную H₂SO₄', ['5.4', '5.6', '5.7'], '4 балла в КИМ'))
+def g34_oleum(rng):
+    pr = pick(rng, [10, 16, 20, 25, 30, 32, 40])
+    m = Fr(rng.choice(range(5, 61)))
+    n = m * (100 - pr) / 100 / M('H2SO4') + m * pr / 100 / M('SO3')
+    W = Fr(rng.choice(range(50, 401, 10)))
+    mode = rng.choice(['acid', 'KOH', 'BaCl2', 'BaCl2'])
+    if mode == 'acid':
+        exact = n * M('H2SO4') / (m + W) * 100
+        p = dict(m=str(m), p=pr, W=str(W), mode='acid')
+        q = (f'Олеум массой {ru(m)} г, массовая доля оксида серы(VI) в котором равна {pr} %, растворили в {ru(W)} г воды. '
+             f'Рассчитайте массовую долю серной кислоты в полученном растворе. (Запишите число с точностью до десятых.)')
+        eqs = [eqp(['SO3', 'H2O'], ['H2SO4'])[1]]
+        wrong = W([m * (100 - pr) / 100 / (m + W) * 100, n * M('H2SO4') / W * 100, m / (m + W) * 100], 1)
+    else:
+        reag = 'KOH' if mode == 'KOH' else 'BaCl2'
+        need = 2 * n if reag == 'KOH' else n
+        nr = need * Fr(rng.choice([11, 12, 13, 15, 16, 18, 20]), 10)
+        wr = pick(rng, [5, 8, 10, 12, 15, 20])
+        mr = Fr(math.ceil(nr * M(reag) * 100 / wr))
+        nr = mr * wr / 100 / M(reag)
+        target = pick(rng, ['K2SO4', 'KOH'] if reag == 'KOH' else ['HCl', 'BaCl2'])
+        if reag == 'KOH':
+            total = m + W + mr
+            val = n * M('K2SO4') if target == 'K2SO4' else (nr - 2 * n) * M('KOH')
+            eqs = [eqp(['SO3', 'H2O'], ['H2SO4'])[1], eqp(['H2SO4', 'KOH'], ['K2SO4', 'H2O'])[1]]
+        else:
+            total = m + W + mr - n * M('BaSO4')
+            val = 2 * n * M('HCl') if target == 'HCl' else (nr - n) * M('BaCl2')
+            eqs = [eqp(['SO3', 'H2O'], ['H2SO4'])[1], eqp(['H2SO4', 'BaCl2'], ['BaSO4', 'HCl'])[1]]
+        exact = val / total * 100
+        p = dict(m=str(m), p=pr, W=str(W), mode='react', reag=reag, mr=str(mr), wr=wr, target=target)
+        tname = {'K2SO4': 'сульфата калия', 'KOH': 'гидроксида калия', 'HCl': 'хлороводорода', 'BaCl2': 'хлорида бария'}[target]
+        q = (f'Порцию олеума массой {ru(m)} г (массовая доля свободного оксида серы(VI) {pr} %) растворили в {ru(W)} мл '
+             f'воды. Полученный раствор прилили к {ru(mr)} г {wr} %-ного раствора {_gw(reag)}. Рассчитайте массовую '
+             f'долю {tname} в образовавшемся растворе. (Запишите число с точностью до десятых.)')
+        wrong = W([val / (m + W + mr) * 100 if reag == 'BaCl2' else exact * 2,
+                   exact * (m + W + mr) / (W + mr), exact / 2], 1)
+    if exact <= 0:
+        raise Retry
+    ans = rnd(exact, 1)
+    e = f'n(H₂SO₄) = {ru(m)}·{100 - pr}/100/98 + {ru(m)}·{pr}/100/80 = {fmt(n, 4)} моль (SO₃ + H₂O = H₂SO₄) ⇒ ω ≈ {ans} %.'
+    return pcard('ch-ege-34-oleum', q, ans, e, p=p, wrong=wrong, eqs=eqs)
+
+
+# ======================================================================= ОГЭ 18. Массовая доля элемента
+
+OGE18 = {  # сюжет → [(формула, в чём (предл. п.), вводная фраза, элементы)]
+    'salt': [
+        ('NH4NO3', 'нитрате аммония', 'Нитрат аммония (аммиачная селитра) — одно из самых распространённых азотных удобрений.', ['N']),
+        ('KNO3', 'нитрате калия', 'Калийная селитра — удобрение, в котором есть сразу два элемента питания растений.', ['K', 'N']),
+        ('Ca(NO3)2', 'нитрате кальция', 'Кальциевую селитру вносят под овощные культуры весной.', ['N', 'Ca']),
+        ('NaNO3', 'нитрате натрия', 'Натриевая (чилийская) селитра — природное азотное удобрение.', ['N', 'Na']),
+        ('(NH4)2SO4', 'сульфате аммония', 'Сульфат аммония применяют как азотно-серное удобрение.', ['N', 'S']),
+        ('CO(NH2)2', 'карбамиде (мочевине)', 'Карбамид — самое концентрированное твёрдое азотное удобрение.', ['N']),
+        ('NH4H2PO4', 'дигидрофосфате аммония', 'Аммофос — сложное азотно-фосфорное удобрение.', ['N', 'P']),
+        ('(NH4)2HPO4', 'гидрофосфате аммония', 'Диаммофос используют для подкормки ягодных культур.', ['N', 'P']),
+        ('Ca(H2PO4)2', 'дигидрофосфате кальция', 'Двойной суперфосфат — фосфорное удобрение.', ['P', 'Ca']),
+        ('CaHPO4', 'гидрофосфате кальция', 'Преципитат — фосфорное удобрение и кормовая добавка.', ['P', 'Ca']),
+        ('KCl', 'хлориде калия', 'Хлорид калия — основное калийное удобрение.', ['K']),
+        ('K2SO4', 'сульфате калия', 'Сульфат калия вносят под культуры, чувствительные к хлору.', ['K', 'S']),
+        ('K2CO3', 'карбонате калия', 'Поташ (карбонат калия) содержится в древесной золе.', ['K']),
+        ('KH2PO4', 'дигидрофосфате калия', 'Монофосфат калия — водорастворимое удобрение для теплиц.', ['K', 'P']),
+        ('NaHCO3', 'гидрокарбонате натрия', 'Питьевую соду используют в кулинарии.', ['Na', 'C']),
+        ('KMnO4', 'перманганате калия', 'Раствор перманганата калия применяют для дезинфекции.', ['K', 'Mn', 'O']),
+        ('NaF', 'фториде натрия', 'Фторид натрия добавляют в зубные пасты.', ['F']),
+        ('Na2PO3F', 'монофторофосфате натрия', 'Монофторофосфат натрия — фторсодержащий компонент зубных паст.', ['F', 'P']),
+        ('KIO3', 'иодате калия', 'Иодат калия добавляют в поваренную соль для профилактики дефицита иода.', ['I']),
+        ('CaCO3', 'карбонате кальция', 'Карбонат кальция входит в состав препаратов кальция.', ['Ca']),
+        ('Na3PO4', 'фосфате натрия', 'Фосфат натрия используют как пищевую добавку.', ['P', 'Na']),
+        ('NaNO2', 'нитрите натрия', 'Нитрит натрия — пищевая добавка в мясных продуктах.', ['N']),
+        ('ZnSO4', 'сульфате цинка', 'Сульфат цинка входит в состав микроудобрений.', ['Zn']),
+        ('CuSO4', 'сульфате меди(II)', 'Сульфат меди(II) применяют для обработки растений.', ['Cu']),
+        ('H3BO3', 'борной кислоте', 'Борная кислота — антисептик и микроудобрение.', ['B']),
+        ('AlPO4', 'фосфате алюминия', 'Фосфат алюминия — действующее вещество некоторых антацидов.', ['Al', 'P']),
+        ('Mg(OH)2', 'гидроксиде магния', 'Гидроксид магния применяют при повышенной кислотности желудка.', ['Mg']),
+    ],
+    'hydrate': [
+        ('FeSO4·7H2O', 'гептагидрате сульфата железа(II)', 'Гептагидрат сульфата железа(II) входит в препараты железа.', ['Fe']),
+        ('FeCl2·4H2O', 'тетрагидрате хлорида железа(II)', 'Тетрагидрат хлорида железа(II) используют в лекарствах.', ['Fe']),
+        ('CuSO4·5H2O', 'медном купоросе (CuSO₄·5H₂O)', 'Медный купорос применяют в садоводстве.', ['Cu', 'S']),
+        ('ZnSO4·7H2O', 'гептагидрате сульфата цинка', 'Гептагидрат сульфата цинка — источник цинка в витаминах.', ['Zn']),
+        ('MgSO4·7H2O', 'гептагидрате сульфата магния', 'Английскую (горькую) соль применяют в медицине.', ['Mg']),
+        ('Na2B4O7·10H2O', 'декагидрате тетрабората натрия (буре)', 'Буру используют в средствах от насекомых.', ['B', 'Na']),
+        ('CaSO4·2H2O', 'дигидрате сульфата кальция (гипсе)', 'Гипс применяют в строительстве и медицине.', ['Ca', 'S']),
+        ('Na2CO3·10H2O', 'кристаллической соде (Na₂CO₃·10H₂O)', 'Кристаллическую соду используют как моющее средство.', ['Na']),
+        ('KAl(SO4)2·12H2O', 'алюмокалиевых квасцах', 'Алюмокалиевые квасцы применяют как кровоостанавливающее средство.', ['Al', 'K']),
+        ('CaCl2·6H2O', 'гексагидрате хлорида кальция', 'Хлорид кальция используют для приготовления растворов для инъекций.', ['Ca']),
+    ],
+    'mineral': [
+        ('CuFeS2', 'халькопирите (CuFeS₂)', 'Халькопирит — важнейший минерал медных руд.', ['Cu', 'Fe', 'S']),
+        ('Cu2S', 'халькозине (Cu₂S)', 'Халькозин — медная руда.', ['Cu']),
+        ('Cu2O', 'куприте (Cu₂O)', 'Куприт — красный минерал меди.', ['Cu']),
+        ('Cu2(OH)2CO3', 'малахите (Cu₂(OH)₂CO₃)', 'Малахит — поделочный камень и медная руда.', ['Cu']),
+        ('FeS2', 'пирите (FeS₂)', 'Пирит служит сырьём для получения серной кислоты.', ['Fe', 'S']),
+        ('Fe3O4', 'магнетите (Fe₃O₄)', 'Магнетит — богатая железная руда.', ['Fe']),
+        ('Fe2O3', 'гематите (Fe₂O₃)', 'Гематит (красный железняк) — железная руда.', ['Fe']),
+        ('ZnS', 'сфалерите (ZnS)', 'Сфалерит (цинковая обманка) — главная руда цинка.', ['Zn', 'S']),
+        ('PbS', 'галените (PbS)', 'Галенит — основной минерал свинца.', ['Pb']),
+        ('CaCO3·MgCO3', 'доломите (CaCO₃·MgCO₃)', 'Доломитовую муку вносят для раскисления почв.', ['Ca', 'Mg']),
+        ('CaF2', 'флюорите (CaF₂)', 'Флюорит используют в металлургии как флюс.', ['F', 'Ca']),
+        ('Ca5(PO4)3F', 'фторапатите (Ca₅(PO₄)₃F)', 'Фторапатит — сырьё для производства фосфорных удобрений.', ['P', 'F']),
+        ('Na3AlF6', 'криолите (Na₃AlF₆)', 'Криолит применяют при получении алюминия.', ['Al', 'F']),
+        ('KCl·MgCl2·6H2O', 'карналлите (KCl·MgCl₂·6H₂O)', 'Карналлит — сырьё для получения магния и калийных удобрений.', ['K', 'Mg']),
+        ('MnO2', 'пиролюзите (MnO₂)', 'Пиролюзит — основная марганцевая руда.', ['Mn']),
+        ('Na2O·CaO·6SiO2', 'стекле состава Na₂O·CaO·6SiO₂', 'Обычное оконное стекло имеет состав Na₂O·CaO·6SiO₂.', ['Na', 'Ca', 'Si']),
+        ('K2O·CaO·6SiO2', 'стекле состава K₂O·CaO·6SiO₂', 'Тугоплавкое химическое стекло имеет состав K₂O·CaO·6SiO₂.', ['K', 'Si']),
+        ('K2O·PbO·6SiO2', 'стекле состава K₂O·PbO·6SiO₂', 'Хрусталь содержит оксид свинца: его состав K₂O·PbO·6SiO₂.', ['Pb', 'K', 'Si']),
+    ],
+}
+EL_G = {'N': 'азота', 'K': 'калия', 'Ca': 'кальция', 'Na': 'натрия', 'S': 'серы', 'P': 'фосфора', 'C': 'углерода',
+        'Mn': 'марганца', 'O': 'кислорода', 'F': 'фтора', 'I': 'иода', 'Zn': 'цинка', 'Cu': 'меди', 'B': 'бора',
+        'Al': 'алюминия', 'Mg': 'магния', 'Fe': 'железа', 'Pb': 'свинца', 'Si': 'кремния', 'H': 'водорода', 'Cl': 'хлора'}
+
+
+def _w_el(f, el):
+    return Fr(AR[el] * parse_formula(f)[el]) / M(f) * 100
+
+
+def _solve_oge18(p):
+    comp = parse_formula(p['f'])
+    return rs(Fr(AR[p['el']]) * comp[p['el']] * 100 / Mi(p['f']), p['dec'])
+
+
+def _g_oge18(rng, pid, key):
+    f, prep, intro, els = pick(rng, OGE18[key])
+    el = pick(rng, els)
+    dec = rng.choice([0, 0, 1, 1, 2])
+    w = _w_el(f, el)
+    ans = rnd(w, dec)
+    q = f'{intro} Вычислите в процентах массовую долю {EL_G[el]} в {prep}{"" if "(" in prep or "·" in prep else " (" + pretty(f) + ")"}. ' \
+        f'Запишите число с точностью до {PREC[dec]}.'
+    e = f'M({pretty(f)}) = {ru(M(f))} г/моль; ω({el}) = {parse_formula(f)[el]}·{ru(AR[el])}/{ru(M(f))}·100 % ≈ {ans} %.'
+    wrong = W([Fr(AR[el]) / M(f) * 100, Fr(parse_formula(f)[el], sum(parse_formula(f).values())) * 100, 100 - w], dec)
+    return pcard(pid, q, ans, e, p=dict(f=f, el=el, dec=dec), wrong=wrong)
+
+
+@proto('ch-oge-18-salt', 'ОГЭ', 18, 'Массовая доля элемента в удобрении, соли или пищевой добавке',
+       invariant='ω(Э) = n·Ar(Э)/Mr(вещества)·100 %',
+       varies='вещество (селитры, фосфаты, калийные соли, соли для медицины и быта), элемент, точность',
+       answer_rule='ω в %, с точностью до целых/десятых/сотых',
+       mistakes=['не умножили Ar на индекс', 'взяли долю по числу атомов', 'ошиблись в Mr'],
+       solve=_solve_oge18, kes=['1.4', '7.1'],
+       fidelity=fid('число, %, точность как указано', 'как зад. 18 демоверсии ОГЭ 2027: вводная фраза о веществе и '
+                    '«Вычислите в процентах массовую долю … Запишите число с точностью до …»', 'Б', 5,
+                    'вещества банка: нитраты, фосфаты, сульфаты, KMnO₄, фториды', 'индекс элемента', ['1.4', '7.1'],
+                    '1 балл'))
+def goge18_salt(rng):
+    return _g_oge18(rng, 'ch-oge-18-salt', 'salt')
+
+
+@proto('ch-oge-18-hydrate', 'ОГЭ', 18, 'Массовая доля элемента в кристаллогидрате (лекарство, бытовое средство)',
+       invariant='Mr кристаллогидрата включает кристаллизационную воду; ω(Э) = n·Ar/Mr·100 %',
+       varies='кристаллогидрат (купоросы, бура, гипс, квасцы, препараты железа), элемент, точность',
+       answer_rule='ω в %',
+       mistakes=['не учли воду в молярной массе', 'умножили Mr воды не на число молекул'],
+       solve=_solve_oge18, kes=['1.4', '7.1'],
+       fidelity=fid('число, %', 'как демоверсия ОГЭ 2027 (FeSO₄·7H₂O в препарате железа)', 'Б', 5,
+                    'кристаллогидраты банка (FeSO₄·7H₂O, FeCl₂·4H₂O, бура)', 'вода в составе кристаллогидрата',
+                    ['1.4', '7.1'], '1 балл'))
+def goge18_hydrate(rng):
+    return _g_oge18(rng, 'ch-oge-18-hydrate', 'hydrate')
+
+
+@proto('ch-oge-18-mineral', 'ОГЭ', 18, 'Массовая доля элемента в минерале или стекле',
+       invariant='Mr считают по формуле минерала (стекла, записанного через оксиды); ω(Э) = n·Ar/Mr·100 %',
+       varies='минерал (халькопирит, малахит, доломит, фторапатит, карналлит …) или стекло, элемент, точность',
+       answer_rule='ω в %',
+       mistakes=['для стекла не сложили массы всех оксидов', 'не учли число атомов элемента в формуле'],
+       solve=_solve_oge18, kes=['1.4', '7.1'],
+       fidelity=fid('число, %', 'как в банке ОГЭ (стекло «указанного состава», халькопирит)', 'Б', 5,
+                    'минералы и стёкла банка', 'формула через оксиды', ['1.4', '7.1'], '1 балл'))
+def goge18_mineral(rng):
+    return _g_oge18(rng, 'ch-oge-18-mineral', 'mineral')
+
+
+# ======================================================================= ОГЭ 19. Практический расчёт по тексту
+
+def _w_round(f, el, dec):
+    return Fr(fmt(_w_el(f, el), dec).replace(',', '.'))
+
+
+def _w_round_i(f, el, dec):
+    return Fr(rs(Fr(AR[el]) * parse_formula(f)[el] * 100 / Mi(f), dec).replace(',', '.'))
+
+
+DOSE19 = [  # (формула, название (род. п.), что (им. п.), элемент, масса вещества в единице, мг, единица, приёмов в сутки)
+    ('FeSO4·7H2O', 'гептагидрата сульфата железа(II)', 'капсула', 'Fe', [150, 200, 250, 300], 'капсуле'),
+    ('FeCl2·4H2O', 'тетрагидрата хлорида железа(II)', 'капсула', 'Fe', [100, 150, 200, 250], 'капсуле'),
+    ('ZnSO4·7H2O', 'гептагидрата сульфата цинка', 'таблетка', 'Zn', [20, 30, 40, 50, 60], 'таблетке'),
+    ('CaCO3', 'карбоната кальция', 'таблетка', 'Ca', [250, 400, 500, 600, 750, 1000], 'таблетке'),
+    ('MgSO4·7H2O', 'гептагидрата сульфата магния', 'таблетка', 'Mg', [100, 150, 200, 250], 'таблетке'),
+    ('KI', 'иодида калия', 'таблетка', 'I', [Fr(1, 10), Fr(13, 100), Fr(2, 10), Fr(26, 100)], 'таблетке'),
+    ('NaF', 'фторида натрия', 'таблетка', 'F', [Fr(11, 10), Fr(22, 10), Fr(5, 2)], 'таблетке'),
+    ('CaHPO4', 'гидрофосфата кальция', 'таблетка', 'Ca', [100, 150, 200, 250, 300], 'таблетке'),
+    ('CuSO4', 'сульфата меди(II)', 'таблетка', 'Cu', [2, 3, 4, 5], 'таблетке'),
+]
+AGRO19 = [  # (формула, название (род. п.), элемент, норма элемента, г на м², площадь)
+    ('NH4NO3', 'аммиачной селитры (NH₄NO₃)', 'N'), ('KNO3', 'калийной селитры (KNO₃)', 'K'),
+    ('Ca(NO3)2', 'кальциевой селитры (Ca(NO₃)₂)', 'N'), ('K2SO4', 'сульфата калия', 'K'), ('KCl', 'хлорида калия', 'K'),
+    ('Ca(H2PO4)2', 'двойного суперфосфата (Ca(H₂PO₄)₂)', 'P'), ('(NH4)2HPO4', 'гидрофосфата аммония', 'N'),
+    ('CO(NH2)2', 'карбамида (CO(NH₂)₂)', 'N'), ('K2CO3', 'карбоната калия (поташа)', 'K'),
+    ('CaCO3·MgCO3', 'доломитовой муки (CaCO₃·MgCO₃)', 'Mg'),
+]
+RAW19 = [  # (формула, название (род. п.), элемент, единица)
+    ('CuFeS2', 'халькопирита', 'Cu', 'кг'), ('Fe3O4', 'магнетита', 'Fe', 'т'), ('Fe2O3', 'гематита', 'Fe', 'т'),
+    ('ZnS', 'сфалерита', 'Zn', 'кг'), ('PbS', 'галенита', 'Pb', 'кг'), ('Cu2S', 'халькозина', 'Cu', 'кг'),
+    ('Na2O·CaO·6SiO2', 'стекла состава Na₂O·CaO·6SiO₂', 'Si', 'кг'), ('K2O·PbO·6SiO2', 'хрусталя состава K₂O·PbO·6SiO₂', 'Pb', 'кг'),
+    ('Na3AlF6', 'криолита', 'Al', 'кг'), ('Cu2(OH)2CO3', 'малахита', 'Cu', 'кг'),
+]
+
+
+def _solve_oge19(p):
+    w = _w_round_i(p['f'], p['el'], p['d18'])
+    t = p['type']
+    if t == 'dose':
+        x = Fr(p['m']) * Fr(p['k']) * Fr(p['days']) * w / 100
+    elif t == 'dose_inv':
+        x = Fr(p['norm']) / Fr(p['k']) / (w / 100)
+    elif t == 'agro':
+        x = Fr(p['norm']) * Fr(p['S']) / (w / 100) / Fr(p['div'])
+    elif t == 'raw':
+        x = Fr(p['mel']) / (w / 100)
+    elif t == 'raw_el':
+        x = Fr(p['mraw']) * w / 100
+    else:
+        x = Fr(p['m']) / Fr(p['V']) * Fr(p['V1']) * w / 100
+    return rs(x, p['dec'])
+
+
+def _intro18(f, el, d18):
+    return f'Массовую долю {EL_G[el]} в {pretty(f)} предварительно вычислите в процентах с точностью до {PREC[d18]} и ' \
+           f'используйте полученное значение в расчёте.'
+
+
+@proto('ch-oge-19-dose', 'ОГЭ', 19, 'Масса элемента, получаемого с лекарственным препаратом (и обратная задача)',
+       invariant='m(Э) = m(вещества)·ω(Э); ω берут из задания 18 с указанной там точностью',
+       varies='препарат (соли железа, цинка, кальция, магния, иода, фтора), масса вещества в таблетке, число таблеток, '
+              'срок; обратная задача — масса вещества в таблетке по суточной норме элемента',
+       answer_rule='масса в мг (г) с точностью, указанной в условии',
+       mistakes=['использовали массу таблетки вместо массы действующего вещества', 'не учли число приёмов/дней',
+                 'взяли точное значение ω вместо округлённого в задании 18'],
+       solve=_solve_oge19, kes=['1.4', '7.1', '6.2'],
+       fidelity=fid('число, мг или г, точность как указано', 'как зад. 19 демоверсии ОГЭ 2027 (капсула с FeSO₄·7H₂O, '
+                    'масса железа в сутки) — связка с № 18 указана в условии', 'Б', 5, 'массы 0,1–1000 мг, 1–3 приёма, '
+                    'до 30 дней', 'округлённая ω из № 18', ['1.4', '7.1', '6.2'], '1 балл'))
+def goge19_dose(rng):
+    f, gname, unit, el, masses, unit_p = pick(rng, DOSE19)
+    d18 = rng.choice([0, 1])
+    w = _w_round(f, el, d18)
+    dec = rng.choice([0, 1, 2])
+    if rng.random() < 0.65:
+        m = Fr(pick(rng, masses))
+        k = rng.choice([1, 2, 3])
+        days = rng.choice([1, 1, 7, 10, 14, 30])
+        x = m * k * days * w / 100
+        period = 'в сутки' if days == 1 else f'за {days} дней' if days not in (7, 14) else f'за {days // 7} недел{"ю" if days == 7 else "и"}'
+        q = (f'В каждой {unit_p} препарата содержится {ru(m)} мг {gname}; остальное — вещества, не содержащие {EL_G[el]}. '
+             f'Препарат принимают по {k} {unit + ("е" if unit == "таблетка" else "е") if k == 1 else ("таблетки" if unit == "таблетка" else "капсулы")} '
+             f'в сутки. Какую массу {EL_G[el]} (в миллиграммах) получает человек {period}? {_intro18(f, el, d18)} '
+             f'Запишите число с точностью до {PREC[dec]}.')
+        q = q.replace(f'по 1 {unit}е', f'по 1 {unit[:-1]}е').replace('по 1 таблеткае', 'по одной таблетке').replace('по 1 капсулае', 'по одной капсуле')
+        p = dict(type='dose', f=f, el=el, d18=d18, m=str(m), k=k, days=days, dec=dec)
+        e = f'ω({el}) ≈ {fmt(w, d18)} %; m({el}) = {ru(m)}·{k}·{days}·{fmt(w, d18)}/100 ≈ {rnd(x, dec)} мг.'
+        wrong = W([m * k * days, m * w / 100, x * 100 / w if w else None], dec)
+    else:
+        norm = Fr(pick(rng, [Fr(1, 10), Fr(15, 100), 1, 2, 5, 10, 12, 15, 20, 50, 100, 200, 300, 400]))
+        k = rng.choice([1, 2, 3])
+        x = norm / k / (w / 100)
+        q = (f'Суточная норма {EL_G[el]} для взрослого человека составляет {ru(norm)} мг. Её восполняют приёмом препарата, '
+             f'действующее вещество которого — {pretty(f)}; рекомендовано принимать {k} {"таблетку" if k == 1 else "таблетки"} '
+             f'в сутки. Вычислите массу {gname} (в миллиграммах), которую должна содержать одна таблетка. '
+             f'{_intro18(f, el, d18)} Запишите число с точностью до {PREC[dec]}.')
+        p = dict(type='dose_inv', f=f, el=el, d18=d18, norm=str(norm), k=k, dec=dec)
+        e = f'ω({el}) ≈ {fmt(w, d18)} %; на одну таблетку {ru(norm)}/{k} мг {el}; m(в-ва) = m({el})/ω ≈ {rnd(x, dec)} мг.'
+        wrong = W([norm / (w / 100), norm / k * w / 100, norm / k], dec)
+    ans = rnd(x, dec)
+    return pcard('ch-oge-19-dose', q, ans, e, p=p, wrong=wrong)
+
+
+@proto('ch-oge-19-agro', 'ОГЭ', 19, 'Масса удобрения для участка по норме внесения элемента (и корма для животных)',
+       invariant='m(удобрения) = норма(Э)·S/ω(Э); ω из задания 18 с указанной точностью',
+       varies='удобрение (селитры, фосфаты, калийные соли, карбамид, доломит), норма на 1 или 10 м², площадь, единицы',
+       answer_rule='масса в г или кг с точностью, указанной в условии',
+       mistakes=['умножили на ω вместо деления', 'не перевели г в кг', 'норма на 10 м² принята как на 1 м²'],
+       solve=_solve_oge19, kes=['1.4', '7.1', '6.2'],
+       fidelity=fid('число, г или кг', 'как в банке ОГЭ: «… из расчёта … г калия на 10 м². Вычислите, сколько граммов … '
+                    'надо внести на участок …» — формулировка своя', 'Б', 5, 'нормы 2–50 г/м², площади 10–400 м²',
+                    'деление на ω; единицы', ['1.4', '7.1', '6.2'], '1 балл'))
+def goge19_agro(rng):
+    f, gname, el = pick(rng, AGRO19)
+    d18 = rng.choice([0, 1])
+    w = _w_round(f, el, d18)
+    div = rng.choice([1, 1, 10])
+    norm = Fr(rng.choice([2, 3, 4, 5, 6, 8, 10, 12, 15, 20, 25, 30, 40, 50]))
+    S = Fr(rng.choice([10, 15, 20, 25, 30, 40, 50, 60, 75, 100, 120, 150, 200, 250, 300, 400]))
+    x = norm * S / (w / 100) / div
+    kg = x > 3000 or rng.random() < 0.3
+    dec = rng.choice([0, 1]) if not kg else 1
+    if kg:
+        x = x / 1000
+    ans = rnd(x, dec)
+    q = (f'Под плодовые деревья вносят {gname} из расчёта {ru(norm)} г {EL_G[el]} на {"1 м²" if div == 1 else "10 м²"} '
+         f'площади. Какую массу удобрения (в {"килограммах" if kg else "граммах"}) нужно внести на участок площадью '
+         f'{ru(S)} м²? {_intro18(f, el, d18)} Запишите число с точностью до {PREC[dec]}.')
+    if f == 'CaCO3·MgCO3':
+        q = q.replace('Под плодовые деревья вносят', 'Для раскисления почвы и восполнения магния вносят')
+    p = dict(type='agro', f=f, el=el, d18=d18, norm=str(norm * (Fr(1, 1000) if kg else 1)), S=str(S), div=div, dec=dec)
+    e = f'ω({el}) ≈ {fmt(w, d18)} %; m({el}) = {ru(norm)}·{ru(S)}/{div} г; m(удобрения) = m({el})/ω ≈ {ans} {"кг" if kg else "г"}.'
+    wrong = W([x * (w / 100) ** 2, x * div if div > 1 else x * 10, norm * S * (w / 100) / div / (1000 if kg else 1)], dec)
+    return pcard('ch-oge-19-agro', q, ans, e, p=p, wrong=wrong)
+
+
+@proto('ch-oge-19-raw', 'ОГЭ', 19, 'Масса минерала (стекла) по массе элемента и обратно',
+       invariant='m(минерала) = m(Э)/ω(Э); m(Э) = m(минерала)·ω(Э); ω из задания 18',
+       varies='руда или стекло, элемент, масса, прямая или обратная задача, единицы (кг, т)',
+       answer_rule='масса с точностью, указанной в условии',
+       mistakes=['умножили вместо деления', 'использовали неокруглённую ω'],
+       solve=_solve_oge19, kes=['1.4', '7.1', '6.2'],
+       fidelity=fid('число, кг или т', 'как в банке ОГЭ: «Вычислите массу стекла, если в нём содержится 15,3 кг свинца»; '
+                    '«… массу халькопирита для получения 40 кг меди»', 'Б', 5, 'массы 1–500 кг (т)', 'деление на ω',
+                    ['1.4', '7.1', '6.2'], '1 балл'))
+def goge19_raw(rng):
+    f, gname, el, unit = pick(rng, RAW19)
+    d18 = rng.choice([0, 1])
+    w = _w_round(f, el, d18)
+    dec = rng.choice([0, 1])
+    if rng.random() < 0.6:
+        mel = Fr(rng.choice(list(range(5, 501, 5)) + [Fr(k, 10) for k in range(15, 200, 7)]))
+        x = mel / (w / 100)
+        q = (f'Какая масса {gname} (в {"тоннах" if unit == "т" else "килограммах"}) содержит {ru(mel)} {unit} {EL_G[el]}? '
+             f'{_intro18(f, el, d18)} Запишите число с точностью до {PREC[dec]}.')
+        p = dict(type='raw', f=f, el=el, d18=d18, mel=str(mel), dec=dec)
+        wrong = W([mel * w / 100, mel / w, mel * 100 / (100 - w)], dec)
+    else:
+        mraw = Fr(rng.choice(list(range(10, 1001, 10))))
+        x = mraw * w / 100
+        q = (f'Сколько {"тонн" if unit == "т" else "килограммов"} {EL_G[el]} содержится в {ru(mraw)} {unit} {gname}? '
+             f'{_intro18(f, el, d18)} Запишите число с точностью до {PREC[dec]}.')
+        p = dict(type='raw_el', f=f, el=el, d18=d18, mraw=str(mraw), dec=dec)
+        wrong = W([mraw / (w / 100), mraw * (100 - w) / 100, mraw * w], dec)
+    ans = rnd(x, dec)
+    e = f'ω({el}) ≈ {fmt(w, d18)} % ⇒ {ans} {unit}.'
+    return pcard('ch-oge-19-raw', q, ans, e, p=p, wrong=wrong)
+
+
+SOL19 = [  # (формула, название (род. п.), элемент, сюжет)
+    ('KMnO4', 'перманганата калия', 'Mn', 'Для подкормки растений'), ('KMnO4', 'перманганата калия', 'K', 'Для дезинфекции семян'),
+    ('CuSO4', 'сульфата меди(II)', 'Cu', 'Для опрыскивания винограда'), ('ZnSO4', 'сульфата цинка', 'Zn', 'Для некорневой подкормки'),
+    ('H3BO3', 'борной кислоты', 'B', 'Для опрыскивания цветущих томатов'), ('Ca(NO3)2', 'нитрата кальция', 'Ca', 'Для полива рассады'),
+    ('MgSO4', 'сульфата магния', 'Mg', 'Для подкормки картофеля'), ('KNO3', 'нитрата калия', 'K', 'Для подкормки огурцов'),
+]
+
+
+@proto('ch-oge-19-sol', 'ОГЭ', 19, 'Масса элемента в заданном объёме рабочего раствора',
+       invariant='концентрация вещества в растворе (г/л) × объём × ω(Э); ω из задания 18',
+       varies='вещество (перманганат калия, купорос, борная кислота, соли кальция, магния), сюжет, объёмы',
+       answer_rule='масса в г (мг) с точностью, указанной в условии',
+       mistakes=['не пересчитали на нужный объём', 'забыли умножить на ω(Э)'],
+       solve=_solve_oge19, kes=['1.4', '7.1', '6.2'],
+       fidelity=fid('число, г', 'как в банке ОГЭ: «Для подкормки растений 2 г перманганата калия растворяют в 10 л воды. '
+                    'Вычислите массу марганца в 1 л раствора» — формулировка своя', 'Б', 5, 'навески 0,5–50 г, объёмы 1–20 л',
+                    'пропорция по объёму', ['1.4', '7.1', '6.2'], '1 балл'))
+def goge19_sol(rng):
+    f, gname, el, story = pick(rng, SOL19)
+    d18 = rng.choice([0, 1])
+    w = _w_round(f, el, d18)
+    m = Fr(rng.choice([Fr(1, 2), 1, 2, 3, 5, 10, 15, 20, 25, 50]))
+    V = Fr(rng.choice([1, 2, 5, 8, 10, 12, 20]))
+    V1 = Fr(rng.choice([Fr(1, 2), 1, 2, 3, 5]))
+    if V1 >= V:
+        raise Retry
+    dec = rng.choice([1, 2])
+    x = m / V * V1 * w / 100
+    ans = rnd(x, dec)
+    q = (f'{story} {ru(m)} г {gname} растворяют в {ru(V)} л воды (объём раствора считать равным объёму воды). Какая масса '
+         f'{EL_G[el]} (в граммах) содержится в {ru(V1)} л такого раствора? {_intro18(f, el, d18)} Запишите число с точностью '
+         f'до {PREC[dec]}.')
+    p = dict(type='sol', f=f, el=el, d18=d18, m=str(m), V=str(V), V1=str(V1), dec=dec)
+    e = f'В {ru(V1)} л — {ru(m)}·{ru(V1)}/{ru(V)} г {pretty(f)}; ω({el}) ≈ {fmt(w, d18)} % ⇒ {ans} г.'
+    wrong = W([m * w / 100, m / V * V1, m * V1 * w / 100], dec)
+    return pcard('ch-oge-19-sol', q, ans, e, p=p, wrong=wrong)
+
+
+# ======================================================================= ОГЭ 22. Расчёт по уравнению с раствором
+
+def _oge22_amounts(rng, f, ws=(2, 4, 5, 6, 8, 10, 12, 15, 16, 20, 25)):
+    """n вещества в растворе и «круглые» масса раствора и доля (как в банке ОГЭ)."""
+    for _ in range(40):
+        n = Fr(rng.choice(range(1, 61)), rng.choice([100, 50, 20]))
+        w = pick(rng, ws)
+        m = n * M(f) * 100 / w
+        if nice(m, 1) and 10 <= m <= 800:
+            return n, w, m
+    raise Retry
+
+
+def _solve_oge22(p):
+    k = coef(p['lhs'], p['rhs'])
+    t = p['type']
+    if t in ('precip', 'gas'):
+        n = Fr(p['m']) * Fr(p['w']) / 100 / Mi(p['sol'])
+        x = n * Fr(k[p['f']], k[p['sol']])
+        return rs(x * (VM if t == 'gas' else Mi(p['f'])), 2)
+    if t == 'omega':
+        nf = Fr(p['pv']) / (VM if p['fby'] == 'V' else Mi(p['f']))
+        ns = nf * Fr(k[p['sol']], k[p['f']])
+        return rs(ns * Mi(p['sol']) / Fr(p['m']) * 100, 2)
+    if t == 'msol':
+        nf = Fr(p['pv']) / (VM if p['fby'] == 'V' else Mi(p['f']))
+        ns = nf * Fr(k[p['sol']], k[p['f']])
+        return rs(ns * Mi(p['sol']) * 100 / Fr(p['w']), 2)
+    n = Fr(p['m']) * Fr(p['w']) / 100 / Mi(p['sol'])
+    nr = n * Fr(k[p['r']], k[p['sol']])
+    return rs(nr * (VM if p['rby'] == 'V' else Mi(p['r'])), 2)
+
+
+def _ans22(x):
+    if not nice(x, 2) or x <= 0:
+        raise Retry
+    return fmt(x)
+
+
+@proto('ch-oge-22-precip', 'ОГЭ', 22, 'Масса осадка при действии избытка реагента на раствор с заданной долей',
+       invariant='m(в-ва) = m(р-ра)·ω; n = m/M; n(осадка) по уравнению; m(осадка) = n·M',
+       varies='реакция осаждения (гидроксиды, сульфат бария, хлорид серебра, карбонаты, фосфаты, сульфид меди), масса и '
+              'доля раствора',
+       answer_rule='масса осадка, г (точное значение)',
+       mistakes=['массу раствора подставили как массу вещества', 'не учли коэффициенты', 'M осадка вместо M вещества'],
+       solve=_solve_oge22, kes=['7.1', '7.2'],
+       fidelity=fid('в ОГЭ — развёрнутый ответ (3 балла: уравнение, n, масса); в тренажёре — число, г', 'как зад. 22 '
+                    'демоверсии ОГЭ 2027 (300 г 8 %-ного CuSO₄ + избыток NaOH) — формулировка своя', 'В', 10,
+                    'массы растворов 10–800 г, доли 2–25 % — как в банке', 'масса вещества в растворе',
+                    ['7.1', '7.2'], '3 балла в КИМ'))
+def goge22_precip(rng):
+    r = pick(rng, [x for x in D.SOLUTION if x['calc']['kind'] == 'precip'])
+    c = r['calc']
+    k = coef(r['lhs'], r['rhs'])
+    n, w, m = _oge22_amounts(rng, c['sol'])
+    x = n * Fr(k[c['f']], k[c['sol']]) * M(c['f'])
+    ans = _ans22(x)
+    q = rng.choice([f'Раствор {gen(c["sol"])} массой {ru(m)} г с массовой долей растворённого вещества {w} % смешали с '
+                    f'избытком раствора {gen(c["ex"])}. Определите массу образовавшегося осадка.',
+                    f'На {ru(m)} г {w} %-ного раствора {gen(c["sol"])} подействовали избытком раствора {gen(c["ex"])}. '
+                    f'Какая масса осадка при этом выпала?'])
+    q += ' В ответе приведите массу осадка в граммах.'
+    eqs, eq = eqp(r['lhs'], r['rhs'])
+    e = f'{eqs}; m({pretty(c["sol"])}) = {ru(m)}·{w}/100 = {ru(m * w / 100)} г; n = {ru(n)} моль; ' \
+        f'n({pretty(c["f"])}) = {ru(n * Fr(k[c["f"]], k[c["sol"]]))} моль; m = {ans} г.'
+    wrong = W([m / M(c['sol']) * Fr(k[c['f']], k[c['sol']]) * M(c['f']), n * M(c['f']), m * w / 100], 2)
+    return pcard('ch-oge-22-precip', q, ans, e, p=dict(type='precip', lhs=r['lhs'], rhs=r['rhs'], sol=c['sol'], f=c['f'],
+                                                       m=str(m), w=w), wrong=wrong, eq=eq)
+
+
+@proto('ch-oge-22-gas', 'ОГЭ', 22, 'Объём газа при реакции раствора с заданной долей',
+       invariant='m(в-ва) = m(р-ра)·ω; n(газа) по уравнению; V = n·22,4',
+       varies='реакция с выделением газа (карбонаты + кислота, металл + кислота, сульфид/сульфит + кислота, соль аммония '
+              '+ щёлочь), масса и доля раствора',
+       answer_rule='объём газа (н.у.), л',
+       mistakes=['не учли коэффициенты', 'объём через молярную массу'],
+       solve=_solve_oge22, kes=['7.1', '7.2'],
+       fidelity=fid('в ОГЭ — развёрнутый ответ; в тренажёре — число, л', 'КИМ-стиль «…поместили избыток цинка. '
+                    'Вычислите объём выделившегося газа (н.у.)» — формулировка своя', 'В', 10, 'как в банке (73 г 5 %-ной '
+                    'HCl)', 'коэффициенты', ['7.1', '7.2'], '3 балла в КИМ'))
+def goge22_gas(rng):
+    r = pick(rng, [x for x in D.SOLUTION if x['calc']['kind'] == 'gas'])
+    c = r['calc']
+    k = coef(r['lhs'], r['rhs'])
+    n, w, m = _oge22_amounts(rng, c['sol'])
+    x = n * Fr(k[c['f']], k[c['sol']]) * VM
+    ans = _ans22(x)
+    ex = c['ex']
+    ex_txt = f'избыток {gen(ex)}' if ex in ('Zn', 'Mg', 'CaCO3', 'FeS') else f'избыток раствора {gen(ex)}'
+    sol_name = 'соляной кислоты' if c['sol'] == 'HCl' else gen(c['sol'])
+    q = rng.choice([f'К {ru(m)} г раствора {sol_name} с массовой долей растворённого вещества {w} % добавили {ex_txt}. '
+                    f'Рассчитайте объём (н.у.) выделившегося газа.',
+                    f'В {ru(m)} г {w} %-ного раствора {sol_name} внесли {ex_txt}. Какой объём газа (н.у.) выделился?'])
+    if c['sol'] == 'NH4Cl':
+        q = q.replace('добавили', 'добавили при нагревании').replace('внесли', 'при нагревании внесли')
+    q += ' В ответе приведите объём в литрах.'
+    eqs, eq = eqp(r['lhs'], r['rhs'])
+    e = f'{eqs}; m({pretty(c["sol"])}) = {ru(m * w / 100)} г; n = {ru(n)} моль; n(газа) = {ru(n * Fr(k[c["f"]], k[c["sol"]]))} моль; ' \
+        f'V = {ans} л.'
+    wrong = W([n * VM, m / M(c['sol']) * Fr(k[c['f']], k[c['sol']]) * VM, n * Fr(k[c['f']], k[c['sol']]) * M(c['f'])], 2)
+    return pcard('ch-oge-22-gas', q, ans, e, p=dict(type='gas', lhs=r['lhs'], rhs=r['rhs'], sol=c['sol'], f=c['f'], m=str(m),
+                                                    w=w), wrong=wrong, eq=eq)
+
+
+@proto('ch-oge-22-omega', 'ОГЭ', 22, 'Массовая доля вещества в исходном растворе по массе осадка или объёму газа',
+       invariant='n(продукта) → по уравнению n(вещества в растворе) → m → ω = m/m(р-ра)·100 %',
+       varies='реакция, продукт — осадок (масса) или газ (объём), масса раствора',
+       answer_rule='ω, % (точное значение)',
+       mistakes=['поделили массу осадка на массу раствора', 'не учли коэффициенты'],
+       solve=_solve_oge22, kes=['7.1', '7.2'],
+       fidelity=fid('в ОГЭ — развёрнутый ответ; в тренажёре — число, %', 'как в банке ОГЭ: «170 г раствора нитрата серебра '
+                    'смешали с избытком хлорида натрия. Выпал осадок массой 8,61 г. Вычислите массовую долю соли…»', 'В', 10,
+                    'как в банке', 'обратный ход по уравнению', ['7.1', '7.2'], '3 балла в КИМ'))
+def goge22_omega(rng):
+    r = pick(rng, [x for x in D.SOLUTION if x['calc']['kind'] in ('precip', 'gas')])
+    c = r['calc']
+    k = coef(r['lhs'], r['rhs'])
+    n, w, m = _oge22_amounts(rng, c['sol'])
+    nf = n * Fr(k[c['f']], k[c['sol']])
+    fby = 'V' if c['kind'] == 'gas' else 'm'
+    pv = nf * (VM if fby == 'V' else M(c['f']))
+    if not nice(pv, 3):
+        raise Retry
+    ans = _ans22(Fr(w))
+    sol_name = 'соляной кислоты' if c['sol'] == 'HCl' else gen(c['sol'])
+    got = f'выделилось {ru(pv)} л (н.у.) газа' if fby == 'V' else f'образовалось {ru(pv)} г осадка'
+    ex = c['ex']
+    ex_txt = f'избытком {gen(ex)}' if ex in ('Zn', 'Mg', 'CaCO3', 'FeS') else f'избытком раствора {gen(ex)}'
+    q = f'Порцию раствора {sol_name} массой {ru(m)} г обработали {ex_txt}; при этом {got}. Рассчитайте массовую долю ' \
+        f'{"хлороводорода" if c["sol"] == "HCl" else gen(c["sol"])} в исходном растворе (%).'
+    eqs, eq = eqp(r['lhs'], r['rhs'])
+    e = f'{eqs}; n(продукта) = {ru(nf)} моль ⇒ n({pretty(c["sol"])}) = {ru(n)} моль, m = {ru(n * M(c["sol"]))} г; ω = {ans} %.'
+    wrong = W([pv / m * 100, nf * M(c['sol']) / m * 100 if k[c['f']] != k[c['sol']] else Fr(w) * 2, n * M(c['sol'])], 2)
+    return pcard('ch-oge-22-omega', q, ans, e, p=dict(type='omega', lhs=r['lhs'], rhs=r['rhs'], sol=c['sol'], f=c['f'],
+                                                      m=str(m), pv=str(pv), fby=fby), wrong=wrong, eq=eq)
+
+
+@proto('ch-oge-22-msol', 'ОГЭ', 22, 'Масса раствора заданной концентрации, необходимая для реакции',
+       invariant='по продукту (или второму реагенту) находят n вещества в растворе; m(р-ра) = n·M/ω',
+       varies='реакция, известное количество продукта, доля раствора',
+       answer_rule='масса раствора, г (точное значение)',
+       mistakes=['нашли массу вещества, а не раствора', 'умножили на ω вместо деления'],
+       solve=_solve_oge22, kes=['7.1', '7.2'],
+       fidelity=fid('в ОГЭ — развёрнутый ответ; в тренажёре — число, г', 'как в банке ОГЭ: «… выпал осадок массой 2,87 г. '
+                    'Вычислите массу исходного раствора нитрата серебра с массовой долей соли 17 %»', 'В', 10, 'как в банке',
+                    'масса раствора = m(в-ва)/ω', ['7.1', '7.2'], '3 балла в КИМ'))
+def goge22_msol(rng):
+    r = pick(rng, [x for x in D.SOLUTION if x['calc']['kind'] in ('precip', 'gas')])
+    c = r['calc']
+    k = coef(r['lhs'], r['rhs'])
+    n, w, m = _oge22_amounts(rng, c['sol'])
+    nf = n * Fr(k[c['f']], k[c['sol']])
+    fby = 'V' if c['kind'] == 'gas' else 'm'
+    pv = nf * (VM if fby == 'V' else M(c['f']))
+    if not nice(pv, 3):
+        raise Retry
+    ans = _ans22(m)
+    sol_name = 'соляной кислоты' if c['sol'] == 'HCl' else gen(c['sol'])
+    got = f'выделилось {ru(pv)} л (н.у.) газа' if fby == 'V' else f'выпал осадок массой {ru(pv)} г'
+    q = f'Раствор {sol_name} с массовой долей растворённого вещества {w} % полностью прореагировал с раствором ' \
+        f'{gen(c["ex"])}, взятым в избытке; {got}. Вычислите массу исходного раствора {sol_name} (г).'
+    if c['ex'] in ('Zn', 'Mg', 'CaCO3', 'FeS'):
+        q = q.replace(f'с раствором {gen(c["ex"])}, взятым в избытке', f'с избытком {gen(c["ex"])}')
+    eqs, eq = eqp(r['lhs'], r['rhs'])
+    e = f'{eqs}; n({pretty(c["sol"])}) = {ru(n)} моль, m = {ru(n * M(c["sol"]))} г; m(р-ра) = m/{w}·100 = {ans} г.'
+    wrong = W([n * M(c['sol']), n * M(c['sol']) * w / 100, pv * 100 / w], 2)
+    return pcard('ch-oge-22-msol', q, ans, e, p=dict(type='msol', lhs=r['lhs'], rhs=r['rhs'], sol=c['sol'], f=c['f'],
+                                                     w=w, pv=str(pv), fby=fby), wrong=wrong, eq=eq)
+
+
+@proto('ch-oge-22-reagent', 'ОГЭ', 22, 'Масса (объём) второго реагента или соли для реакции с раствором',
+       invariant='m(в-ва в растворе) = m(р-ра)·ω → n → по уравнению n второго реагента (продукта) → m или V',
+       varies='реакция (оксид/гидроксид + кислота, аммиак + кислота, металл + соль, CO₂/SO₂ + щёлочь, H₂S + CuSO₄), '
+              'масса и доля раствора',
+       answer_rule='масса (г) или объём (л) — точное значение',
+       mistakes=['не учли коэффициенты', 'взяли массу раствора как массу вещества'],
+       solve=_solve_oge22, kes=['7.1', '7.2'],
+       fidelity=fid('в ОГЭ — развёрнутый ответ; в тренажёре — число', 'как в банке ОГЭ: «Вычислите массу оксида меди(II), '
+                    'который может прореагировать с 73 г 20 %-ного раствора соляной кислоты»', 'В', 10, 'как в банке',
+                    'коэффициенты', ['7.1', '7.2'], '3 балла в КИМ'))
+def goge22_reagent(rng):
+    r = pick(rng, [x for x in D.REAGENT if not x['calc'].get('made')])
+    c = r['calc']
+    k = coef(r['lhs'], r['rhs'])
+    n, w, m = _oge22_amounts(rng, c['sol'])
+    nr = n * Fr(k[c['r']], k[c['sol']])
+    rby = c['by']
+    x = nr * (VM if rby == 'V' else M(c['r']))
+    ans = _ans22(x)
+    sol_name = {'HCl': 'соляной кислоты'}.get(c['sol'], gen(c['sol']))
+    want = f'объём (н.у.) {gen(c["r"])}' if rby == 'V' else f'массу {gen(c["r"])}'
+    q = rng.choice([f'Вычислите {want}, который может полностью прореагировать с {ru(m)} г раствора {sol_name} с массовой '
+                    f'долей растворённого вещества {w} %.',
+                    f'Имеется {ru(m)} г {w} %-ного раствора {sol_name}. Определите {want}, необходимый для полного '
+                    f'взаимодействия с этим раствором.'])
+    q = q.replace(f'{want}, который', f'{want}, {"которая" if gnd(c["r"]) == "f" else "который"}') if rby == 'm' and gnd(c['r']) == 'f' else q
+    q += ' В ответе приведите ' + ('объём в литрах.' if rby == 'V' else 'массу в граммах.')
+    eqs, eq = eqp(r['lhs'], r['rhs'])
+    e = f'{eqs}; m({pretty(c["sol"])}) = {ru(m * w / 100)} г, n = {ru(n)} моль; n({pretty(c["r"])}) = {ru(nr)} моль ⇒ {ans}.'
+    wrong = W([n * (VM if rby == 'V' else M(c['r'])), m / M(c['sol']) * Fr(k[c['r']], k[c['sol']]) * (VM if rby == 'V' else M(c['r'])),
+               nr * (M(c['r']) if rby == 'V' else VM)], 2)
+    return pcard('ch-oge-22-reagent', q, ans, e, p=dict(type='reag', lhs=r['lhs'], rhs=r['rhs'], sol=c['sol'], r=c['r'],
+                                                        rby=rby, m=str(m), w=w), wrong=wrong, eq=eq)

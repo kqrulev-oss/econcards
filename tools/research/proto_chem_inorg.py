@@ -808,3 +808,663 @@ def g_7two(rng):
         '; с остальными веществами перечня реакция не идёт.'
     return card(pid, q, ans, e, k='many', o=opts([txt(x) for x in items]),
                  p={'center': c, 'opts': [list(x) for x in items]})
+
+
+# ================================================================= 8. Исходные вещества ↔ продукты
+
+_ALK_SET = {'NaOH', 'KOH', 'LiOH', 'Ba(OH)2', 'Ca(OH)2'}
+_ACID_SET = {'HCl', 'HBr', 'HI', 'HNO3', 'H2SO4', 'H3PO4', 'CH3COOH', 'HF', 'H2S'}
+
+
+def _cond_marks(r):
+    """Условия реакции → (пометки у веществ {f: 'изб.'}, общие условия [..]) или None, если условие не передаётся."""
+    lhs = [x for x in r['lhs'] if x != 'H2O']
+    marks, extra = {}, []
+    cond = r.get('cond', '')
+    for tok in [t.strip() for t in re.split(r',\s*', cond) if t.strip()]:
+        t0 = tok.split(' (')[0]
+        if tok in ('конц.', 'разб.', 'оч. разб.', 'р-р'):
+            continue
+        if t0 in ('t', 't°') or tok.startswith('t (') or tok in ('t (кипячение)', 't (прокаливание)', 'нагревание'):
+            extra.append('t°')
+        elif tok == 'сплавление':
+            extra.append('при сплавлении')
+        elif tok == 'хол.':
+            extra.append('на холоду')
+        elif tok.startswith('кат.'):
+            extra.append(pretty(tok))
+        elif tok.startswith(('избыток ', 'недостаток ')):
+            what = tok.split(' ', 1)[1]
+            tgt = None
+            if what == 'щёлочи':
+                tgt = next((x for x in lhs if x in _ALK_SET), None)
+            elif what == 'кислоты':
+                tgt = next((x for x in lhs if x in _ACID_SET), None)
+            elif what in lhs:
+                tgt = what
+            elif what == 'NH3':
+                tgt = next((x for x in lhs if x.startswith('NH3')), None)
+            elif what in ('сульфида',):
+                tgt = next((x for x in lhs if x.endswith('S') or x.endswith('S2')), None)
+            if tgt is None:
+                return None
+            if tok.startswith('недостаток'):
+                others = [x for x in lhs if x != tgt]
+                if len(others) != 1:
+                    return None
+                tgt = others[0]
+            marks[tgt] = 'изб.'
+        elif tok in ('избыток', 'электрический ток', 'свет (hν)', 'свет'):
+            return None
+        else:
+            return None
+    return marks, extra
+
+
+def disp_lhs(r):
+    """Как в КИМ: «Cu и HNO₃ (конц.)», «Cl₂ и KOH (t°)», «NaHCO₃ →t°»; None — если условие не передать."""
+    cm = _cond_marks(r)
+    if cm is None:
+        return None
+    marks, extra = cm
+    lhs = [x for x in dict.fromkeys(r['lhs'])]
+    base = [x for x in lhs if x != 'H2O']
+    if len(base) >= 3:
+        return None
+    show = base if (len(base) == 2 or 'H2O' not in lhs) else base + ['H2O']
+    parts = []
+    for x in show:
+        lab = []
+        fm = FORM_OF(r, x)
+        if fm in ('конц.', 'разб.', 'оч. разб.'):
+            lab.append(fm)
+        elif fm == 'р-р' and x in _ALK_SET:
+            lab.append('р-р')
+        if marks.get(x):
+            lab.append(marks[x])
+        parts.append(F(x) + (f' ({", ".join(lab)})' if lab else ''))
+    if len(show) == 1:
+        if not extra:
+            return None
+        return parts[0] + ' →' + ('t°' if extra == ['t°'] else ' (' + ', '.join(extra) + ')')
+    ex = ['при нагревании' if x == 't°' else x for x in extra]
+    if ex == ['при сплавлении'] or ex == ['при нагревании'] or ex == ['на холоду']:
+        return ' и '.join(parts) + f' ({ex[0]})'
+    return ' и '.join(parts) + (f' ({", ".join(ex)})' if ex else '')
+
+
+def disp_prod(fs):
+    fs = list(fs)
+    txt = [F(x) for x in fs]
+    return txt[0] if len(txt) == 1 else ', '.join(txt[:-1]) + ' и ' + txt[-1]
+
+
+DISP8 = {}
+for _r in RX:
+    if 'электролиз' in _r['type'] or 'качественная' in _r.get('tags', []):
+        continue
+    _d = disp_lhs(_r)
+    if _d:
+        DISP8.setdefault(_d, []).append(_r)
+USE8 = {d: rs[0] for d, rs in DISP8.items() if len({tuple(sorted(r['rhs'])) for r in rs}) == 1}
+
+_SWAPS = [('NO2', 'NO'), ('NO', 'N2O'), ('N2O', 'N2'), ('SO2', 'H2S'), ('H2S', 'S'), ('SO2', 'S'), ('FeCl2', 'FeCl3'),
+          ('FeSO4', 'Fe2(SO4)3'), ('Fe(NO3)2', 'Fe(NO3)3'), ('FeBr2', 'FeBr3'), ('NaAlO2', 'Na(Al(OH)4)'),
+          ('KAlO2', 'K(Al(OH)4)'), ('Na2ZnO2', 'Na2(Zn(OH)4)'), ('K2ZnO2', 'K2(Zn(OH)4)'), ('KClO', 'KClO3'),
+          ('NaClO', 'NaClO3'), ('CrCl3', 'CrCl2'), ('MnSO4', 'MnO2'), ('MnO2', 'K2MnO4'), ('NaHCO3', 'Na2CO3'),
+          ('KHCO3', 'K2CO3'), ('NaHSO3', 'Na2SO3'), ('NaHSO4', 'Na2SO4'), ('FeO', 'Fe2O3'), ('Cu2O', 'CuO'),
+          ('NaNO2', 'NaNO3'), ('KNO2', 'KNO3'), ('Cu(NO3)2', 'CuO'), ('Na2O', 'Na2O2'),
+          ('Cr2(SO4)3', 'CrSO4'), ('K2CrO4', 'K2Cr2O7'), ('Na2CrO4', 'Na2Cr2O7'), ('NaI', 'NaIO3'), ('KI', 'KIO3'),
+          ('NH4NO3', 'NO'), ('Fe(OH)2', 'Fe(OH)3'), ('CuCl', 'CuCl2'), ('NaH2PO4', 'Na2HPO4'), ('Na2HPO4', 'Na3PO4'),
+          ('KH2PO4', 'K2HPO4'), ('K2HPO4', 'K3PO4'), ('Ca(HCO3)2', 'CaCO3'), ('HNO3', 'HNO2'), ('H2SO4', 'H2SO3'),
+          ('CO', 'CO2'), ('P2O3', 'P2O5'), ('PCl3', 'PCl5'), ('NH3', 'N2'), ('Mn2O3', 'MnO2'), ('Ag', 'Ag2O'),
+          ('Hg', 'HgO'), ('Fe3O4', 'Fe2O3'), ('Ca(NO2)2', 'CaO'), ('KNO2', 'K2O'), ('NaNO2', 'Na2O'),
+          ('Ba(NO2)2', 'BaO'), ('Mg(NO2)2', 'MgO'), ('Li2O', 'LiNO2'), ('N2O', 'NH3'), ('K2S', 'K2SO3'),
+          ('Na2S', 'Na2SO3'), ('BaSO3', 'BaSO4'), ('CaSO3', 'CaSO4'), ('Cl2', 'HCl'), ('Br2', 'HBr'), ('I2', 'HI'),
+          ('KCl', 'KClO4'), ('CrCl3', 'K2CrO4')]
+SWAP = {}
+for _a, _b in _SWAPS:
+    SWAP.setdefault(_a, []).append(_b)
+    SWAP.setdefault(_b, []).append(_a)
+
+
+def _mutations(prod, rng):
+    out = []
+    for i, x in enumerate(prod):
+        for y in SWAP.get(x, []):
+            if y in SUBS and y not in prod:
+                out.append(prod[:i] + [y] + prod[i + 1:])
+    if 'H2O' in prod and len(prod) > 2:
+        out.append([x for x in prod if x != 'H2O'])
+    rng.shuffle(out)
+    return out
+
+
+def _solve_8(p):
+    ans = {}
+    for i, (lhs, cond, form) in enumerate(p['items']):
+        hits = []
+        for r in RX:
+            if sorted(r['lhs']) == sorted(lhs) and r.get('cond', '') == cond and (r.get('form') or {}) == form:
+                for j, pr in enumerate(p['prods']):
+                    if sorted(pr) == sorted(r['rhs']):
+                        hits.append(str(j + 1))
+        hits = sorted(set(hits))
+        if len(hits) != 1:
+            return {'err': i}
+        ans[LET[i]] = hits[0]
+    return ans
+
+
+def _theme8(r, theme):
+    tags = set(r.get('tags', [])) | set(r['type'])
+    if theme == 'oxacid':
+        return bool(tags & {'кислота-окислитель', 'металл+кислота-окислитель', 'неметалл+кислота-окислитель',
+                            'металл+кислота', 'конц. кислота+соль'}) or \
+            any(FORM_OF(r, x) == 'конц.' for x in r['lhs'])
+    if theme == 'amph':
+        return any('амфотер' in t or t in ('комплекс+кислота', 'комплекс+кислотный оксид', 'алюминат+кислота',
+                                           'цинкат+кислота', 'разложение комплекса', 'щёлочь+соль') for t in tags) \
+            and any(e in ''.join(r['lhs']) for e in ('Al', 'Zn', 'Cr', 'Be'))
+    if theme == 'decomp':
+        return len(r['lhs']) == 1
+    return True
+
+
+_ELEMENTS8 = ['Na', 'K', 'Ca', 'Ba', 'Mg', 'Al', 'Zn', 'Fe', 'Cu', 'Cr', 'Mn', 'Ag', 'N', 'P', 'S', 'Cl', 'Br', 'I', 'C',
+              'Si']
+
+
+def _has_el(f, el):
+    try:
+        return el in parse_formula(f)
+    except ValueError:
+        return False
+
+
+def gen8(rng, pid, theme):
+    pool = [d for d, r in USE8.items() if _theme8(r, theme)]
+    if theme == 'elem':
+        el = rng.choice(_ELEMENTS8)
+        pool = [d for d in pool if any(_has_el(x, el) for x in USE8[d]['lhs'] if x != 'H2O')]
+    if len(pool) < 6:
+        raise Retry
+    # 4 реакции; с вероятностью берём «пары» с одинаковыми реагентами и разными условиями
+    items = []
+    by_lhs = {}
+    for d in pool:
+        by_lhs.setdefault(frozenset(USE8[d]['lhs']) - {'H2O'}, []).append(d)
+    twins = [v for v in by_lhs.values() if len(v) >= 2]
+    if twins and rng.random() < 0.6:
+        items += rng.sample(rng.choice(twins), 2)
+    for d in shuffled(rng, pool):
+        if len(items) == 4:
+            break
+        if d not in items and all(sorted(USE8[d]['rhs']) != sorted(USE8[x]['rhs']) for x in items):
+            items.append(d)
+    if len(items) < 4:
+        raise Retry
+    rng.shuffle(items)
+    prods = [list(USE8[d]['rhs']) for d in items]
+    if len({tuple(sorted(x)) for x in prods}) < 4:
+        raise Retry
+    # два дистрактора
+    pool_mut = []
+    for pr in prods:
+        pool_mut += _mutations(pr, rng)
+    for d in by_lhs.get(frozenset(USE8[items[0]]['lhs']) - {'H2O'}, []):
+        if d not in items:
+            pool_mut.append(list(USE8[d]['rhs']))
+    dis = []
+    true_sets = {tuple(sorted(x)) for x in prods}
+    for m in shuffled(rng, pool_mut):
+        key = tuple(sorted(m))
+        if key in true_sets or key in {tuple(sorted(x)) for x in dis}:
+            continue
+        dis.append(m)
+        if len(dis) == 2:
+            break
+    if len(dis) < 2:
+        raise Retry
+    right = shuffled(rng, prods + dis)
+    ans = {LET[i]: str(next(j for j, x in enumerate(right) if sorted(x) == sorted(prods[i])) + 1) for i in range(4)}
+    left = items
+    q = rng.choice(['Установите соответствие между исходными веществами, вступающими в реакцию, и продуктами этой '
+                    'реакции', 'Установите соответствие между исходными веществами и продуктом(-ами), который(-ые) '
+                    'образуется(-ются) при взаимодействии этих веществ', 'Установите соответствие между реагирующими '
+                    'веществами и продуктами, которые образуются при взаимодействии этих веществ'])
+    if theme == 'decomp':
+        q = 'Установите соответствие между исходным веществом, вступающим в реакцию, и продуктами, которые ' \
+            'образуются при нагревании этого вещества'
+    q += (': к каждой позиции, обозначенной буквой, подберите соответствующую позицию, обозначенную цифрой. '
+          'Запишите в таблицу выбранные цифры под соответствующими буквами.')
+    e = '; '.join(f'{LET[i]}) {eq_text(USE8[d]["lhs"], USE8[d]["rhs"])}' for i, d in enumerate(items)) + '.'
+    eqs = []
+    for d in items:
+        r = USE8[d]
+        kl, kr = r['k']
+        eqs.append((r['lhs'], r['rhs'], kl, kr))
+    return card(pid, q, ans, e, k='match', o=match_opts(left, [disp_prod(x) for x in right], rids='123456'),
+                p={'items': [[USE8[d]['lhs'], USE8[d].get('cond', ''), USE8[d].get('form') or {}] for d in items],
+                   'prods': right}, eqs=eqs)
+
+
+_TRAP8 = 'условия (конц./разб., t°, избыток) меняют продукты; дистракторы — «соседние» продукты: NO₂/NO, SO₂/H₂S, ' \
+         'Fe²⁺/Fe³⁺, Na[Al(OH)₄]/NaAlO₂, KClO/KClO₃, кислая/средняя соль'
+_SCALE8 = '4 пары реагентов × 6 наборов продуктов (два лишних) — как в демоверсии 2027 (Cl₂ и KOH, K₂O и HCl, ' \
+          'HCl и MnO₂, Cl₂O и KOH) и ~69 заданиях банка этой формы'
+
+
+@proto('ch-ege-08-oxacids', 'ЕГЭ', 8, 'Реагенты → продукты: кислоты-окислители (HNO₃, H₂SO₄ конц.) и кислоты-неокислители',
+       invariant='определить продукты реакции металла/неметалла/соединения с кислотой с учётом её концентрации',
+       varies='металлы разной активности, неметаллы, оксиды и соли-восстановители; конц./разб. HNO₃, H₂SO₄',
+       answer_rule='каждой паре реагентов — набор продуктов; учитываются концентрация, t°, пассивация',
+       mistakes=['медь с разб. HNO₃ даёт NO₂', 'металл с HNO₃ даёт H₂', 'железо окисляется до +2 конц. кислотой',
+                 'активный металл с конц. H₂SO₄ даёт SO₂ вместо H₂S/S'],
+       solve=_solve_8, kind='dict', kes=['2.2', '2.3'],
+       fidelity=FID(8, trap=_TRAP8, scale=_SCALE8, kes=['2.2', '2.3'], fmt_='четыре цифры под буквами А–Г'))
+def g_8oxacid(rng):
+    return gen8(rng, 'ch-ege-08-oxacids', 'oxacid')
+
+
+@proto('ch-ege-08-amphoteric', 'ЕГЭ', 8, 'Реагенты → продукты: соединения Al, Zn, Cr(III), Be (раствор/сплавление, избыток)',
+       invariant='амфотерные оксиды/гидроксиды/металлы со щелочами (в растворе — гидроксокомплекс, при сплавлении — '
+                 'метасоль), разрушение комплексов кислотами и CO₂ в зависимости от избытка',
+       varies='элемент (Al, Zn, Cr, Be), вид реагента, условия (р-р/сплавление, избыток/недостаток)',
+       answer_rule='каждой паре реагентов — набор продуктов с учётом условий',
+       mistakes=['в растворе пишут NaAlO₂ вместо Na[Al(OH)₄]', 'при сплавлении пишут комплекс',
+                 'не учитывают избыток щёлочи/кислоты'],
+       solve=_solve_8, kind='dict', kes=['2.2', '2.3'],
+       fidelity=FID(8, trap=_TRAP8, scale=_SCALE8, kes=['2.2', '2.3'], fmt_='четыре цифры под буквами А–Г'))
+def g_8amph(rng):
+    return gen8(rng, 'ch-ege-08-amphoteric', 'amph')
+
+
+@proto('ch-ege-08-element', 'ЕГЭ', 8, 'Реагенты → продукты: соединения одного элемента (разные классы и условия)',
+       invariant='по классам реагентов и условиям определить продукты: обмен, ОВР, диспропорционирование, '
+                 'кислые/средние соли',
+       varies='элемент-«тема» (Na, Fe, Cu, S, N, P, Cl и др.), четыре реакции его соединений',
+       answer_rule='каждой паре реагентов — набор продуктов',
+       mistakes=['хлор с горячей щёлочью даёт гипохлорит', 'кислые соли при избытке щёлочи',
+                 'Fe(III) с иодидами без ОВР'],
+       solve=_solve_8, kind='dict', kes=['2.2', '2.3'],
+       fidelity=FID(8, trap=_TRAP8, scale=_SCALE8, kes=['2.2', '2.3'], fmt_='четыре цифры под буквами А–Г'))
+def g_8elem(rng):
+    return gen8(rng, 'ch-ege-08-element', 'elem')
+
+
+@proto('ch-ege-08-decomposition', 'ЕГЭ', 8, 'Вещество → продукты его разложения при нагревании',
+       invariant='правила термического разложения нитратов (по ряду активности), карбонатов, гидрокарбонатов, '
+                 'солей аммония, гидроксидов, перманганата, хлората',
+       varies='соли и гидроксиды разных металлов, соли аммония',
+       answer_rule='каждому веществу — набор продуктов разложения',
+       mistakes=['нитрат активного металла разлагают до оксида', 'Fe(NO₃)₂ разлагают до FeO',
+                 'NH₄NO₃ разлагают до NH₃ и HNO₃', 'NaHCO₃ разлагают до Na₂O'],
+       solve=_solve_8, kind='dict', kes=['2.2', '2.3'],
+       fidelity=FID(8, trap='нитраты: до Mg — нитрит + O₂, Mg–Cu — оксид + NO₂ + O₂, после Cu — металл; соли аммония; '
+                            'Fe(II) окисляется до Fe₂O₃', scale='4 вещества × 6 наборов продуктов — как задания банка '
+                            '«…продуктами, которые образуются при нагревании этого вещества»', kes=['2.2', '2.3'],
+                    fmt_='четыре цифры под буквами А–Г'))
+def g_8dec(rng):
+    return gen8(rng, 'ch-ege-08-decomposition', 'decomp')
+
+
+# ================================================================= 9. Схема превращений X → Y
+
+def els(f):
+    try:
+        return set(parse_formula(f))
+    except ValueError:
+        return set()
+
+
+def central(f):
+    """«Сквозной» элемент цепочки: металл соли/оксида/гидроксида; для солей Na, K, NH₄ — элемент аниона."""
+    s = SUBS.get(f, {})
+    io = s.get('ion')
+    e = [x for x in parse_formula(f.split('·')[0]) if x not in ('H', 'O')]
+    if io and not io.get('cplx'):
+        ck, an = io['cat'], io['an']
+        if ck in ('Na', 'K', 'Li', 'NH4', 'Rb', 'Cs') and an not in ('Cl', 'Br', 'I', 'F', 'NO3', 'CH3COO'):
+            an_f = I.AN[an][0]
+            return [x for x in parse_formula(an_f) if x not in ('H', 'O')][0]
+        return CAT[ck][3] if ck in CAT and ck != 'NH4' else 'N'
+    if io and io.get('cplx'):
+        m = re.match(r'[A-Z][a-z]?', io['an']).group()
+        return m
+    if not e:
+        return 'O'
+    metals = [x for x in e if x in METALS]
+    return metals[0] if metals else e[0]
+
+
+METALS = {'Li', 'Na', 'K', 'Rb', 'Cs', 'Be', 'Mg', 'Ca', 'Sr', 'Ba', 'Al', 'Zn', 'Fe', 'Cr', 'Mn', 'Cu', 'Ag', 'Hg',
+          'Pb', 'Sn', 'Ni', 'Au', 'Pt'}
+CAT = I.CAT
+
+
+def carriers(r, src):
+    """Продукты реакции, содержащие «сквозной» элемент исходного вещества."""
+    key = central(src)
+    return [x for x in dict.fromkeys(r['rhs']) if x != 'H2O' and key in els(x) and x in SUBS]
+
+
+def two_reagents(r):
+    base = [x for x in dict.fromkeys(r['lhs']) if x != 'H2O']
+    return base if len(base) == 2 else None
+
+
+REAG9 = [('HCl', ''), ('H2SO4', 'разб.'), ('H2SO4', 'конц.'), ('HNO3', 'разб.'), ('HNO3', 'конц.'), ('NaOH', ''),
+         ('KOH', ''), ('Ca(OH)2', ''), ('Ba(OH)2', ''), ('NH3·H2O', ''), ('H2O', ''), ('O2', ''), ('H2', ''),
+         ('Cl2', ''), ('Br2', ''), ('CO2', ''), ('SO2', ''), ('CO', ''), ('C', ''), ('Fe', ''), ('Zn', ''), ('Cu', ''),
+         ('Mg', ''), ('Al', ''), ('AgNO3', ''), ('BaCl2', ''), ('Na2CO3', ''), ('K2CO3', ''), ('Na2S', ''), ('KI', ''),
+         ('KMnO4', ''), ('K2Cr2O7', ''), ('H2O2', ''), ('Na2SO4', ''), ('NaCl', ''), ('KNO3', ''), ('H2S', ''),
+         ('Na3PO4', ''), ('K3PO4', ''), ('HBr', ''), ('HI', ''), ('NaNO3', ''), ('CuO', ''), ('KCl', ''),
+         ('Na2SO3', ''), ('NH4Cl', ''), ('FeCl3', ''), ('CuSO4', ''), ('Pb(NO3)2', ''), ('H3PO4', ''), ('LiOH', '')]
+
+
+def step_can(S, o, lo, T):
+    """Может ли S + o (форма lo) дать T: True/False/None (неизвестно)."""
+    pos = pos_rx(S, '', o, lo)
+    if any(T in r['rhs'] for r in pos):
+        return True
+    if pos:
+        return False
+    if reacts(S, '', o, lo) is False:
+        return False
+    need = els(T) - {'H', 'O'}
+    if not need <= (els(S) | els(o)):
+        return False
+    return None
+
+
+def _solve_9r(p):
+    A, B, C = p['chain']
+    ans = {}
+    for letter, (S, T) in (('X', (A, B)), ('Y', (B, C))):
+        hits = []
+        for j, (o, lo) in enumerate(p['opts']):
+            ok = any(T in r['rhs'] for r in RX if S in r['lhs'] and o in r['lhs'] and
+                     set(r['lhs']) - {S, o} <= {'H2O'} and _form_ok(lo, FORM_OF(r, o), r.get('cond', '')))
+            if ok:
+                hits.append(str(j + 1))
+        if len(hits) != 1:
+            return {'err': letter}
+        ans[letter] = hits[0]
+    return ans
+
+
+_SCHEME_HEAD = ['Задана схема превращений веществ:', 'В заданной схеме превращений']
+
+
+def _arrow(lbl):
+    return f' →({lbl}) '
+
+
+@proto('ch-ege-09-reagents', 'ЕГЭ', 9, 'Схема A →X B →Y C: подобрать реагенты X и Y',
+       invariant='по генетической связи классов подобрать реагенты для двух последовательных превращений',
+       varies='цепочки из базы реакций: металлы, оксиды, гидроксиды, соли; реагенты — кислоты, щёлочи, соли, '
+              'окислители/восстановители',
+       answer_rule='X — реагент, переводящий A в B; Y — реагент, переводящий B в C; остальные реагенты перечня '
+                   'дают другой продукт или не реагируют',
+       mistakes=['берут реагент, который реагирует, но даёт другой продукт (Fe + Cl₂ → FeCl₃, а не FeCl₂)',
+                 'не учитывают концентрацию кислоты', 'амфотерные гидроксиды растворяются в избытке щёлочи'],
+       solve=_solve_9r, kind='dict', kes=['2.4'],
+       fidelity=FID(9, trap='реагент-«ловушка» тоже реагирует с исходным веществом, но даёт другой продукт; '
+                            'степень окисления продукта (Fe²⁺/Fe³⁺), кислая/средняя соль',
+                    scale='цепочка из двух стрелок и пять реагентов — как 78 заданий банка (КЭС 2.4) и демоверсия 2027',
+                    kes=['2.4'], fmt_='две цифры под буквами X, Y', style='«Задана схема превращений веществ: … '
+                    'Определите, какие из указанных веществ являются веществами X и Y.»'))
+def g_9r(rng):
+    pid = 'ch-ege-09-reagents'
+    for _ in range(40):
+        r1 = rng.choice(RX)
+        tr = two_reagents(r1)
+        if not tr or 'электролиз' in r1['type'] or r1.get('cond', '').startswith('электролиз'):
+            continue
+        A, X = tr if rng.random() < 0.5 else tr[::-1]
+        if SUBS[A]['cls'] == 'простое вещество' and A in ('O2', 'H2', 'N2') or A == 'H2O':
+            continue
+        cb = carriers(r1, A)
+        if not cb:
+            continue
+        B = rng.choice(cb)
+        r2s = [r for r in RX if B in r['lhs'] and two_reagents(r) and 'электролиз' not in r['type']]
+        if not r2s:
+            continue
+        r2 = rng.choice(r2s)
+        Y = next(x for x in two_reagents(r2) if x != B)
+        cc = [x for x in carriers(r2, B) if x not in (A, B)]
+        if not cc or Y == X:
+            continue
+        C = rng.choice(cc)
+        break
+    else:
+        raise Retry
+    lx = FORM_OF(r1, X) if FORM_OF(r1, X) in ('конц.', 'разб.') else ''
+    ly = FORM_OF(r2, Y) if FORM_OF(r2, Y) in ('конц.', 'разб.') else ''
+    if X in ('HNO3', 'H2SO4') and not lx or Y in ('HNO3', 'H2SO4') and not ly:
+        raise Retry
+    if step_can(A, X, lx, B) is not True or step_can(B, Y, ly, C) is not True:
+        raise Retry
+    dis = []
+    for o in shuffled(rng, REAG9):
+        if o[0] in (X, Y, A, B, C) or o in dis:
+            continue
+        if step_can(A, o[0], o[1], B) is False and step_can(B, o[0], o[1], C) is False:
+            dis.append(o)
+        if len(dis) == 3:
+            break
+    if len(dis) < 3:
+        raise Retry
+    items = shuffled(rng, [(X, lx), (Y, ly)] + dis)
+    # X не должен давать C из B, а Y — B из A (иначе двусмысленно)
+    if step_can(A, Y, ly, B) is not False or step_can(B, X, lx, C) is not False:
+        raise Retry
+    ans = {'X': str(items.index((X, lx)) + 1), 'Y': str(items.index((Y, ly)) + 1)}
+    scheme = F(A) + _arrow('X') + F(B) + _arrow('Y') + F(C)
+    q = (f'Задана схема превращений веществ: {scheme}. Определите, какие из указанных веществ являются веществами '
+         f'X и Y. Запишите в таблицу номера выбранных веществ под соответствующими буквами.')
+    by_name = rng.random() < 0.35
+    txt = lambda o: (ru(o[0]) + (f' ({o[1]})' if o[1] else '')) if by_name else FL(*o)
+    e = f'X: {eq_text(r1["lhs"], r1["rhs"])}; Y: {eq_text(r2["lhs"], r2["rhs"])}.'
+    return card(pid, q, ans, e, k='match', o=match_opts(['X', 'Y'], [txt(o) for o in items], lids='XY'),
+                p={'chain': [A, B, C], 'opts': [list(o) for o in items]},
+                eqs=[(r1['lhs'], r1['rhs'], *r1['k']), (r2['lhs'], r2['rhs'], *r2['k'])])
+
+
+def _union_products(S, o, lo):
+    if o == 't':
+        return {x for r in SINGLE.get(S, []) for x in r['rhs']}
+    return {x for r in pos_rx(S, '', o, lo) for x in r['rhs']}
+
+
+def _solve_9s(p):
+    A, (R1, l1), (R2, l2) = p['A'], p['r1'], p['r2']
+    opts_ = p['opts']
+    u1 = set()
+    for r in RX:
+        if R1 == 't':
+            if r['lhs'] == [A]:
+                u1 |= set(r['rhs'])
+        elif A in r['lhs'] and R1 in r['lhs'] and set(r['lhs']) - {A, R1} <= {'H2O'} and \
+                _form_ok(l1, FORM_OF(r, R1), r.get('cond', '')):
+            u1 |= set(r['rhs'])
+    xs = [o for o in opts_ if o in u1]
+    if len(xs) != 1:
+        return {'err': 'X'}
+    X = xs[0]
+    u2 = set()
+    for r in RX:
+        if R2 == 't':
+            if r['lhs'] == [X]:
+                u2 |= set(r['rhs'])
+        elif X in r['lhs'] and R2 in r['lhs'] and set(r['lhs']) - {X, R2} <= {'H2O'} and \
+                _form_ok(l2, FORM_OF(r, R2), r.get('cond', '')):
+            u2 |= set(r['rhs'])
+    ys = [o for o in opts_ if o in u2 and o != X]
+    if len(ys) != 1:
+        return {'err': 'Y'}
+    return {'X': str(opts_.index(X) + 1), 'Y': str(opts_.index(ys[0]) + 1)}
+
+
+def _pick_step(rng, S, exclude=()):
+    """Случайная реакция S (+ один реагент или нагревание) → carrier. Возвращает (reagent, label, product, r)."""
+    rs = [r for r in RX if S in r['lhs'] and (two_reagents(r) or r['lhs'] == [S]) and 'электролиз' not in r['type']]
+    rng.shuffle(rs)
+    for r in rs:
+        if r['lhs'] == [S]:
+            if 't' not in r.get('cond', ''):
+                continue
+            R, lab = 't', ''
+        else:
+            R = next(x for x in two_reagents(r) if x != S)
+            lab = FORM_OF(r, R) if FORM_OF(r, R) in ('конц.', 'разб.') else ''
+            if R in ('HNO3', 'H2SO4') and not lab:
+                continue
+        cc = [x for x in carriers(r, S) if x not in exclude]
+        if cc:
+            return R, lab, rng.choice(cc), r
+    return None
+
+
+def _related(f, rng, k=12):
+    key = els(f) - {'H', 'O'}
+    pool = [x for x, s in SUBS.items() if s.get('_mod') == 'chemdb_inorg.py' and els(x) & key and x != f
+            and '·' not in x and 'Hg' not in x and not x.startswith(('Rb', 'Cs', 'Sr'))]
+    rng.shuffle(pool)
+    return pool[:k]
+
+
+def _lab9(R, lab):
+    if R == 't':
+        return 't°'
+    return FL(R, lab)
+
+
+@proto('ch-ege-09-substances', 'ЕГЭ', 9, 'Схема A →(реагент) X →(реагент) Y: определить вещества X и Y',
+       invariant='по известным реагентам и условиям определить продукты двух последовательных превращений',
+       varies='исходное вещество, реагенты/условия над стрелками (t°, кислоты, щёлочи, окислители)',
+       answer_rule='X — продукт первого превращения, Y — продукт второго (из вещества X)',
+       mistakes=['не учитывают степень окисления продукта', 'кислая/средняя соль', 'амфотерность при избытке'],
+       solve=_solve_9s, kind='dict', kes=['2.4'],
+       fidelity=FID(9, trap='в перечне — соединения того же элемента в других степенях окисления и другие соли',
+                    scale='схема из двух стрелок с реагентами над ними, пять веществ — как задания банка вида '
+                          '«Fe →Cl₂ X →Y FeS», «H₂O₂ →MnO₂ X →Y K₂SO₄»', kes=['2.4'],
+                    fmt_='две цифры под буквами X, Y'))
+def g_9s(rng):
+    pid = 'ch-ege-09-substances'
+    A = rng.choice([x for x in SUBS if SUBS[x].get('_mod') == 'chemdb_inorg.py' and x in PARTNERS and
+                    SUBS[x]['cls'] != 'бинарное' and x not in ('H2O', 'O2', 'H2')])
+    s1 = _pick_step(rng, A)
+    if not s1:
+        raise Retry
+    R1, l1, X, r1 = s1
+    s2 = _pick_step(rng, X, exclude=(A,))
+    if not s2:
+        raise Retry
+    R2, l2, Y, r2 = s2
+    if Y == X:
+        raise Retry
+    u1, u2 = _union_products(A, R1, l1), _union_products(X, R2, l2)
+    if Y in u1:
+        raise Retry
+    dis = [f for f in _related(X, rng, 20) + _related(Y, rng, 20)
+           if f not in u1 and f not in u2 and f not in (A, X, Y)]
+    dis = list(dict.fromkeys(dis))[:3]
+    if len(dis) < 3:
+        raise Retry
+    items = shuffled(rng, [X, Y] + dis)
+    ans = {'X': str(items.index(X) + 1), 'Y': str(items.index(Y) + 1)}
+    scheme = F(A) + _arrow(_lab9(R1, l1)) + 'X' + _arrow(_lab9(R2, l2)) + 'Y'
+    q = (f'Задана схема превращений веществ: {scheme}. Определите, какие из указанных веществ являются веществами '
+         f'X и Y. Запишите в таблицу номера выбранных веществ под соответствующими буквами.')
+    e = f'{eq_text(r1["lhs"], r1["rhs"])}; {eq_text(r2["lhs"], r2["rhs"])}.'
+    return card(pid, q, ans, e, k='match', o=match_opts(['X', 'Y'], [F(x) for x in items], lids='XY'),
+                p={'A': A, 'r1': [R1, l1], 'r2': [R2, l2], 'opts': items},
+                eqs=[(r1['lhs'], r1['rhs'], *r1['k']), (r2['lhs'], r2['rhs'], *r2['k'])])
+
+
+def _solve_9m(p):
+    A, (R1, l1), C = p['A'], p['r1'], p['C']
+    opts_ = [tuple(o) for o in p['opts']]
+    u1 = set()
+    for r in RX:
+        if R1 == 't':
+            if r['lhs'] == [A]:
+                u1 |= set(r['rhs'])
+        elif A in r['lhs'] and R1 in r['lhs'] and set(r['lhs']) - {A, R1} <= {'H2O'} and \
+                _form_ok(l1, FORM_OF(r, R1), r.get('cond', '')):
+            u1 |= set(r['rhs'])
+    xs = [o for o in opts_ if o[0] in u1 and not o[1]]
+    if len(xs) != 1:
+        return {'err': 'X'}
+    X = xs[0][0]
+    ys = []
+    for j, (o, lo) in enumerate(opts_):
+        if any(C in r['rhs'] for r in RX if X in r['lhs'] and o in r['lhs'] and set(r['lhs']) - {X, o} <= {'H2O'}
+               and _form_ok(lo, FORM_OF(r, o), r.get('cond', ''))):
+            ys.append(str(j + 1))
+    if len(ys) != 1:
+        return {'err': 'Y'}
+    return {'X': str(opts_.index(xs[0]) + 1), 'Y': ys[0]}
+
+
+@proto('ch-ege-09-mixed', 'ЕГЭ', 9, 'Схема A →(реагент) X →Y C: вещество X и реагент Y',
+       invariant='определить продукт первого превращения и подобрать реагент для второго',
+       varies='исходное и конечное вещества, реагент/условие первой стрелки',
+       answer_rule='X — продукт A с указанным реагентом; Y — реагент, переводящий X в C',
+       mistakes=['путают продукты разложения (CuO/Cu₂O)', 'берут реагент, не дающий C'],
+       solve=_solve_9m, kind='dict', kes=['2.4'],
+       fidelity=FID(9, trap='вещество X узнают по реагенту первой стрелки; реагент Y проверяют по продукту C',
+                    scale='схема «Cu(OH)₂ →t° X →Y Cu» — как задания банка, где X — вещество, Y — реагент',
+                    kes=['2.4'], fmt_='две цифры под буквами X, Y'))
+def g_9m(rng):
+    pid = 'ch-ege-09-mixed'
+    A = rng.choice([x for x in SUBS if SUBS[x].get('_mod') == 'chemdb_inorg.py' and x in PARTNERS and
+                    SUBS[x]['cls'] not in ('бинарное',) and x not in ('H2O', 'O2', 'H2')])
+    s1 = _pick_step(rng, A)
+    if not s1:
+        raise Retry
+    R1, l1, X, r1 = s1
+    r2s = [r for r in RX if X in r['lhs'] and two_reagents(r) and 'электролиз' not in r['type']]
+    if not r2s:
+        raise Retry
+    r2 = rng.choice(r2s)
+    Y = next(x for x in two_reagents(r2) if x != X)
+    ly = FORM_OF(r2, Y) if FORM_OF(r2, Y) in ('конц.', 'разб.') else ''
+    if Y in ('HNO3', 'H2SO4') and not ly:
+        raise Retry
+    cc = [x for x in carriers(r2, X) if x not in (A, X)]
+    if not cc:
+        raise Retry
+    C = rng.choice(cc)
+    u1 = _union_products(A, R1, l1)
+    if C in u1 or Y in u1 or step_can(X, Y, ly, C) is not True:
+        raise Retry
+    dis_s = [f for f in _related(X, rng, 20) if f not in u1 and f not in (A, C, Y)]
+    dis_r = [o for o in shuffled(rng, REAG9) if o[0] not in (X, Y, A, C) and o[0] not in u1 and
+             step_can(X, o[0], o[1], C) is False]
+    if not dis_s or not dis_r:
+        raise Retry
+    n_s = rng.choice([1, 2])
+    dis = [(f, '') for f in dis_s[:n_s]] + dis_r[:3 - n_s]
+    if len(dis) < 3:
+        raise Retry
+    # вещества-дистракторы не должны сами давать C с каким-либо реагентом перечня как «X»
+    items = shuffled(rng, [(X, ''), (Y, ly)] + dis)
+    if len({o[0] for o in items}) < 5:
+        raise Retry
+    for o in items:
+        if o[0] in u1 and o[0] != X:
+            raise Retry
+        if o != (Y, ly) and step_can(X, o[0], o[1], C) is not False:
+            raise Retry
+    ans = {'X': str(items.index((X, '')) + 1), 'Y': str(items.index((Y, ly)) + 1)}
+    scheme = F(A) + _arrow(_lab9(R1, l1)) + 'X' + _arrow('Y') + F(C)
+    q = (f'Задана схема превращений веществ: {scheme}. Определите, какие из указанных веществ являются веществами '
+         f'X и Y. Запишите в таблицу номера выбранных веществ под соответствующими буквами.')
+    e = f'{eq_text(r1["lhs"], r1["rhs"])}; {eq_text(r2["lhs"], r2["rhs"])}.'
+    return card(pid, q, ans, e, k='match', o=match_opts(['X', 'Y'], [FL(*o) for o in items], lids='XY'),
+                p={'A': A, 'r1': [R1, l1], 'C': C, 'opts': [list(o) for o in items]},
+                eqs=[(r1['lhs'], r1['rhs'], *r1['k']), (r2['lhs'], r2['rhs'], *r2['k'])])
