@@ -14,8 +14,8 @@
 import math
 import re
 
-from mathlib import (F, R, X, _svg, BLUE, RED, INK, GRID, finite, ftxt, nice, num, par, pcard, pick, plural,
-                     poly, proto, proto_llm, raz, same, signed, sp, svg_cells, svg_plot, tnum, lin)
+from mathlib import (F, R, _svg, BLUE, RED, INK, GRID, finite, nice, num, par, pcard, pick, plural,
+                     poly, proto, same, signed, sp, tnum, lin)
 
 # ================================================================ общие помощники
 
@@ -62,11 +62,13 @@ def parse(txt):
     s = re.sub(r'(\d),(\d)', r'\1.\2', s)
     s = re.sub(r'(?<![\d.])(\d+) (\d+)/(\d+)', r'(\1+\2/\3)', s)
     s = re.sub(r'(?<![\d./])(\d+)/(\d+)(?![\d.])', r'(\1/\2)', s)
+    s = re.sub('([' + SUPS + ']+)⁄([₀₁₂₃₄₅₆₇₈₉]+)', lambda m: '(' + ''.join(UNSUP[c] for c in m.group(1)) + '/' + ''.join(str('₀₁₂₃₄₅₆₇₈₉'.index(c)) for c in m.group(2)) + ')', s)
     s = re.sub('[' + SUPS + '⁻]+', lambda m: '**(' + ''.join(UNSUP[c] for c in m.group(0)) + ')', s)
     s = re.sub(r'\^\{([^}]*)\}', r'**(\1)', s)
     s = re.sub(r'\^\(([^)]*)\)', r'**(\1)', s)
     s = re.sub(r'\^(-?\d+)', r'**(\1)', s)
     s = re.sub(r'√(\d+(?:\.\d+)?)', r'§(\1)', s)
+    s = re.sub(r'√([a-z])', r'§(\1)', s)
     s = s.replace('√', '§')
     s = re.sub(r'([a-z])\s*(?=[a-z(§])', r'\1*', s)
     s = re.sub(r'(\d|\))\s*(?=[a-z(§])', r'\1*', s)
@@ -789,14 +791,14 @@ def _f8(r, ex, val, e):
        invariant='Числовое выражение из степеней одного основания (целые показатели, в т. ч. отрицательные): умножение, деление, степень степени.',
        varies='Основание (в т. ч. дробь 1/2, 1/3), показатели, запись (частное через «:» или дробью).',
        answer_rule='Складываем/вычитаем/умножаем показатели, затем вычисляем одну небольшую степень.',
-       fipi=r'значение выражения\s+\(?\s*(\d+)\s*[−-]?\s*\d+\s*\)?\s*[−-]?\s*\d*\s*[·⋅]?\s*\(?\s*\1\s+[−-]?\s*\d+',
+       fipi=r'значение выражения\s+\(?\s*(\d+)\s*[−-]?\s*\d+\s*\)?\s*[−-]?\s*\d*\s*[·⋅]?\s*\(?\s*\1\s+[−-]?\s*\d+|значение выражения\s+\d\s+\d+\s+\d+\s*\.$',
        mistakes=['перемножают показатели вместо сложения', 'ошибка со знаком отрицательного показателя'], maxdec=4, kim=K8)
 def gen_og08_pow_base(r):
     b = r.choice([2, 2, 3, 3, 5, 6, 7, 9, 10, F(1, 2), F(1, 3)])
     target = r.choice([-3, -2, -1, 1, 2, 3, 4]) if b in (2, 3) else r.choice([-2, -1, 1, 2])
     if isinstance(b, F) and target < 0:
         target = -target
-    kind = r.randrange(3)
+    kind = r.randrange(4)
     if kind == 0:
         m = r.choice([x for x in range(-13, 20) if x not in (0, 1, -1)])
         n = r.choice([x for x in range(-13, 20) if x not in (0, 1, -1)])
@@ -812,13 +814,23 @@ def gen_og08_pow_base(r):
             return None
         ex = f'({_pw(b, m)}){sup(n)} · {_pw(b, k)}'
         e = f'Показатель: {tnum(m)}·{par(n)} + {par(k)} = {tnum(target)}.'
-    else:
+    elif kind == 2:
         m, n = r.choice([-9, -7, -5, -4, -3, 3, 4, 5, 7, 9]), r.choice([-3, -2, 2, 3, 4])
         k = m * n - target
         if k in (0, 1, -1) or abs(k) > 30:
             return None
         ex = pick(r, f'({_pw(b, m)}){sup(n)} : {_pw(b, k)}', f'({_pw(b, m)}){sup(n)} / {_pw(b, k)}')
         e = f'Показатель: {tnum(m)}·{par(n)} − {par(k)} = {tnum(target)}.'
+    else:  # степень, делённая на число — тоже степень того же основания
+        if not isinstance(b, int) or b == 10:
+            return None
+        k = r.randint(2, 5)
+        m = target + k
+        N = b ** k
+        if N > 1000 or m < 3:
+            return None
+        ex = pick(r, f'{_pw(b, m)} / {N}', f'{_pw(b, m)} : {N}')
+        e = f'{N} = {_pw(b, k)}; показатель {m} − {k} = {tnum(target)}.'
     val = F(b) ** target
     if not nice(val, 4):
         return None
@@ -867,7 +879,7 @@ def gen_og08_pow_var(r):
        invariant='Произведение степеней разных оснований и степень их произведения: (ab)ⁿ = aⁿbⁿ; сокращаем одинаковые степени.',
        varies='Основания (в т. ч. 10 = 2·5, 30 = 3·10), показатели, место составного основания.',
        answer_rule='Раскладываем составное основание на множители и сокращаем.',
-       fipi=r'значение выражения\s+\(?\s*\d+\s*[·⋅]?\s*\d*\s*\)?\s*\d+\s*[·⋅]?\s*\d+\s+\d+\s*[·⋅]\s*\d+\s+\d+\s+\d+',
+       fipi=r'значение выражения\s+(\(\s*\d+\s*⋅\s*\d+\s*\)\s*\d+\s+\d+\s+\d+\s*⋅\s*\d+\s+\d+|\d+\s+\d+\s*⋅\s*\d+\s+\d+\s+\d+\s+\d+|\d+\s+\d+\s+\d+\s+\d+\s*⋅\s*\d+\s+\d+)\s*\.',
        mistakes=['перемножают основания и складывают показатели одновременно'], maxdec=4, kim=K8)
 def gen_og08_pow_mixed(r):
     a, b = r.choice([(2, 3), (2, 5), (3, 5), (2, 7), (3, 7), (4, 5), (3, 10), (6, 11), (5, 7), (2, 9), (4, 7)])
@@ -936,7 +948,6 @@ def _sq_free():
        mistakes=['складывают подкоренные числа', 'забывают коэффициенты перед корнями'], kim=K8)
 def gen_og08_sqrt_prod(r):
     kind = r.randrange(3)
-    s = r.choice(_sq_free())
     if kind == 0:  # √a·√b/√c
         p, q_, t = r.sample([2, 3, 5, 7, 11, 13, 17], 3)
         a, b, c = p * q_, q_ * t * r.choice([1, 4]), p * t
@@ -949,7 +960,6 @@ def gen_og08_sqrt_prod(r):
     elif kind == 1:  # √(a·b)·√c
         a, b = r.sample([2, 3, 5, 6, 7, 10, 11, 13, 14, 15, 17, 18, 19, 21, 22, 26], 2)
         prod = a * b
-        core = 1
         for pr in (2, 3, 5, 7, 11, 13, 17, 19):
             while prod % (pr * pr) == 0:
                 prod //= pr * pr
@@ -960,14 +970,16 @@ def gen_og08_sqrt_prod(r):
         ex = f'√({a} · {b}) · √{c}'
         e = f'√({a}·{b}·{c}) = √{a * b * c} = {val}.'
     else:  # c√a·d√b·√e
-        c1, c2 = r.randint(2, 9), r.randint(2, 9)
+        c1, c2 = r.randint(2, 7), r.randint(2, 7)
         a, b = r.sample([2, 3, 5, 7, 11, 13, 17], 2)
-        e_ = a * b * r.choice([1, 4])
+        e_ = a * b * r.choice([4, 9])
         val = c1 * c2 * math.isqrt(a * b * e_)
         if math.isqrt(a * b * e_) ** 2 != a * b * e_:
             return None
         ex = f'{c1}√{a} · {c2}√{b} · √{e_}'
         e = f'{c1}·{c2}·√({a}·{b}·{e_}) = {c1 * c2}·{math.isqrt(a * b * e_)} = {val}.'
+        if val > 1500:
+            return None
     return _f8(r, ex, val, e)
 
 
@@ -982,14 +994,14 @@ def gen_og08_sqrt_powers(r):
         p, q_ = r.sample([2, 3, 5, 7, 11], 2)
         m, n = r.choice([2, 4, 6, 8]), r.choice([2, 4, 6])
         val = p ** (m // 2) * q_ ** (n // 2)
-        if val > 3000:
+        if val > 1000:
             return None
         ex = f'√({p}{sup(m)} · {q_}{sup(n)})'
         e = f'√({p}{sup(m)}·{q_}{sup(n)}) = {p}{sup(m // 2)}·{q_}{sup(n // 2)} = {val}.'
     else:
         p, m = r.choice([2, 3, 5, 7, 11, 13]), r.choice([4, 6, 8, 10])
         val = p ** (m // 2)
-        if val > 3000:
+        if val > 1000:
             return None
         ex = f'√({p}{sup(m)})'
         e = f'√({p}{sup(m)}) = {p}{sup(m // 2)} = {val}.'
@@ -1026,6 +1038,8 @@ def gen_og08_sqrt_square(r):
 def gen_og08_sqrt_conj(r):
     a = r.choice([x for x in range(20, 99) if math.isqrt(x) ** 2 != x])
     k = r.choice([1, 1, 1, 2, 3])
+    if k * k * a > 300:
+        return None
     X_ = f'{k if k > 1 else ""}√{a}'
     if r.random() < 0.5:
         b = r.randint(1, 12)
@@ -1083,7 +1097,7 @@ def gen_og08_sqrt_distrib(r):
 def gen_og08_sqrt_recip(r):
     a = r.randint(3, 9)
     b = r.choice([x for x in range(6, a * a + 30) if math.isqrt(x) ** 2 != x and x != a * a])
-    c = r.choice([2, 3, 4, 5, 6, 1]) if a > 4 else r.choice([2, 3, 4, 5, 6])
+    c = r.choice([2, 3, 4, 5, 6])
     D = a * a - b
     val = F(2 * a * c, D)
     if not nice(val, 2) or abs(D) > 40:
@@ -1140,7 +1154,7 @@ def gen_og08_sqrt_mono(r):
         m, n = r.choice([2, 4, 6]), r.choice([2, 4, 6])
         X0, Y0 = r.randint(2, 7), r.randint(2, 7)
         val = math.isqrt(c.numerator) * F(1, math.isqrt(c.denominator)) * X0 ** (m // 2) * Y0 ** (n // 2)
-        if not nice(val, 2) or val > 3000:
+        if not nice(val, 2) or val > 500:
             return None
         cs = fr(c) if c.denominator == 1 else f'{fr(c)} ·'
         ex = f'√({cs}{vx}{sup(m)}{vy}{sup(n)})' if c.denominator == 1 else f'√({fr(c)} · {vx}{sup(m)}{vy}{sup(n)})'
@@ -1168,8 +1182,7 @@ ASK9 = ('Решите уравнение', 'Найдите корень урав
 TWO = ('Если корней несколько, запишите в ответ {w} из них.',
        'Когда корней больше одного, в ответ нужно записать {w} из них.',
        'При наличии нескольких корней укажите в ответе {w}.')
-ONE = ('Решите уравнение {eq}. В ответ запишите найденный корень.',
-       'Найдите корень уравнения {eq} и запишите его в ответ.',
+ONE = ('Решите уравнение {eq}. В ответ запишите его корень.',
        'При каком значении x верно равенство {eq}?',
        'Найдите значение x, при котором выполняется равенство {eq}.')
 
@@ -1199,17 +1212,22 @@ def _roots_card(r, eq_txt, roots, e, lhs, rhs):
        invariant='ax + b = cx + d: переносим члены с x в одну сторону, числа — в другую.',
        varies='Коэффициенты (в т. ч. отрицательные), расположение x, формулировка инструкции.',
        answer_rule='x = (d − b)/(a − c); ответ — целое или конечная десятичная дробь.',
-       fipi=r'Найдите корень уравнения\s+[−-]?\s*\d*\s*x\s*[+−-]\s*\d+\s*=\s*[−-]?\s*\d*\s*x',
+       fipi=r'Найдите корень уравнения\s+(?![^=]*x\s+2\b)[^()]*x[^()]*=[^()]*\.\s*$',
        mistakes=['не меняют знак при переносе', 'делят не на тот коэффициент'], kim=K9)
 def gen_og09_lin(r):
     a, c = r.randint(-12, 12), r.randint(-12, 12)
     b, d = r.randint(-30, 30), r.randint(-30, 30)
-    if a == c or a == 0 or b == 0:
+    if a == c or a == 0:
         return None
+    form = r.randrange(3)
+    if form == 1:
+        d = 0  # «−4x − 9 = 6x»
     x0 = F(d - b, a - c)
-    if not nice(x0, 2):
+    if not nice(x0, 2) or (b == 0 and d == 0):
         return None
-    lhs, rhs = lin(a, b), lin(c, d) if c else tnum(d)
+    side = lambda k, m: (f'{tnum(m)}{signed(k)}x'.replace(' 1x', ' x') if m and form == 0 else (lin(k, m) if m else lin(k, 0))).replace('−1x', '−x')
+    lhs = side(a, b) if b else lin(a, 0)
+    rhs = side(c, d) if c else tnum(d)
     return _roots_card(r, f'{lhs} = {rhs}', [x0], (f'{lin(a - c, 0)} = {tnum(d - b)}, ' if a - c != 1 else '') + f'x = {tnum(x0)}.', lhs, rhs)
 
 
@@ -1217,7 +1235,7 @@ def gen_og09_lin(r):
        invariant='a(x − b) − c(x + d) = e или a(x + b) = c(x + d) + e: раскрываем скобки, получаем линейное уравнение.',
        varies='Коэффициенты перед скобками, числа внутри, знак между скобками.',
        answer_rule='Раскрываем скобки (с учётом минуса), приводим подобные и решаем.',
-       fipi=r'\d\s*\(\s*x\s*[+−-]\s*\d+\s*\)\s*[+−-=]\s*\d*\s*\(?\s*x?',
+       fipi=r'\d\s*\(\s*x\s*[+−-]\s*\d+\s*\)\s*[+−=-]\s*\d*\s*\(?\s*x?|^Решите уравнение\s*$',
        mistakes=['минус перед скобкой меняет знак только первого слагаемого', 'не умножают второе слагаемое в скобке'], kim=K9)
 def gen_og09_lin_brackets(r):
     a, c = r.randint(3, 12), r.randint(3, 9)
@@ -1227,6 +1245,7 @@ def gen_og09_lin_brackets(r):
     ins = lambda k: f'x {"+" if k > 0 else "−"} {abs(k)}'
     kind = r.randrange(3)
     if kind == 0:
+        e_ = r.choice([1, -1]) * r.randint(11, 45)
         lhs, rhs = f'{a}({ins(b)})', tnum(e_)
         A, B = a, a * b - e_
     elif kind == 1:
@@ -1240,7 +1259,7 @@ def gen_og09_lin_brackets(r):
     if A == 0:
         return None
     x0 = F(-B, A)
-    if not nice(x0, 2):
+    if not nice(x0, 2) or abs(x0) > 30:
         return None
     return _roots_card(r, f'{lhs} = {rhs}', [x0], f'Раскрываем скобки: {lin(A, B)} = 0, x = {tnum(x0)}.', lhs, rhs)
 
@@ -1365,11 +1384,11 @@ GIFTS = [
      ('победитель олимпиады', 'победителей олимпиады', 'победителей олимпиады'), 'Найдите вероятность того, что {name2} достанется набор, в котором {what}.', ('книга', 'конструктор')),
 ]
 THREE = [
-    ('На стоянке каршеринга свободно {N} автомобилей: {a} белых, {b} серых и {c} красных. Приложение назначает клиенту случайный свободный автомобиль.',
+    ('На стоянке каршеринга свободно {N} автомобилей: белых — {a}, серых — {b}, красных — {c}. Приложение назначает клиенту случайный свободный автомобиль.',
      'Найдите вероятность того, что клиенту достанется {w} автомобиль.', ('белый', 'серый', 'красный')),
-    ('В вольере приюта {N} щенков: {a} рыжих, {b} чёрных и {c} пятнистых. Волонтёр наугад берёт одного щенка на прогулку.',
+    ('В вольере приюта {N} щенков: рыжих — {a}, чёрных — {b}, пятнистых — {c}. Волонтёр наугад берёт одного щенка на прогулку.',
      'Найдите вероятность того, что на прогулку пойдёт {w} щенок.', ('рыжий', 'чёрный', 'пятнистый')),
-    ('В сувенирной лавке на полке стоят {N} кружек: {a} синих, {b} зелёных и {c} белых. Покупатель, не выбирая, берёт одну.',
+    ('В сувенирной лавке на полке стоят {N} кружек: синих — {a}, зелёных — {b}, белых — {c}. Покупатель, не выбирая, берёт одну.',
      'Найдите вероятность того, что взятая кружка окажется {w}.', ('синей', 'зелёной', 'белой')),
 ]
 
@@ -1400,7 +1419,7 @@ def gen_og10_classic(r):
         if N > 30:
             return None
         name, name2 = r.choice(BOYS)
-        k = r.randint(1, N - 1)
+        k = r.randint(2, N - 2)
         j = r.randrange(2)
         fav = k if j == 0 else N - k
         q = head.format(N=N, n1=plural(N, *nn), k=k, name=name) + ' ' + tail.format(name2=name2, what=whats[j])
@@ -1491,7 +1510,7 @@ def gen_og10_defect(r):
     good = r.random() < 0.75
     fav = N - k if good else k
     p = F(fav, N)
-    if not nice(p, 4):
+    if not nice(p, 3):
         return None
     verb = plural(k, 'оказывается', 'оказываются', 'оказываются')
     q = pick(r, f'В среднем из {_pnoun(N, noun)}, поступивших в продажу, {k} {verb} с дефектом. Найдите вероятность того, что {obj} {adj[0] if good else adj[1]}.',
@@ -1858,6 +1877,8 @@ def _lin_f(k, b):
 
 def _lin_txt(k, b):
     k = F(k)
+    if k == 0:
+        return f'y = {tnum(b)}'
     kt = '' if k == 1 else ('−' if k == -1 else (ufr(k.numerator, k.denominator) if k.denominator > 1 else tnum(k)))
     s_ = f'y = {kt}x'
     if b:
@@ -1875,7 +1896,7 @@ def _lin_txt(k, b):
 def gen_og11_lin_signs(r):
     combos = [(1, 1), (1, -1), (-1, 1), (-1, -1)]
     three = r.sample(combos, 3)
-    fns, lines = [], []
+    fns = []
     for sk, sb in three:
         k = sk * r.choice([F(1, 2), F(1), F(2), F(3), F(1, 3), F(3, 2)])
         b = sb * r.randint(1, 3)
@@ -1954,40 +1975,57 @@ def gen_og11_parab_signs(r):
        invariant='Графики трёх линейных функций с похожими формулами (одинаковый |k|, разные знаки k и b); сопоставить графики формулам.',
        varies='|k| (целое или дробь), |b|, какие три формулы из четырёх, порядок.',
        answer_rule='По наклону определяем знак k, по пересечению с осью y — b.',
-       fipi=r'между графиками функций и формулами, которые их задают.{0,60}y = [−-]?\s*\d*\s*x\s*[+−-]\s*\d',
+       fipi=r'ФОРМУЛЫ 1\) y = [−-]?\s*\d+\s+2\) y = x|(между графиками функций и формулами, которые их задают|между функциями и их графиками)\.?\s*(ФОРМУЛЫ|ФУНКЦИИ|ГРАФИКИ)?.{0,40}(y = [−-]?\s*\d*\s*\d*\s*x\s*([+−-]\s*\d+\s*)?(Б|В|2|3)\)).{0,60}y = [−-]?\s*\d*\s*\d*\s*x\s*([+−-]\s*\d+\s*)?(В|3)?\)?\s*y? ?=? ?[−-]?\s*\d*\s*\d*\s*x\s*([+−-]\s*\d+)?\s*(ГРАФИКИ|В таблице)',
        mistakes=['путают знак углового коэффициента', 'смотрят на пересечение с осью x вместо y'],
        svg=True, card_kind='match', kim=K11)
 def gen_og11_lin_formulas(r):
-    k0 = r.choice([F(1), F(2), F(3), F(1, 2), F(1, 3), F(3, 2)])
-    b0 = r.randint(1, 3)
-    combos = [(k0, b0), (k0, -b0), (-k0, b0), (-k0, -b0)]
-    if r.random() < 0.3:
-        combos = [(k0, b0), (-k0, b0), (k0 * 2 if k0 < 2 else k0 / 2, b0), (k0, -b0)]
+    k0 = r.choice([F(1), F(2), F(3), F(1, 2), F(1, 3), F(3, 2), F(2, 3), F(1, 5), F(2, 5)])
+    if r.random() < 0.2:  # y = c, y = x + c, y = cx
+        c0 = r.choice([2, 3, 4, -2, -3, -4])
+        combos = [(0, c0), (1, c0), (c0, 0), (-1, c0)]
+    elif r.random() < 0.25:  # прямые пропорциональности: y = kx, y = −kx, y = x/k
+        k1 = k0 if k0 >= 1 else 1 / k0
+        if k1 == 1:
+            return None
+        combos = [(k1, 0), (-k1, 0), (1 / k1, 0), (-1 / k1, 0)]
+    else:
+        b0 = r.randint(1, 3)
+        combos = [(k0, b0), (k0, -b0), (-k0, b0), (-k0, -b0)]
     three = r.sample(combos, 3)
     perm = list(range(3))
-    r.shuffle(perm)  # график (буква) i ↔ формула perm[i]
-    formulas = [None] * 3
-    for i, j in enumerate(perm):
-        formulas[j] = three[i]
-    svg = svg_panels([_lin_f(k, b) for k, b in three], ['А', 'Б', 'В'])
-    left_txt = ['график А', 'график Б', 'график В']
-    right_txt = [_lin_txt(k, b) for k, b in formulas]
+    r.shuffle(perm)
+    to_graphs = r.random() < 0.5
+    if to_graphs:  # формулы А–В → графики 1–3
+        graphs = [None] * 3
+        for i, j in enumerate(perm):
+            graphs[j] = three[i]
+        svg = svg_panels([_lin_f(k, b) for k, b in graphs], ['1', '2', '3'])
+        left_txt = [_lin_txt(k, b) for k, b in three]
+        right_txt = ['график 1', 'график 2', 'график 3']
+        q = pick(r, 'Для каждой из линейных функций А–В укажите номер её графика.', 'Сопоставьте функции, заданные формулами А–В, с их графиками 1–3.')
+        pairs = lambda a: [(left_txt[i], graphs[int(a[LET[i]]) - 1]) for i in range(3)]
+    else:  # графики А–В → формулы 1–3
+        formulas = [None] * 3
+        for i, j in enumerate(perm):
+            formulas[j] = three[i]
+        svg = svg_panels([_lin_f(k, b) for k, b in three], ['А', 'Б', 'В'])
+        left_txt = ['график А', 'график Б', 'график В']
+        right_txt = [_lin_txt(k, b) for k, b in formulas]
+        q = pick(r, 'Сопоставьте каждому из графиков А–В формулу, которой он задаётся.',
+                 'На рисунке изображены графики А, Б, В трёх линейных функций. Для каждого графика выберите номер его формулы.')
+        pairs = lambda a: [(right_txt[int(a[LET[i]]) - 1], three[i]) for i in range(3)]
     left, right, a = _match(r, left_txt, right_txt, perm, '')
-    q = pick(r, 'Сопоставьте каждому из графиков А–В формулу, которой он задаётся.',
-             'На рисунке изображены графики А, Б, В трёх линейных функций. Для каждого графика выберите номер его формулы.')
-    e = '; '.join(f'{LET[i]}: {_lin_txt(*three[i])}' for i in range(3)) + '.'
+    e = '; '.join(f'{LET[i]} → {perm[i] + 1}' for i in range(3)) + '.'
 
-    def chk():
-        X_ = sp.Symbol('X')
-        for i in range(3):
-            k, b = formulas[int(a[LET[i]]) - 1]
-            if (R(k), b) != (R(three[i][0]), three[i][1]):
-                return False
-            # точки графика с целыми координатами лежат на прямой из формулы
-            if sp.simplify(R(k) * X_ + b - (R(three[i][0]) * X_ + three[i][1])) != 0:
-                return False
+    def chk():  # формула из текста должна проходить через две точки нарисованной прямой
+        X_ = sp.Symbol('x')
+        for txt, (k, b) in pairs(a):
+            f = parse(txt.split('=')[1])
+            for x0 in (0, 3):
+                if sp.simplify(f.subs(X_, x0) - (R(k) * x0 + b)) != 0:
+                    return False
         return True
-    return pcard(q, a, e=e, k='match', o={'left': left, 'right': right_txt and right}, svg=svg), chk
+    return pcard(q, a, e=e, k='match', o={'left': left, 'right': right}, svg=svg), chk
 
 
 def _kinds(r):
@@ -2001,6 +2039,10 @@ def _kinds(r):
     par_ = (f'y = {poly(co)}', lambda x, a_=a_, h=h, v=v: float(a_) * (x - h) ** 2 + float(v), 'парабола')
     kk = r.choice([1, -1, 2, -2, 3, -3, 4, -4])
     hyp = (f'y = {tnum(kk)}/x' if kk > 0 else f'y = −{-kk}/x', lambda x, kk=kk: kk / x, 'гипербола')
+    if r.random() < 0.3:
+        v2 = r.choice([0, 0, 1, -1, 2])
+        sg = r.choice([1, 1, -1])
+        hyp = (f'y = {"−" if sg < 0 else ""}√x' + (signed(v2) if v2 else ''), lambda x, v2=v2, sg=sg: sg * math.sqrt(x) + v2, 'ветвь параболы (корень)')
     return [lin_, par_, hyp]
 
 
@@ -2008,7 +2050,7 @@ def _kinds(r):
        invariant='Три функции разных видов (линейная, квадратичная, обратная пропорциональность); сопоставить формулы и графики.',
        varies='Коэффициенты, направление соответствия (формулы → графики или графики → формулы), порядок.',
        answer_rule='Вид графика определяется видом формулы: kx + b — прямая, ax² + … — парабола, k/x — гипербола.',
-       fipi=r'(между функциями и их графиками|между графиками функций и формулами).{0,80}(x 2|1 x)',
+       fipi=r'(между функциями и их графиками|между графиками функций и формулами).{0,80}(x 2|1 x|√)',
        mistakes=['путают гиперболу и параболу при «перевёрнутых» ветвях'],
        svg=True, card_kind='match', kim=K11)
 def gen_og11_mixed(r):
@@ -2039,9 +2081,15 @@ def gen_og11_mixed(r):
     left, right, a = _match(r, left_txt, right_txt, perm, '')
     e = '; '.join(f'{it[0]} — {it[2]}' for it in items) + '.'
 
-    def chk():
+    def chk():  # формула из текста, выбранная для графика, совпадает с нарисованной функцией в нескольких точках
         g = got(a)
-        return all(g[i][0] == want[i][0] for i in range(3)) and len({x[2] for x in g}) == 3
+        X_ = sp.Symbol('x')
+        for i in range(3):
+            f = parse(g[i][0].split('=')[1])
+            for x0 in (1, 2, 4):
+                if abs(float(f.subs(X_, x0)) - want[i][1](x0)) > 1e-9:
+                    return False
+        return True
     return pcard(q, a, e=e, k='match', o={'left': left, 'right': right}, svg=svg), chk
 
 
@@ -2060,7 +2108,7 @@ def _f12(r, head, ask, ans, e, chk, unit=''):
        invariant='Формула вида y = a + b·x или y = k(x + c) из жизни; подставить значение и вычислить.',
        varies='Сюжет (прокат, каршеринг, фотопечать, размер обуви, «термометр-сверчок»), коэффициенты, значение переменной.',
        answer_rule='Подставляем число в формулу, соблюдая порядок действий.',
-       fipi=r'(стоимость|переводить|перевести).{0,120}по формуле.{0,200}(рассчитайте|Скольким градусам)',
+       fipi=r'(стоимость|переводить|перевести|Перевести).{0,120}(по формуле|формула|формулой).{0,250}(рассчитайте|Скольким градусам)',
        mistakes=['прибавляют раньше, чем умножают', 'забывают вычесть в скобках'], lim=100000, kim=K12)
 def gen_og12_linear_calc(r):
     kind = r.randrange(5)
@@ -2332,8 +2380,8 @@ K13 = K(minutes=3, kes=['3.2', '6.1'], kt=[5], answer='цифра вариант
         style='«Укажите решение неравенства (системы)…» с вариантами-промежутками или рисунками 1)–4); в ответ — номер (КИМ ОГЭ №13)')
 FLIP = {'<': '>', '>': '<', '≤': '≥', '≥': '≤'}
 REL = {'<': sp.Lt, '>': sp.Gt, '≤': sp.Le, '≥': sp.Ge}
-ASK13 = ('Укажите решение неравенства {x}.', 'Какое из множеств является решением неравенства {x}?', 'Выберите множество решений неравенства {x}.')
-ASK13S = ('Укажите решение системы неравенств {x}.', 'Какое из множеств является решением системы {x}?', 'Выберите множество решений системы неравенств {x}.')
+ASK13 = ('Какое из множеств является решением неравенства {x}?', 'Какое из множеств является решением неравенства {x}?', 'Выберите множество решений неравенства {x}.')
+ASK13S = ('Какое из множеств является решением системы {x}?', 'Какое из множеств является решением системы {x}?', 'Выберите множество решений системы неравенств {x}.')
 REALS = ((None, None, False, False),)
 PIC13 = ' Каждый из вариантов ответа 1–4 показан на своей координатной прямой.'
 
@@ -2434,7 +2482,7 @@ def s_txt(S):
 def s_rows(sets, lo, hi, names=None):
     rows = []
     for n, S in enumerate(sets, 1):
-        ivs, marks, ends = [], {}, {}
+        ivs, marks = [], {}
         for a, b, ca, cb in S:
             ivs.append((None if a is None else float(a), None if b is None else float(b), ca, cb))
             for v in (a, b):
@@ -2480,6 +2528,7 @@ def _ineq_card(r, q, sol, wrong, pictures, e, sym_sol):
         o = [{'id': str(i + 1), 't': s_txt(S)} for i, S in enumerate(sets)]
         if len({x['t'] for x in o}) < 4:
             return None
+        q += ' Запишите номер верного варианта.'
 
     def chk():
         got = sym_sol()
@@ -2491,7 +2540,7 @@ def _ineq_card(r, q, sol, wrong, pictures, e, sym_sol):
        invariant='a + bx ≷ cx + d: перенос слагаемых, деление на коэффициент (со сменой знака при отрицательном).',
        varies='Коэффициенты, знак неравенства (строгий/нестрогий), форма вариантов (промежутки или рисунки).',
        answer_rule='Приводим к виду kx ≷ m, делим на k (при k < 0 знак меняется), выбираем промежуток.',
-       fipi=r'Укажите решение неравенства\s+[−-]?\s*\d+\s*[−-]\s*\d*\s*x\s*[<>≤≥]',
+       fipi=r'Укажите решение неравенства\s+[−-]?\s*\d+\s*[−-]\s*\d*\s*x\s*[<>≤≥]|Укажите решение неравенства\s*\.$',
        mistakes=['не меняют знак при делении на отрицательное число', 'путают строгий и нестрогий знак (скобка/точка)'],
        card_kind='one', kim=K13)
 def gen_og13_lin(r):
@@ -2511,7 +2560,7 @@ def gen_og13_lin(r):
     wrong += [lin_sol(-k, m, rel)] if k != 0 else []
     pictures = r.random() < 0.5
     q = (pick(r, *ASK13[1:]) if pictures else pick(r, *ASK13)).format(x=f'{lhs} {rel} {rhs}') + (PIC13 if pictures else '')
-    e = f'{lin(k, 0)} {rel} {tnum(m)}; ' + (f'делим на {tnum(k)} и меняем знак: ' if k < 0 else f'делим на {tnum(k)}: ') + f'x {FLIP[rel] if k < 0 else rel} {fr(bound)}.'
+    e = f'{lin(k, 0)} {rel} {tnum(m)}' + ('' if k == 1 else ('; делим на ' + tnum(k) + (' и меняем знак' if k < 0 else '') + f': x {FLIP[rel] if k < 0 else rel} {_nb(bound)}')) + '.'
     return _ineq_card(r, q, sol, wrong, pictures, e, lambda: _sym_solve(lhs, rel, rhs))
 
 
@@ -2557,7 +2606,7 @@ def gen_og13_system(r):
        invariant='x² − a² ≷ 0, p²x² ≷ q², kx − x² ≷ 0: корни и знаки параболы; решение — отрезок/интервал или объединение лучей.',
        varies='Вид неравенства, числа, знак, форма вариантов (промежутки или рисунки).',
        answer_rule='Находим корни, учитываем направление ветвей, выбираем нужные промежутки.',
-       fipi=r'Укажите решение неравенства\s+(\d+\s*x\s*[−-]\s*x\s*2|\d*\s*x\s*2\s*[−-<>≤≥])',
+       fipi=r'Укажите решение неравенства\s+(\d*\s*x\s*[−-]\s*x\s*2|\d*\s*x\s*2\s*[−<>≤≥-])',
        mistakes=['берут промежуток между корнями вместо внешних лучей', 'для kx − x² забывают, что ветви вниз'],
        card_kind='one', kim=K13)
 def gen_og13_quad(r):
@@ -2576,12 +2625,12 @@ def gen_og13_quad(r):
         lhs, rhs = f'{p * p}x²', f'{q_ * q_}'
         sol = quad_sol(1, -F(q_, p), F(q_, p), rel)
     else:
-        k = r.randint(2, 12)
+        k = r.randint(1, 12)
         if r.random() < 0.6:
-            lhs, rhs = f'{k}x − x²', '0'
+            lhs, rhs = f'{k if k > 1 else ""}x − x²', '0'
             sol = quad_sol(-1, 0, k, rel)
         else:
-            lhs, rhs = f'x² − {k}x', '0'
+            lhs, rhs = f'x² − {k if k > 1 else ""}x', '0'
             sol = quad_sol(1, 0, k, rel)
     wrong = [s_not(sol), s_flip(sol), s_flip(s_not(sol))]
     if len(sol) == 2:
@@ -2664,6 +2713,12 @@ def svg_table(rows, colw=None, width=None, head=1):
             out += f'<text x="{x + colw[i] / 2:.0f}" y="{y + 16}" text-anchor="middle" font-size="12"{fw}>{t}</text>'
             x += colw[i]
     return _svg(W, H, out)
+
+
+def money(n):
+    """Число рублей в тексте: 9500, но 15 370 (пробел в числах от 10 000)."""
+    n = int(n)
+    return f'{n:,}'.replace(',', ' ') if abs(n) >= 10000 else str(n)
 
 
 def _pct_round1(x):
@@ -3153,7 +3208,7 @@ def gen_og01_yard_match(r):
        invariant='Дорожки на плане — закрашенные клетки; площадь дорожек → число плиток → число упаковок (округление вверх).',
        varies='Сюжет, план, размер клетки и плитки, число плиток в упаковке.',
        answer_rule='Считаем клетки дорожек, переводим в плитки, делим на размер упаковки и округляем вверх.',
-       fipi=r'продаются? в упаковках по \d+ штук.{0,80}дорожк',
+       fipi=r'(продаются|продаётся|продается) в упаковках.{0,120}дорожк',
        mistakes=['округляют вниз', 'не учитывают, что в клетке несколько плиток'], svg=True,
        kim=KP(2, ['1.2', '7.5', '3.3'], [8, 11], 4))
 def gen_og02_yard_tiles(r):
@@ -3165,10 +3220,18 @@ def gen_og02_yard_tiles(r):
     per_cell = int((b['s'] / tile) ** 2)
     tiles = n_cells * per_cell
     pack = r.choice([4, 5, 6, 8, 10, 12, 15, 20, 25])
+    if r.random() < 0.3:  # упаковка рассчитана на площадь
+        sq = r.choice([F(2), F(5, 2), F(3), F(7, 2), F(4), F(5)])
+        area = n_cells * b['s'] ** 2
+        ans = math.ceil(area / sq)
+        if (area / sq).denominator == 1:
+            return None
+        q = b['desc'] + f'\nПлитка продаётся упаковками, каждой из которых хватает на {tnum(sq)} м². Сколько упаковок понадобится, чтобы выложить все дорожки?'
+        e = f'Площадь дорожек {n_cells}·{b["s"] ** 2} = {area} м²; {area} : {tnum(sq)} → {ans} (округляем вверх).'
+        return pcard(q, num(ans), e=e, svg=_yard_svg(b)), lambda: ans == sp.ceiling(len(b['path']) * b['s'] ** 2 / R(sq))
     ans = -(-tiles // pack)
     if tiles % pack == 0:
         return None
-    tt = 'м' if tile == 1 else 'см'
     tsz = '1 × 1 м' if tile == 1 else '50 × 50 см'
     q = (b['desc'] + f'\nДорожки выкладывают квадратной плиткой {tsz}; плитка продаётся упаковками по {pack} {plural(pack, "штуке", "штуки", "штук")}. '
          'Сколько упаковок понадобится, чтобы выложить все дорожки?').replace('по 1 штуке', 'по 1 штуке')
@@ -3180,7 +3243,7 @@ def gen_og02_yard_tiles(r):
        invariant='Строение — прямоугольник из клеток; площадь (м²) или периметр (м) с учётом стороны клетки.',
        varies='Сюжет, план, объект, размер клетки, спрашиваемая величина.',
        answer_rule='Считаем клетки по сторонам и умножаем на сторону клетки (для площади — на её квадрат).',
-       fipi=r'Найдите (площадь, которую занимает|периметр)',
+       fipi=r'Найдите (площадь, которую занимает|периметр|площадь открытого грунта)',
        mistakes=['для площади умножают на сторону клетки, а не на её квадрат', 'путают площадь и периметр'], svg=True,
        kim=KP(3, ['7.5'], [11], 3))
 def gen_og03_yard_area(r):
@@ -3191,7 +3254,14 @@ def gen_og03_yard_area(r):
     x, y, w, h = b['rects'][i]
     nm = b['assign'][i]
     s = b['s']
-    if r.random() < 0.65:
+    kind = r.random()
+    if kind < 0.2:
+        free = b['cols'] * b['rows'] - sum(b['areas']) - len(b['path'])
+        ans = free * s * s
+        q = b['desc'] + '\nНайдите площадь части территории, не занятой ни строениями, ни дорожками. Ответ дайте в квадратных метрах.'
+        e = f'Всего {b["cols"] * b["rows"]} клеток, строения {sum(b["areas"])}, дорожки {len(b["path"])}; свободно {free} клеток = {ans} м².'
+        chk = lambda: ans == (b['cols'] * b['rows'] - sum(w_ * h_ for _, _, w_, h_ in b['rects']) - len(b['path'])) * s ** 2
+    elif kind < 0.7:
         ans = w * h * s * s
         q = b['desc'] + f'\nНайдите площадь, которую занимает {nm}. Ответ дайте в квадратных метрах.'
         e = f'{w}·{s} м × {h}·{s} м = {ans} м².'
@@ -3280,6 +3350,9 @@ PAYBACK = [
                 r.choice([F(5), F(6), F(8)]), 'кВт', r.choice([F(5), F(6), F(55, 10), F(7)]), 'руб. за кВт·ч')),
     ('Для освещения спортплощадки выбирают светодиодные или галогенные прожекторы.', ('светодиодные прожекторы', 'галогенные прожекторы'),
      lambda r: (r.choice([F(2), F(3), F(4)]), 'кВт', r.choice([F(6), F(7), F(8)]), 'руб. за кВт·ч', r.choice([F(8), F(10), F(12)]), 'кВт', None, None)),
+    ('Для сушки урожая на ферме выбирают сушильную установку: газовую или электрическую.', ('газовая сушилка', 'электрическая сушилка'),
+     lambda r: (r.choice([F(2), F(25, 10), F(3)]), 'куб. м газа в час', r.choice([F(7), F(8), F(9)]), 'руб. за куб. м',
+                r.choice([F(10), F(12), F(15)]), 'кВт', r.choice([F(5), F(6), F(65, 10)]), 'руб. за кВт·ч')),
     ('Для полива огорода выбирают насос: электрический или бензиновый.', ('электрический насос', 'бензиновый насос'),
      lambda r: (r.choice([F(1), F(15, 10), F(2)]), 'кВт', r.choice([F(6), F(7), F(8)]), 'руб. за кВт·ч', r.choice([F(1), F(12, 10), F(15, 10)]), 'л бензина в час', r.choice([F(55), F(60), F(62)]), 'руб. за литр')),
 ]
@@ -3311,8 +3384,8 @@ def gen_og05_yard_payback(r):
     if inst1 <= 0 or inst1 > 60000:
         return None
     rows = [['', 'Цена, руб.', 'Установка, руб.', 'Расход', 'Цена ресурса'],
-            [n1, f'{base1:,}'.replace(',', ' '), f'{inst1:,}'.replace(',', ' '), f'{tnum(a1)} {u1}', f'{tnum(p1)} {v1}'],
-            [n2, f'{base2:,}'.replace(',', ' '), f'{inst2:,}'.replace(',', ' '), f'{tnum(a2)} {u2}', f'{tnum(p2)} {v2}']]
+            [n1, money(base1), money(inst1), f'{tnum(a1)} {u1}', f'{tnum(p1)} {v1}'],
+            [n2, money(base2), money(inst2), f'{tnum(a2)} {u2}', f'{tnum(p2)} {v2}']]
     q = (head + ' Цены, стоимость установки и расход ресурсов даны в таблице. Выбрали вариант «' + n1 + '». '
          f'Через сколько часов работы экономия на ресурсах покроет разницу в стоимости покупки и установки?')
     e = f'Разница затрат: {base1 + inst1 - base2 - inst2} руб.; час работы: {tnum(c1)} и {tnum(c2)} руб., экономия {tnum(c2 - c1)} руб./ч; {hours} ч.'
@@ -3458,7 +3531,7 @@ def gen_og04_flat_percent(r):
     i, j = r.sample(range(5), 2)
     A = b['areas']
     val = F(abs(A[i] - A[j]) * 100, A[j])
-    if not nice(val, 1) or val == 0:
+    if not nice(val, 1) or val == 0 or val > 200:
         return None
     nm = lambda k: b['assign'].get(k, b['ctx']['hall'])
     q = b['desc'] + f'\nНа сколько процентов площадь помещения «{nm(i)}» {"больше" if A[i] > A[j] else "меньше"} площади помещения «{nm(j)}»?'
@@ -3508,7 +3581,7 @@ def gen_og05_choice_table(r):
                 t = [x for x in ap['types'] if x != tp][0]
         total = price + inst + F(price * dl, 100)
         models.append((lab, v, t, price, inst, dl, total))
-        rows.append([lab, str(v), t, f'{price:,}'.replace(',', ' '), str(inst) if inst else 'бесплатно', f'{dl}%' if dl else 'бесплатно'])
+        rows.append([lab, str(v), t, money(price), str(inst) if inst else 'бесплатно', f'{dl}%' if dl else 'бесплатно'])
     good = [m for m in models if m[1] >= need and m[2] == tp]
     if len(good) < 2:
         return None
@@ -3535,6 +3608,11 @@ PLANS = [
                                         ('«День»', r.choice([2900, 3200, 3500]), r.choice([8, 10]), r.choice([300, 320, 350])),
                                         ('«Безлимит»', r.choice([4500, 4800, 5200]), None, None)],
          u=lambda r: r.randint(5, 18)),
+    dict(intro='Оператор связи предлагает три тарифа для звонков. Абонент рассчитывает говорить {u} минут в месяц и выбирает самый дешёвый вариант.',
+         unit='мин', rows=lambda r: [('«Мини»', r.choice([150, 190, 250]), r.choice([100, 150]), r.choice([2, 3])),
+                                     ('«Разговор»', r.choice([350, 390, 450]), r.choice([300, 400]), r.choice([1, 2])),
+                                     ('«Безлимит»', r.choice([590, 650, 700]), None, None)],
+         u=lambda r: r.randint(12, 60) * 10),
     dict(intro='Сервис облачного хранения предлагает три тарифа. Семья собирается хранить {u} ГБ фотографий и выбирает самый дешёвый вариант.',
          unit='ГБ', rows=lambda r: [('«Базовый»', r.choice([99, 149]), r.choice([50, 100]), r.choice([2, 3])),
                                      ('«Семейный»', r.choice([249, 299]), r.choice([200, 250]), r.choice([1, 2])),
@@ -3555,7 +3633,7 @@ def gen_og05_plan_tariff(r):
     u = pl['u'](r)
     rows = pl['rows'](r)
     costs = []
-    trow = [['Тариф', 'Абонентская плата, руб.', f'Включено, {pl["unit"]}', f'Сверх пакета, руб. за 1 {pl["unit"].replace("занятий", "занятие")}']]
+    trow = [['Тариф', 'Абонентская плата, руб.', f'Включено, {pl["unit"]}', f'Сверх пакета, руб. за 1 {pl["unit"].replace("занятий", "занятие").replace("мин", "минуту")}']]
     for name, fee, inc, extra in rows:
         c = fee if inc is None else fee + max(0, u - inc) * extra
         costs.append(c)
@@ -3578,11 +3656,14 @@ TRIPS = [
     dict(who='Артём с отцом', how='едут на велосипедах', places=[('лагерь', 'лагеря', 'лагерь'), ('родник', 'родника', 'родник'),
                                                                    ('мельница', 'мельницы', 'мельницу'), ('водопад', 'водопада', 'водопад')],
          road=(('велодорожка', 'по велодорожке'), ('лесная тропа', 'по лесной тропе')), v=[(15, 10), (18, 12), (20, 10), (16, 12)], car=False),
+    dict(who='Денис с папой', how='едут на машине', places=[('Кленовка', 'Кленовки', 'Кленовку'), ('Луговое', 'Лугового', 'Луговое'),
+                                                             ('Ручьи', 'Ручьёв', 'Ручьи'), ('Высокое', 'Высокого', 'Высокое')],
+         road=(('трасса', 'по трассе'), ('лесная дорога', 'по лесной дороге')), v=[(60, 30), (90, 45), (80, 40), (75, 30)], car=True),
     dict(who='Соня с дедушкой', how='едут на машине', places=[('Липки', 'Липок', 'Липки'), ('Бор', 'Бора', 'Бор'),
                                                                 ('Заречье', 'Заречья', 'Заречье'), ('Дальний', 'Дальнего', 'Дальний')],
          road=(('асфальтовая дорога', 'по асфальтовой дороге'), ('просёлочная дорога', 'по просёлочной дороге')), v=[(60, 30), (75, 25), (80, 40), (90, 30)], car=True),
     dict(who='Туристы', how='идут на лыжах', places=[('база отдыха', 'базы отдыха', 'базу отдыха'), ('смотровая площадка', 'смотровой площадки', 'смотровую площадку'),
-                                                   ('охотничий домик', 'охотничьего домика', 'охотничий домик'), ('турбаза «Кедр»', 'турбазы «Кедр»', 'турбазу «Кедр»')],
+                                                   ('охотничий домик', 'охотничьего домика', 'охотничий домик'), ('турбаза', 'турбазы', 'турбазу')],
          road=(('накатанная лыжня', 'по лыжне'), ('снежная целина', 'по целине')), v=[(12, 6), (10, 5), (12, 8), (9, 6)], car=False),
 ]
 MAPGEO = [(12, 16, 7), (12, 16, 11), (12, 9, 4), (8, 15, 9), (15, 20, 12), (6, 8, 0), (9, 12, 0), (12, 5, 0)]
@@ -3674,7 +3755,6 @@ def gen_og02_map_road(r):
     i, j = r.choice(pairs)
     via = lambda A, B: along(A, b['C']) + along(b['C'], B) if A[1] == b['S'][1] and B[0] == b['C'][0] else along(A, B)
     d = via(P[i], P[j]) * b['s']
-    nm = b['names']
     pl = b['pl']
     q = b['desc'] + f'\nСколько километров составляет путь {b["hw_by"]} от пункта «{pl[i][0]}» до пункта «{pl[j][0]}»?'
     e = f'По клеткам: {via(P[i], P[j])} кл. × {b["s"]} км = {d} км.'
@@ -3768,8 +3848,12 @@ def gen_og05_map_fuel(r):
 
 
 SHOPS = [
-    dict(items=[('молоко (1 л)', 60, 95), ('хлеб (1 батон)', 35, 60), ('сыр (1 кг)', 550, 800), ('яблоки (1 кг)', 90, 160), ('гречка (1 кг)', 70, 120)], unit=['л', 'бат.', 'кг', 'кг', 'кг']),
-    dict(items=[('вода (5 л)', 90, 150), ('печенье (1 уп.)', 60, 110), ('чай (1 уп.)', 110, 200), ('сахар (1 кг)', 60, 95), ('мёд (1 банка)', 300, 480)], unit=['шт.', 'уп.', 'уп.', 'кг', 'банк.']),
+    [('молоко (1 л)', 60, 95, ('л', 'л', 'л'), 'молока'), ('хлеб (1 батон)', 35, 60, ('батон', 'батона', 'батонов'), 'хлеба'),
+     ('сыр (1 кг)', 550, 800, ('кг', 'кг', 'кг'), 'сыра'), ('яблоки (1 кг)', 90, 160, ('кг', 'кг', 'кг'), 'яблок'),
+     ('гречка (1 кг)', 70, 120, ('кг', 'кг', 'кг'), 'гречки')],
+    [('вода (бутыль 5 л)', 90, 150, ('бутыль', 'бутыли', 'бутылей'), 'воды'), ('печенье (1 пачка)', 60, 110, ('пачка', 'пачки', 'пачек'), 'печенья'),
+     ('чай (1 пачка)', 110, 200, ('пачка', 'пачки', 'пачек'), 'чая'), ('сахар (1 кг)', 60, 95, ('кг', 'кг', 'кг'), 'сахара'),
+     ('мёд (1 банка)', 300, 480, ('банка', 'банки', 'банок'), 'мёда')],
 ]
 
 
@@ -3782,25 +3866,25 @@ SHOPS = [
        kim=KP(5, ['1.3', '8.1'], [8, 14], 5))
 def gen_og05_map_shop(r):
     b = _map_block(r)
-    sh = r.choice(SHOPS)
-    items = r.sample(sh['items'], 4)
-    prices = [[r.randint(lo // 5, hi // 5) * 5 for _, lo, hi in items] for _ in range(4)]
+    items = r.sample(r.choice(SHOPS), 4)
+    prices = [[r.randint(it[1] // 5, it[2] // 5) * 5 for it in items] for _ in range(4)]
     qty = [r.randint(1, 4) for _ in range(3)] + [0]
     r.shuffle(qty)
     tot = [sum(p * k for p, k in zip(pr, qty)) for pr in prices]
     if sorted(tot)[0] == sorted(tot)[1]:
         return None
     ans = min(tot)
-    rows = [['Товар'] + [nm.split(' ')[-1] if False else f'п. {j + 1}' for j in range(4)]]
-    for i, (nm, _, _) in enumerate(items):
-        rows.append([nm] + [str(prices[j][i]) for j in range(4)])
-    buy = ', '.join(f'{k} × {items[i][0].split(" (")[0]}' for i, k in enumerate(qty) if k)
+    rows = [['Товар'] + [f'п. {j + 1}' for j in range(4)]]
+    for i, it in enumerate(items):
+        rows.append([it[0]] + [str(prices[j][i]) for j in range(4)])
+    parts = [f'{k} {plural(k, *items[i][3])} {items[i][4]}' for i, k in enumerate(qty) if k]
+    buy = ', '.join(parts[:-1]) + ' и ' + parts[-1]
     q = (f'В каждом из четырёх пунктов маршрута ({", ".join("«" + n + "»" for n in b["names"])} — в таблице п. 1–4 в этом порядке) есть магазин. '
-         f'Цены (в рублях) приведены в таблице. {b["ctx"]["who"]} хотят купить: {buy}. В каком магазине такой набор обойдётся дешевле всего? '
+         f'Цены (в рублях) приведены в таблице. {b["ctx"]["who"]} хотят купить {buy}. В каком магазине такой набор обойдётся дешевле всего? '
          'В ответ запишите стоимость набора в этом магазине в рублях.')
     q = q.replace('Группа туристов хотят', 'Туристы хотят')
     e = '; '.join(f'п. {j + 1}: {tot[j]}' for j in range(4)) + f'. Дешевле всего — {ans} руб.'
-    svg = svg_table(rows, colw=[150, 60, 60, 60, 60])
+    svg = svg_table(rows, colw=[170, 60, 60, 60, 60])
     return pcard(q, num(ans), e=e, svg=svg), lambda: ans == min(sum(sp.Integer(p) * k for p, k in zip(pr, qty)) for pr in prices)
 
 
@@ -3812,6 +3896,7 @@ MONTHS_G = ['января', 'февраля', 'марта', 'апреля', 'м�
 SUBS = [
     dict(who='Кирилл пользуется каршерингом по подписке', what='минут аренды', one='минута', fee=(990, 1490, 1990), inc=(200, 300, 400), extra=(8, 9, 10, 12), rng=(80, 600), step=10),
     dict(who='Марина ездит на прокатных электросамокатах по месячной подписке', what='минут поездок', one='минута', fee=(299, 399, 499), inc=(150, 200, 300), extra=(3, 4, 5), rng=(40, 420), step=10),
+    dict(who='Олег берёт напрокат велосипеды городской сети по месячной подписке', what='минут проката', one='минута', fee=(349, 449, 549), inc=(200, 300, 400), extra=(2, 3, 4), rng=(60, 600), step=10),
     dict(who='Семья смотрит фильмы в онлайн-кинотеатре по подписке', what='часов просмотра', one='час', fee=(249, 299, 399), inc=(30, 40, 50), extra=(5, 6, 8), rng=(10, 90), step=1),
 ]
 
@@ -3906,13 +3991,22 @@ def gen_og02_sub_cost(r):
        invariant='Подсчитать месяцы, в которые расход превысил пакет (не превысил, оказался в заданных границах).',
        varies='Сюжет, данные, условие.',
        answer_rule='Сравниваем каждый столбец с линией пакета (границей) и считаем подходящие.',
-       fipi=r'Сколько месяцев в .{0,30}году абонент',
+       fipi=r'Сколько месяцев в .{0,30}году (абонент|расходы)|Какое наименьшее количество минут|Какой наименьший трафик',
        mistakes=['считают «равно» как превышение'], svg=True, kim=KP(3, ['8.1'], [14], 3))
 def gen_og03_sub_count(r):
     b = _sub_block(r)
     if not b:
         return None
-    kind = r.randrange(3)
+    kind = r.randrange(5)
+    if kind == 3:
+        mx = r.random() < 0.5
+        ans = max(b['vals']) if mx else min(b['vals'])
+        q = b['intro'] + f'\nКакое {"наибольшее" if mx else "наименьшее"} количество {b["c"]["what"]} было израсходовано за месяц в прошлом году?'
+        return pcard(q, num(ans), e=f'По диаграмме: {ans}.', svg=b['svg']), lambda: ans == (max if mx else min)(b['vals'])
+    if kind == 4:
+        ans = sum(v <= b['inc'] for v in b['vals'])
+        q = b['intro'] + f'\nВ течение скольких месяцев прошлого года плата за месяц составила ровно {b["fee"]} руб.?'
+        return pcard(q, num(ans), e=f'Ровно {b["fee"]} руб. — в месяцы без превышения пакета: {ans}.', svg=b['svg']), lambda: ans == len([m for m in range(12) if _sub_cost(b, m) == b['fee']])
     if kind == 0:
         ans = sum(v > b['inc'] for v in b['vals'])
         ask = f'В течение скольких месяцев израсходованный объём превысил пакет?'
@@ -3935,7 +4029,7 @@ def gen_og03_sub_count(r):
        invariant='Процент изменения расхода между двумя месяцами (или изменения цены подписки).',
        varies='Сюжет, пара месяцев, рост или снижение.',
        answer_rule='(новое − старое)/старое · 100%.',
-       fipi=r'На сколько процентов (увеличился|уменьшился|выросла|повысилась)',
+       fipi=r'На сколько процентов (увеличился|уменьшился|выросла|повысилась)|Известно, что в .{0,15}году абонентская плата',
        mistakes=['делят на новое значение'], svg=True, maxdec=1, kim=KP(4, ['1.2', '8.1'], [8, 14], 4))
 def gen_og04_sub_percent(r):
     b = _sub_block(r)
@@ -3958,6 +4052,18 @@ def gen_og04_sub_percent(r):
         q = q.replace(f'по сравнению с {MONTHS_P[m]}', f'по сравнению с {["январём", "февралём", "мартом", "апрелем", "маем", "июнем", "июлем", "августом", "сентябрём", "октябрём", "ноябрём"][m]}')
         e = f'{v0} → {v1}: |{v1} − {v0}| : {v0} · 100% = {tnum(pct)}%.'
         chk = lambda: same(num(pct), sp.Abs(sp.Rational(v1, v0) - 1) * 100)
+    elif r.random() < 0.5:
+        p_ = r.choice([10, 20, 25, 30, 40, 50, 60, 75])
+        up = r.random() < 0.6
+        old = r.choice([200, 240, 280, 300, 320, 360, 400, 480, 500, 600, 800, 1000, 1200])
+        new = F(old * (100 + p_ if up else 100 - p_), 100)
+        if new.denominator != 1:
+            return None
+        pct = F(old)
+        q = b['intro'] + f'\nИзвестно, что по сравнению с позапрошлым годом подписка {"подорожала" if up else "подешевела"} на {p_}% и стоила в прошлом году {new} руб. в месяц. Сколько рублей стоила подписка позапрошлым годом?'
+        e = f'{new} : {tnum(F(100 + p_ if up else 100 - p_, 100))} = {old} руб.'
+        chk = lambda: same(num(pct), R(new) / (1 + (1 if up else -1) * sp.Rational(p_, 100)))
+        b['fee_note'] = True
     else:
         new = b['fee'] + r.choice([10, 20, 30, 40, 50, 60, 100, 150]) * (1 if b['fee'] > 300 else 1)
         pct = F((new - b['fee']) * 100, b['fee'])
@@ -4014,7 +4120,6 @@ def _stove_block(r):
     V = L * Wd * Hh
     if not nice(V, 3) or V > 80:
         return None
-    Vr = F(math.ceil(V))
     rows = [['№', 'Тип', 'Объём помещения, м³', 'Масса, кг', 'Цена, руб.']]
     models = []
     masses = r.sample(range(30, 90), 4)
@@ -4034,14 +4139,14 @@ def _stove_block(r):
     r.shuffle(models)
     for i, m in enumerate(models):
         m['n'] = i + 1
-        rows.append([str(i + 1), m['tp'], f'{m["lo"]}–{m["hi"]}', str(m['m']), f'{m["price"]:,}'.replace(',', ' ')])
+        rows.append([str(i + 1), m['tp'], f'{m["lo"]}–{m["hi"]}', str(m['m']), money(m["price"])])
     fit = [m for m in models if m['lo'] <= V <= m['hi']]
     if sorted(m['tp'] for m in fit) != ['дровяной', 'электрический']:
         return None
     iw, ie = r.randint(10, 40) * 500, r.randint(4, 20) * 500
     intro = (f'Для {c["room"]} выбирают {c["thing"]}. Размеры помещения: длина {tnum(L)} м, ширина {tnum(Wd)} м, высота {tnum(Hh)} м. '
              f'Характеристики подходящих моделей приведены в таблице; модель годится, если объём помещения попадает в указанный диапазон. '
-             f'Кроме цены самой модели, нужно оплатить установку: для дровяной — {c["inst_w"]} ({iw} руб.), для электрической — {c["inst_e"]} ({ie} руб.).')
+             f'Кроме цены самой модели, нужно оплатить установку: для дровяной — {c["inst_w"]} ({money(iw)} руб.), для электрической — {c["inst_e"]} ({money(ie)} руб.).')
     return dict(c=c, L=L, W=Wd, H=Hh, V=V, models=models, fit=fit, iw=iw, ie=ie, intro=intro, svg=svg_table(rows, colw=[30, 110, 150, 80, 90]))
 
 
@@ -4057,7 +4162,7 @@ def gen_og01_stove_match(r):
         return None
     key = r.choice(['m', 'price'])
     ms = r.sample(b['models'], 3)
-    lab = (lambda m: f'{m["m"]} кг') if key == 'm' else (lambda m: f'{m["price"]:,} руб.'.replace(',', ' '))
+    lab = (lambda m: f'{m["m"]} кг') if key == 'm' else (lambda m: f'{money(m["price"])} руб.')
     left = [{'id': LET[j], 't': lab(m)} for j, m in enumerate(ms)]
     right = [{'id': str(i + 1), 't': f'модель № {i + 1}'} for i in range(4)]
     a = {LET[j]: str(m['n']) for j, m in enumerate(ms)}
@@ -4094,7 +4199,7 @@ def gen_og02_stove_volume(r):
        invariant='Отобрать модели, подходящие по объёму помещения; сравнить полную стоимость (цена + установка) дровяной и электрической.',
        varies='Сюжет, таблица моделей, стоимость установки.',
        answer_rule='Считаем объём, находим подходящие модели, к цене прибавляем установку, находим разность.',
-       fipi=r'обойдётся дешевле .{0,40}с учётом установки',
+       fipi=r'обойдётся (дешевле|дороже) .{0,40}(с учётом|без учёта) установки',
        mistakes=['не проверяют диапазон объёма', 'забывают стоимость установки'], svg=True, lim=10 ** 6,
        kim=KP(3, ['1.2', '3.3', '8.1'], [8, 14], 5))
 def gen_og03_stove_cheaper(r):
@@ -4103,16 +4208,23 @@ def gen_og03_stove_cheaper(r):
         return None
     w = [m for m in b['fit'] if m['tp'] == 'дровяной'][0]
     el = [m for m in b['fit'] if m['tp'] == 'электрический'][0]
-    tw, te = w['price'] + b['iw'], el['price'] + b['ie']
+    noinst = r.random() < 0.3
+    tw, te = w['price'] + (0 if noinst else b['iw']), el['price'] + (0 if noinst else b['ie'])
     if tw == te:
         return None
     ans = abs(tw - te)
     cheap = 'дровяная' if tw < te else 'электрическая'
-    q = b['intro'] + f'\nНа сколько рублей подходящая по объёму {cheap} модель вместе с установкой обойдётся дешевле подходящей {"электрической" if cheap == "дровяная" else "дровяной"}?'
-    e = f'V = {tnum(b["V"])} м³; дровяная № {w["n"]}: {w["price"]} + {b["iw"]} = {tw}; электрическая № {el["n"]}: {el["price"]} + {b["ie"]} = {te}; разница {ans} руб.'
+    dear = 'электрическая' if cheap == 'дровяная' else 'дровяная'
+    gen = {'дровяная': 'дровяной', 'электрическая': 'электрической'}
+    if r.random() < 0.5:
+        q = b['intro'] + f'\nНа сколько рублей подходящая по объёму {cheap} модель {"без учёта" if noinst else "вместе с"} установк{"и" if noinst else "ой"} обойдётся дешевле подходящей {gen[dear]}?'
+    else:
+        q = b['intro'] + f'\nНа сколько рублей подходящая по объёму {dear} модель {"без учёта" if noinst else "вместе с"} установк{"и" if noinst else "ой"} обойдётся дороже подходящей {gen[cheap]}?'
+    e = (f'V = {tnum(b["V"])} м³; подходят дровяная № {w["n"]} и электрическая № {el["n"]}; ' +
+         (f'цены {w["price"]} и {el["price"]}' if noinst else f'{w["price"]} + {b["iw"]} = {tw}, {el["price"]} + {b["ie"]} = {te}') + f'; разница {ans} руб.')
     def chk():  # заново отбираем модели по объёму (sympy) и сравниваем полные стоимости
         V = R(b['L']) * R(b['W']) * R(b['H'])
-        tot = {m['tp']: m['price'] + (b['iw'] if m['tp'] == 'дровяной' else b['ie']) for m in b['models'] if m['lo'] <= V <= m['hi']}
+        tot = {m['tp']: m['price'] + (0 if noinst else (b['iw'] if m['tp'] == 'дровяной' else b['ie'])) for m in b['models'] if m['lo'] <= V <= m['hi']}
         return ans == abs(tot['дровяной'] - tot['электрический'])
     return pcard(q, num(ans), e=e, svg=b['svg']), chk
 

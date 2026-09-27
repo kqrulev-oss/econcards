@@ -138,7 +138,7 @@ def _pow_rhs(a, m):
        invariant='a^{kx+b} = c, где c — степень числа a (в том числе с отрицательным показателем, записанная дробью 1/…); приравниваем показатели.',
        varies='основание 2–10, вид показателя (x − b, b − x, kx + b), знак показателя в правой части, формулировка инструкции',
        answer_rule='kx + b = m, где c = a^m; x = (m − b)/k',
-       fipi=r'корень уравнения (\d{1,2}) (x [+−–] \d+|\d+ − x|− \d+ − x|\d x [+−] \d+) ​? ?= (1 )?\d+ ​? ?\.?$',
+       fipi=r'корень уравнения [2-9] (x [+−–] \d+|\d+ − x|− \d+ − x)[\s​]*=[\s​]*(1 )?\d+[\s​]*\.?$',
        mistakes=['1/81 принимают за 3^4 вместо 3^(−4)', 'ошибка в знаке при показателе b − x', 'делят c на a вместо представления степенью'],
        kim=kim(KIM7, kes=['2.4']))
 def gen_ep07_exp_base(r):
@@ -171,7 +171,7 @@ def gen_ep07_exp_base(r):
        invariant='(1/a)^{kx+b} = c, где c — степень a; переписываем (1/a)^t = a^{−t} и приравниваем показатели.',
        varies='основание 1/2 … 1/9, вид показателя, правая часть — целое или дробь 1/…',
        answer_rule='−(kx + b) = m, где c = a^m',
-       fipi=r'корень уравнения (\( 1 \d \)|1 [2-9] (\d+ − x|x [+−] \d+)) ',
+       fipi=r'корень уравнения (\( 1 \d \) x [+−] \d+ = (1 )?\d+ ?\.?$|1 [3-9] (\d+ − x|x [+−] \d+) = \d{2,}\.?$)',
        mistakes=['забывают сменить знак показателя при переходе к основанию a', 'путают 1/a^m и a^m'],
        kim=kim(KIM7, kes=['2.4']))
 def gen_ep07_exp_recip(r):
@@ -362,7 +362,7 @@ def gen_ep07_cube(r):
        invariant='m/(kx + b) = c, знаменатель не равен нулю; kx + b = m/c.',
        varies='числитель m, линейный знаменатель, правая часть c (в том числе дробная или отрицательная)',
        answer_rule='x = (m/c − b)/k',
-       fipi=r'корень уравнения 1 \d x [+−] \d+ = −? ?\d+ ?\.?$',
+       fipi=r'корень уравнения 1 \d x [+−] \d+ = −? ?\d \.?$',
        mistakes=['умножают c на m вместо деления', 'переносят b без смены знака'],
        kim=kim(KIM7, kes=['2.1']))
 def gen_ep07_recip(r):
@@ -846,7 +846,7 @@ def gen_ep08_log_sum(r):
        invariant='log_c B^k / log_c B = k (формула перехода к новому основанию: это log_B B^k).',
        varies='основание c (не связано с числами), B и k, иногда дробный результат',
        answer_rule='k',
-       fipi=r'значение выражения log (\d+) \d+ log \1 \d+ ?\.',
+       fipi=r'значение выражения log (\d+) \d+ log \1 \d+ ?(\.|\+)',
        mistakes=['сокращают логарифмы как дроби: log 32 / log 2 = 16', 'вычитают вместо деления'],
        kim=kim(KIM8, kes=['1.6']))
 def gen_ep08_log_ratio(r):
@@ -878,7 +878,7 @@ def gen_ep08_log_ratio(r):
        invariant='log_a c / log_{a^k} c = k: основание a^k выносим множителем 1/k.',
        varies='основание a и его степень a^k, число c, порядок дроби, добавочное слагаемое',
        answer_rule='k (или 1/k)',
-       fipi=r'значение выражения log (\d+) \d+ log (\d+) \d+ ?\.$|log 9 28 log 9 7',
+       fipi=r'значение выражения log (\d+) (\d+) log (?!\1 )\d+ \2',
        mistakes=['считают, что отношение равно 1 (одно и то же число c)', 'путают k и 1/k'],
        kim=kim(KIM8, kes=['1.6']))
 def gen_ep08_log_base_ratio(r):
@@ -905,7 +905,7 @@ def gen_ep08_log_base_ratio(r):
        invariant='a^{log_a b} = b; при основании степени a^k или сумме в показателе: (a^k)^{log_a b} = b^k, a^{m + log_a b} = a^m·b.',
        varies='основание, число b, вид выражения (степень основания, слагаемое в показателе, основание a², √a)',
        answer_rule='b, b^k, a^m·b или √b',
-       fipi=r'\d+ log \d+ \d+ ?\.?$',
+       fipi=r'значение выражения (\d+) (\d+ )?log \1 \d+',
        mistakes=['ответ log_a b вместо b', 'для 36^{log_6 5} отвечают 5'],
        kim=kim(KIM8, kes=['1.6']))
 def gen_ep08_log_power(r):
@@ -964,7 +964,7 @@ def gen_ep08_trig_dbl(r):
     k = r.choice(range(2, 41))
     ans = F(k, 2)
     if r.random() < 0.8:
-        f = pick(r, f'{k} sin {deg(a)} · cos {deg(a)} / sin {deg(2 * a)}', f'{k} cos {deg(a)} · sin {deg(a)} / sin {deg(2 * a)}')
+        f = pick(r, f'{k} cos {deg(a)} · sin {deg(a)} / sin {deg(2 * a)}', f'{k} cos {deg(a)} sin {deg(a)} : sin {deg(2 * a)}')
     else:
         f = f'sin {deg(2 * a)} / ({k} sin {deg(a)} · cos {deg(a)})'
         ans = F(2, k)
@@ -997,7 +997,7 @@ def gen_ep08_trig_compl(r):
         d1, d2 = f'sin {deg(a)}', f'sin {deg(b)}'
     else:                  # cos α · cos(90° − α) = cos α · sin α
         d1, d2 = f'cos {deg(a)}', f'cos {deg(b)}'
-    f = f'{k} sin {deg(top)} / ({d1} · {d2})'
+    f = f'{k} sin {deg(top)} / ({d2} · {d1})'   # в банке ФИПИ обычно сначала α — ставим дополнительный угол первым
     q = val_q(r, f)
     ex = (f'sin {deg(top)} = {"" if top == 2 * a else f"sin {deg(2 * a)} = "}2 sin {deg(a)} cos {deg(a)}, '
           f'{d2} = {"cos" if den == "sin_sin" else "sin"} {deg(a)}; значение равно 2·{k} = {ans}.')
@@ -1036,7 +1036,7 @@ def gen_ep08_trig_rad_sc(r):
     ans = F(str(sp.Rational(val))) if val.is_rational else None
     if ans is None or not nice(ans, 2):
         return None
-    f = f'{coef} sin {_pi(p, den)} · cos {_pi(p, den)}'.strip()
+    f = f'{coef} cos {_pi(p, den)} · sin {_pi(p, den)}'.strip()
     q = val_q(r, f)
     ex = f'{coef} sin t cos t = {coef}/2 · sin 2t, 2t = {_pi(2 * p, den)}; значение {tnum(ans)}.'.replace(' /2', '1/2')
     return pcard(q, num(ans), ex), lambda: abs(float(cexpr * sp.sin(t) * sp.cos(t)) - float(ans)) < 1e-12
@@ -1112,7 +1112,7 @@ QUART = {1: '(0; π/2)', 2: '(π/2; π)', 3: '(π; 3π/2)', 4: '(3π/2; 2π)'}
        invariant='основное тригонометрическое тождество + знак по четверти; величины заданы через корни (5√26/26) или дробями.',
        varies='какая функция дана и какую найти (sin, cos, tg), четверть, множитель, вид записи',
        answer_rule='sin² + cos² = 1, tg = sin/cos, знак по четверти',
-       fipi=r'(значение выражения )?tg α , если cos α|найдите \d* ?(sin|cos|tg) α , если',
+       fipi=r'(значение выражения )?tg α , если cos α|найдите \d* ?(sin|cos|tg) α , если|^Найдите , если и \.$',
        mistakes=['берут неверный знак для четверти', 'не избавляются от корней в знаменателе'],
        kim=kim(KIM8, kes=['1.5', '1.8']))
 def gen_ep08_trig_find(r):
@@ -1153,7 +1153,8 @@ def gen_ep08_trig_find(r):
     q = pick(r, f'Найдите {fm(ws)}, если {fm(f"{given} α = {g}")} и {fm(f"α ∈ {QUART[quarter]}")}.',
              f'Известно, что {fm(f"{given} α = {g}")} и {fm(f"α ∈ {QUART[quarter]}")}. Найдите {fm(ws)}.',
              f'Вычислите {fm(ws)}, если {fm(f"{given} α = {g}")}, а угол α лежит в интервале {fm(QUART[quarter])}.')
-    ex = f'По основному тождеству и знаку в {quarter}-й четверти: sin α = {sinv}, cos α = {cosv}; {ws} = {tnum(ans)}.'.replace('sqrt', '√')
+    sv = lambda z: (fr(F(int(z.p), int(z.q))) if z.is_rational else ('−' if z < 0 else '') + str(abs(z)).replace('sqrt', '√'))
+    ex = f'По основному тождеству и знаку в {quarter}-й четверти: sin α = {sv(sinv)}, cos α = {sv(cosv)}; {ws} = {tnum(ans)}.'
 
     def chk():
         al = sp.atan2(sinv, cosv) % (2 * sp.pi)
@@ -1203,7 +1204,7 @@ def _angle(s):
        invariant='k·√m·f(α)·g(β), где f, g — sin, cos, tg табличных углов (в том числе после приведения); корни сокращаются.',
        varies='углы (π/6 … 11π/6, отрицательные), функции, множитель k√m',
        answer_rule='подставляем табличные значения',
-       fipi=r'значение выражения \d+ √\( \d \) tg π \d sin',
+       fipi=r'значение выражения \d+ √\( \d \) tg π \d sin|^Найдите значение выражения \.$',
        mistakes=['путают sin π/6 и cos π/6', 'теряют знак для углов вне первой четверти'],
        kim=kim(KIM8, kes=['1.5']))
 def gen_ep08_trig_table(r):
@@ -1316,7 +1317,7 @@ def gen_ep08_alg_ratio(r):
     den_s = poly([r_, 0], 'a') + signed(s_) + 'b'
     den_s = den_s.replace(' 1b', ' b')
     f = f'({num_s})/({den_s})'
-    cond = f'a/b = {fr(t)}' if r.random() < 0.7 else (f'a = {fr(t)}b' if t.denominator == 1 else f'{t.denominator}a = {t.numerator}b'.replace('-', '−'))
+    cond = f'a/b = {fr(t)}' if r.random() < 0.7 else ((f'a = {fr(t)}b' if abs(t) != 1 else f'a = {"−" if t < 0 else ""}b') if t.denominator == 1 else f'{t.denominator}a = {t.numerator}b'.replace('-', '−'))
     q = pick(r, f'Найдите значение выражения {fm(f)}, если {fm(cond)}.', f'Известно, что {fm(cond)}. Вычислите {fm(f)}.')
     pf = lambda z: f'({fr(z)})' if z < 0 else fr(z)
     ex = f'Делим числитель и знаменатель на b: ({tnum(p_)}·{pf(t)} + {pf(q_)})/({tnum(r_)}·{pf(t)} + {pf(s_)}) = {tnum(ans)}.'
@@ -1370,7 +1371,9 @@ def _label_spot(fn, a, b, X0, X1, y0, y1, u):
     """Место для подписи «y = f(x)» (левый нижний угол текста): угол рисунка, где график дальше всего."""
     wid = 72 / u          # ширина подписи в клетках
     best, spot = -1, (X1 - wid - 0.2, y1 - 0.9)
-    for x_left in (X1 - wid - 0.2, X0 + 0.2, X0 + 0.2 + (X1 - X0 - wid) / 2):
+    for x_left in (X1 - wid - 0.2, X0 + 0.2, X0 + 0.2 + (X1 - X0 - wid) / 2, 1.3, -wid - 0.4):
+        if x_left < X0 or x_left + wid > X1 or (x_left < 1.2 and x_left + wid > -0.4):
+            continue    # не залезаем на ось y и её подписи
         for yb in (y1 - 0.9, y0 + 0.4):
             gap = 99
             for i in range(21):
@@ -1651,7 +1654,7 @@ NUMW = {6: 'шесть', 7: 'семь', 8: 'восемь', 9: 'девять', 10
 
 def _marks(r, a, b, avoid, cnt, gap=0.45):
     """cnt отмеченных абсцисс (кратных 0,5) внутри (a; b), далеко от точек avoid."""
-    cand = [F(k, 2) for k in range(2 * a + 1, 2 * b) if all(abs(F(k, 2) - t) >= gap for t in avoid)]
+    cand = [F(k, 2) for k in range(2 * a + 1, 2 * b) if all(abs(F(k, 2) - t) >= gap for t in avoid) and not -1 < F(k, 2) < 2]
     if len(cand) < cnt:
         return None
     for _ in range(40):
@@ -1897,7 +1900,7 @@ def gen_ep09_fg_which(r):
        invariant='f′(x) = 0 в точках экстремума гладкой функции (касательная горизонтальна); для графика первообразной F: f = F′, нули f — экстремумы F.',
        varies='график, отрезок, вопрос (сколько корней на отрезке / найдите корень / сколько точек с горизонтальной касательной), функция или первообразная',
        answer_rule='число (или абсцисса) вершин графика на отрезке',
-       fipi=r'корней уравнения f ′ ?\(? ?x ?\)? ?= 0|корень уравнения f ′|одной из первообразных',
+       fipi=r"корней уравнения f ['′] ?\(? ?x ?\)? ?= 0|корень уравнения f ['′]|одной из первообразных",
        mistakes=['считают нули самой функции (пересечения с осью Ox)', 'не учитывают границы отрезка'],
        svg=True, kim=kim(KIM9, kes=['4.1', '4.2', '4.3']))
 def gen_ep09_fg_zeros(r):
@@ -2147,7 +2150,7 @@ def gen_ep09_motion(r):
         v = 3 * a3 * t0 ** 2 + 2 * a2 * t0 + a1
         if not nice(v, 1) or v <= 0 or v > 300:
             return None
-        q = story.format(f=fm(law)) + f' Найдите {what} (в {unit}) в момент времени {fm(f"t = {t0}")} с.'
+        q = story.format(f=fm(law)) + f' Найдите {what.replace("вертикальная", "вертикальную")} (в {unit}) в момент времени {fm(f"t = {t0}")} с.'
         ex = f'v(t) = {sym[0]}′(t) = {poly([3 * a3, 2 * a2, a1], "t")}; v({t0}) = {tnum(v)} {unit}.'
         return pcard(q, num(v), ex), lambda: sp.diff(xt, T).subs(T, t0) == R(v)
     t1 = r.randint(1, 12)
@@ -2182,7 +2185,7 @@ def gen_ep09_parallel(r):
     if not nice(x0, 1) or k.denominator != 1 or k == 0 or m == c:
         return None
     fx, ln = f'y = {poly([a, b, c])}', f'y = {lin(k, m)}'
-    q = pick(r, f'Прямая {fm(ln)} параллельна касательной к графику функции {fm(fx)}. Найдите абсциссу точки касания.',
+    q = pick(r, f'Прямая {fm(ln)} параллельна касательной к графику функции {fm(fx)}. В какой точке (укажите абсциссу) проведена эта касательная?',
              f'Касательная к графику функции {fm(fx)} параллельна прямой {fm(ln)}. Найдите абсциссу точки касания.',
              f'В некоторой точке графика функции {fm(fx)} провели касательную, параллельную прямой {fm(ln)}. Найдите абсциссу этой точки.')
     ex = f'y′ = {lin(2 * a, b)}; {lin(2 * a, b)} = {tnum(k)}, x₀ = {tnum(x0)}.'
@@ -2213,8 +2216,8 @@ def gen_ep09_tangent_line(r):
         if R(x1) ** 3 + p * R(x1) ** 2 + q * R(x1) + s_ == k * R(x1) + m:
             return None
         ln, fs = f'y = {lin(k, m)}' if k else f'y = {tnum(m)}', f'y = {poly([1, p, q, s_])}'
-        qq = pick(r, f'Прямая {fm(ln)} является касательной к графику функции {fm(fs)}. Найдите абсциссу точки касания.',
-                  f'Прямая {fm(ln)} касается графика функции {fm(fs)}. Найдите абсциссу точки касания.')
+        qq = pick(r, f'Прямая {fm(ln)} касается графика функции {fm(fs)} в одной точке. Чему равна абсцисса этой точки?',
+                  f'График функции {fm(fs)} касается прямой {fm(ln)}. Найдите x-координату точки касания.')
         ex = f'y′ = {poly([3, 2 * p, q])} = {tnum(k)} при x = {tnum(x0)} и x = {fr(x1)}; равенство значений выполняется только при x = {tnum(x0)}.'
 
         def chk():
@@ -2280,7 +2283,7 @@ def crit_check(expr, ans, kind, dom=None):
        invariant='y′ — квадратный трёхчлен с двумя корнями; при положительном старшем коэффициенте максимум в меньшем корне, минимум в большем.',
        varies='коэффициенты (в том числе без x² или без x), корни производной (целый ответ, второй корень может быть дробным), форма записи (раскрытая или (x − a)²(x − b) + c)',
        answer_rule='корень y′ = 0, в котором знак меняется в нужную сторону',
-       fipi=r'точку (максимума|минимума) функции y = \(? ?x 3 ',
+       fipi=r'точку (максимума|минимума) функции y = \(? ?x 3 (?!2 )|^Найдите точку (максимума|минимума) функции \.$',
        mistakes=['путают точку максимума и значение максимума', 'берут не тот корень производной'],
        note=NOTE_MM, kim=kim(KIM9, kes=['4.2'], style='как в КИМ 2026 (№12): «Найдите точку максимума функции y = …»'))
 def gen_ep09_ext_cubic(r):
@@ -2326,7 +2329,7 @@ def gen_ep09_ext_cubic(r):
        invariant='y = a + bx − c·x√x: y′ = b − 1,5c√x = 0, откуда √x = 2b/(3c); область x ≥ 0.',
        varies='коэффициенты, знак (максимум или минимум), запись x√x или x^{3/2}',
        answer_rule='x = (2b/(3c))²',
-       fipi=r'x √\( x \)|x 3 2',
+       fipi=r'точку (максимума|минимума) функции .*(x √\( x \)|x 3 2)',
        mistakes=['считают (x√x)′ = √x', 'забывают возвести в квадрат'],
        note=NOTE_MM, kim=kim(KIM9, kes=['4.2']))
 def gen_ep09_ext_sqrt(r):
@@ -2340,10 +2343,10 @@ def gen_ep09_ext_sqrt(r):
     t = r.choice(['x√x', 'x^{3/2}'])
     cx = ('' if c == 1 else str(c)) + t
     if want == 'max':
-        f = pick(r, f'y = {a0} + {b}x − {cx}', f'y = {b}x − {cx} {"+" if a0 >= 0 else "−"} {abs(a0)}')
+        f = pick(r, f'y = {tnum(a0)} + {b}x − {cx}', f'y = {b}x − {cx} {"+" if a0 >= 0 else "−"} {abs(a0)}')
         expr = a0 + b * X - c * X * sp.sqrt(X)
     else:
-        f = pick(r, f'y = {cx} − {b}x {"+" if a0 >= 0 else "−"} {abs(a0)}', f'y = {a0} − {b}x + {cx}')
+        f = pick(r, f'y = {cx} − {b}x {"+" if a0 >= 0 else "−"} {abs(a0)}', f'y = {tnum(a0)} − {b}x + {cx}')
         expr = a0 - b * X + c * X * sp.sqrt(X)
     ans = s_ * s_
     wd = 'максимума' if want == 'max' else 'минимума'
@@ -2356,7 +2359,7 @@ def gen_ep09_ext_sqrt(r):
        invariant='y = kx − m·ln(x + a) + c: y′ = k − m/(x + a) = 0 → x = m/k − a; учитываем область x > −a.',
        varies='коэффициенты k, m, сдвиг a, запись m·ln(x + a) или ln(x + a)^m, максимум или минимум',
        answer_rule='x = m/k − a',
-       fipi=r'точку (максимума|минимума) функции y = .*ln',
+       fipi=r'точку (максимума|минимума) функции y = (?!.*x 2 ).*ln',
        mistakes=['забывают производную сложной функции', 'получают точку вне области определения'],
        note=NOTE_MM, kim=kim(KIM9, kes=['4.2']))
 def gen_ep09_ext_ln(r):
@@ -2377,7 +2380,7 @@ def gen_ep09_ext_ln(r):
         f = f'y = {kx} − {lnm}{cs}'
         expr = k * X - m * sp.log(X + a) + c
     else:
-        f = pick(r, f'y = {lnm} − {kx}{cs}', f'y = {c} + {lnm} − {kx}')
+        f = pick(r, f'y = {lnm} − {kx}{cs}', f'y = {tnum(c)} + {lnm} − {kx}')
         expr = m * sp.log(X + a) - k * X + c
     wd = 'максимума' if want == 'max' else 'минимума'
     q = pt_q(r, wd, f)
@@ -2453,7 +2456,7 @@ def gen_ep09_ext_exp(r):
        invariant='y = x + a²/x (или −(x² + a²)/x): y′ = 1 − a²/x² = 0 при x = ±a; тип точки — по смене знака, x ≠ 0.',
        varies='a, знак перед дробью, запись (сумма или одна дробь), максимум или минимум',
        answer_rule='x = a или x = −a по знакам производной',
-       fipi=r'точку (максимума|минимума) функции y = −? ?x 2 [+−] \d+ x|\d+ x [+−] x',
+       fipi=r'функции y = −? ?\(? ?x 2 \+ \d+ \)? x',
        mistakes=['берут только положительный корень', 'не учитывают знак перед дробью'],
        note=NOTE_MM, kim=kim(KIM9, kes=['4.2']))
 def gen_ep09_ext_rational(r):
@@ -2506,7 +2509,7 @@ def seg_check(expr, lo, hi, ans, want):
        invariant='сравниваем значения на концах отрезка и в критических точках внутри него.',
        varies='многочлен 3-й степени, отрезок (содержит одну или обе критические точки), наибольшее или наименьшее',
        answer_rule='max/min из значений в концах и в критических точках отрезка',
-       fipi=r'(наибольшее|наименьшее) значение функции y = x 3',
+       fipi=r'(наибольшее|наименьшее) значение функции y = x 3|^Найдите (наибольшее|на[иы]?м[еа]ньшее) значение функции на отрезке',
        mistakes=['берут критическую точку вне отрезка', 'отвечают точкой, а не значением'],
        note=NOTE_MM, kim=kim(KIM9, kes=['4.2']))
 def gen_ep09_seg_cubic(r):
@@ -2658,7 +2661,7 @@ def gen_ep09_seg_sqrt(r):
     if lo >= x0:
         return None
     cx = ('' if c == 1 else str(c)) + 'x√x'
-    f = (f'y = {a0} + {b}x − {cx}' if want == 'max' else f'y = {cx} − {b}x {"+" if a0 >= 0 else "−"} {abs(a0)}')
+    f = (f'y = {tnum(a0)} + {b}x − {cx}' if want == 'max' else f'y = {cx} − {b}x {"+" if a0 >= 0 else "−"} {abs(a0)}')
     wd = 'наибольшее' if want == 'max' else 'наименьшее'
     q = seg_q(r, wd, f, f'[{lo}; {hi}]')
     ex = f'y′ = 0 при √x = {s_}, x = {x0}; y({x0}) = {tnum(val)} — {wd} значение.'
@@ -2858,8 +2861,9 @@ def gen_ep06_table_solve(r):
     ans = ps[i] if ask == 'a' else ps[j]
     tbl = f'\nЗначение: {_row(xs)}\nВероятность: {" | ".join(v if isinstance(v, str) else fr(v) for v in shown)}\n'
     q = story + tbl + f'Известно, что математическое ожидание X равно {tnum(E)}. Найдите {ask}.'
-    cf = lambda c, v: (v if c == 1 else f'−{v}' if c == -1 else f'{par(c)}{v}')
-    ex = f'a + b = {fr(ps[i] + ps[j])}, {cf(xs[i], "a")} + {cf(xs[j], "b")} = {tnum(E - sum(x * p for k, (x, p) in enumerate(zip(xs, ps)) if k not in (i, j)))}; {ask} = {fr(ans)}.'
+    cf = lambda c, v: (v if c == 1 else f'−{v}' if c == -1 else '0' if c == 0 else f'{tnum(c)}{v}')
+    t2 = cf(xs[j], 'b')
+    ex = f'a + b = {fr(ps[i] + ps[j])}, {cf(xs[i], "a")} {"− " + t2[1:] if t2.startswith("−") else "+ " + t2} = {tnum(E - sum(x * p for k, (x, p) in enumerate(zip(xs, ps)) if k not in (i, j)))}; {ask} = {fr(ans)}.'
 
     def chk():
         a, b = sp.symbols('a b')
@@ -2947,7 +2951,7 @@ def gen_ep06_linear(r):
     bb = -b if minus else b
     if Y == 'Z':
         a, bb = F(9, 5), 32
-    if 'кафе' in story and a < 0:
+    if ('кафе' in story or 'курьер' in story) and (a < 0 or E <= 0):
         return None
     ask = r.choice(['E', 'D', 'D', 's'])
     if ask == 's':
@@ -3057,7 +3061,7 @@ def gen_ep06_binom(r):
     story = r.choice(BINOM)
     n = r.choice([4, 5, 8, 10, 12, 16, 20, 25, 30, 40, 50, 100, 200, 400])
     p = F(r.choice([1, 2, 3, 4, 5, 6, 7, 8, 9]), 10) if r.random() < 0.7 else F(r.choice([1, 3, 1, 1]), r.choice([4, 5, 20, 2]))
-    if p >= 1:
+    if p >= 1 or ('бракованным' in story or 'заказом' in story) and p > F(3, 10) or 'Монету' in story and not F(3, 10) <= p <= F(7, 10):
         return None
     ask = r.choice(['E', 'D', 'D', 's'])
     D = n * p * (1 - p)
@@ -3120,7 +3124,7 @@ IND = [
     ('В городе три кинотеатра. В выходной день билеты на вечерний сеанс раскупаются полностью с вероятностями {ps} соответственно, '
      'независимо друг от друга.', 'число кинотеатров, где вечерний сеанс будет полностью распродан'),
     ('Студент сдаёт в сессию экзамены по {k} предметам; вероятности получить «отлично» равны {ps} соответственно.',
-     'число экзаменов, сданных на «отлично»'),
+     'число экзаменов, сданных на пятёрку'),
     ('В офисе {k} принтера. Вероятности того, что в течение дня принтер потребует замены картриджа, равны {ps}.',
      'число принтеров, которым понадобится замена картриджа'),
     ('Метеорологи оценили вероятности дождя в {k} городах завтра: {ps}.', 'число городов, где завтра пойдёт дождь'),
@@ -3222,10 +3226,10 @@ def gen_ep06_uniform(r):
 
 
 EXPO = [
-    ('Время безотказной работы X (в годах) светодиодной лампы распределено по показательному закону.', 'лампа проработает', 'лет'),
-    ('Время X (в минутах) между двумя звонками в диспетчерскую распределено по показательному закону.', 'следующего звонка не будет', 'минут'),
-    ('Время X (в часах) до первого сбоя сервера имеет показательное распределение.', 'сервер проработает без сбоя', 'часов'),
-    ('Время ожидания X (в минутах) такси через приложение распределено по показательному закону.', 'такси не приедет', 'минут'),
+    ('Время безотказной работы X (в годах) светодиодной лампы распределено по показательному закону.', 'лампа проработает', ('года', 'лет')),
+    ('Время X (в минутах) между двумя звонками в диспетчерскую распределено по показательному закону.', 'пауза между звонками продлится', ('минуты', 'минут')),
+    ('Время X (в часах) до первого сбоя сервера имеет показательное распределение.', 'сервер проработает без сбоя', ('часа', 'часов')),
+    ('Время ожидания X (в минутах) такси через приложение распределено по показательному закону.', 'ожидание такси продлится', ('минуты', 'минут')),
 ]
 
 
@@ -3237,7 +3241,9 @@ EXPO = [
        mistakes=['считают P(X > 2t) = 2·P(X > t)', 'путают λ и 1/λ'],
        maxdec=4, kim=kim(KIM6))
 def gen_ep06_expo(r):
-    story, event, unit = r.choice(EXPO)
+    story, event, ug = r.choice(EXPO)
+    unit = ug[1]
+    gu = lambda k: ug[0] if k == 1 else ug[1]
     ask = r.choice(['E', 'D', 'lam', 'pow', 'mem'])
     if ask in ('E', 'D'):
         lam = F(1, r.choice([2, 4, 5, 8, 10, 20, 25, 40, 50])) * r.choice([1, 1, 2, 3])
@@ -3252,7 +3258,7 @@ def gen_ep06_expo(r):
     if ask == 'lam':
         m = r.choice([2, 4, 5, 8, 10, 20, 25, 40, 50, 16])
         ans = F(1, m)
-        q = story + f' Среднее значение X равно {m} {unit}. Найдите параметр λ этого распределения.'
+        q = story + f' Математическое ожидание X равно {m}. Найдите параметр λ этого распределения.'
         ex = f'EX = 1/λ, λ = 1/{m} = {tnum(ans)}.'
         lv = sp.Symbol('lv', positive=True)
         return pcard(q, num(ans), ex), lambda: sp.solve(sp.Eq(sps.E(sps.Exponential('X', lv)), m), lv) == [R(ans)]
@@ -3261,12 +3267,12 @@ def gen_ep06_expo(r):
     k = r.choice([2, 3])
     if ask == 'pow':
         ans = p ** k
-        q = story + f' Вероятность того, что {event} больше {t} {unit}, равна {tnum(p)}. Найдите вероятность того, что {event} больше {k * t} {unit}.'
+        q = story + f' Вероятность того, что {event} больше {t} {gu(t)}, равна {tnum(p)}. Найдите вероятность того, что {event} больше {k * t} {gu(k * t)}.'
         ex = f'P(X > {k * t}) = e^{{−λ·{k * t}}} = (e^{{−λ·{t}}})^{{{k}}} = {tnum(p)}^{{{k}}} = {tnum(ans)}.'
     else:
         s0 = r.choice([1, 2, 3, 4, 5, 10])
         ans = p ** k
-        q = (story + f' Вероятность того, что {event} больше {t} {unit}, равна {tnum(p)}. '
+        q = (story + f' Вероятность того, что {event} больше {t} {gu(t)}, равна {tnum(p)}. '
              f'Известно, что X > {s0}. Найдите вероятность того, что X > {s0 + k * t}.')
         ex = f'Из-за отсутствия памяти P(X > {s0 + k * t} | X > {s0}) = P(X > {k * t}) = {tnum(p)}^{{{k}}} = {tnum(ans)}.'
     if not nice(ans, 4):
@@ -3492,9 +3498,11 @@ def gen_ep10_quad_first(r):
         T0 = r.choice(range(600, 1701, 50)) if st == 0 else r.choice(range(20, 101, 5))
         Tmax = T0 - a * t1 * t2
         unit = 'К' if st == 0 else '°C'
+        if Tmax > (2500 if st == 0 else 1300):
+            return None
         if st == 0:
             q = (f'Для нагревательного элемента прибора опытным путём установили зависимость температуры (в кельвинах) от времени работы: '
-                 f'{fm(f"T(t) = T₀ + bt + at²")}, где t — время в минутах, {fm(f"T₀ = {T0}")} К, {fm(f"a = {a}")} К/мин², {fm(f"b = {b}")} К/мин. '
+                 f'{fm(f"T(t) = T₀ + bt + at²")}, где t — время в минутах, {fm(f"T₀ = {T0}")} К, {fm(f"a = {tnum(a)}")} К/мин², {fm(f"b = {b}")} К/мин. '
                  f'Если температура превысит {Tmax} К, прибор выйдет из строя, поэтому его нужно выключить. Через какое наибольшее '
                  f'время после включения нужно выключить прибор? Ответ дайте в минутах.')
         else:
@@ -4001,7 +4009,7 @@ def gen_ep10_lens(r):
        invariant='из формулы находим sin α (sin²α, cos α, sin 2α) — табличное значение; учитываем, что угол острый.',
        varies='сюжет (неупругое столкновение Q = mv²sin²α, дальность полёта мяча L = v²sin2α/g, скейтбордист и платформа v = (m/(m + M))·u·cos α, высота подъёма H = v²sin²α/(2g)), что найти (угол или удвоенный угол)',
        answer_rule='угол по табличному значению тригонометрической функции',
-       fipi=r'(под углом 2 α|sin 2 α|cos α)',
+       fipi=r'(под углом 2 α|абсолютно неупругом)',
        mistakes=['отвечают α вместо 2α (или наоборот)', 'путают синус и косинус табличных углов'],
        kim=kim(KIM10, kes=['2.3']))
 def gen_ep10_trig(r):
@@ -4092,6 +4100,6 @@ def gen_ep10_econ(r):
         return None
     qf = f'q = {a} − {"" if b == 1 else b}p'
     q = story.format(q=fm(qf), rf=fm('r(p) = q·p'), R=Rv)
-    ex = f'p({a} − {b}p) ≥ {Rv} ⇔ {p1} ≤ p ≤ {p2}; наибольшая цена {p2}.'
+    ex = f'p({a} − {"" if b == 1 else b}p) ≥ {Rv} ⇔ {p1} ≤ p ≤ {p2}; наибольшая цена {p2}.'
     pv = sp.Symbol('p', positive=True)
     return pcard(q, num(p2), ex), lambda: sp.solve_univariate_inequality(pv * (a - b * pv) >= Rv, pv, relational=False).sup == p2
