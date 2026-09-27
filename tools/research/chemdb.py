@@ -65,6 +65,11 @@ def load(strict=True):
             key = (tuple(sorted(lhs)), tuple(sorted(rhs)), r.get('cond', ''))
             if key in seen_r:  # та же реакция из другого модуля — дополняем теги, не дублируем
                 old = seen_r[key]
+                for fld in ('sign', 'cond', 'src', 'note'):  # пустые поля первого модуля дополняем из второго
+                    if not old.get(fld) and r.get(fld):
+                        old[fld] = r[fld]
+                if not old.get('type') and r.get('type'):
+                    old['type'] = list(r['type'])
                 for t in r.get('type', []) + r.get('tags', []):
                     if t not in old.get('type', []) + old.get('tags', []):
                         old.setdefault('tags', []).append(t)

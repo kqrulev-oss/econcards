@@ -1329,7 +1329,7 @@ def _pick_step(rng, S, exclude=()):
 
 
 def _related(f, rng, k=12):
-    key = els(f) - {'H', 'O'}
+    key = {central(f)}
     pool = [x for x, s in SUBS.items() if s.get('_mod') == 'chemdb_inorg.py' and els(x) & key and x != f
             and '·' not in x and 'Hg' not in x and not x.startswith(('Rb', 'Cs', 'Sr'))]
     rng.shuffle(pool)
@@ -3895,10 +3895,25 @@ _SUBJ = {'осадок': ['Образовавшийся осадок', 'Выпа
          'простое': ['Образовавшееся простое вещество']}
 
 
+def _acc_name(f):
+    n = ru(f)
+    w = n.split(' ')
+    if n.endswith('кислота'):
+        w = [x[:-2] + 'ую' if x.endswith('ая') else x for x in w]
+        w[-1] = 'кислоту'
+    elif n in ('вода',):
+        return 'воду'
+    return ' '.join(w)
+
+
+_GAS_R = {'CO2', 'SO2', 'Cl2', 'H2S', 'NH3', 'O2', 'H2', 'CO', 'NO2'}
+
+
 def _step_text(r, subj_f, kind, rng, first=False):
     """Фраза для одной стадии. subj_f — «носитель» (вещество, над которым действуют)."""
     others = [x for x in dict.fromkeys(r['lhs']) if x != subj_f and x != 'H2O']
     cond = r.get('cond', '')
+    heat = ' и нагрели' if cond.startswith('t') or ', t' in cond else ''
     if first:
         name = ru(subj_f)
         subj = name[0].upper() + name[1:]
@@ -3909,7 +3924,7 @@ def _step_text(r, subj_f, kind, rng, first=False):
             verb = rng.choice(['прокалили', 'нагрели'])
             return f'{subj} {verb}.'
         if others == [] and 'H2O' in r['lhs']:
-            return f'{subj} {"поместили в воду" if not first else "обработали водой"}.'
+            return f'{subj} {"обработали водой" if first else "поместили в воду"}.'
         return None
     if len(others) != 1:
         return None
@@ -3917,43 +3932,53 @@ def _step_text(r, subj_f, kind, rng, first=False):
     fr = FORM_OF(r, R) or ''
     exc = 'избыток ' in cond and R in cond or ('избыток кислоты' in cond and SUBS[R]['cls'] == 'кислота') or \
         ('избыток щёлочи' in cond and R in I.ALKALIS)
-    lack = 'недостаток' in cond
-    if lack:
+    if 'недостаток' in cond:
         return None
     if 'сплавл' in cond:
         return f'{subj} сплавили с {ins(R)}.'
     if R == 'O2':
-        return f'{subj} {"сожгли в кислороде" if "горение" in cond or "обжиг" not in cond else "подвергли обжигу"}.'
+        return f'{subj} {"подвергли обжигу" if "обжиг" in cond else "сожгли в кислороде"}.'
+    is_metal = SUBS[R]['cls'] == 'простое вещество' and SUBS[R].get('sub') == 'металл'
     if kind == 'газ' and not first:
         if SUBS[R].get('sol') == 'р' or SUBS[R]['cls'] in ('кислота', 'основание'):
-            return f'{subj} пропустили через {"избыток " if exc else ""}раствор{"а" if exc else ""} {gen(R)}.'
+            return f'{subj} пропустили через {"избыток раствора" if exc else "раствор"} {gen(R)}.'
         if 't' in cond:
             return f'{subj} пропустили над нагретым {ins(R)}.'
         return None
-    if R in GAS_NOM:
+    if R in _GAS_R:
         if r.get('aq'):
-            if first:
-                return f'Через раствор {gen(subj_f)} пропустили {"избыток " if exc else ""}{GAS_NOM[R] if not exc else gen(R)}.'
-            return f'Через {"полученный раствор" if kind == "раствор" else subj.lower()} пропустили ' \
-                   f'{"избыток " + gen(R) if exc else GAS_NOM[R]}.'
+            where = f'раствор {gen(subj_f)}' if first else ('полученный раствор' if kind == 'раствор' else None)
+            if where is None:
+                return None
+            return f'Через {where} пропустили {"избыток " + gen(R) if exc else GAS_NOM[R]}.'
         if 't' in cond:
             return f'{subj} нагрели в атмосфере {gen(R)}.'
         return None
-    solid_subj = SUBS[subj_f].get('sol') == 'н' or SUBS[subj_f]['cls'] in ('простое вещество',) or kind in (
+    solid_subj = SUBS[subj_f].get('sol') == 'н' or SUBS[subj_f]['cls'] == 'простое вещество' or kind in (
         'осадок', 'твёрдое', 'простое')
     if solid_subj:
-        if SUBS[R]['cls'] == 'кислота' or R in I.ALKALIS or SUBS[R].get('sol') == 'р':
-            verb = rng.choice(['растворили', 'обработали']) if SUBS[R]['cls'] == 'кислота' else 'обработали'
-            if verb == 'растворили':
-                return f'{subj} растворили {_prep_name(R, fr)}.'
-            return f'{subj} обработали {"избытком " if exc else ""}{("раствором " + gen(R)) if SUBS[R]["cls"] != "кислота" else (_ADJ.get(fr, "") + ins(R))}.'
+        if is_metal:
+            return None
+        if SUBS[R]['cls'] == 'кислота':
+            if rng.random() < 0.5:
+                return f'{subj} растворили {_prep_name(R, fr)}{heat}.'
+            return f'{subj} обработали {"избытком " if exc else ""}{_ADJ.get(fr, "")}{ins(R)}{heat}.'
+        if R in I.ALKALIS or SUBS[R].get('sol') == 'р':
+            return f'{subj} обработали {"избытком раствора" if exc else "раствором"} {gen(R)}{heat}.'
         if 't' in cond:
             return f'{subj} нагрели с {ins(R)}.'
         return None
-    # раствор + раствор
+    # раствор + металл / кислота / раствор
+    target = f'раствор {gen(subj_f)}' if first else 'полученный раствор'
+    if is_metal:
+        return f'В {target} поместили {ru(R)}{heat}.'
+    if SUBS[R]['cls'] == 'кислота':
+        adj = {'конц.': 'концентрированную ', 'разб.': 'разбавленную '}.get(fr, '')
+        return f'К {"раствору " + gen(subj_f) if first else "полученному раствору"} прилили ' \
+               f'{"избыток " if exc else ""}{adj}{_acc_name(R) if not exc else gen(R)}{heat}.'
     if first:
-        return f'К раствору {gen(subj_f)} прилили {"избыток раствора" if exc else "раствор"} {gen(R)}.'
-    return f'К полученному раствору добавили {"избыток раствора" if exc else "раствор"} {gen(R)}.'
+        return f'К раствору {gen(subj_f)} прилили {"избыток раствора" if exc else "раствор"} {gen(R)}{heat}.'
+    return f'К полученному раствору добавили {"избыток раствора" if exc else "раствор"} {gen(R)}{heat}.'
 
 
 def _unique_step(r, carrier, R):
@@ -4038,6 +4063,7 @@ def _solve_31(p):
 
 
 _ORD = ['первой', 'второй', 'третьей', 'четвёртой']
+_ORD_ACC = ['первую', 'вторую', 'третью', 'четвёртую']
 _KIND_Q = {'осадок': 'выпавший в осадок', 'газ': 'выделившийся газ', 'раствор': 'соль, оставшуюся в растворе',
            'твёрдое': 'твёрдый продукт', 'простое': 'образовавшееся простое вещество'}
 
@@ -4086,7 +4112,14 @@ def g_31(rng):
     if len(rel) < 3:
         raise Retry
     items = shuffled(rng, [c] + rel[:3])
-    q = text + f' Какое вещество — {_KIND_Q[kind]} в {_ORD[k]} реакции — вступило затем в {_ORD[k + 1]} реакцию?'
+    pre = 'во' if k == 1 else 'в'
+    qq = {'осадок': f'Какое вещество выпало в осадок {pre} {_ORD[k]} реакции?',
+          'газ': f'Какой газ выделился {pre} {_ORD[k]} реакции?',
+          'раствор': f'Какая соль, образовавшаяся {pre} {_ORD[k]} реакции, вступила затем в {_ORD_ACC[k + 1]} '
+                     f'реакцию?',
+          'твёрдое': f'Какое твёрдое вещество образовалось {pre} {_ORD[k]} реакции?',
+          'простое': f'Какое простое вещество образовалось {pre} {_ORD[k]} реакции?'}[kind]
+    q = text + ' ' + qq
     e = ' '.join(f'{i + 1}) {eq_text(s[0]["lhs"], s[0]["rhs"])}' for i, s in enumerate(steps))
     return card(pid, q, str(items.index(c) + 1), e, k='one', o=opts([F(x) for x in items]),
                 p={'rids': rids, 'k': k, 'ask': 'subst', 'opts': items},
