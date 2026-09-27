@@ -290,6 +290,39 @@ def FID(n, *, trap, scale, kes, fmt_=None, style=None, level=None, time_min=None
                 level=lv, time_min=tm, scale=scale, trap=trap, kes=kes, score=sc)
 
 
+# ---- страховка от близких пересказов банка: если локальная выгрузка ФИПИ доступна (FIPI_DIR), карточка со сходством
+# ≥ 0,28 отбрасывается (Retry) — аналог обязан отличаться веществами и сочетаниями, а не только числами.
+_SIM = None
+
+
+def _sim():
+    global _SIM
+    if _SIM is None:
+        import glob
+        import json
+        import os
+        from pc_core import Similarity
+        texts = []
+        d = os.environ.get('FIPI_DIR', '')
+        for path in sorted(glob.glob(os.path.join(d, '*-chem*.jsonl'))) if d else []:
+            for line in open(path, encoding='utf-8'):
+                t = json.loads(line).get('text', '')
+                if t:
+                    texts.append(t)
+        _SIM = Similarity(texts) if texts else False
+    return _SIM
+
+
+def card(pid, q, a, e, **kw):
+    c = pcard(pid, q, a, e, **kw)
+    sim = _sim()
+    if sim:
+        from pc_core import card_text
+        if sim.score(card_text(c))[0] >= 0.28:
+            raise Retry
+    return c
+
+
 def shuffled(rng, xs):
     xs = list(xs)
     rng.shuffle(xs)
@@ -462,7 +495,7 @@ def g_5cells(rng):
         ' Запишите в таблицу номера ячеек, в которых расположены выбранные вещества, под соответствующими буквами.'
     e = '; '.join(f'{LET[i]}) {cats[i]} — ячейка {ans[LET[i]]}: {F(chosen[i])} ({SUBS[chosen[i]]["name"]})'
                   for i in range(3)) + '.'
-    return pcard(pid, q, ans, e, k='match', o=match_opts(cats, texts, rids='123456789'), p={'cats': cats, 'cells': items})
+    return card(pid, q, ans, e, k='match', o=match_opts(cats, texts, rids='123456789'), p={'cats': cats, 'cells': items})
 
 
 def _solve_5match(p):
@@ -522,7 +555,7 @@ def g_5match(rng):
          f'соответствующую позицию, обозначенную цифрой. Запишите в таблицу выбранные цифры под соответствующими '
          f'буквами.')
     e = '; '.join(f'{F(f)} ({SUBS[f]["name"]}) — {groups[int(ans[LET[i]]) - 1]}' for i, f in enumerate(items)) + '.'
-    return pcard(pid, q, ans, e, k='match', o=match_opts(left, groups), p={'items': items, 'groups': groups})
+    return card(pid, q, ans, e, k='match', o=match_opts(left, groups), p={'items': items, 'groups': groups})
 
 
 # ================================================================= 7. Вещество ↔ реагенты
@@ -713,7 +746,7 @@ def g_7(rng):
         S = sets[int(ans[LET[i]]) - 1]
         ex.append(f'{CF(c)} реагирует с {", ".join(_rlabel(p, lab) for p, lab in S)}')
     e = '; '.join(ex) + '. В остальных наборах есть реагент, с которым вещество не взаимодействует.'
-    return pcard(pid, q, ans, e, k='match', o=match_opts(left, right),
+    return card(pid, q, ans, e, k='match', o=match_opts(left, right),
                  p={'centers': centers, 'sets': [[list(x) for x in S] for S in sets]})
 
 
@@ -757,15 +790,21 @@ def g_7two(rng):
     if len(wrong) < 3:
         raise Retry
     items = shuffled(rng, right + wrong)
-    by_name = rng.random() < 0.5
-    txt = lambda x: (ru(x[0]) + (f' ({x[1]})' if x[1] else '')) if by_name else _rlabel(*x)
+    by_name = rng.random() < 0.9
+    rr = rng.random() < 0.6
+    lab_of = lambda x: x[1] or ('р-р' if rr and SUBS[x[0]].get('sol') == 'р' and
+                                SUBS[x[0]]['cls'] in ('соль', 'основание') and reacts(csplit(c)[0], csplit(c)[1], x[0], 'р-р')
+                                == reacts(csplit(c)[0], csplit(c)[1], x[0], x[1]) else '')
+    txt = lambda x: (ru(x[0]) + (f' ({lab_of(x)})' if lab_of(x) else '')) if by_name else FL(x[0], lab_of(x))
     ans = [str(i + 1) for i, x in enumerate(items) if x in right]
     f0, lab0 = csplit(c)
     cname = ru(f0) + (f' ({lab0})' if lab0 else '')
     q = rng.choice([f'Из предложенного перечня выберите два вещества, с каждым из которых взаимодействует {cname}.',
-                    f'Из предложенного перечня веществ выберите два вещества, с которыми реагирует {cname}.']) + \
+                    f'Из предложенного перечня веществ выберите два вещества, с которыми реагирует {cname}.',
+                    f'Из предложенного перечня выберите два вещества, которые вступают в реакцию с {ins(f0)}'
+                    f'{" (" + lab0 + ")" if lab0 else ""}.']) + \
         ' Запишите номера выбранных ответов.'
     e = f'{CF(c)} реагирует с ' + ' и '.join(ins(x[0]) + (f' ({x[1]})' if x[1] else '') for x in right) + \
         '; с остальными веществами перечня реакция не идёт.'
-    return pcard(pid, q, ans, e, k='many', o=opts([txt(x) for x in items]),
+    return card(pid, q, ans, e, k='many', o=opts([txt(x) for x in items]),
                  p={'center': c, 'opts': [list(x) for x in items]})

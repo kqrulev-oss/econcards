@@ -447,4 +447,68 @@ GEN.update({'Ca(NO3)2': ('нитрата кальция', 'm'), 'Mg(NO3)2': ('н
             'Al2(SO4)3': ('сульфата алюминия', 'm'), 'BaCO3': ('карбоната бария', 'm'),
             'NaHSO4': ('гидросульфата натрия', 'm')})
 
-REACTIONS = THERMO + GASVOL + STOICH + YIELD + EXCESS + SOLUTION + PLATE + ELECTRO + MISC34
+SUBSTANCES += [
+    _s('Ba3(PO4)2', 'фосфат бария', 'соль', sol='н'), _s('Cu3(PO4)2', 'фосфат меди(II)', 'соль', sol='н'),
+    _s('Mg3(PO4)2', 'фосфат магния', 'соль', sol='н'), _s('CuS', 'сульфид меди(II)', 'соль', color='чёрный', sol='н'),
+    _s('Fe2(SO4)3', 'сульфат железа(III)', 'соль'), _s('ZnCO3', 'карбонат цинка', 'соль', sol='н'),
+    _s('FeO', 'оксид железа(II)', 'оксид'), _s('KHCO3', 'гидрокарбонат калия', 'соль'),
+    _s('BaO', 'оксид бария', 'оксид'), _s('Na2(Zn(OH)4)', 'тетрагидроксоцинкат натрия', 'комплексная соль'),
+    _s('Mg(NO3)2', 'нитрат магния', 'соль'), _s('KClO3', 'хлорат калия', 'соль'),
+]
+GEN.update({'Ba3(PO4)2': ('фосфата бария', 'm'), 'Cu3(PO4)2': ('фосфата меди(II)', 'm'),
+            'Mg3(PO4)2': ('фосфата магния', 'm'), 'CuS': ('сульфида меди(II)', 'm'),
+            'Fe2(SO4)3': ('сульфата железа(III)', 'm'), 'ZnCO3': ('карбоната цинка', 'm'), 'FeO': ('оксида железа(II)', 'm'),
+            'KHCO3': ('гидрокарбоната калия', 'm'), 'BaO': ('оксида бария', 'm'), 'C12H22O11': ('сахарозы', 'f'),
+            'CH3COONa': ('ацетата натрия', 'm'), 'NH4NO3': ('нитрата аммония', 'm')})
+
+# ОГЭ 22: дополнительные реакции с раствором заданной концентрации
+SOLUTION += [
+    _r(['BaCl2', 'Na3PO4'], ['Ba3(PO4)2', 'NaCl'], ['обмена'], sign='белый осадок', tags=['sol'],
+       calc=dict(sol='BaCl2', ex='Na3PO4', f='Ba3(PO4)2', kind='precip')),
+    _r(['K3PO4', 'CuCl2'], ['Cu3(PO4)2', 'KCl'], ['обмена'], sign='голубой осадок', tags=['sol'],
+       calc=dict(sol='K3PO4', ex='CuCl2', f='Cu3(PO4)2', kind='precip')),
+    _r(['Mg(NO3)2', 'Na3PO4'], ['Mg3(PO4)2', 'NaNO3'], ['обмена'], sign='белый осадок', tags=['sol'],
+       calc=dict(sol='Mg(NO3)2', ex='Na3PO4', f='Mg3(PO4)2', kind='precip')),
+    _r(['CuCl2', 'Na2S'], ['CuS', 'NaCl'], ['обмена'], sign='чёрный осадок', tags=['sol'],
+       calc=dict(sol='CuCl2', ex='Na2S', f='CuS', kind='precip')),
+    _r(['Ba(OH)2', 'K2CO3'], ['BaCO3', 'KOH'], ['обмена'], sign='белый осадок', tags=['sol'],
+       calc=dict(sol='Ba(OH)2', ex='K2CO3', f='BaCO3', kind='precip')),
+    _r(['Al2(SO4)3', 'Ba(NO3)2'], ['BaSO4', 'Al(NO3)3'], ['обмена'], sign='белый осадок', tags=['sol'],
+       calc=dict(sol='Al2(SO4)3', ex='Ba(NO3)2', f='BaSO4', kind='precip')),
+    _r(['Fe2(SO4)3', 'Ba(NO3)2'], ['BaSO4', 'Fe(NO3)3'], ['обмена'], sign='белый осадок', tags=['sol'],
+       calc=dict(sol='Fe2(SO4)3', ex='Ba(NO3)2', f='BaSO4', kind='precip')),
+    _r(['AgNO3', 'FeCl3'], ['AgCl', 'Fe(NO3)3'], ['обмена'], sign='белый творожистый осадок', tags=['sol'],
+       calc=dict(sol='AgNO3', ex='FeCl3', f='AgCl', kind='precip')),
+    _r(['Ca(NO3)2', 'K3PO4'], ['Ca3(PO4)2', 'KNO3'], ['обмена'], sign='белый осадок', tags=['sol'],
+       calc=dict(sol='Ca(NO3)2', ex='K3PO4', f='Ca3(PO4)2', kind='precip')),
+    _r(['Ba(NO3)2', 'Na2CO3'], ['BaCO3', 'NaNO3'], ['обмена'], sign='белый осадок', tags=['sol'],
+       calc=dict(sol='Ba(NO3)2', ex='Na2CO3', f='BaCO3', kind='precip')),
+    _r(['H2SO4', 'Ba(NO3)2'], ['BaSO4', 'HNO3'], ['обмена'], sign='белый осадок', tags=['sol'],
+       calc=dict(sol='H2SO4', ex='Ba(NO3)2', f='BaSO4', kind='precip')),
+    _r(['K2CO3', 'HCl'], ['KCl', 'CO2', 'H2O'], ['обмена'], sign='выделение газа', tags=['sol'],
+       calc=dict(sol='K2CO3', ex='HCl', f='CO2', kind='gas')),
+    _r(['H2SO4', 'Zn'], ['ZnSO4', 'H2'], ['замещения', 'ОВР'], sign='выделение газа', tags=['sol'],
+       calc=dict(sol='H2SO4', ex='Zn', f='H2', kind='gas')),
+    _r(['H2SO4', 'FeS'], ['FeSO4', 'H2S'], ['обмена'], sign='газ с запахом тухлых яиц', tags=['sol'],
+       calc=dict(sol='H2SO4', ex='FeS', f='H2S', kind='gas')),
+    _r(['HCl', 'Mg'], ['MgCl2', 'H2'], ['замещения', 'ОВР'], sign='выделение газа', tags=['sol'],
+       calc=dict(sol='HCl', ex='Mg', f='H2', kind='gas')),
+]
+# ОГЭ 22: найти количество второго реагента (твёрдого/газа) для реакции с раствором
+REAGENT = [
+    _r(['HCl', 'CuO'], ['CuCl2', 'H2O'], ['обмена'], tags=['reag'], calc=dict(sol='HCl', r='CuO', by='m')),
+    _r(['HCl', 'Fe(OH)3'], ['FeCl3', 'H2O'], ['обмена'], tags=['reag'], calc=dict(sol='HCl', r='Fe(OH)3', by='m')),
+    _r(['H2SO4', 'NH3'], ['(NH4)2SO4'], ['соединения'], tags=['reag'], calc=dict(sol='H2SO4', r='NH3', by='V')),
+    _r(['HCl', 'NH3'], ['NH4Cl'], ['соединения'], tags=['reag'], calc=dict(sol='HCl', r='NH3', by='V')),
+    _r(['CuSO4', 'Al'], ['Al2(SO4)3', 'Cu'], ['замещения', 'ОВР'], tags=['reag'], calc=dict(sol='CuSO4', r='Al', by='m')),
+    _r(['H2SO4', 'Na2CO3'], ['Na2SO4', 'CO2', 'H2O'], ['обмена'], tags=['reag'], calc=dict(sol='H2SO4', r='Na2CO3', by='m')),
+    _r(['CuSO4', 'H2S'], ['CuS', 'H2SO4'], ['обмена'], tags=['reag'], calc=dict(sol='CuSO4', r='H2S', by='V')),
+    _r(['AgNO3', 'Cu'], ['Cu(NO3)2', 'Ag'], ['замещения', 'ОВР'], tags=['reag'], calc=dict(sol='AgNO3', r='Cu', by='m')),
+    _r(['HNO3', 'MgO'], ['Mg(NO3)2', 'H2O'], ['обмена'], tags=['reag'], calc=dict(sol='HNO3', r='MgO', by='m')),
+    _r(['NaOH', 'SO2'], ['Na2SO3', 'H2O'], ['обмена'], tags=['reag'], calc=dict(sol='NaOH', r='SO2', by='V')),
+    _r(['NaOH', 'CO2'], ['Na2CO3', 'H2O'], ['обмена'], tags=['reag'], calc=dict(sol='NaOH', r='CO2', by='V')),
+    _r(['H2SO4', 'Al2O3'], ['Al2(SO4)3', 'H2O'], ['обмена'], tags=['reag'], calc=dict(sol='H2SO4', r='Al2O3', by='m')),
+    _r(['Na2O', 'H2O'], ['NaOH'], ['соединения'], tags=['reag'], calc=dict(sol='NaOH', r='Na2O', by='m', made=True)),
+]
+
+REACTIONS = THERMO + GASVOL + STOICH + YIELD + EXCESS + SOLUTION + PLATE + ELECTRO + MISC34 + REAGENT
