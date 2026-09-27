@@ -2694,7 +2694,7 @@ def _solve_8tab(p):
 def g_8tab(rng):
     sub_ = rng.choice(['олово', 'свинец', 'лёд'])
     c, lam, tm = C_HEAT[sub_], LAMBDA[sub_], T_MELT[sub_]
-    m = rng.choice([Fr(1, 2), 1, 2, 4, 5])
+    m = rng.choice([Fr(1, 5), Fr(2, 5), Fr(1, 2), 1, 2, 3, 4, 5, 10])
     find = rng.choice(['c', 'lam'])
     t0 = tm - rng.choice([20, 30, 40, 50, 60, 100]) if sub_ != 'лёд' else rng.choice([-40, -30, -20])
     dQh = c * m * (tm - t0) / 1000

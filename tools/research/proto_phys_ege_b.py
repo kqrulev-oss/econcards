@@ -3646,11 +3646,33 @@ def rq(dec):
     return {0: 'Ответ округлите до целых.', 1: 'Ответ округлите до десятых.', 2: 'Ответ округлите до сотых.', 3: 'Ответ округлите до тысячных.'}[dec]
 
 
-def num_card(pid, q, val, dec, e, p, wrong):
+SS = {}   # pid -> fn(p) -> значения шагов решения (независимый пересчёт)
+
+
+def sig_dec(v, n=3):
+    v = abs(float(v))
+    if v == 0:
+        return 0
+    return min(4, max(0, n - 1 - math.floor(math.log10(v))))
+
+
+def num_card(pid, q, val, dec, e, p, wrong, steps=None):
+    y = float(val) * 10 ** dec
+    if abs(y - round(y)) > 0.3:      # ответ устойчив к разумным промежуточным округлениям
+        raise Retry
     a = rnd(val, dec)
     if a in ('0', '-0'):
         raise Retry
-    return pcard(pid, q, a, e.replace('{ANS}', a), p=dict(p, dec=dec), wrong=[fmt(float(w), dec) for w in wrong if w is not None and w > 0])
+    st = None
+    if steps:
+        st, sd = [], []
+        for lbl, v in steps:
+            d = sig_dec(v)
+            st.append((lbl, rnd(v, d)))
+            sd.append(d)
+        p = dict(p, sd=sd)
+    return pcard(pid, q, a, e.replace('{ANS}', a), p=dict(p, dec=dec), wrong=[fmt(float(w), dec) for w in wrong if w is not None and w > 0],
+                 steps=st)
 
 
 G10 = 10
