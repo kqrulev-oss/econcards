@@ -1,7 +1,7 @@
 // Кабинет родителя: вход, привязка ребёнка по коду и понятная сводка —
 // занимается ли, насколько точно, что подтягивать.
 import { api, loadPack, esc, day, plural, toast } from '../lib.js';
-import { signedIn, account, loginDialog, logout, addRole, finishRedirectLogin } from '../account.js';
+import { signedIn, account, loginDialog, logout, addRole, finishRedirectLogin, finishPayment, payDialog, daysLeft, dateRu } from '../account.js';
 
 const $app = document.getElementById('app');
 const packs = new Map(); // ref → набор (кэш)
@@ -41,7 +41,7 @@ function stats(prog, pack) {
     .sort((a, b) => a.acc - b.acc).slice(0, 3);
   const mastered = Object.values(prog.cards || {}).filter(s => s.b >= 3).length;
   const acc = w => w.n ? Math.round(w.ok / w.n * 100) : null;
-  return { streak, days7, strip, weeks, last, weak, mastered, total: pack?.cards.length || 0, week, acc7: acc(week), accPrev: acc(prev), acc };
+  return { streak, days7, strip, weeks, last, weak, mastered, total: pack?.limited?.total || pack?.cards.length || 0, week, acc7: acc(week), accPrev: acc(prev), acc };
 }
 
 const ago = d => d === null ? 'ещё не занимался' : d === day() ? 'занимался сегодня' : d === day() - 1 ? 'занимался вчера' : `занимался ${plural(day() - d, 'день', 'дня', 'дней')} назад`;
@@ -71,6 +71,19 @@ function packBlock(s, pack) {
     </section>`;
 }
 
+// Доступ ребёнка к библиотеке ЕГЭ: оплачен, пробный, через репетитора или нет
+function libLine(ch) {
+  const lib = ch.plans?.lib || {}, now = Date.now();
+  const via = ch.plans?.libVia || 0;
+  let text, pay = 'Оплатить доступ';
+  if ((lib.paidUntil || 0) > now) { text = `Библиотека ЕГЭ оплачена до ${dateRu(lib.paidUntil)}`; pay = 'Продлить'; }
+  else if (via > now) { text = 'Библиотека ЕГЭ открыта — входит в тариф репетитора'; pay = ''; }
+  else if ((lib.trialEnd || 0) > now) text = `Пробный доступ к библиотеке ЕГЭ: осталось ${plural(daysLeft(lib.trialEnd), 'день', 'дня', 'дней')}`;
+  else text = 'Библиотека ЕГЭ: бесплатная часть (2 прототипа в каждом задании)';
+  const tone = (lib.paidUntil || 0) > now || via > now ? 'ok' : (lib.trialEnd || 0) > now ? 'trial' : 'free';
+  return `<div class="panel plan ${tone} kid-plan"><span>${text}</span>${pay ? `<button class="btn small primary" data-pay="${esc(ch.id)}" data-name="${esc(ch.name)}">${pay}</button>` : ''}</div>`;
+}
+
 async function viewChildren() {
   let children;
   try { ({ children } = await api('/me/children')); } catch (err) { $app.innerHTML = `<section class="panel">${esc(err.message)}</section>`; return; }
@@ -80,6 +93,7 @@ async function viewChildren() {
     return `<section class="kid">
       <div class="kid-head"><span class="avatar">${esc((ch.name || 'У').slice(0, 2).toUpperCase())}</span><h1>${esc(ch.name)}</h1>
         <button class="btn small" data-unlink="${esc(ch.id)}" aria-label="Убрать">Убрать</button></div>
+      ${libLine(ch)}
       ${parts.join('') || '<p class="panel muted">Ребёнок ещё не занимался с аккаунтом. Когда он начнёт, здесь появится сводка.</p>'}
     </section>`;
   }));
@@ -102,6 +116,7 @@ async function viewChildren() {
   $app.querySelector('#add').onclick = add;
   $app.querySelector('#code').onkeydown = e => e.key === 'Enter' && add();
   $app.querySelector('#logout').onclick = async () => { await logout(); route(); };
+  $app.querySelectorAll('[data-pay]').forEach(b => b.onclick = () => payDialog({ product: 'lib', forAcct: b.dataset.pay, forName: b.dataset.name }));
   $app.querySelectorAll('[data-unlink]').forEach(b => b.onclick = async () => {
     if (!confirm('Убрать ребёнка из кабинета? Его прогресс не пропадёт, добавить снова можно по новому коду.')) return;
     await api(`/me/children/${b.dataset.unlink}`, { method: 'DELETE' });
@@ -132,4 +147,5 @@ function route() {
 
 const done = await finishRedirectLogin();
 if (done) await addRole('parent');
+await finishPayment();
 route();

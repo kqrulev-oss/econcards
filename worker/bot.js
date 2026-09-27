@@ -22,7 +22,8 @@
    Переменная GH_REPO (по умолч. kqrulev-oss/econcards).
    ============================================================ */
 
-import { confirmTelegram } from './auth.js';
+import { confirmTelegram, getAccount, planStatus } from './auth.js';
+import { extend } from './billing.js';
 
 const MARK = '<!-- via-telegram -->'; // наши issue и комментарии — не пересылаем их обратно
 const AGENTS = { claude: 'Claude', codex: 'Codex', gemini: 'Gemini' };
@@ -62,6 +63,8 @@ const HELP = `Пишите задачу обычным текстом — Gemini
 /codex текст — сразу Codex (дизайн, вёрстка)
 /ask вопрос — просто ответ Gemini, без задач
 /status — открытые задачи
+/grant кто tutor|lib дней — выдать доступ вручную (кто: id аккаунта, почта или id в Telegram)
+/stats — аккаунты, пробные периоды, оплаты
 Ответ реплаем на сообщение агента уходит ему же в задачу.`;
 
 // ---------- GitHub ----------
@@ -144,6 +147,33 @@ async function onMessage(env, msg) {
     const agent = await env.DB.get(`gh:agent:${num}`) || 'claude';
     await gh(env, `/issues/${num}/comments`, { body: `${live(env) ? '@' + agent + ' ' : ''}${text}\n\n${MARK}` });
     return say(env, `${live(env) ? 'Передал ' + AGENTS[agent] : 'Добавил комментарий'} в задачу #${num}.`, { reply_to_message_id: msg.message_id });
+  }
+
+  if (cmd === '/grant') {
+    const [whoArg, product, daysArg] = rest;
+    const days = Number(daysArg);
+    if (!whoArg || !['tutor', 'lib'].includes(product) || !(days > 0 && days <= 400)) return say(env, 'Формат: /grant <id|почта|telegram id> tutor|lib <дней>');
+    const id = /^a[a-z0-9]{12}$/.test(whoArg) ? whoArg
+      : await env.DB.get(whoArg.includes('@') ? `ident:email:${whoArg.toLowerCase()}` : `ident:tg:${whoArg}`);
+    const acct = id && await extend(env, id, product, days, 'вручную');
+    if (!acct) return say(env, 'Аккаунт не найден.');
+    const until = new Date(planStatus(acct, product).until).toLocaleDateString('ru-RU');
+    return say(env, `Готово: ${acct.name || acct.email || acct.id} — ${product === 'tutor' ? 'студия' : 'библиотека'} до ${until}.`);
+  }
+
+  if (cmd === '/stats') {
+    const all = async prefix => { const keys = []; let cursor; do { const l = await env.DB.list({ prefix, cursor }); keys.push(...l.keys); cursor = l.list_complete ? null : l.cursor; } while (cursor); return keys; };
+    const accts = (await Promise.all((await all('acct:')).map(k => getAccount(env, k.name.slice(5))))).filter(Boolean);
+    const count = f => accts.filter(f).length;
+    const paid = await Promise.all((await all('paid:')).map(k => env.DB.get(k.name, 'json')));
+    const month = Date.now() - 30 * 86400e3;
+    const sum = list => list.reduce((n, p) => n + Number(p?.amount || 0), 0);
+    return say(env, [
+      `Аккаунтов: ${accts.length} (репетиторов ${count(a => a.roles?.tutor)}, учеников ${count(a => a.roles?.student)}, родителей ${count(a => a.roles?.parent)})`,
+      `Студия: пробный ${count(a => planStatus(a, 'tutor').trial)}, оплачено ${count(a => planStatus(a, 'tutor').paidUntil > Date.now())}`,
+      `Библиотека: пробный ${count(a => planStatus(a, 'lib').trial)}, оплачено ${count(a => planStatus(a, 'lib').paidUntil > Date.now())}`,
+      `Оплат всего: ${paid.length} на ${sum(paid)} ₽, за 30 дней: ${sum(paid.filter(p => p?.at > month))} ₽`,
+    ].join('\n'));
   }
 
   if (cmd === '/status') {

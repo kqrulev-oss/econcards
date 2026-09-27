@@ -59,8 +59,29 @@ export async function getAccount(env, id) {
 }
 export const saveAccount = (env, a) => env.DB.put(`acct:${a.id}`, JSON.stringify(a));
 
+// Пробный период: один раз на аккаунт и продукт (tutor — студия, lib — библиотека ЕГЭ)
+export const TRIAL_DAYS = env => ({ tutor: Number(env.TRIAL_TUTOR_DAYS || 14), lib: Number(env.TRIAL_LIB_DAYS || 7) });
+export function startTrial(env, acct, product) {
+  acct.plans ||= {};
+  const p = acct.plans[product] ||= {};
+  if (p.trialEnd) return false;
+  p.trialEnd = Date.now() + TRIAL_DAYS(env)[product] * DAY * 1000;
+  return true;
+}
+
+// Доступ сейчас: пробный, оплаченный или (для библиотеки) через репетитора с тарифом
+export function planStatus(acct, product) {
+  const p = acct?.plans?.[product] || {};
+  const now = Date.now();
+  const via = product === 'lib' ? acct?.plans?.libVia || 0 : 0;
+  const until = Math.max(p.trialEnd || 0, p.paidUntil || 0, via);
+  return { active: until > now, until, trialEnd: p.trialEnd || 0, paidUntil: p.paidUntil || 0, via,
+    trial: (p.trialEnd || 0) > now && !((p.paidUntil || 0) > now) && !(via > now) };
+}
+
 export function publicAccount(a) {
-  return { id: a.id, name: a.name, email: a.email || null, roles: a.roles, idents: a.idents.map(i => i.split(':')[0]), plans: a.plans || {} };
+  return { id: a.id, name: a.name, email: a.email || null, roles: a.roles, idents: a.idents.map(i => i.split(':')[0]), plans: a.plans || {},
+    status: { tutor: planStatus(a, 'tutor'), lib: planStatus(a, 'lib') } };
 }
 
 // Сессия из заголовка Authorization: Bearer <token>
@@ -356,6 +377,8 @@ export async function handleAuth(req, env, parts) {
       const { role } = await readBody(req);
       if (!ROLES.includes(role)) throw new AuthError(400, 'Неизвестная роль.');
       if (!acct.roles[role]) acct.roles[role] = Date.now();
+      if (role === 'tutor') startTrial(env, acct, 'tutor');
+      if (role === 'student') startTrial(env, acct, 'lib');
       await saveAccount(env, acct);
       return publicAccount(acct);
     }
@@ -364,7 +387,7 @@ export async function handleAuth(req, env, parts) {
       const data = await readBody(req, MAX_STUDIO);
       if (!data || typeof data.packs !== 'object' || typeof data.keys !== 'object') throw new AuthError(400, 'Некорректные данные студии.');
       await env.DB.put(`studio:${acct.id}`, JSON.stringify({ packs: data.packs, keys: data.keys, deleted: data.deleted || {}, saved: Date.now() }));
-      if (!acct.roles.tutor) { acct.roles.tutor = Date.now(); await saveAccount(env, acct); }
+      if (!acct.roles.tutor || startTrial(env, acct, 'tutor')) { acct.roles.tutor ||= Date.now(); await saveAccount(env, acct); }
       return { ok: true, saved: Date.now() };
     }
     if (b === 'parent-code' && m === 'POST') {
@@ -399,7 +422,7 @@ export async function handleAuth(req, env, parts) {
         const data = await readBody(req, MAX_PROGRESS);
         if (!data || typeof data.cards !== 'object' || typeof data.log !== 'object') throw new AuthError(400, 'Некорректный прогресс.');
         await env.DB.put(k, JSON.stringify({ ...data, saved: Date.now() }));
-        if (!acct.roles.student) { acct.roles.student = Date.now(); await saveAccount(env, acct); }
+        if (!acct.roles.student || startTrial(env, acct, 'lib')) { acct.roles.student ||= Date.now(); await saveAccount(env, acct); }
         return { ok: true };
       }
     }

@@ -32,7 +32,7 @@ export async function api(path, { method = 'GET', body, key } = {}) {
     throw new Error('Нет связи с сервером');
   }
   const data = await r.json().catch(() => ({}));
-  if (!r.ok) throw new Error(data.message || `Ошибка сервера (${r.status})`);
+  if (!r.ok) throw Object.assign(new Error(data.message || `Ошибка сервера (${r.status})`), { status: r.status });
   return data;
 }
 
@@ -41,7 +41,9 @@ export const ai = (task, payload) => api('/ai', { method: 'POST', body: { task, 
 // Встроенные наборы лежат в packs/, наборы репетиторов — на сервере
 export async function loadPack(ref, root = './') {
   if (ref.startsWith('t:')) return api('/packs/' + encodeURIComponent(ref.slice(2)));
-  const r = await fetch(`${root}packs/${encodeURIComponent(ref)}.json`);
+  // С сессией сервер отдаёт библиотеку целиком, если есть доступ (пробный, оплата)
+  const token = store.get('zd-session', null)?.token;
+  const r = await fetch(`${root}packs/${encodeURIComponent(ref)}.json`, token ? { headers: { Authorization: `Bearer ${token}` } } : {});
   if (!r.ok) throw new Error('Набор не найден');
   return r.json();
 }
