@@ -1664,6 +1664,8 @@ def export_protos(path, fipi_dir, n=30):
     protos = load_protos()
     fipi = Fipi(fipi_dir) if fipi_dir else None
     cov = fipi_coverage(protos, fipi) if fipi else {}
+    fid_path = os.path.join(HERE, 'math_fidelity.json')
+    fid = json.load(open(fid_path, encoding='utf-8')) if os.path.exists(fid_path) else {}
     out = []
     for p in sorted(protos.values(), key=lambda p: (list(EXAMS).index(p['exam']), p['n'], p['id'])):
         cards, info = run_proto(p, n, fipi)
@@ -1679,6 +1681,9 @@ def export_protos(path, fipi_dir, n=30):
             rec['figure'] = True
         if p.get('note'):
             rec['note'] = p['note']
+        if p.get('kim'):
+            rec['kim'] = p['kim']
+        rec['fidelity'] = fid.get(p['id'], {'verdict': 'not_checked'})
         if fipi:
             rec['fipi_bank_matches'] = cov[p['exam']]['per'].get(p['id'], 0)
             rec['sim_fipi_max'] = info['sim_max']
@@ -1688,6 +1693,29 @@ def export_protos(path, fipi_dir, n=30):
         json.dump(out, fh, ensure_ascii=False, indent=1)
         fh.write('\n')
     print(f'{path}: {len(out)} прототипов')
+
+
+def review_dump(path, fipi_dir, k=5):
+    """Материал для «экзаменационной проверки»: по k случайных аналогов на прототип (другое зерно,
+    чем в самопроверке) + паспорт КИМ + до 3 заданий банка ФИПИ того же прототипа (только локально)."""
+    protos = load_protos()
+    fipi = Fipi(fipi_dir) if fipi_dir else None
+    bank = {}
+    if fipi:
+        for exam, key in BANK_OF.items():
+            bank[exam] = fipi.bank.get(key, [])
+    with open(path, 'w', encoding='utf-8') as fh:
+        for p in sorted(protos.values(), key=lambda p: (list(EXAMS).index(p['exam']), p['n'], p['id'])):
+            cards, _ = run_proto(p, k, None, seed=7)
+            rng = random.Random(p['id'])
+            same_bank = [r_['text'] for r_ in bank.get(p['exam'], []) if p.get('fipi') and re.search(p['fipi'], r_['text'], re.I)]
+            rec = {k_: p[k_] for k_ in ('id', 'exam', 'n', 'title', 'invariant', 'varies', 'answer_rule', 'kind', 'kim', 'mistakes')}
+            rec['analogs'] = [{k_: c[k_] for k_ in ('q', 'a', 'e', 'o', 'k') if k_ in c} | ({'svg': True} if c.get('svg') else {}) for c in cards]
+            rec['fipi_bank_sample'] = rng.sample(same_bank, min(3, len(same_bank)))
+            if p['kind'] == 'llm':
+                rec['recipe'] = p['recipe']
+            fh.write(json.dumps(rec, ensure_ascii=False) + '\n')
+    print(f'{path}: {len(protos)} прототипов')
 
 
 def main():
@@ -1703,7 +1731,11 @@ def main():
     ap.add_argument('--fipi', help='папка с локальными текстами ФИПИ для сверки сходства')
     ap.add_argument('--unmatched', type=int, default=0, help='показать столько заданий банка без прототипа')
     ap.add_argument('--export-protos', help='собрать data/source/math-prototypes.json')
+    ap.add_argument('--review-dump', help='материал для экзаменационной проверки (локально, не коммитить)')
     args = ap.parse_args()
+    if args.review_dump:
+        review_dump(args.review_dump, args.fipi)
+        return 0
     if args.export_protos:
         export_protos(args.export_protos, args.fipi)
         return 0
