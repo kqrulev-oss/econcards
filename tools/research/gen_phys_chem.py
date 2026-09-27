@@ -1434,8 +1434,16 @@ def load_protos():
     if HERE not in sys.path:
         sys.path.insert(0, HERE)
     for path in sorted(_glob.glob(_os.path.join(HERE, 'proto_*.py'))):
-        _importlib.import_module(_os.path.basename(path)[:-3])
+        name = _os.path.basename(path)[:-3]
+        try:
+            _importlib.import_module(name)
+        except Exception as ex:  # noqa: BLE001 — модуль в работе не должен ронять проверку остальных
+            LOAD_ERRORS.append(f'{name}: {type(ex).__name__}: {ex}')
+            print(f'!! {name} не загружен: {type(ex).__name__}: {ex}', file=sys.stderr)
     return _pc.PROTOS
+
+
+LOAD_ERRORS = []
 
 
 def load_fipi(subj, fipi_dir):
@@ -1577,7 +1585,9 @@ def print_proto_report(rows, cross_dups, nfipi, n):
     print(f'Итого: прототипов {len(rows)} (с генератором {len(gen_rows)}, рецептов {len(rows) - len(gen_rows)}); '
           f'карточек {sum(r["n"] for r in rows)}; ошибок {tot_err}; повторов в выдаче 0 (отброшено при генерации '
           f'{sum(r["reps"] for r in rows)}); дублей между прототипами {cross_dups}; карточек со сходством с ФИПИ ≥ 0,3: {bad_sim}.')
-    return tot_err + cross_dups + bad_sim
+    if LOAD_ERRORS:
+        print('Модули с ошибкой загрузки:', '; '.join(LOAD_ERRORS))
+    return tot_err + cross_dups + bad_sim + len(LOAD_ERRORS)
 
 
 def main():
