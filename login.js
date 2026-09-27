@@ -73,7 +73,7 @@ function viewSignedIn() {
   $app.querySelector('#logout').onclick = async () => { await logout(); render(); };
 }
 
-const brand = () => `<header class="login-top"><a class="ld-logo" href="./?about"><span class="ld-mark">М</span>Между уроками</a>
+const brand = () => `<header class="login-top"><a class="ld-logo" href="./?about"><img class="ld-mark" src="icons/icon-192.png" alt="" width="40" height="40">Между уроками</a>
   <a class="btn small" href="./?about">О сервисе</a></header>`;
 
 function render(resume = null) {
