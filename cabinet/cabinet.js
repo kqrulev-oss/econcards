@@ -2,7 +2,7 @@
 // роли свой раздел: репетитор (ученики и тариф), ученик (серия, тренажёры,
 // библиотека), родитель (дети и оплата). Ролей у одного аккаунта может быть несколько.
 import { store, api, esc, day, plural, toast, loadLibrary } from '../lib.js';
-import { signedIn, account, logout, addRole, finishRedirectLogin, finishPayment, refreshAccount,
+import { signedIn, account, signOut, addRole, finishRedirectLogin, finishPayment, refreshAccount, accountFresh,
   loginDialog, payDialog, planOf, daysLeft, dateRu, TG_ICON, openLink } from '../account.js';
 import { renderChildren, stats } from '../parent/view.js';
 
@@ -30,29 +30,36 @@ const trainerUrl = ref => ref.startsWith('t:') ? `../?t=${encodeURIComponent(ref
 
 // ---------- шапка и вкладки ----------
 
+// Шапка как в студии: логотип, путь в студию (у репетитора) и аватар. Вкладки на телефоне
+// переносятся на вторую строку — ни одна не прячется за край экрана
 function shell(tab, body) {
   const a = account();
   const tabs = [...rolesOf(a).map(r => [r, ROLES[r].tab]), ['settings', 'Настройки']];
   $app.innerHTML = `
     <header class="cab-top">
-      <a class="ld-logo" href="../?about"><img class="ld-mark" src="../icons/icon-192.png" alt="" width="40" height="40"><span class="cab-logo-text">Между уроками</span></a>
-      <a class="cab-me" href="#settings" aria-label="Настройки аккаунта"><span class="avatar">${initials(a)}</span><span class="cab-me-name">${esc(a?.name || a?.email || 'Аккаунт')}</span></a>
+      <a class="ld-logo" href="../?about" aria-label="Между уроками — о сервисе"><img class="ld-mark" src="../icons/icon-192.png" alt="" width="40" height="40"><span class="cab-logo-text">Между уроками</span></a>
+      <span class="cab-top-right">
+        ${a?.roles?.tutor ? '<a class="btn small cab-studio" href="../studio/">Студия</a>' : ''}
+        <a class="cab-me" href="#settings" aria-label="Настройки аккаунта"><span class="avatar">${initials(a)}</span><span class="cab-me-name">${esc(a?.name || a?.email || 'Аккаунт')}</span></a>
+      </span>
     </header>
     <nav class="cab-tabs" aria-label="Разделы кабинета">${tabs.map(([id, t]) =>
-      `<a href="#${id}" class="${tab === id ? 'on' : ''}" ${tab === id ? 'aria-current="page"' : ''}>${ICON[id]}<span>${t}</span></a>`).join('')}
-      ${rolesOf(a).length < 3 ? '<a href="#role" class="cab-add" aria-label="Добавить роль">+</a>' : ''}</nav>
+      `<a href="#${id}" class="${tab === id ? 'on' : ''}" ${tab === id ? 'aria-current="page"' : ''} aria-label="${t}">${ICON[id]}<span>${t}</span></a>`).join('')}
+      ${rolesOf(a).length < 3 ? '<a href="#role" class="cab-add" aria-label="Добавить роль"><b aria-hidden="true">+</b><span>Роль</span></a>' : ''}</nav>
     <div id="cab-body">${body}</div>`;
   return $app.querySelector('#cab-body');
 }
 
-// Плашка тарифа: пробный / оплачен / бесплатный — и кнопка оплаты
+// Плашка тарифа: пробный / оплачен / бесплатный. «Оплатить» кнопкой — только когда пробный
+// кончился; в пробный период и при оплаченном — мелкая ссылка «Тарифы» / «Продлить»
 function planPanel(product, { name, free, via }) {
   const st = planOf(product), now = Date.now();
-  let tone = 'free', text = free, btn = 'Оплатить';
-  if ((st.paidUntil || 0) > now) { tone = 'ok'; text = `${name} оплачен до ${dateRu(st.paidUntil)}`; btn = 'Продлить'; }
+  let tone = 'free', text = free, btn = 'Оплатить', quiet = false;
+  if ((st.paidUntil || 0) > now) { tone = 'ok'; text = `${name} оплачен до ${dateRu(st.paidUntil)}`; btn = 'Продлить'; quiet = true; }
   else if (via && st.via > now) { tone = 'ok'; text = via; btn = ''; }
-  else if ((st.trialEnd || 0) > now) { tone = 'trial'; text = `Пробный период: ${plural(daysLeft(st.trialEnd), 'день', 'дня', 'дней')} без ограничений`; }
-  return `<div class="panel plan ${tone} cab-plan"><span>${text}</span>${btn ? `<button class="btn small primary" data-pay="${product}">${btn}</button>` : ''}</div>`;
+  else if ((st.trialEnd || 0) > now) { tone = 'trial'; text = `Пробный период: ${plural(daysLeft(st.trialEnd), 'день', 'дня', 'дней')} без ограничений`; btn = 'Тарифы'; quiet = true; }
+  return `<div class="panel plan ${tone} cab-plan"><span>${text}</span>${!btn ? '' : quiet
+    ? `<button class="link-btn" data-pay="${product}">${btn}</button>` : `<button class="btn small primary" data-pay="${product}">${btn}</button>`}</div>`;
 }
 const bindPay = box => box.querySelectorAll('[data-pay]').forEach(b => { b.onclick = () => payDialog({ product: b.dataset.pay }); });
 
@@ -102,11 +109,11 @@ function viewRole(first) {
       <button class="role-card ${r === pick ? 'on' : ''}" role="radio" aria-checked="${r === pick}" data-role="${r}">
         <span class="role-ico">${ICON[r]}</span><b>${ROLES[r].title}</b><span>${ROLES[r].what}</span></button>`).join('')}
     </div>
-    ${first ? `<label class="field cab-name"><span>Как вас зовут</span><input id="name" maxlength="80" autocomplete="name" value="${esc(a?.name || '')}" placeholder="Имя и фамилия"></label>` : ''}
+    ${first ? `<div class="field cab-name"><label for="name">Как вас зовут</label><input id="name" maxlength="80" autocomplete="name" value="${esc(a?.name || '')}" placeholder="Имя и фамилия"></div>` : ''}
     <button class="btn primary big cab-go" id="go">Продолжить</button>`;
   const box = first ? ($app.innerHTML = `<header class="cab-top"><a class="ld-logo" href="../?about"><img class="ld-mark" src="../icons/icon-192.png" alt="" width="40" height="40"><span class="cab-logo-text">Между уроками</span></a>
     <button class="btn small" id="out">Выйти</button></header><div id="cab-body">${body}</div>`, $app) : shell('role', body);
-  box.querySelector('#out')?.addEventListener('click', async () => { await logout(); location.href = '../login.html'; });
+  box.querySelector('#out')?.addEventListener('click', leave);
   box.querySelectorAll('[data-role]').forEach(b => {
     b.onclick = () => {
       pick = b.dataset.role;
@@ -128,16 +135,42 @@ function viewRole(first) {
 
 // ---------- репетитор ----------
 
+// Нетронутый «Новый тренажёр» (так студия создавала раньше) в списках не показываем — как в студии
+const isBlank = p => !p.cards?.length && !p.topics?.length && !p.theory?.length && !p.published
+  && !p.course?.lessons?.length && !p.course?.lives?.length && (p.title || 'Новый тренажёр') === 'Новый тренажёр';
+const packsOf = s => Object.values(s?.packs || {}).filter(p => !(s.deleted?.[p.id] >= p.edited) && !isBlank(p)).sort((x, y) => y.edited - x.edited);
+const packState = p => (p.published ? (p.published >= p.edited ? 'опубликован' : 'есть правки') : 'черновик');
+const STUDIO = '../studio/';
+
 async function viewTutor() {
   const box = shell('tutor', '<p class="loading">Загружаю учеников…</p>');
   let studio;
-  try { studio = await api('/me/studio'); } catch (err) { box.innerHTML = `<section class="panel">${esc(err.message)}</section>`; return; }
-  const packs = Object.values(studio.packs || {}).filter(p => !studio.deleted?.[p.id]).sort((x, y) => y.edited - x.edited);
+  try { studio = await api('/me/studio'); } catch (err) { if (box.isConnected) tutorOffline(box, err); return; }
+  if (!box.isConnected) return;
+  const packs = packsOf(studio);
+  const plan = planPanel('tutor', { name: 'Тариф репетитора', free: 'Бесплатный тариф: 1 опубликованный тренажёр и до 3 учеников' });
+  // Новый репетитор: один шаг — «Создайте первый тренажёр». Статистика из нулей, Telegram и тариф — потом
+  if (!packs.length) {
+    box.innerHTML = `
+      <section class="panel cab-empty first-step">
+        <h1>Создайте первый тренажёр</h1>
+        <p>Вставьте свои материалы — ИИ сделает карточки — или возьмите готовые задания ЕГЭ. Опубликуйте и отправьте ученикам ссылку: здесь появится, кто занимается, где ошибки и что разобрать на уроке.</p>
+        <div class="first-ways">
+          <a class="btn primary big" href="${STUDIO}#/new">Создать тренажёр</a>
+          <a class="btn big" href="${STUDIO}#/sample">Сначала посмотреть пример</a>
+        </div>
+      </section>
+      ${plan}`;
+    bindPay(box);
+    return;
+  }
   const withStudents = await Promise.all(packs.map(async p => {
     if (!p.published) return { p, students: [] };
     try { return { p, students: (await api(`/packs/${encodeURIComponent(p.id)}/progress`)).students }; }
     catch { return { p, students: [] }; }
   }));
+  if (!box.isConnected) return;
+  const published = packs.some(p => p.published);
   const all = withStudents.flatMap(({ p, students }) => students.map(s => ({ ...s, pack: p })));
   const now = Date.now();
   const active = all.filter(s => now - s.at < 7 * DAY);
@@ -152,46 +185,66 @@ async function viewTutor() {
     return null;
   }).filter(Boolean).sort((x, y) => y.rank - x.rank).slice(0, 6);
 
-  const studio$ = '../studio/';
   box.innerHTML = `
-    ${planPanel('tutor', { name: 'Тариф репетитора', free: 'Бесплатный тариф: 1 опубликованный тренажёр и до 3 учеников' })}
-    <section class="hero-stats cab-stats">
+    ${published ? `<section class="hero-stats cab-stats">
       <div><b>${all.length}</b><span>${words(all.length, 'ученик', 'ученика', 'учеников')}</span></div>
       <div><b>${active.length}</b><span>занимались за неделю</span></div>
       <div><b>${weekCards ? Math.round(weekOk / weekCards * 100) + '%' : '—'}</b><span>точность за неделю</span></div>
-    </section>
-    ${packs.length ? '' : `<section class="panel cab-empty">
-      <h2>Первый тренажёр — за 15 минут</h2>
-      <p>Вставьте свои материалы или возьмите карточки из библиотеки ЕГЭ, опубликуйте и отправьте ученикам ссылку. Здесь появится, кто занимается и где ошибки.</p>
-      <a class="btn primary big" href="${studio$}#/new">Создать тренажёр</a></section>`}
+    </section>` : ''}
     ${all.length ? `<section class="panel">
       <h2>Требуют внимания</h2>
       ${attention.length ? `<ul class="cab-list">${attention.map(({ s, why, tone }) => `
-        <li><a href="${studio$}#/p/${esc(s.pack.id)}/students"><span class="avatar small">${esc(s.name.slice(0, 2).toUpperCase())}</span>
+        <li><a href="${STUDIO}#/p/${esc(s.pack.id)}/students"><span class="avatar small">${esc(s.name.slice(0, 2).toUpperCase())}</span>
           <span class="cab-li-main"><b>${esc(s.name)}</b><small>${esc(s.pack.title)}</small></span><span class="pill ${tone}">${esc(why)}</span></a></li>`).join('')}</ul>`
         : '<p class="muted">Все занимаются — никого не нужно догонять.</p>'}
-    </section>` : packs.length ? `<section class="panel"><h2>Ученики</h2><p class="muted">Пока никто не занимался. Отправьте ученикам ссылку из вкладки тренажёра «Ссылка» — как только ученик ответит на первые карточки, он появится здесь.</p></section>` : ''}
-    ${packs.length ? `<section class="panel">
-      <div class="cab-head"><h2>Мои тренажёры</h2><a class="btn small primary" href="${studio$}#/new">+ Создать</a></div>
+    </section>` : published ? `<section class="panel"><h2>Ученики</h2><p class="muted">Пока никто не занимался. Отправьте ученикам ссылку из вкладки тренажёра «Ссылка» — как только ученик ответит на первые карточки, он появится здесь.</p></section>`
+      : `<section class="panel cab-empty"><h2>Опубликуйте тренажёр</h2><p>Черновик готов — опубликуйте его и отправьте ученикам ссылку. Здесь появится, кто занимается и где ошибки.</p>
+        <a class="btn primary" href="${STUDIO}#/p/${esc(packs[0].id)}/publish">Опубликовать «${esc(packs[0].title)}»</a></section>`}
+    <section class="panel">
+      <div class="cab-head"><h2>Мои тренажёры</h2><a class="btn small primary" href="${STUDIO}#/new">+ Создать</a></div>
       <ul class="cab-list">${withStudents.map(({ p, students }) => `
-        <li><a href="${studio$}#/p/${esc(p.id)}/${students.length ? 'students' : 'cards'}"><span class="dot" style="background:${esc(p.color || '#5B3DF5')}"></span>
-          <span class="cab-li-main"><b>${esc(p.title)}</b><small>${plural(p.cards?.length || 0, 'карточка', 'карточки', 'карточек')} · ${p.published ? (p.published >= p.edited ? 'опубликован' : 'есть правки') : 'черновик'}</small></span>
+        <li><a href="${STUDIO}#/p/${esc(p.id)}/${students.length ? 'students' : 'cards'}"><span class="dot" style="background:${esc(p.color || '#5B3DF5')}"></span>
+          <span class="cab-li-main"><b>${esc(p.title)}</b><small>${plural(p.cards?.length || 0, 'карточка', 'карточки', 'карточек')} · ${packState(p)}</small></span>
           <span class="pill">${plural(students.length, 'ученик', 'ученика', 'учеников')}</span></a></li>`).join('')}</ul>
-    </section>` : ''}
-    <div id="tg-me"></div>
+    </section>
+    ${published ? `<div id="tg-me"></div>
     <section class="panel cab-tip">
       <h2>Родителям</h2>
       <p class="muted">Отчёт родителю может приходить в Telegram каждое воскресенье: Студия → Ученики → ученик → «Отчёты родителю в Telegram». Или дайте код — родитель увидит прогресс в своём кабинете.</p>
-      <a class="btn" href="${studio$}">Открыть студию</a>
-    </section>`;
+      <a class="btn" href="${STUDIO}">Открыть студию</a>
+    </section>` : ''}
+    ${plan}`;
   bindPay(box);
-  tgPanel(box.querySelector('#tg-me'));
+  const tg = box.querySelector('#tg-me');
+  if (tg) tgPanel(tg);
+}
+
+// Сервер не отвечает: не «Нет связи» вместо всего, а «Повторить», тренажёры из этого браузера и путь в студию
+function tutorOffline(box, err) {
+  const local = store.get('zd-studio', null);
+  const packs = packsOf(local);
+  box.innerHTML = `
+    <section class="panel warn-box" role="alert">
+      <p><b>${err.status ? esc(err.message) : 'Нет связи с сервером.'}</b> Учеников и отчёты покажем, когда связь вернётся. Тренажёры можно открыть и без неё.</p>
+      <div class="row"><button class="btn primary" id="retry">Повторить</button><a class="btn" href="${STUDIO}">Открыть студию</a></div>
+    </section>
+    ${packs.length ? `<section class="panel">
+      <h2>Тренажёры в этом браузере</h2>
+      <ul class="cab-list">${packs.map(p => `
+        <li><a href="${STUDIO}#/p/${esc(p.id)}/cards"><span class="dot" style="background:${esc(p.color || '#5B3DF5')}"></span>
+          <span class="cab-li-main"><b>${esc(p.title)}</b><small>${plural(p.cards?.length || 0, 'карточка', 'карточки', 'карточек')} · ${packState(p)}</small></span></a></li>`).join('')}</ul>
+    </section>` : ''}`;
+  box.querySelector('#retry').onclick = e => { e.currentTarget.disabled = true; viewTutor(); };
 }
 
 // ---------- ученик ----------
 
-async function packTitles(refs) {
-  const titles = Object.fromEntries(store.get('zd-recent', []).map(r => [r.ref, r.title]));
+// Названия тренажёров: из сводки в облачном прогрессе (/me/progress отдаёт title), из недавних
+// в этом браузере и из библиотеки. Набор с сервера качаем, только если названия нигде нет
+async function packTitles(refs, items = []) {
+  const titles = {};
+  for (const i of items) if (i.title) titles[i.ref] = i.title;
+  for (const r of store.get('zd-recent', [])) titles[r.ref] ||= r.title;
   const lib = await loadLibrary('../').catch(() => []);
   for (const p of lib) titles[p.id] ||= p.title;
   await Promise.all(refs.filter(r => !titles[r] && r.startsWith('t:')).map(async r => {
@@ -206,7 +259,7 @@ async function viewStudent() {
   try { ({ items } = await api('/me/progress')); } catch (err) { toast(err.message); }
   // Сюда же — тренажёры, открытые на этом устройстве, но ещё без прогресса в аккаунте
   const refs = [...new Set([...items.map(i => i.ref), ...store.get('zd-recent', []).map(r => r.ref)])];
-  const { titles, lib } = await packTitles(refs);
+  const { titles, lib } = await packTitles(refs, items);
   const byRef = Object.fromEntries(items.map(i => [i.ref, i]));
   // Общий журнал по всем тренажёрам: серия и «сегодня» — одни на ученика
   const log = {};
@@ -289,7 +342,7 @@ function viewSettings() {
   const box = shell('settings', `
     <section class="panel">
       <h2>Профиль</h2>
-      <label class="field"><span>Имя</span><input id="name" maxlength="80" autocomplete="name" value="${esc(a?.name || '')}"></label>
+      <div class="field"><label for="name">Имя</label><input id="name" maxlength="80" autocomplete="name" value="${esc(a?.name || '')}"></div>
       <button class="btn primary" id="save">Сохранить</button>
     </section>
     <section class="panel">
@@ -320,7 +373,16 @@ function viewSettings() {
     e.target.hidden = true;
     loginDialog({ into: box.querySelector('#link-box'), onDone: async () => { await refreshAccount(); toast('Способ входа привязан'); viewSettings(); } });
   };
-  box.querySelector('#out').onclick = async () => { await logout(); location.href = '../login.html'; };
+  box.querySelector('#out').onclick = leave;
+}
+
+// «Выйти»: всё, что уже в облаке, стирается из браузера; несохранённое — спросить (account.js signOut)
+async function leave(e) {
+  const btn = e.currentTarget;
+  btn.disabled = true;
+  const r = await signOut();
+  if (r.out) location.href = '../login.html';
+  else btn.disabled = false;
 }
 
 // ---------- навигация ----------
@@ -334,13 +396,23 @@ function route() {
     || (ROLES[params.get('role')] && !have.includes(params.get('role')) && !tab))) return viewRole(false);
   const r = have.includes(tab) ? tab : tab === 'settings' ? tab
     : have.includes(params.get('role')) ? params.get('role') : have.includes(store.get('zd-cab', '')) ? store.get('zd-cab', '') : have[0];
-  if (r !== tab) history.replaceState(null, '', location.pathname + location.search + '#' + r);
+  if (r !== tab) history.replaceState(history.state, '', location.pathname + location.search + '#' + r);
   if (ROLES[r]) store.set('zd-cab', r);
   window.scrollTo(0, 0);
   ({ tutor: viewTutor, student: viewStudent, parent: viewParent, settings: viewSettings })[r]();
 }
 
 const PAY_WANT = 'zd-pay-want';
+// Без входа или вход закончился (401 на любом запросе) — на страницу входа; она скажет «Сессия закончилась».
+// Ссылка вида cabinet/#parent — там сразу открыта нужная вкладка
+let toLoginOnce = false;
+const toLogin = () => {
+  if (toLoginOnce) return;
+  toLoginOnce = true;
+  const want = location.hash.slice(1);
+  location.replace(`../login.html?${ROLES[want] ? `role=${want}&` : ''}next=${encodeURIComponent('cabinet/' + location.hash)}`);
+};
+window.addEventListener('zd-session-expired', toLogin);
 
 async function main() {
   await finishRedirectLogin();
@@ -350,24 +422,34 @@ async function main() {
   // входа возвращает в кабинет без ?pay, поэтому до входа желание оплатить ждёт в sessionStorage
   const pay = [params.get('pay'), sessionStorage.getItem(PAY_WANT)].find(p => p === 'tutor' || p === 'lib');
   if (pay) sessionStorage.setItem(PAY_WANT, pay);
-  if (!signedIn()) {
-    // Ссылка вида cabinet/#parent — на странице входа сразу открыта нужная вкладка
-    const want = location.hash.slice(1);
-    location.replace(`../login.html?${ROLES[want] ? `role=${want}&` : ''}next=${encodeURIComponent('cabinet/' + location.hash)}`);
+  if (!signedIn()) return toLogin();
+  const start = () => {
+    window.addEventListener('hashchange', route);
+    route();
+    sessionStorage.removeItem(PAY_WANT);
+    if (pay) {
+      // ?pay убираем из адреса сразу: payDialog берёт адрес возврата из ЮKassa из location,
+      // и с ?pay окно оплаты открылось бы снова после оплаты
+      const q = new URLSearchParams(location.search);
+      q.delete('pay');
+      history.replaceState(history.state, '', location.pathname + (q.toString() ? '?' + q : '') + location.hash);
+      payDialog({ product: pay });
+    }
+  };
+  // /me уже спрашивали в этой вкладке — рисуем кабинет сразу, свежий аккаунт подтягиваем в фоне
+  // и перерисовываем, только если он изменился (и человек ничего не вводит)
+  if (accountFresh()) {
+    const before = JSON.stringify(account());
+    start();
+    await refreshAccount();
+    if (!signedIn()) return toLogin();
+    const typing = document.activeElement?.closest?.('input, textarea, select');
+    if (JSON.stringify(account()) !== before && !document.querySelector('.modal') && !typing) route();
     return;
   }
-  if (!await refreshAccount() && !signedIn()) { location.replace('../login.html?next=cabinet/'); return; }
-  window.addEventListener('hashchange', route);
-  route();
-  sessionStorage.removeItem(PAY_WANT);
-  if (pay) {
-    // ?pay убираем из адреса сразу: payDialog берёт адрес возврата из ЮKassa из location,
-    // и с ?pay окно оплаты открылось бы снова после оплаты
-    const q = new URLSearchParams(location.search);
-    q.delete('pay');
-    history.replaceState(null, '', location.pathname + (q.toString() ? '?' + q : '') + location.hash);
-    payDialog({ product: pay });
-  }
+  await refreshAccount();
+  if (!signedIn()) return toLogin();
+  start();
 }
 
 main();

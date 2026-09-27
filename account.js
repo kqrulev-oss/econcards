@@ -1,32 +1,178 @@
 // Аккаунт: вход (Telegram, почта, Яндекс ID, VK ID, Google), сессия и выход.
 // Один модуль для студии, приложения ученика и кабинета родителя.
-import { store, api, esc, toast, modal } from './lib.js';
+import { store, api, apiBase, esc, toast, modal } from './lib.js';
 
 const KEY = 'zd-session';
 const PENDING = 'zd-tg-pending'; // незавершённый вход через Telegram
+const EXPIRED = 'zd-session-expired'; // sessionStorage: сервер не узнал сессию — «Сессия закончилась»
+const ME_AT = 'zd-me-at'; // sessionStorage: когда в этой вкладке последний раз спрашивали /me
+const tab = {
+  get: k => { try { return sessionStorage.getItem(k); } catch { return null; } },
+  set: (k, v) => { try { if (v == null) sessionStorage.removeItem(k); else sessionStorage.setItem(k, v); } catch { /* приватный режим */ } },
+};
 export const session = () => store.get(KEY, null);
 export const signedIn = () => !!session()?.token;
 export const account = () => session()?.account || null;
-const setSession = s => store.set(KEY, s);
+const tokenTag = () => (session()?.token || '').slice(0, 8);
+// Аккаунт в сессии всегда только что пришёл с сервера (вход, /me, /me/role) — он свежий
+const setSession = s => {
+  store.set(KEY, s);
+  if (s?.token) {
+    tab.set(EXPIRED, null);
+    if (s.account) tab.set(ME_AT, JSON.stringify({ t: s.token.slice(0, 8), at: Date.now() }));
+  } else tab.set(ME_AT, null);
+};
+
+// Сервер ответил 401 на запрос с сессией (lib.js api): вышли на другом устройстве или истёк
+// срок. Забываем сессию и просим войти снова — страница узнаёт об этом по событию zd-session-expired
+let leaving = false;
+window.addEventListener('zd-unauthorized', e => {
+  if (leaving || !e.detail?.token || session()?.token !== e.detail.token) return;
+  store.set(KEY, null);
+  tab.set(ME_AT, null);
+  tab.set(EXPIRED, '1');
+  window.dispatchEvent(new Event('zd-session-expired'));
+});
+export const sessionExpired = () => !signedIn() && tab.get(EXPIRED) === '1';
+export const forgetExpired = () => tab.set(EXPIRED, null);
 
 export async function logout() {
+  leaving = true;
   try { await api('/auth/logout', { method: 'POST' }); } catch { /* офлайн — сессия всё равно забывается */ }
+  leaving = false;
   setSession(null);
+  tab.set(EXPIRED, null);
+  await dropApiCache();
 }
 
 export async function refreshAccount() {
+  const tag = tokenTag();
   try {
     const a = await api('/me');
+    if (tokenTag() !== tag) return account(); // пока ждали ответ, вышли или вошли заново
     setSession({ ...session(), account: a });
     return a;
   } catch (err) {
-    if (/войти/i.test(err.message)) setSession(null); // сессия истекла
+    if (err.status === 401 && tokenTag() === tag) setSession(null); // сессия истекла
     return null;
   }
 }
 
+// /me уже спрашивали в этой вкладке недавно: страницу можно рисовать сразу по сохранённому
+// аккаунту, а свежий подтянуть в фоне — без лишнего круга до сервера перед первым экраном
+export function accountFresh(maxAge = 20 * 60e3) {
+  try {
+    const x = JSON.parse(tab.get(ME_AT) || 'null');
+    return !!account() && !!x && x.t === tokenTag() && Date.now() - x.at < maxAge;
+  } catch { return false; }
+}
+
 export async function addRole(role) {
-  try { setSession({ ...session(), account: await api('/me/role', { method: 'POST', body: { role } }) }); } catch { /* не критично */ }
+  const tag = tokenTag();
+  try {
+    const a = await api('/me/role', { method: 'POST', body: { role } });
+    if (tag && tokenTag() === tag) setSession({ ...session(), account: a });
+  } catch { /* не критично */ }
+}
+
+// ---------- выход ----------
+
+// Ответы сервера в кэше service worker'а (студия с ключами, имена учеников) после выхода не нужны.
+// Статику (packs/*.json, скрипты) не трогаем — она нужна без сети
+const API_PATH = /^\/(me|auth|pay|ai|tg)(\/|$)|^\/packs\/[^/.]+(\/|$)/;
+async function dropApiCache() {
+  if (!('caches' in window)) return;
+  try {
+    let base = null;
+    try { base = new URL(apiBase()); } catch { /* адрес сервера не задан */ }
+    const prefix = base ? base.pathname.replace(/\/+$/, '') : '';
+    for (const name of await caches.keys()) {
+      const c = await caches.open(name);
+      for (const req of await c.keys()) {
+        const u = new URL(req.url);
+        const path = base && u.origin === base.origin && u.pathname.startsWith(prefix + '/') ? u.pathname.slice(prefix.length) : u.pathname;
+        if ((u.origin === location.origin || u.origin === base?.origin) && API_PATH.test(path)) await c.delete(req);
+      }
+    }
+  } catch { /* кэш недоступен — не страшно */ }
+}
+
+// Данные этого браузера, которые принадлежат аккаунту: черновики студии и ключи учеников,
+// прогресс, сохранённые наборы, недавние тренажёры, последняя вкладка кабинета
+const OWN = [/^zd-studio/, /^zd-prog:/, /^zd-pack:/, /^zd-recent$/, /^zd-tg:/, /^zd-cab$/];
+const ownKeys = () => { try { return Object.keys(localStorage).filter(k => OWN.some(r => r.test(k))); } catch { return []; } };
+export function wipeLocal() {
+  for (const k of ownKeys()) try { localStorage.removeItem(k); } catch { /* приватный режим */ }
+}
+
+// Что в этом браузере ещё не в облаке: правки студии (studio.js держит zd-studio-dirty, пока
+// сервер не принял их) и ответы в тренажёрах, которых нет в облачном прогрессе аккаунта.
+// Без связи проверить нельзя — тогда считаем, что несохранённое есть
+export async function unsyncedLocal() {
+  const left = { studio: false, prog: [] };
+  const st = store.get('zd-studio', null);
+  if (store.get('zd-studio-dirty', null) && Object.keys(st?.packs || {}).length) left.studio = true;
+  const more = (a, b) => Object.entries(a.cards || {}).some(([id, s]) => (s?.n || 0) > (b?.cards?.[id]?.n || 0) || !b?.cards?.[id])
+    || Object.entries(a.log || {}).some(([d, l]) => (l?.d || 0) > (b?.log?.[d]?.d || 0));
+  await Promise.all(ownKeys().filter(k => k.startsWith('zd-prog:')).map(async k => {
+    const local = store.get(k, null), ref = k.slice('zd-prog:'.length);
+    if (!local || (!Object.keys(local.cards || {}).length && !Object.keys(local.log || {}).length)) return;
+    try { if (more(local, await api('/me/progress/' + encodeURIComponent(ref)))) left.prog.push(ref); }
+    catch { left.prog.push(ref); }
+  }));
+  return left;
+}
+
+// Копия несохранённого файлом: студия (тренажёры и ключи учеников) и прогресс по тренажёрам.
+// Студия открывает такой файл через «Импорт из файла»
+export function downloadBackup() {
+  const data = { kind: 'mezhdu-urokami-backup', saved: new Date().toISOString(), studio: store.get('zd-studio', null), progress: {} };
+  for (const k of ownKeys()) if (k.startsWith('zd-prog:')) data.progress[k.slice('zd-prog:'.length)] = store.get(k, null);
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([JSON.stringify(data)], { type: 'application/json' }));
+  a.download = `mezhdu-urokami-${data.saved.slice(0, 10)}.json`;
+  document.body.append(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 60e3);
+}
+
+/* «Выйти» на любой странице. Всё, что уже в облаке, стирается из браузера (общий компьютер:
+   следующий человек не увидит тренажёры, ключи и учеников). Если есть несохранённое — спрашиваем:
+   скачать копию, оставить в этом браузере или не выходить. Возвращает { out, wiped }. */
+export async function signOut() {
+  // Проверка идёт с текущей сессией; если она уже не действует (401), это не «сессия закончилась»,
+  // а просто «проверить не удалось» — несохранённое спросим в окне
+  leaving = true;
+  const left = await unsyncedLocal().finally(() => { leaving = false; });
+  if (!left.studio && !left.prog.length) {
+    await logout();
+    wipeLocal();
+    return { out: true, wiped: true };
+  }
+  const what = [left.studio && 'изменения тренажёров', left.prog.length && `ответы в ${left.prog.length > 1 ? `${left.prog.length} тренажёрах` : 'тренажёре'}`].filter(Boolean).join(' и ');
+  return new Promise(done => {
+    let result = { out: false, wiped: false };
+    const { box, close } = modal(`<h3>Выйти из аккаунта?</h3>
+      <p>В этом браузере есть ${what}, которых нет в облаке — их не получилось сохранить (нет связи или вход закончился).</p>
+      <p class="muted">Скачайте копию — её можно открыть в студии через «Импорт из файла». Или оставьте всё в этом браузере, если компьютер ваш.</p>
+      <div class="row signout-row">
+        <button class="btn primary" id="so-copy">Скачать копию и выйти</button>
+        <button class="btn" id="so-keep">Выйти, оставить в браузере</button>
+        <button class="btn ghost" id="so-stay">Не выходить</button>
+      </div>`, { onClose: () => done(result) });
+    const go = async wipe => {
+      box.querySelectorAll('button').forEach(b => { b.disabled = true; });
+      if (wipe) downloadBackup();
+      await logout();
+      if (wipe) wipeLocal();
+      result = { out: true, wiped: wipe };
+      close();
+    };
+    box.querySelector('#so-copy').onclick = () => { go(true); };
+    box.querySelector('#so-keep').onclick = () => { go(false); };
+    box.querySelector('#so-stay').onclick = () => { close(); };
+  });
 }
 
 // Возврат от Яндекса/VK/Google: адрес вида …#login=<ticket>. Вызывается при старте
@@ -79,16 +225,17 @@ export function openLink(url) {
 }
 const MAIL_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="M4 7l8 6 8-6"/></svg>';
 
-/* Окно входа. onDone(account) вызывается после успешного входа.
-   why — одна строка, зачем входить (своя для репетитора, ученика, родителя). */
+/* Окно входа. onDone(account) вызывается после успешного входа, onCancel — если окно
+   закрыли, не войдя. why — одна строка, зачем входить (своя для репетитора, ученика, родителя). */
 /* into — элемент страницы: форма входа рисуется прямо в нём (страница login.html),
    иначе — во всплывающем окне. role может быть функцией (роль выбирают на странице). */
-export async function loginDialog({ why = '', onDone, role = '', resume = null, into = null } = {}) {
+export async function loginDialog({ why = '', onDone, onCancel, role = '', resume = null, into = null } = {}) {
   let providers = { tg: true };
   try { providers = await api('/auth/providers'); } catch { /* офлайн: покажем Telegram, ошибка будет при нажатии */ }
   const roleOf = () => (typeof role === 'function' ? role() : role);
   const html = `
     ${into ? '' : '<h3>Вход в «Между уроками»</h3>'}
+    ${!into && sessionExpired() ? '<p class="panel warn-box session-note"><b>Сессия закончилась — войдите снова.</b> Всё, что вы сделали, сохранится.</p>' : ''}
     ${why ? `<p class="muted">${esc(why)}</p>` : ''}
     <div class="login-ways">
       ${providers.tg ? `<button class="btn big login-tg" data-way="tg">${TG_ICON}Через Telegram</button>` : ''}
@@ -98,14 +245,15 @@ export async function loginDialog({ why = '', onDone, role = '', resume = null, 
     </div>
     <div class="login-step"></div>
     <p class="muted small-note">Входя, вы соглашаетесь с <a href="${new URL('privacy.html', import.meta.url)}" target="_blank" rel="noopener">политикой обработки данных</a>.</p>`;
-  let box, close;
-  if (into) { into.innerHTML = html; box = into; close = () => {}; } else ({ box, close } = modal(html));
+  let box, close, entered = false;
+  if (into) { into.innerHTML = html; box = into; close = () => {}; } else ({ box, close } = modal(html, { onClose: () => { if (!entered) onCancel?.(); } }));
   const step = box.querySelector('.login-step');
   let stop = false;
   const observer = new MutationObserver(() => { if (!box.isConnected) { stop = true; observer.disconnect(); } });
   observer.observe(document.body, { childList: true });
 
   const finish = res => {
+    entered = true;
     setSession({ token: res.token, account: res.account });
     close();
     toast(`Вы вошли${res.account.name ? ': ' + res.account.name : ''}`);
@@ -174,7 +322,7 @@ export async function loginDialog({ why = '', onDone, role = '', resume = null, 
 
   box.querySelector('[data-way=email]')?.addEventListener('click', () => {
     step.innerHTML = `
-      <label class="field"><span>Почта</span></label>
+      <label class="field" for="lg-email"><span>Почта</span></label>
       <div class="row"><input id="lg-email" type="email" autocomplete="email" placeholder="you@mail.ru"><button class="btn primary" id="lg-send">Получить код</button></div>`;
     const input = step.querySelector('#lg-email');
     input.focus();
@@ -239,7 +387,7 @@ export async function payDialog({ product, forAcct = null, forName = '' }) {
         <button class="pay-opt" data-m="1"><b data-price="1">${pr[product][1]} ₽</b><span>1 месяц</span></button>
         <button class="pay-opt best" data-m="3"><b data-price="3">${pr[product][3]} ₽</b><span>3 месяца · выгоднее на ${Math.round((1 - pr[product][3] / (pr[product][1] * 3)) * 100)}%</span></button>
       </div>
-      <label class="field pay-mail"><span>Почта для чека</span><input id="pay-email" type="email" inputmode="email" autocomplete="email" placeholder="you@mail.ru" value="${esc(account()?.email || '')}"></label>
+      <div class="field pay-mail"><label for="pay-email">Почта для чека</label><input id="pay-email" type="email" inputmode="email" autocomplete="email" placeholder="you@mail.ru" value="${esc(account()?.email || '')}"></div>
       <p class="muted small-note">Оплата картой или через СБП на странице ЮKassa. Без автосписаний — продлеваете сами, мы напомним. Чек из «Мой налог» пришлём на почту. <a href="${new URL('offer.html', import.meta.url)}" target="_blank" rel="noopener">Оферта</a></p>`
     : `<p class="panel warn-box">Онлайн-оплата скоро появится. Сейчас напишите в Telegram <a href="https://t.me/trwqxp" target="_blank" rel="noopener">@trwqxp</a> — включим доступ вручную.</p>`}
     <details class="promo"><summary>Есть промокод?</summary>
