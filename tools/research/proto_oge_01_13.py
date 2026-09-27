@@ -492,24 +492,27 @@ def gen_og07_point_number(r):
 
 @proto('og07-decimals-points', 'oge', 7, 'Точки и десятичные дроби: какой точке соответствует число',
        invariant='Точки A, B, C, D на прямой соответствуют четырём близким десятичным числам (в разном порядке); по порядку чисел найти точку для заданного числа.',
-       varies='Числа (сотые и тысячные, отрицательные), порядок точек на рисунке, спрашиваемое число.',
+       varies='Две цифры и четыре записи из них (0,xy; 0,0xy; 0,x0y; 0,yx …), знаки, спрашиваемое число.',
        answer_rule='Упорядочиваем числа по возрастанию: самое левое число — самая левая точка и т. д.',
        fipi=r'соответствуют числам',
        mistakes=['считают 0,098 больше 0,11 из-за «большего числа цифр»', 'путают порядок отрицательных'],
        svg=True, card_kind='one', kim=K7)
 def gen_og07_decimals_points(r):
-    base = F(r.choice([1, 1, 1, 2, 3, 5, 7]), r.choice([10, 100]))
-    nums = set()
-    while len(nums) < 4:
-        x = base + F(r.randint(-12, 12), r.choice([100, 1000])) * base * 5
-        x = F(round(x * 1000), 1000)
-        if x != 0:
-            nums.add(x)
-    nums = sorted(nums)
-    if min(b - a for a, b in zip(nums, nums[1:])) < F(1, 1000):
+    # как в банке: четыре числа из одних и тех же цифр с разным положением нуля и знаком
+    # (0,098; −0,02; 0,09; 0,11 или −0,205; −0,052; 0,02; 0,008) — ловушка «длинное число больше»
+    d1, d2 = r.sample(range(1, 10), 2)
+    forms = [f'{d1}{d2}', f'0{d1}{d2}', f'{d1}0{d2}', f'{d2}{d1}', f'0{d2}{d1}', f'{d2}0{d1}', f'{d1}', f'0{d1}', f'00{d1}{d2}']
+    picked = r.sample(forms, 4)
+    neg = r.choice([0, 0, 1, 1, 2])
+    signs = [-1] * neg + [1] * (4 - neg)
+    r.shuffle(signs)
+    nums_ = [sg * F(int(t), 10 ** len(t)) for sg, t in zip(signs, picked)]
+    if len(set(nums_)) < 4:
         return None
-    listed = nums[:]
-    r.shuffle(listed)
+    listed = nums_[:]
+    nums = sorted(nums_)
+    if min(b - a for a, b in zip(nums, nums[1:])) <= 0:
+        return None
     names = 'ABCD'
     xs = [F(i * 3 + r.randint(0, 1), 1) for i in range(4)]  # позиции точек слева направо
     target = r.choice(listed)
@@ -567,6 +570,7 @@ def gen_og07_frac_interval(r):
     kind = r.randrange(3)
     d = r.choice([3, 6, 7, 9, 11, 12, 13, 14, 17, 19, 21, 23])
     if kind == 0:
+        d = r.choice([6, 12, 14, 15, 17, 19, 21, 23])  # в банке здесь 7, 9, 11, 13 — берём другие знаменатели
         m = r.randint(1, d - 1)
         v = F(m, d)
         if math.gcd(m, d) != 1 or (v * 10) % 1 == 0:
@@ -1187,14 +1191,9 @@ def gen_og08_sqrt_mono(r):
 
 # ================================================================ №9 — уравнения
 
-K9 = K(minutes=3, kes=['3.1'], kt=[5], style='«Решите уравнение …» / «Найдите корень уравнения …»; при двух корнях — «в ответ запишите больший/меньший из корней»')
-ASK9 = ('Решите уравнение', 'Найдите корень уравнения', 'Решите уравнение')
-TWO = ('Если корней несколько, запишите в ответ {w} из них.',
-       'Когда корней больше одного, в ответ нужно записать {w} из них.',
-       'При наличии нескольких корней укажите в ответе {w}.')
-ONE = ('Решите уравнение {eq}. В ответ запишите его корень.',
-       'При каком значении x верно равенство {eq}?',
-       'Найдите значение x, при котором выполняется равенство {eq}.')
+K9 = K(minutes=3, kes=['3.1'], kt=[5], style='Инструкции КИМ: «Найдите корень уравнения …» (линейное); «Решите уравнение … Если уравнение '
+       'имеет более одного корня, в ответе запишите меньший (больший) из корней» (квадратное)')
+TWO = 'Если уравнение имеет более одного корня, в ответе запишите {w} из корней.'
 
 
 def _roots_card(r, eq_txt, roots, e, lhs, rhs):
@@ -1204,10 +1203,10 @@ def _roots_card(r, eq_txt, roots, e, lhs, rhs):
     if len(roots) > 1:
         which = r.choice([w for w, x in (('min', roots[0]), ('max', roots[-1])) if nice(x, 2)])
         ans = roots[0] if which == 'min' else roots[-1]
-        q = f'{pick(r, "Решите уравнение", "Найдите корни уравнения")} ⟦{eq_txt}⟧. ' + pick(r, *TWO).format(w='меньший' if which == 'min' else 'больший')
+        q = f'Решите уравнение ⟦{eq_txt}⟧. ' + TWO.format(w='меньший' if which == 'min' else 'больший')
     else:
         which, ans = None, roots[0]
-        q = pick(r, *ONE).format(eq=f'⟦{eq_txt}⟧')
+        q = pick(r, f'Найдите корень уравнения ⟦{eq_txt}⟧.', f'Решите уравнение ⟦{eq_txt}⟧.')
 
     def chk():
         sol = sorted(s_ for s_ in sp.solve(sp.Eq(parse(lhs), parse(rhs)), sp.Symbol('x')) if s_.is_real)
@@ -1220,14 +1219,16 @@ def _roots_card(r, eq_txt, roots, e, lhs, rhs):
 
 @proto('og09-lin', 'oge', 9, 'Линейное уравнение',
        invariant='ax + b = cx + d: переносим члены с x в одну сторону, числа — в другую.',
-       varies='Коэффициенты (в т. ч. отрицательные), расположение x, формулировка инструкции.',
+       varies='Коэффициенты (до 12, в т. ч. отрицательные), свободные числа (одно из них двузначное, до 20), расположение x.',
        answer_rule='x = (d − b)/(a − c); ответ — целое или конечная десятичная дробь.',
        fipi=r'Найдите корень уравнения\s+(?![^=]*x\s+2\b)[^()]*x[^()]*=[^()]*\.\s*$',
        mistakes=['не меняют знак при переносе', 'делят не на тот коэффициент'], kim=K9)
 def gen_og09_lin(r):
+    # банк: −5 + 2x = −2x − 3, 8 + 7x = 9x + 4, −4x − 9 = 6x. Однозначные числа банк покрывает почти
+    # целиком, поэтому одно из свободных чисел берём двузначным (до 20) — уровень тот же, но это не копия
     a, c = r.randint(-12, 12), r.randint(-12, 12)
-    b, d = r.randint(-30, 30), r.randint(-30, 30)
-    if a == c or a == 0:
+    b, d = r.randint(-20, 20), r.randint(-20, 20)
+    if a == c or a == 0 or max(abs(b), abs(d)) < 11:
         return None
     form = r.randrange(3)
     if form == 1:
@@ -1248,14 +1249,15 @@ def gen_og09_lin(r):
        fipi=r'\d\s*\(\s*x\s*[+−-]\s*\d+\s*\)\s*[+−=-]\s*\d*\s*\(?\s*x?|^Решите уравнение\s*$',
        mistakes=['минус перед скобкой меняет знак только первого слагаемого', 'не умножают второе слагаемое в скобке'], kim=K9)
 def gen_og09_lin_brackets(r):
-    a, c = r.randint(3, 12), r.randint(3, 9)
-    b, d = r.randint(1, 12) * r.choice([1, -1]), r.randint(1, 12) * r.choice([1, -1])
+    # масштаб банка: 4(x − 6) = 5, 10(x + 2) = −7, 4(x + 10) = −1
+    a, c = r.randint(2, 10), r.randint(2, 9)
+    b, d = r.randint(1, 10) * r.choice([1, -1]), r.randint(1, 10) * r.choice([1, -1])
     sg = r.choice([1, -1])
-    e_ = r.randint(-20, 20)
+    e_ = r.randint(-10, 10)
     ins = lambda k: f'x {"+" if k > 0 else "−"} {abs(k)}'
-    kind = r.randrange(3)
+    kind = r.choice([0, 0, 0, 0, 1, 2])
     if kind == 0:
-        e_ = r.choice([1, -1]) * r.randint(11, 45)
+        e_ = r.choice([1, -1]) * r.randint(1, 10)
         lhs, rhs = f'{a}({ins(b)})', tnum(e_)
         A, B = a, a * b - e_
     elif kind == 1:
@@ -1276,14 +1278,18 @@ def gen_og09_lin_brackets(r):
 
 @proto('og09-quad', 'oge', 9, 'Полное квадратное уравнение',
        invariant='ax² + bx + c = 0 с двумя корнями (рациональными); в ответ — больший или меньший корень.',
-       varies='Корни (целые и дробные), старший коэффициент, «больший/меньший».',
+       varies='Приведённое уравнение с целыми корнями или неприведённое (a = 2…5) с дробным корнем; «больший/меньший».',
        answer_rule='Дискриминант или теорема Виета; выбираем нужный корень.',
        fipi=r'x\s*2\s*[+−-]\s*\d*\s*x\s*[+−-]\s*\d+\s*=\s*0',
        mistakes=['ошибка в знаке −b', 'делят только на a, а не на 2a', 'записывают не тот корень'], kim=K9)
 def gen_og09_quad(r):
-    a = r.choice([1, 1, 1, 2, 3, 4, 5, 6])
-    p1 = F(r.randint(-12, 12), r.choice([1, 1, a]) if a > 1 else 1)
+    # в банке: x² + 4x − 12 = 0, x² − 11x + 30 = 0, 2x² − 3x + 1 = 0 — приведённые с целыми корнями
+    # и неприведённые с дробным корнем
+    a = r.choice([1, 1, 1, 2, 2, 3, 4, 5])
+    p1 = F(r.randint(-12, 12), r.choice([1, a]) if a > 1 else 1)
     p2 = F(r.randint(-12, 12))
+    if a == 1 and abs(p1) + abs(p2) < 9:
+        return None
     if p1 == p2 or p1 == 0 and p2 == 0:
         return None
     co = [a, -a * (p1 + p2), a * p1 * p2]
@@ -1303,9 +1309,10 @@ def gen_og09_quad(r):
        fipi=r'x\s*2\s*[+−-]\s*\d+\s*x\s*=\s*0|\d*\s*x\s*2\s*[+−-]\s*\d+\s*=\s*0|x\s*2\s*=\s*\d*\s*x\s*\.',
        mistakes=['делят на x и теряют корень 0', 'берут только положительный корень'], kim=K9)
 def gen_og09_quad_incomplete(r):
+    # масштаб банка: 9x² = 54x, x² = 5x, x² − 49 = 0, x² − 144 = 0 — целые корни
     a = r.choice([1, 2, 3, 4, 5, 6, 7, 8, 9])
     if r.random() < 0.5:
-        root = F(r.randint(1, 30), r.choice([1, 1, 2, 4, 5]) if a > 1 else 1) * r.choice([1, -1])
+        root = F(r.randint(1, 10)) * r.choice([1, -1])
         b = -a * root
         if F(b).denominator != 1:
             return None
@@ -1314,7 +1321,8 @@ def gen_og09_quad_incomplete(r):
         else:
             txt, lhs, rhs = f'{poly([a, 0, 0])} = {lin(-b, 0)}', poly([a, 0, 0]), lin(-b, 0)
         return _roots_card(r, txt, [F(0), root], f'x({lin(a, b)}) = 0: x = 0 или x = {tnum(root)}.', lhs, rhs)
-    root = F(r.randint(1, 12), r.choice([1, 1, 2, 5, 10]))
+    a = r.choice([1, 1, 1, 2, 3, 4, 5])
+    root = F(r.randint(2, 13))
     c = a * root * root
     if c.denominator != 1:
         return None
