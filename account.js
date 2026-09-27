@@ -56,7 +56,9 @@ export async function finishRedirectLogin() {
     return null;
   }
   try {
-    const res = await api('/auth/ticket', { method: 'POST', body: { ticket: m[2] } });
+    const bind = store.get('zd-oauth-bind', '');
+    store.set('zd-oauth-bind', null);
+    const res = await api('/auth/ticket', { method: 'POST', body: { ticket: m[2], bind } });
     setSession({ token: res.token, account: res.account });
     toast(`Вы вошли${res.account.name ? ': ' + res.account.name : ''}`);
     return { account: res.account, role };
@@ -112,7 +114,7 @@ export async function loginDialog({ why = '', onDone, role = '', resume = null, 
     box.querySelector('.login-ways').hidden = true; // выбран Telegram — остальные способы не отвлекают
     step.innerHTML = `
       <a class="btn primary big" id="tg-open" href="${esc(link)}" target="_blank" rel="noopener">Открыть Telegram</a>
-      <p class="muted center">Нажмите в боте «Start» — вход произойдёт сам. <span class="login-wait">Жду подтверждения…</span></p>
+      <p class="muted center">Нажмите в боте «Start», затем «Да, это я — войти». <span class="login-wait">Жду подтверждения…</span></p>
       <p class="muted small-note">Не открылось? Найдите бота <b>@${esc(link.split('/')[3].split('?')[0])}</b> и отправьте ему: <code class="tg-cmd">${esc(cmd)}</code> <button class="link-btn" id="tg-copy">скопировать</button></p>`;
     step.querySelector('#tg-open').addEventListener('click', ev => {
       ev.preventDefault();
@@ -156,7 +158,8 @@ export async function loginDialog({ why = '', onDone, role = '', resume = null, 
   box.querySelectorAll('[data-oauth]').forEach(btn => btn.addEventListener('click', async () => {
     btn.disabled = true;
     try {
-      const { url } = await api(`/auth/oauth/${btn.dataset.oauth}`, { method: 'POST', body: { back: location.href.split('#')[0] } });
+      const { url, bind } = await api(`/auth/oauth/${btn.dataset.oauth}`, { method: 'POST', body: { back: location.href.split('#')[0] } });
+      store.set('zd-oauth-bind', bind); // вход завершится только в этом браузере
       sessionStorage.setItem('zd-login-after', location.hash);
       sessionStorage.setItem('zd-login-role', roleOf());
       store.set(PENDING, null); // выбран другой способ — не возвращаться к ожиданию Telegram
@@ -231,7 +234,8 @@ export async function payDialog({ product, forAcct = null, forName = '' }) {
         <button class="pay-opt" data-m="1"><b data-price="1">${pr[product][1]} ₽</b><span>1 месяц</span></button>
         <button class="pay-opt best" data-m="3"><b data-price="3">${pr[product][3]} ₽</b><span>3 месяца · выгоднее на ${Math.round((1 - pr[product][3] / (pr[product][1] * 3)) * 100)}%</span></button>
       </div>
-      <p class="muted small-note">Оплата картой или через СБП на странице ЮKassa. Без автосписаний — продлеваете сами, мы напомним. <a href="${new URL('offer.html', import.meta.url)}" target="_blank" rel="noopener">Оферта</a></p>`
+      <label class="field pay-mail"><span>Почта для чека</span><input id="pay-email" type="email" inputmode="email" autocomplete="email" placeholder="you@mail.ru" value="${esc(account()?.email || '')}"></label>
+      <p class="muted small-note">Оплата картой или через СБП на странице ЮKassa. Без автосписаний — продлеваете сами, мы напомним. Чек из «Мой налог» пришлём на почту. <a href="${new URL('offer.html', import.meta.url)}" target="_blank" rel="noopener">Оферта</a></p>`
     : `<p class="panel warn-box">Онлайн-оплата скоро появится. Сейчас напишите в Telegram <a href="https://t.me/trwqxp" target="_blank" rel="noopener">@trwqxp</a> — включим доступ вручную.</p>`}
     <details class="promo"><summary>Есть промокод?</summary>
       <div class="row"><input id="promo" placeholder="Например, START20" autocapitalize="characters" autocomplete="off"><button class="btn" id="promo-ok">Применить</button></div>
@@ -260,10 +264,12 @@ export async function payDialog({ product, forAcct = null, forName = '' }) {
   box.querySelector('#promo-ok').onclick = applyPromo;
   box.querySelector('#promo').onkeydown = e => { if (e.key === 'Enter') applyPromo(); };
   box.querySelectorAll('[data-m]').forEach(b => b.addEventListener('click', async () => {
+    const email = box.querySelector('#pay-email')?.value.trim() || '';
+    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) { toast('Проверьте почту для чека'); return; }
     b.disabled = true;
     try {
       sessionStorage.setItem('zd-pay-after', location.hash);
-      const { url } = await api('/pay/create', { method: 'POST', body: { product, months: Number(b.dataset.m), forAcct, promo: promo?.code, back: location.href.split('#')[0] } });
+      const { url } = await api('/pay/create', { method: 'POST', body: { product, months: Number(b.dataset.m), forAcct, promo: promo?.code, email, back: location.href.split('#')[0] } });
       location.href = url;
     } catch (err) { toast(err.message); b.disabled = false; }
   }));
@@ -281,7 +287,11 @@ export async function finishPayment() {
   try {
     const r = await api(`/pay/status?id=${encodeURIComponent(ref)}`);
     if (r.status === 'succeeded') { toast('Оплата прошла — доступ открыт. Спасибо!'); await refreshAccount(); return true; }
-    toast(r.status === 'pending' ? 'Платёж ещё обрабатывается — доступ откроется автоматически.' : 'Оплата не завершена.');
+    toast({
+      pending: 'Платёж ещё обрабатывается — доступ откроется автоматически.',
+      waiting_for_capture: 'Платёж ещё обрабатывается — доступ откроется автоматически.',
+      amount_mismatch: 'Оплата получена, но что-то не сошлось с суммой. Мы уже знаем и откроем доступ вручную.',
+    }[r.status] || 'Оплата не завершена.');
   } catch (err) { toast(err.message); }
   return false;
 }

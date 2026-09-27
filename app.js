@@ -19,16 +19,25 @@ let topicsById = {};
 
 const progKey = () => 'zd-prog:' + ref;
 // Прогресс хранится в браузере, а после входа в аккаунт — ещё и на сервере
-let progTimer;
+// В облако — не чаще раза в 30 секунд и при уходе со страницы: у бесплатного
+// хранилища Cloudflare 1000 записей в сутки на весь сайт
+let progTimer, progDirty = false;
 const save = () => {
   store.set(progKey(), prog);
   if (!signedIn()) return;
-  clearTimeout(progTimer);
-  progTimer = setTimeout(pushProg, 3000);
+  progDirty = true;
+  progTimer ||= setTimeout(() => { progTimer = null; pushProg(); }, 30000);
 };
+const flushProg = () => { if (progDirty && prog && signedIn()) pushProg(true); };
+addEventListener('pagehide', flushProg);
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') flushProg(); });
 const progUrl = () => `/me/progress/${encodeURIComponent(ref)}`;
-async function pushProg() {
-  try { await api(progUrl(), { method: 'PUT', body: prog }); } catch { /* офлайн — отправим со следующим ответом */ }
+async function pushProg(leaving = false) {
+  if (!ref) return;
+  progDirty = false;
+  clearTimeout(progTimer); progTimer = null;
+  // keepalive (отправка при закрытии вкладки) ограничен 64 КБ
+  try { await api(progUrl(), { method: 'PUT', body: prog, keepalive: leaving && JSON.stringify(prog).length < 60000 }); } catch { progDirty = true; /* офлайн — отправим позже */ }
 }
 
 // Прогресс с двух устройств → один: по карточке и по дню берём, где сделано больше
@@ -482,7 +491,7 @@ function startSession(queue, title, back = '#/', { variant = false } = {}) {
     $app.querySelector('#done').onclick = leave;
     $app.querySelector('#more')?.addEventListener('click', () => startSession(more, title, back));
     $app.querySelector('#remind')?.addEventListener('click', e => { addReminder(store.get('zd-remind-time', '19:00')); e.target.remove(); });
-    sync(true);
+    sync(true).then(() => { if (progDirty && signedIn()) pushProg(); }); // урок окончен — прогресс в облако сразу
   };
   const finishVariant = () => {
     const tasks = results.map(({ card, score }) => {
@@ -506,7 +515,7 @@ function startSession(queue, title, back = '#/', { variant = false } = {}) {
         <button class="btn primary big" id="done">Готово</button>
       </section>`;
     $app.querySelector('#done').onclick = leave;
-    sync(true);
+    sync(true).then(() => { if (progDirty && signedIn()) pushProg(); }); // урок окончен — прогресс в облако сразу
   };
   next();
 }
@@ -587,7 +596,7 @@ function viewMe() {
     why: 'Прогресс, серия и ошибки сохранятся в аккаунте.',
     onDone: async () => { await addRole('student'); await pullProg(); sync(true); if (pack.limited) location.reload(); else viewMe(); },
   }));
-  $app.querySelector('#logout')?.addEventListener('click', async () => { await logout(); viewMe(); });
+  $app.querySelector('#logout')?.addEventListener('click', async () => { if (progDirty && prog) await pushProg(); await logout(); viewMe(); });
   $app.querySelector('#pcode')?.addEventListener('click', async () => {
     try {
       const { code } = await api('/me/parent-code', { method: 'POST' });

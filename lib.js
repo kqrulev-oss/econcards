@@ -16,7 +16,7 @@ export const store = {
 // Адрес сервера можно переопределить в настройках без пересборки
 export const apiBase = () => (store.get('zd-api', '') || CFG.api || '').replace(/\/+$/, '');
 
-export async function api(path, { method = 'GET', body, key } = {}) {
+export async function api(path, { method = 'GET', body, key, keepalive = false } = {}) {
   const base = apiBase();
   if (!base) throw new Error('Не задан адрес сервера');
   const headers = {};
@@ -27,7 +27,7 @@ export async function api(path, { method = 'GET', body, key } = {}) {
   if (token) headers.Authorization = `Bearer ${token}`;
   let r;
   try {
-    r = await fetch(base + path, { method, headers, body: body === undefined ? undefined : JSON.stringify(body) });
+    r = await fetch(base + path, { method, headers, keepalive, body: body === undefined ? undefined : JSON.stringify(body) });
   } catch {
     throw new Error('Нет связи с сервером');
   }

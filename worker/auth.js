@@ -3,7 +3,7 @@
    ------------------------------------------------------------
    POST /auth/tg/start            ссылка на бота с одноразовым кодом входа
    GET  /auth/tg/poll?nonce=      ждём, пока человек нажмёт «Start» в боте
-   POST /auth/email/start         код на почту (Resend: RESEND_KEY, EMAIL_FROM)
+   POST /auth/email/start         код на почту (SMTP_USER/SMTP_PASS — ящик Яндекса, или Resend)
    POST /auth/email/verify        проверка кода
    GET  /auth/providers           какие способы входа включены
    POST /auth/oauth/:p            ссылка на вход через Яндекс ID, VK ID или Google
@@ -20,6 +20,8 @@
    KV: acct:<id>, ident:<provider>:<sub> → id, sess:<token> → id,
        tgauth:<nonce>, mailcode:<email>, studio:<id>, progress:<id>:<ref>
    ============================================================ */
+
+import { sendSmtp } from './smtp.js';
 
 export class AuthError extends Error {
   constructor(status, message) { super(message); this.status = status; }
@@ -114,6 +116,7 @@ export async function login(env, provider, sub, profile = {}, current = null) {
   if (!acct.email && profile.email) acct.email = String(profile.email).slice(0, 120);
   await saveAccount(env, acct);
   if (!known) await env.DB.put(identKey, acct.id);
+  if (acct.email) await env.DB.put(`mail:${acct.email.toLowerCase()}`, acct.id);
   const token = randomId(32);
   await env.DB.put(`sess:${token}`, acct.id, { expirationTtl: SESSION_TTL });
   return { token, account: publicAccount(acct) };
@@ -131,7 +134,13 @@ async function botName(env) {
   return name;
 }
 
-// Вызывается ботом на «/start login_<nonce>» — из любого чата
+// Бот на «/start login_<nonce>»: есть ли такой незавершённый вход
+export async function telegramPending(env, nonce) {
+  const state = await env.DB.get(`tgauth:${nonce}`, 'json');
+  return !!state && !state.tg;
+}
+
+// Бот, кнопка «Да, это я — войти»: вход подтверждён этим пользователем Telegram
 export async function confirmTelegram(env, nonce, from) {
   const k = `tgauth:${nonce}`;
   const state = await env.DB.get(k, 'json');
@@ -143,16 +152,33 @@ export async function confirmTelegram(env, nonce, from) {
 
 // ---------- почта ----------
 
+const smtpOn = env => !!(env.SMTP_USER && env.SMTP_PASS);
+
 async function sendMail(env, to, code) {
+  const subject = `Код входа: ${code}`;
+  const text = `Ваш код для входа в «Между уроками»: ${code}\n\nОн действует 10 минут. Если вы не запрашивали код — просто удалите письмо.`;
+  // Пока нет своего домена — письмо уходит с ящика на Яндекс Почте (SMTP, пароль приложения)
+  if (smtpOn(env)) {
+    try {
+      await sendSmtp({ host: env.SMTP_HOST || 'smtp.yandex.ru', port: env.SMTP_PORT || 465, user: String(env.SMTP_USER).trim(),
+        pass: String(env.SMTP_PASS).replace(/\s+/g, ''), name: 'Между уроками', to, subject, text }, env.SMTP_CONNECT);
+    } catch (err) {
+      console.error('smtp', err?.message);
+      throw new AuthError(502, 'Не получилось отправить письмо. Попробуйте позже или войдите другим способом.');
+    }
+    return;
+  }
   const r = await fetch('https://api.resend.com/emails', {
     method: 'POST',
-    headers: { Authorization: `Bearer ${env.RESEND_KEY}`, 'Content-Type': 'application/json' },
+    headers: { Authorization: `Bearer ${String(env.RESEND_KEY).trim()}`, 'Content-Type': 'application/json', 'User-Agent': 'mezhdu-urokami/1.0' },
     body: JSON.stringify({
-      from: env.EMAIL_FROM, to, subject: `Код входа: ${code}`,
-      text: `Ваш код для входа в «Между уроками»: ${code}\n\nОн действует 10 минут. Если вы не запрашивали код — просто удалите письмо.`,
+      from: env.EMAIL_FROM, to, subject, text,
     }),
   });
-  if (!r.ok) throw new AuthError(502, 'Не получилось отправить письмо. Попробуйте позже.');
+  if (!r.ok) {
+    console.error('resend', r.status, (await r.text().catch(() => '')).slice(0, 300));
+    throw new AuthError(502, 'Не получилось отправить письмо. Попробуйте позже.');
+  }
 }
 
 const normEmail = e => String(e || '').trim().toLowerCase();
@@ -199,10 +225,10 @@ const OAUTH = {
   vk: {
     on: env => env.VK_ID,
     pkce: true,
-    authorize: (env, q) => `https://id.vk.com/authorize?${form({ response_type: 'code', client_id: env.VK_ID, redirect_uri: q.redirect, state: q.state, code_challenge: q.challenge, code_challenge_method: 'S256', scope: 'email' })}`,
+    authorize: (env, q) => `https://id.vk.ru/authorize?${form({ response_type: 'code', client_id: env.VK_ID, redirect_uri: q.redirect, state: q.state, code_challenge: q.challenge, code_challenge_method: 'S256', scope: 'email' })}`,
     async profile(env, q) {
-      const t = await postForm('https://id.vk.com/oauth2/auth', { grant_type: 'authorization_code', code: q.code, code_verifier: q.verifier, client_id: env.VK_ID, device_id: q.device_id, redirect_uri: q.redirect, state: q.state });
-      const u = (await postForm('https://id.vk.com/oauth2/user_info', { client_id: env.VK_ID, access_token: t.access_token })).user || {};
+      const t = await postForm('https://id.vk.ru/oauth2/auth', { grant_type: 'authorization_code', code: q.code, code_verifier: q.verifier, client_id: env.VK_ID, device_id: q.device_id, redirect_uri: q.redirect, state: q.state });
+      const u = (await postForm('https://id.vk.ru/oauth2/user_info', { client_id: env.VK_ID, access_token: t.access_token })).user || {};
       if (!u.user_id) throw new AuthError(502, 'VK не вернул профиль.');
       return { sub: String(u.user_id), name: [u.first_name, u.last_name].filter(Boolean).join(' '), email: u.email };
     },
@@ -255,7 +281,7 @@ const refKey = ref => {
 export function providers(env) {
   return {
     tg: !!env.TG_TOKEN,
-    email: !!(env.RESEND_KEY && env.EMAIL_FROM),
+    email: !!(env.RESEND_KEY && env.EMAIL_FROM) || smtpOn(env),
     yandex: !!OAUTH.yandex.on(env),
     vk: !!OAUTH.vk.on(env),
     google: !!OAUTH.google.on(env),
@@ -302,6 +328,7 @@ export async function handleAuth(req, env, parts) {
     }
 
     if (b === 'email' && c === 'verify' && m === 'POST') {
+      await limit(env, 'mailvf', ip(req), 30);
       const body = await readBody(req);
       const email = normEmail(body.email);
       const k = `mailcode:${email}`;
@@ -328,8 +355,10 @@ export async function handleAuth(req, env, parts) {
       const verifier = prov.pkce ? randomId(64) : undefined;
       const challenge = verifier ? b64url(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(verifier))) : undefined;
       const current = await sessionAccount(env, req); // уже вошёл — привязываем новый способ к этому аккаунту
-      await env.DB.put(`oauth:${state}`, JSON.stringify({ p: c, back: safeBack(body.back, origin), verifier, link: current?.id }), { expirationTtl: 600 });
-      return { url: prov.authorize(env, { redirect: `${origin}/auth/${c}/callback`, state, challenge }) };
+      // bind остаётся в браузере, начавшем вход: чужой билет (#login=…) без него не примется
+      const bind = randomId(32);
+      await env.DB.put(`oauth:${state}`, JSON.stringify({ p: c, back: safeBack(body.back, origin), verifier, link: current?.id, bind }), { expirationTtl: 600 });
+      return { url: prov.authorize(env, { redirect: `${origin}/auth/${c}/callback`, state, challenge }), bind };
     }
 
     // Провайдер вернул человека: код → профиль → вход → назад на сайт с одноразовым ticket
@@ -342,9 +371,10 @@ export async function handleAuth(req, env, parts) {
       if (!q.code) return Response.redirect(`${saved.back}#login_error=cancelled`, 302);
       try {
         const prof = await OAUTH[b].profile(env, { ...q, verifier: saved.verifier, redirect: `${url.origin}/auth/${b}/callback` });
-        const res = await login(env, b, prof.sub, prof, saved.link ? await getAccount(env, saved.link) : null);
+        // Вход и привязку делаем только после проверки bind (в /auth/ticket): иначе чужая
+        // ссылка «привязать Яндекс» привязала бы Яндекс жертвы к аккаунту злоумышленника
         const ticket = randomId(32);
-        await env.DB.put(`ticket:${ticket}`, JSON.stringify(res), { expirationTtl: 120 });
+        await env.DB.put(`ticket:${ticket}`, JSON.stringify({ p: b, prof, link: saved.link, bind: saved.bind }), { expirationTtl: 120 });
         return Response.redirect(`${saved.back}#login=${ticket}`, 302);
       } catch (err) {
         console.error('oauth callback', b, err?.message);
@@ -353,12 +383,14 @@ export async function handleAuth(req, env, parts) {
     }
 
     if (b === 'ticket' && m === 'POST') {
-      const { ticket } = await readBody(req);
+      const { ticket, bind } = await readBody(req);
       if (!/^[a-z0-9]{32}$/.test(ticket || '')) throw new AuthError(400, 'Некорректный вход.');
-      const res = await env.DB.get(`ticket:${ticket}`, 'json');
-      if (!res) throw new AuthError(410, 'Вход устарел. Попробуйте ещё раз.');
+      const saved = await env.DB.get(`ticket:${ticket}`, 'json');
+      if (!saved) throw new AuthError(410, 'Вход устарел. Попробуйте ещё раз.');
+      if (!saved.bind || saved.bind !== bind) throw new AuthError(403, 'Вход начат в другом браузере. Начните его заново здесь.');
       await env.DB.delete(`ticket:${ticket}`);
-      return res;
+      if (!OAUTH[saved.p] || !saved.prof?.sub) throw new AuthError(410, 'Вход устарел. Попробуйте ещё раз.');
+      return login(env, saved.p, saved.prof.sub, saved.prof, saved.link ? await getAccount(env, saved.link) : null);
     }
 
     if (b === 'logout' && m === 'POST') {
