@@ -746,6 +746,50 @@ def generate(pid, n, seed=1):
     return out
 
 
+# ---------- проверка карточек, написанных ИИ (рецепты llm) ----------
+
+def check_llm(c):
+    """Проверки правилом для аналогов по рецептам llm. Пустая строка — всё в порядке."""
+    pid, k, t, a = c.get('proto', ''), c.get('k'), c.get('t', ''), c.get('a')
+    if k not in ('many', 'word', 'match') or not c.get('q'):
+        return 'нет формата или формулировки'
+    if k == 'many':
+        ids = [o['id'] for o in c.get('o', [])]
+        pos = re.findall(r'\((\d+)\)', t) if not ids else []
+        dom = set(ids or pos)
+        if not isinstance(a, list) or not a or not set(a) <= dom:
+            return f'ответ {a} вне вариантов {sorted(dom)}'
+        if len(a) == len(dom) and not pid.startswith(('e26', 'e21')):
+            return 'верны все варианты'
+        if pos and [int(x) for x in pos] != sorted(int(x) for x in pos):
+            return 'позиции идут не по порядку'
+    if k == 'match' and not re.fullmatch(r'\d{3,5}', str(a)):
+        return 'ответ соответствия — не 3–5 цифр'
+    if k == 'word':
+        words = [w for w in str(a).split('|') if w]
+        if not words:
+            return 'пустой ответ'
+        if pid.startswith(('e25', 'o12-meaning', 'o12-syn', 'e6-excess')):
+            low = yo(t.lower())
+            if not any(yo(w.lower()) in low for w in words):
+                return 'выписываемого слова нет в тексте'
+        if pid == 'e6-excess' and sum(yo(t.lower()).count(yo(w.lower())) for w in words[:1]) != 1:
+            return 'лишнее слово встречается не один раз'
+    if pid == 'o7-letters':
+        m = re.search(r'буква ([А-ЯЁ])', c['q'])
+        bank = {g.full: g for g in pool('roots') + pool('prefixes') + pool('suffixes')}
+        got = []
+        for w_pre, i, w_post in re.findall(r'([а-яё]*)\.\.\((\d)\)([а-яё]*)', t.lower()):
+            fills = [L for L in 'аоеиыяюуёзсъь' if known(w_pre + L + w_post)]
+            if len(fills) != 1:
+                return f'пропуск ({i}) неоднозначен или не слово: {w_pre}..{w_post} → {fills}'
+            if m and fills[0] == m.group(1).lower():
+                got.append(i)
+        if m and sorted(got) != sorted(a):
+            return f'по словарю ответ {got}, в карточке {a}'
+    return ''
+
+
 # ---------- самопроверка ----------
 
 def verify(card):
@@ -869,6 +913,7 @@ def main():
     ap.add_argument('--check', action='store_true')
     ap.add_argument('--fipi')
     ap.add_argument('--dump')
+    ap.add_argument('--check-llm', help='JSON с аналогами по рецептам llm')
     ap.add_argument('--capacity', action='store_true', help='сколько разных карточек даёт прототип (до 2000)')
     args = ap.parse_args()
     if args.list:
@@ -885,6 +930,22 @@ def main():
         d.mkdir(parents=True, exist_ok=True)
         for pid in GEN:
             (d / f'{pid}.json').write_text(json.dumps(generate(pid, args.n), ensure_ascii=False, indent=1))
+    elif args.check_llm:
+        cards = json.loads(Path(args.check_llm).read_text())
+        fsh = load_fipi(args.fipi) if args.fipi else None
+        bad = 0
+        for i, c in enumerate(cards):
+            e = check_llm(c)
+            sim = 0.0
+            if fsh:
+                sh = shingles(card_text(c))
+                sim = len(sh & fsh) / len(sh) if sh else 0
+                if sim >= 0.3:
+                    e = (e + '; ' if e else '') + f'сходство с ФИПИ {sim:.0%}'
+            if e:
+                bad += 1
+                print(i, c.get('proto'), e)
+        print(f'{len(cards) - bad}/{len(cards)} прошли проверку правилом')
     elif args.check:
         sys.exit(0 if check(max(args.n, 200), args.fipi) else 1)
     else:
