@@ -230,7 +230,7 @@ def gen_og06_frac_addsub(r):
         return None
     op = r.choice('+−')
     val = a + b if op == '+' else a - b
-    if not nice(val, 3) or val == 0:
+    if not nice(val, 2) or val == 0:
         return None
     if r.random() < 0.5:
         a, b = b, a
@@ -3023,3 +3023,1153 @@ def gen_og05_paper_font(r):
          'точно так же, то есть все размеры изменились в одно и то же число раз? Размер шрифта округлите до целого.')
     e = f'Коэффициент подобия {PAPER[ser][dst][1]}/{PAPER[ser][src][1]}; {f0}·{approx(ratio, 3)} ≈ {approx(val, 2)} ≈ {ans}.'
     return pcard(q, num(ans), e=e), lambda: ans == round(sp.Rational(f0 * PAPER[ser][dst][1], PAPER[ser][src][1]))
+
+
+# ---------------------------------------------------------------- план на клетчатой бумаге (территория, квартира)
+
+def svg_plan(cols, rows, rects, cells=(), gate=None, cell=22, fills=None, extra=''):
+    """План: rects — [(x, y, w, h, 'подпись')] в клетках (y вверх); cells — закрашенные клетки дорожек [(x, y)];
+    gate — (x, y) клетка ворот на границе (рисуется стрелкой)."""
+    W, H = cols * cell + 20, rows * cell + 20
+    sx = lambda x: 10 + x * cell
+    sy = lambda y: 10 + (rows - y) * cell
+    g = ''.join(f'<line x1="{sx(i)}" y1="{sy(0)}" x2="{sx(i)}" y2="{sy(rows)}"/>' for i in range(cols + 1))
+    g += ''.join(f'<line x1="{sx(0)}" y1="{sy(j)}" x2="{sx(cols)}" y2="{sy(j)}"/>' for j in range(rows + 1))
+    out = f'<g stroke="{GRID}" stroke-width="1">{g}</g>'
+    out += ''.join(f'<rect x="{sx(x)}" y="{sy(y + 1)}" width="{cell}" height="{cell}" fill="#C9CED8"/>' for x, y in cells)
+    for i, (x, y, w, h, lab) in enumerate(rects):
+        fill = (fills or {}).get(i, BLUE)
+        out += (f'<rect x="{sx(x)}" y="{sy(y + h)}" width="{w * cell}" height="{h * cell}" fill="{fill}" fill-opacity="0.16" stroke="{fill}" stroke-width="2.2"/>'
+                f'<text x="{sx(x + w / 2):.1f}" y="{sy(y + h / 2) + 6:.1f}" text-anchor="middle" font-size="17" font-weight="bold">{lab}</text>')
+    out += f'<rect x="{sx(0)}" y="{sy(rows)}" width="{cols * cell}" height="{rows * cell}" fill="none" stroke="{INK}" stroke-width="2.4"/>'
+    if gate:
+        gx, gy = gate
+        out += (f'<line x1="{sx(gx + 0.5)}" y1="{sy(gy) + 26}" x2="{sx(gx + 0.5)}" y2="{sy(gy) + 3}" stroke="{RED}" stroke-width="2.4" marker-end="url(#a)"/>')
+    return _svg(W, H + (18 if gate else 0), out + extra)
+
+
+def _dist_rect(a, b):
+    """(dx, dy) — зазоры между прямоугольниками a=(x, y, w, h), b по осям (0, если проекции перекрываются)."""
+    dx = max(0, b[0] - (a[0] + a[2]), a[0] - (b[0] + b[2]))
+    dy = max(0, b[1] - (a[1] + a[3]), a[1] - (b[1] + b[3]))
+    return dx, dy
+
+
+YARDS = [
+    dict(site='турбазы', obj=['главный корпус', 'столовая', 'баня', 'лодочный сарай'], tile='плиткой для дорожек'),
+    dict(site='школьного двора', obj=['школа', 'спортзал', 'теплица', 'мастерская'], tile='тротуарной плиткой'),
+    dict(site='фермы', obj=['жилой дом', 'коровник', 'амбар', 'птичник'], tile='бетонной плиткой'),
+    dict(site='детского лагеря', obj=['спальный корпус', 'столовая', 'медпункт', 'склад'], tile='резиновой плиткой'),
+    dict(site='автосервиса', obj=['мастерская', 'офис', 'мойка', 'склад шин'], tile='тротуарной плиткой'),
+]
+
+
+def _yard_block(r):
+    """Генерация плана территории: 4 строения, аллея, ворота внизу."""
+    ctx = r.choice(YARDS)
+    cols, rows = r.randint(18, 22), r.randint(13, 16)
+    s = r.choice([1, 1, 2])  # сторона клетки, м
+    ym = r.randint(5, rows - 7)  # ряд аллеи
+    g = r.randint(7, cols - 8)  # колонка дорожки от ворот
+    rects = []
+    # два строения ниже аллеи (слева и справа от дорожки), два — выше
+    specs = [(1, g - 1, 1, ym - 1), (g + 2, cols - 1, 1, ym - 1), (1, cols // 2 - 1, ym + 2, rows - 1), (cols // 2 + 1, cols - 1, ym + 2, rows - 1)]
+    for x0, x1, y0, y1 in specs:
+        if x1 - x0 < 3 or y1 - y0 < 2:
+            return None
+        w = r.randint(2, min(8, x1 - x0))
+        h = r.randint(2, min(6, y1 - y0))
+        x = r.randint(x0, x1 - w)
+        y = r.randint(y0, y1 - h) if r.random() < 0.4 else (y1 - h if y0 == 1 else y0)
+        rects.append((x, y, w, h))
+    areas = [w * h for _, _, w, h in rects]
+    if len(set(areas)) < 4:
+        return None
+    path = {(x, ym) for x in range(1, cols - 1)} | {(g, y) for y in range(0, ym)}
+    names = ctx['obj'][:]
+    r.shuffle(names)
+    # правила описания: самое большое; ближе всех к воротам; из оставшихся двух — левее; последнее
+    order = list(range(4))
+    big = max(order, key=lambda i: areas[i])
+    rest = [i for i in order if i != big]
+    gd = lambda i: sum(_dist_rect(rects[i], (g, 0, 1, 1)))
+    dists = sorted(gd(i) for i in rest)
+    if dists[0] == dists[1]:
+        return None
+    near = min(rest, key=gd)
+    rest2 = [i for i in rest if i != near]
+    if rects[rest2[0]][0] == rects[rest2[1]][0]:
+        return None
+    left = min(rest2, key=lambda i: rects[i][0])
+    last = [i for i in rest2 if i != left][0]
+    assign = {big: names[0], near: names[1], left: names[2], last: names[3]}
+    digits = list(range(1, 5))
+    r.shuffle(digits)
+    desc = (f'На клетчатом плане (сторона клетки {s} м) изображены строения {ctx["site"]}; въездные ворота отмечены стрелкой. Самое большое строение — {names[0]}. '
+            f'Ближе всех к воротам находится {names[1]}. Из двух оставшихся строений левее на плане стоит {names[2]}, а правее — {names[3]}. '
+            f'Дорожки, выложенные {ctx["tile"]}, закрашены серым.')
+    return dict(ctx=ctx, cols=cols, rows=rows, s=s, rects=rects, areas=areas, path=path, gate=(g, 0), assign=assign,
+                digits=digits, desc=desc, names=names)
+
+
+def _yard_svg(b):
+    rects = [(x, y, w, h, str(b['digits'][i])) for i, (x, y, w, h) in enumerate(b['rects'])]
+    return svg_plan(b['cols'], b['rows'], rects, cells=sorted(b['path']), gate=b['gate'])
+
+
+@proto('og01-yard-match', 'oge', 1, 'План территории: какие цифры соответствуют объектам',
+       invariant='По словесному описанию (самое большое, ближе к воротам, левее/правее) определить, какой цифрой на плане обозначен каждый объект.',
+       varies='Сюжет (турбаза, школьный двор, ферма, лагерь, автосервис), расположение и размеры строений, нумерация.',
+       answer_rule='Последовательно применяем признаки описания к плану; каждому объекту — своя цифра.',
+       fipi=r'Для объектов, указанных в таблице, определите, какими цифрами они обозначены на плане',
+       mistakes=['путают «ближе к воротам» с «ближе к краю плана»', 'сравнивают площади на глаз'],
+       svg=True, card_kind='match', kim=KP(1, ['7.1', '7.5'], [9, 10], 3, answer='соответствие'))
+def gen_og01_yard_match(r):
+    b = _yard_block(r)
+    if not b:
+        return None
+    names = b['ctx']['obj']
+    left = [{'id': LET[j], 't': nm} for j, nm in enumerate(names)]
+    right = [{'id': str(d), 't': f'цифра {d} на плане'} for d in range(1, 5)]
+    idx = {nm: i for i, nm in b['assign'].items()}
+    a = {LET[j]: str(b['digits'][idx[nm]]) for j, nm in enumerate(names)}
+    q = b['desc'] + '\nДля каждого объекта определите, какой цифрой он обозначен на плане.'
+    e = '; '.join(f'{nm} — {b["digits"][idx[nm]]}' for nm in names) + '.'
+
+    def chk():  # заново применяем правила к геометрии
+        rects, areas = b['rects'], b['areas']
+        big = max(range(4), key=lambda i: areas[i])
+        rest = [i for i in range(4) if i != big]
+        g = b['gate'][0]
+        near = min(rest, key=lambda i: math.hypot(*_dist_rect(rects[i], (g, 0, 1, 1))) * 0 + sum(_dist_rect(rects[i], (g, 0, 1, 1))))
+        rest2 = [i for i in rest if i != near]
+        lft = min(rest2, key=lambda i: rects[i][0])
+        want = {b['names'][0]: big, b['names'][1]: near, b['names'][2]: lft, b['names'][3]: [i for i in rest2 if i != lft][0]}
+        return all(a[LET[j]] == str(b['digits'][want[nm]]) for j, nm in enumerate(names))
+    return pcard(q, a, e=e, k='match', o={'left': left, 'right': right}, svg=_yard_svg(b)), chk
+
+
+@proto('og02-yard-tiles', 'oge', 2, 'План территории: сколько упаковок плитки для дорожек',
+       invariant='Дорожки на плане — закрашенные клетки; площадь дорожек → число плиток → число упаковок (округление вверх).',
+       varies='Сюжет, план, размер клетки и плитки, число плиток в упаковке.',
+       answer_rule='Считаем клетки дорожек, переводим в плитки, делим на размер упаковки и округляем вверх.',
+       fipi=r'продаются? в упаковках по \d+ штук.{0,80}дорожк',
+       mistakes=['округляют вниз', 'не учитывают, что в клетке несколько плиток'], svg=True,
+       kim=KP(2, ['1.2', '7.5', '3.3'], [8, 11], 4))
+def gen_og02_yard_tiles(r):
+    b = _yard_block(r)
+    if not b:
+        return None
+    n_cells = len(b['path'])
+    tile = r.choice([F(1, 2), F(1, 2), F(1)] if b['s'] == 1 else [F(1), F(1, 2)])
+    per_cell = int((b['s'] / tile) ** 2)
+    tiles = n_cells * per_cell
+    pack = r.choice([4, 5, 6, 8, 10, 12, 15, 20, 25])
+    ans = -(-tiles // pack)
+    if tiles % pack == 0:
+        return None
+    tt = 'м' if tile == 1 else 'см'
+    tsz = '1 × 1 м' if tile == 1 else '50 × 50 см'
+    q = (b['desc'] + f'\nДорожки выкладывают квадратной плиткой {tsz}; плитка продаётся упаковками по {pack} {plural(pack, "штуке", "штуки", "штук")}. '
+         'Сколько упаковок понадобится, чтобы выложить все дорожки?').replace('по 1 штуке', 'по 1 штуке')
+    e = f'Клеток дорожек {n_cells}, в клетке {per_cell} {plural(per_cell, "плитка", "плитки", "плиток")}: {tiles} {plural(tiles, "плитка", "плитки", "плиток")}; {tiles} : {pack} → {ans} {plural(ans, "упаковка", "упаковки", "упаковок")} (с округлением вверх).'
+    return pcard(q, num(ans), e=e, svg=_yard_svg(b)), lambda: ans == sp.ceiling(sp.Rational(len(b['path']) * int((b['s'] / tile) ** 2), pack))
+
+
+@proto('og03-yard-area', 'oge', 3, 'План территории: площадь или периметр строения',
+       invariant='Строение — прямоугольник из клеток; площадь (м²) или периметр (м) с учётом стороны клетки.',
+       varies='Сюжет, план, объект, размер клетки, спрашиваемая величина.',
+       answer_rule='Считаем клетки по сторонам и умножаем на сторону клетки (для площади — на её квадрат).',
+       fipi=r'Найдите (площадь, которую занимает|периметр)',
+       mistakes=['для площади умножают на сторону клетки, а не на её квадрат', 'путают площадь и периметр'], svg=True,
+       kim=KP(3, ['7.5'], [11], 3))
+def gen_og03_yard_area(r):
+    b = _yard_block(r)
+    if not b:
+        return None
+    i = r.randrange(4)
+    x, y, w, h = b['rects'][i]
+    nm = b['assign'][i]
+    s = b['s']
+    if r.random() < 0.65:
+        ans = w * h * s * s
+        q = b['desc'] + f'\nНайдите площадь, которую занимает {nm}. Ответ дайте в квадратных метрах.'
+        e = f'{w}·{s} м × {h}·{s} м = {ans} м².'
+        chk = lambda: ans == b['rects'][i][2] * b['rects'][i][3] * s ** 2
+    else:
+        ans = 2 * (w + h) * s
+        q = b['desc'] + f'\nНайдите периметр строения «{nm}». Ответ дайте в метрах.'
+        e = f'2·({w * s} + {h * s}) = {ans} м.'
+        chk = lambda: ans == 2 * (b['rects'][i][2] + b['rects'][i][3]) * s
+    return pcard(q, num(ans), e=e, svg=_yard_svg(b)), chk
+
+
+@proto('og04-yard-distance', 'oge', 4, 'План территории: расстояние между строениями',
+       invariant='Расстояние между ближайшими точками двух строений по прямой: по клеткам (если строения «друг напротив друга») или по теореме Пифагора.',
+       varies='Сюжет, план, пара строений, сторона клетки.',
+       answer_rule='Находим горизонтальный и вертикальный зазоры в клетках, переводим в метры, при необходимости — теорема Пифагора.',
+       fipi=r'расстояние между двумя ближайшими точками по прямой',
+       mistakes=['меряют между центрами строений', 'складывают катеты вместо теоремы Пифагора'], svg=True,
+       kim=KP(4, ['7.5', '7.2'], [11], 4))
+def gen_og04_yard_distance(r):
+    b = _yard_block(r)
+    if not b:
+        return None
+    pairs = []
+    for i in range(4):
+        for j in range(i + 1, 4):
+            dx, dy = _dist_rect(b['rects'][i], b['rects'][j])
+            d2 = dx * dx + dy * dy
+            if d2 and math.isqrt(d2) ** 2 == d2:
+                pairs.append((i, j, dx, dy))
+    if not pairs:
+        return None
+    diag = [p for p in pairs if p[2] and p[3]]
+    i, j, dx, dy = r.choice(diag) if diag and r.random() < 0.7 else r.choice(pairs)
+    ans = math.isqrt(dx * dx + dy * dy) * b['s']
+    q = b['desc'] + f'\nНайдите расстояние (в метрах) между строениями «{b["assign"][i]}» и «{b["assign"][j]}», то есть между их ближайшими точками по прямой.'
+    e = f'Зазоры: {dx * b["s"]} м и {dy * b["s"]} м; расстояние √({(dx * b["s"]) ** 2} + {(dy * b["s"]) ** 2}) = {ans} м.' if dx and dy else f'Строения напротив друг друга: {ans} м.'
+
+    def chk():  # перебор всех пар угловых точек/сторон по сетке 0,5 клетки
+        A, B = b['rects'][i], b['rects'][j]
+        ptsA = [(A[0] + u / 2, A[1] + v / 2) for u in range(2 * A[2] + 1) for v in range(2 * A[3] + 1)]
+        ptsB = [(B[0] + u / 2, B[1] + v / 2) for u in range(2 * B[2] + 1) for v in range(2 * B[3] + 1)]
+        m = min((pa[0] - pb[0]) ** 2 + (pa[1] - pb[1]) ** 2 for pa in ptsA for pb in ptsB)
+        return abs(math.sqrt(m) * b['s'] - ans) < 1e-9
+    return pcard(q, num(ans), e=e, svg=_yard_svg(b)), chk
+
+
+@proto('og04-yard-percent', 'oge', 4, 'План территории: проценты площадей',
+       invariant='Сравнение площадей в процентах: на сколько процентов одно строение больше/меньше другого или какую долю территории занимают строения (округление до целых).',
+       varies='Сюжет, план, пара строений или набор, вид вопроса.',
+       answer_rule='Считаем площади в клетках; (S₁ − S₂)/S₂·100% или S/S_общ·100%.',
+       fipi=r'На сколько процентов площадь|Сколько процентов (от )?площади',
+       mistakes=['делят на площадь не того строения', 'забывают умножить на 100'], svg=True, maxdec=0,
+       kim=KP(4, ['1.2', '7.5'], [8, 11], 4))
+def gen_og04_yard_percent(r):
+    b = _yard_block(r)
+    if not b:
+        return None
+    A = b['areas']
+    kind = r.randrange(3)
+    if kind < 2:
+        i, j = r.sample(range(4), 2)
+        big = A[i] > A[j]
+        val = F(abs(A[i] - A[j]) * 100, A[j])
+        if not nice(val, 0):
+            return None
+        ans = val
+        q = b['desc'] + f'\nНа сколько процентов площадь строения «{b["assign"][i]}» {"больше" if big else "меньше"} площади строения «{b["assign"][j]}»?'
+        e = f'Площади в клетках: {A[i]} и {A[j]}; |{A[i]} − {A[j]}| : {A[j]} · 100% = {tnum(ans)}%.'
+        chk = lambda: same(num(ans), sp.Abs(sp.Rational(A[i] - A[j], A[j])) * 100)
+    else:
+        tot = b['cols'] * b['rows']
+        val = F(sum(A) * 100, tot)
+        ans = F(math.floor(val + F(1, 2)))
+        if abs(val - math.floor(val) - F(1, 2)) < F(1, 50):
+            return None
+        q = b['desc'] + f'\nСколько процентов площади всей территории занимают строения? Ответ округлите до целого.'
+        e = f'Строения: {sum(A)} клеток из {tot}; {sum(A)}/{tot}·100% ≈ {tnum(ans)}%.'
+        chk = lambda: ans == round(sp.Rational(sum(A) * 100, tot))
+    return pcard(q, num(ans), e=e, svg=_yard_svg(b)), chk
+
+
+PAYBACK = [
+    ('Для обогрева мастерской выбирают между газовым и электрическим котлом.', ('газовый котёл', 'электрический котёл'),
+     lambda r: (r.choice([F(16, 10), F(15, 10), F(12, 10), F(2)]), 'куб. м газа в час', r.choice([F(7), F(8), F(9), F(65, 10)]), 'руб. за куб. м',
+                r.choice([F(5), F(6), F(8)]), 'кВт', r.choice([F(5), F(6), F(55, 10), F(7)]), 'руб. за кВт·ч')),
+    ('Для освещения спортплощадки выбирают светодиодные или галогенные прожекторы.', ('светодиодные прожекторы', 'галогенные прожекторы'),
+     lambda r: (r.choice([F(2), F(3), F(4)]), 'кВт', r.choice([F(6), F(7), F(8)]), 'руб. за кВт·ч', r.choice([F(8), F(10), F(12)]), 'кВт', None, None)),
+    ('Для полива огорода выбирают насос: электрический или бензиновый.', ('электрический насос', 'бензиновый насос'),
+     lambda r: (r.choice([F(1), F(15, 10), F(2)]), 'кВт', r.choice([F(6), F(7), F(8)]), 'руб. за кВт·ч', r.choice([F(1), F(12, 10), F(15, 10)]), 'л бензина в час', r.choice([F(55), F(60), F(62)]), 'руб. за литр')),
+]
+
+
+@proto('og05-yard-payback', 'oge', 5, 'Выбор оборудования: через сколько часов окупится более дорогой вариант',
+       invariant='Два варианта оборудования: дороже купить, но дешевле в работе; найти, через сколько часов работы экономия покроет разницу в цене.',
+       varies='Сюжет (котлы, прожекторы, насосы), цены, мощности/расход, тарифы.',
+       answer_rule='Часы = (разница начальных затрат) / (разница стоимости часа работы).',
+       fipi=r'Через сколько часов непрерывной работы',
+       mistakes=['сравнивают только цену покупки', 'путают кВт и кВт·ч в расчёте стоимости часа'], lim=10 ** 5,
+       kim=KP(5, ['3.3', '1.2', '8.1'], [8, 14], 6))
+def gen_og05_yard_payback(r):
+    head, (n1, n2), gen = r.choice(PAYBACK)
+    a1, u1, p1, v1, a2, u2, p2, v2 = gen(r)
+    if p2 is None:
+        p2, v2 = p1, v1
+    c1, c2 = a1 * p1, a2 * p2  # стоимость часа
+    if c1 >= c2:
+        return None
+    hours = r.randint(20, 400) * 5
+    d = (c2 - c1) * hours
+    if not nice(d, 0):
+        return None
+    base2 = r.randint(8, 40) * 1000
+    inst2 = r.randint(3, 20) * 500
+    base1 = base2 + r.randint(1, 8) * 1000
+    inst1 = base2 + inst2 + int(d) - base1
+    if inst1 <= 0 or inst1 > 60000:
+        return None
+    rows = [['', 'Цена, руб.', 'Установка, руб.', 'Расход', 'Цена ресурса'],
+            [n1, f'{base1:,}'.replace(',', ' '), f'{inst1:,}'.replace(',', ' '), f'{tnum(a1)} {u1}', f'{tnum(p1)} {v1}'],
+            [n2, f'{base2:,}'.replace(',', ' '), f'{inst2:,}'.replace(',', ' '), f'{tnum(a2)} {u2}', f'{tnum(p2)} {v2}']]
+    q = (head + ' Цены, стоимость установки и расход ресурсов даны в таблице. Выбрали вариант «' + n1 + '». '
+         f'Через сколько часов работы экономия на ресурсах покроет разницу в стоимости покупки и установки?')
+    e = f'Разница затрат: {base1 + inst1 - base2 - inst2} руб.; час работы: {tnum(c1)} и {tnum(c2)} руб., экономия {tnum(c2 - c1)} руб./ч; {hours} ч.'
+    svg = svg_table(rows, colw=[150, 80, 100, 130, 130])
+    t = sp.Symbol('t')
+    return pcard(q, num(hours), e=e, svg=svg), lambda: same(num(hours), sp.solve(sp.Eq(base1 + inst1 + R(c1) * t, base2 + inst2 + R(c2) * t), t)[0])
+
+
+# ---------------------------------------------------------------- сюжет «план помещения»
+
+FLATS = [
+    dict(what='офиса небольшой фирмы', rooms=['переговорная', 'кабинет директора', 'кухня', 'архив'], hall='холл'),
+    dict(what='первого этажа загородного дома', rooms=['гостиная', 'кухня', 'котельная', 'кладовая'], hall='прихожая'),
+    dict(what='небольшого кафе', rooms=['зал для посетителей', 'кухня', 'склад', 'гардероб'], hall='коридор'),
+    dict(what='сельской библиотеки', rooms=['читальный зал', 'абонемент', 'хранилище', 'кабинет'], hall='холл'),
+    dict(what='детского клуба', rooms=['игровая', 'класс рисования', 'раздевалка', 'кладовая'], hall='коридор'),
+]
+
+
+def _flat_block(r):
+    ctx = r.choice(FLATS)
+    cols, rows = r.randint(14, 18), r.randint(9, 12)
+    a = r.randint(5, cols - 6)          # ширина левой части
+    hy = r.randint(3, rows - 4)         # граница по высоте слева
+    c = r.randint(2, 3)                 # ширина коридора (справа от левой части)
+    b = r.randint(3, rows - 3)          # граница справа
+    rects = [(0, hy, a, rows - hy), (0, 0, a, hy), (a + c, b, cols - a - c, rows - b), (a + c, 0, cols - a - c, b), (a, 0, c, rows)]
+    if min(w for _, _, w, _ in rects[:4]) < 3:
+        return None
+    areas = [w * h for _, _, w, h in rects]
+    if len(set(areas[:4])) < 4 or max(areas[:4]) <= areas[4]:
+        return None
+    s = F(4, 10)
+    names = ctx['rooms'][:]
+    order = sorted(range(4), key=lambda i: -areas[i])
+    assign = {order[0]: names[0], order[3]: names[3]}
+    mid = order[1:3]
+    left = min(mid, key=lambda i: (rects[i][0], -rects[i][1]))
+    if rects[mid[0]][0] == rects[mid[1]][0]:
+        return None
+    assign[left] = names[1]
+    assign[[i for i in mid if i != left][0]] = names[2]
+    digits = list(range(1, 5))
+    r.shuffle(digits)
+    desc = (f'На рисунке — план {ctx["what"]} (сторона клетки {tnum(s)} м). Вдоль всего помещения тянется {ctx["hall"]} — серые клетки на плане. '
+            f'Самое большое помещение — {names[0]}, самое маленькое — {names[3]}. Из двух оставшихся помещений левее на плане находится {names[1]}, '
+            f'а {names[2]} — правее.')
+    return dict(ctx=ctx, cols=cols, rows=rows, s=s, rects=rects, areas=areas, assign=assign, digits=digits, desc=desc, names=names)
+
+
+def _flat_svg(b):
+    rects = [(x, y, w, h, str(b['digits'][i])) for i, (x, y, w, h) in enumerate(b['rects'][:4])]
+    x, y, w, h = b['rects'][4]
+    cells = [(x + i, y + j) for i in range(w) for j in range(h)]
+    return svg_plan(b['cols'], b['rows'], rects, cells=cells, cell=24)
+
+
+@proto('og01-flat-match', 'oge', 1, 'План помещения: какими цифрами обозначены комнаты',
+       invariant='По описанию (самое большое/маленькое, левее/правее) определить цифры помещений на плане.',
+       varies='Сюжет (офис, дом, кафе, библиотека, клуб), разбиение плана, нумерация.',
+       answer_rule='Считаем площади в клетках, сравниваем, применяем признаки расположения.',
+       fipi=r'определите, какими цифрами (они )?обозначены на плане|Для (объектов|помещений), указанных в таблице',
+       mistakes=['ошибаются в подсчёте клеток', 'путают лево и право на плане'], svg=True, card_kind='match',
+       kim=KP(1, ['7.1', '7.5'], [9, 10], 3, answer='соответствие'))
+def gen_og01_flat_match(r):
+    b = _flat_block(r)
+    if not b:
+        return None
+    names = b['ctx']['rooms']
+    idx = {nm: i for i, nm in b['assign'].items()}
+    left = [{'id': LET[j], 't': nm} for j, nm in enumerate(names)]
+    right = [{'id': str(d), 't': f'цифра {d} на плане'} for d in range(1, 5)]
+    a = {LET[j]: str(b['digits'][idx[nm]]) for j, nm in enumerate(names)}
+    q = b['desc'] + '\nСопоставьте каждому помещению цифру, которой оно обозначено на плане.'
+    e = '; '.join(f'{nm} — {b["digits"][idx[nm]]} ({b["areas"][idx[nm]]} {plural(b["areas"][idx[nm]], "клетка", "клетки", "клеток")})' for nm in names) + '.'
+
+    def chk():
+        ar = b['areas'][:4]
+        big, small = ar.index(max(ar)), ar.index(min(ar))
+        mid = [i for i in range(4) if i not in (big, small)]
+        lft = min(mid, key=lambda i: b['rects'][i][0])
+        want = {names[0]: big, names[3]: small, names[1]: lft, names[2]: [i for i in mid if i != lft][0]}
+        return all(a[LET[j]] == str(b['digits'][want[nm]]) for j, nm in enumerate(names))
+    return pcard(q, a, e=e, k='match', o={'left': left, 'right': right}, svg=_flat_svg(b)), chk
+
+
+FLOOR = [('плиткой 40 × 40 см', 1), ('плиткой 20 × 40 см', 2), ('плиткой 20 × 20 см', 4), ('паркетной доской 20 × 40 см', 2)]
+
+
+@proto('og02-flat-floor', 'oge', 2, 'План помещения: упаковки плитки (паркета) для пола',
+       invariant='Площадь пола помещения в клетках → число плиток/досок → число упаковок (округление вверх).',
+       varies='Сюжет, помещение, размер плитки (1, 2 или 4 на клетку), размер упаковки.',
+       answer_rule='Клетки × (плиток на клетку) = число плиток; делим на упаковку и округляем вверх.',
+       fipi=r'(Плитка для пола|Паркетная доска) размером',
+       mistakes=['округляют вниз', 'не учитывают, сколько плиток в одной клетке'], svg=True, kim=KP(2, ['1.2', '7.5', '3.3'], [8, 11], 4))
+def gen_og02_flat_floor(r):
+    b = _flat_block(r)
+    if not b:
+        return None
+    i = r.randrange(4)
+    nm = b['assign'][i]
+    ft, per = r.choice(FLOOR)
+    pack = r.choice([6, 8, 10, 12, 14, 16, 20, 24])
+    n = b['areas'][i] * per
+    if n % pack == 0:
+        return None
+    ans = -(-n // pack)
+    forms = ('доска', 'доски', 'досок') if 'доск' in ft else ('плитка', 'плитки', 'плиток')
+    q = (b['desc'] + f'\nПол в помещении «{nm}» покрывают {ft}; в упаковке {pack} {plural(pack, *forms)}. Сколько упаковок нужно купить, чтобы покрыть весь пол в этом помещении?')
+    e = f'Клеток {b["areas"][i]}, на клетку {per}: {n} {plural(n, *forms)}; {n} : {pack} → {ans} {plural(ans, "упаковка", "упаковки", "упаковок")} (округляем вверх).'
+    return pcard(q, num(ans), e=e, svg=_flat_svg(b)), lambda: ans == sp.ceiling(sp.Rational(b['rects'][i][2] * b['rects'][i][3] * per, pack))
+
+
+@proto('og03-flat-area', 'oge', 3, 'План помещения: площадь комнаты',
+       invariant='Площадь прямоугольного помещения по плану: число клеток × площадь клетки (0,4 × 0,4 м).',
+       varies='Сюжет, помещение, разбиение.',
+       answer_rule='S = (клеток по длине × 0,4) · (клеток по ширине × 0,4).',
+       fipi=r'Найдите площадь (кухни|спальни|гостиной|санузла|кладовой|коридора|лоджии|большей лоджии|меньшей лоджии)',
+       mistakes=['умножают число клеток на 0,4 вместо 0,16'], svg=True, kim=KP(3, ['7.5', '1.2'], [11], 3))
+def gen_og03_flat_area(r):
+    b = _flat_block(r)
+    if not b:
+        return None
+    i = r.randrange(5)
+    x, y, w, h = b['rects'][i]
+    nm = b['assign'].get(i, b['ctx']['hall'])
+    ans = w * b['s'] * h * b['s']
+    q = b['desc'] + f'\nНайдите площадь помещения «{nm}». Ответ дайте в квадратных метрах.'
+    e = f'{w}·0,4 = {tnum(w * b["s"])} м, {h}·0,4 = {tnum(h * b["s"])} м; S = {tnum(ans)} м².'
+    return pcard(q, num(ans), e=e, svg=_flat_svg(b)), lambda: same(num(ans), R(b['s']) ** 2 * b['rects'][i][2] * b['rects'][i][3])
+
+
+@proto('og04-flat-percent', 'oge', 4, 'План помещения: на сколько процентов одна комната больше другой',
+       invariant='Сравнение площадей двух помещений в процентах.',
+       varies='Сюжет, пара помещений, «больше/меньше».',
+       answer_rule='(S₁ − S₂)/S₂ · 100%, где S₂ — площадь, с которой сравнивают.',
+       fipi=r'На сколько процентов площадь (кухни|гостиной|спальни|санузла|коридора|лоджии)',
+       mistakes=['делят на площадь не того помещения'], svg=True, maxdec=1, kim=KP(4, ['1.2', '7.5'], [8, 11], 4))
+def gen_og04_flat_percent(r):
+    b = _flat_block(r)
+    if not b:
+        return None
+    i, j = r.sample(range(5), 2)
+    A = b['areas']
+    val = F(abs(A[i] - A[j]) * 100, A[j])
+    if not nice(val, 1) or val == 0:
+        return None
+    nm = lambda k: b['assign'].get(k, b['ctx']['hall'])
+    q = b['desc'] + f'\nНа сколько процентов площадь помещения «{nm(i)}» {"больше" if A[i] > A[j] else "меньше"} площади помещения «{nm(j)}»?'
+    e = f'В клетках: {A[i]} и {A[j]}; {abs(A[i] - A[j])} : {A[j]} · 100% = {tnum(val)}%.'
+    return pcard(q, num(val), e=e, svg=_flat_svg(b)), lambda: same(num(val), sp.Abs(sp.Rational(A[i], A[j]) - 1) * 100)
+
+
+APPL = [
+    dict(what='посудомоечную машину', par='вместимость (комплектов посуды)', u='комплектов', need=lambda r: r.choice([9, 10, 12, 13]), vals=[6, 8, 9, 10, 11, 12, 13, 14],
+         types=('встраиваемая', 'отдельностоящая'), price=(22000, 48000)),
+    dict(what='водонагреватель', par='объём бака (л)', u='л', need=lambda r: r.choice([50, 80, 100]), vals=[30, 50, 80, 100, 120],
+         types=('вертикальный', 'горизонтальный'), price=(9000, 26000)),
+    dict(what='холодильник', par='объём камер (л)', u='л', need=lambda r: r.choice([250, 300, 350]), vals=[200, 240, 280, 310, 350, 400],
+         types=('с морозилкой снизу', 'с морозилкой сверху'), price=(24000, 62000)),
+    dict(what='кондиционер', par='площадь охлаждения (м²)', u='м²', need=lambda r: r.choice([20, 25, 30]), vals=[15, 20, 25, 30, 35, 40],
+         types=('инверторный', 'обычный'), price=(18000, 45000)),
+]
+
+
+@proto('og05-choice-table', 'oge', 5, 'Выбор самого дешёвого подходящего товара по таблице',
+       invariant='Таблица моделей: параметр, тип, цена, стоимость подключения, доставка (% от цены или бесплатно); отобрать подходящие и найти наименьшую полную стоимость.',
+       varies='Товар, требования (не меньше X, тип), числа в таблице.',
+       answer_rule='Отсеиваем неподходящие модели, для остальных считаем цену + подключение + доставку, берём минимум.',
+       fipi=r'Сколько рублей будет стоить наиболее дешёвый подходящий вариант',
+       mistakes=['забывают доставку в процентах', 'выбирают модель, не подходящую по типу или параметру'], svg=True, lim=10 ** 6,
+       kim=KP(5, ['1.2', '8.1', '3.3'], [8, 14], 6))
+def gen_og05_choice_table(r):
+    ap = r.choice(APPL)
+    need = ap['need'](r)
+    tp = r.choice(ap['types'])
+    rows = [['Модель', ap['par'], 'Тип', 'Цена, руб.', 'Подключение, руб.', 'Доставка']]
+    models = []
+    labs = 'АБВГДЕЖЗ'[:r.randint(6, 8)]
+    fit = set(r.sample(range(len(labs)), r.choice([2, 3])))
+    trap = r.choice([k for k in range(len(labs)) if k not in fit])
+    for k, lab in enumerate(labs):
+        if k in fit:
+            v, t = r.choice([x for x in ap['vals'] if x >= need]), tp
+        else:
+            v, t = r.choice(ap['vals']), r.choice(ap['types'])
+        price = r.randint(ap['price'][0] // 100, ap['price'][1] // 100) * 100
+        inst = r.choice([0, 1500, 2000, 2500, 3000, 3500, 4000])
+        dl = r.choice([0, 0, 5, 10, 15])
+        if k == trap:
+            price, inst, dl = ap['price'][0] - 1000, 0, 0
+            if v >= need and t == tp:
+                t = [x for x in ap['types'] if x != tp][0]
+        total = price + inst + F(price * dl, 100)
+        models.append((lab, v, t, price, inst, dl, total))
+        rows.append([lab, str(v), t, f'{price:,}'.replace(',', ' '), str(inst) if inst else 'бесплатно', f'{dl}%' if dl else 'бесплатно'])
+    good = [m for m in models if m[1] >= need and m[2] == tp]
+    if len(good) < 2:
+        return None
+    best = min(good, key=lambda m: m[6])
+    others = sorted(m[6] for m in good)
+    if others[0] == others[1] or not nice(best[6], 0, 10 ** 6):
+        return None
+    q = (f'Для помещения выбирают {ap["what"]}. Нужна модель типа «{tp}», у которой {ap["par"].split(" (")[0]} не меньше {need} {ap["u"]}. '
+         'Характеристики моделей и условия подключения и доставки приведены в таблице (доставка — в процентах от цены или бесплатно). '
+         'Сколько рублей будет стоить самый дешёвый подходящий вариант вместе с подключением и доставкой?')
+    e = f'Подходят: {", ".join(m[0] for m in good)}; дешевле всех модель {best[0]}: {best[3]} + {best[4]} + {best[5]}% = {tnum(best[6])} руб.'
+    svg = svg_table(rows, colw=[60, 150, 150, 90, 120, 80])
+    return pcard(q, num(best[6]), e=e, svg=svg), lambda: same(num(best[6]), min(sp.Rational(m[3]) * (100 + m[5]) / 100 + m[4] for m in models if m[1] >= need and m[2] == tp))
+
+
+PLANS = [
+    dict(intro='Для дачного роутера выбирают тариф мобильного интернета. Ожидается, что за месяц уйдёт {u} ГБ трафика, и выбирают самый дешёвый вариант.',
+         unit='ГБ', rows=lambda r: [('«Лайт»', r.choice([290, 350, 390]), r.choice([10, 15, 20]), r.choice([25, 30, 40])),
+                                     ('«Стандарт»', r.choice([490, 550, 590]), r.choice([30, 35, 40]), r.choice([15, 18, 20])),
+                                     ('«Максимум»', r.choice([790, 850, 900]), None, None)],
+         u=lambda r: r.randint(12, 60)),
+    dict(intro='Бассейн продаёт абонементы на месяц. Посетитель рассчитывает прийти {u} раз и выбирает самый дешёвый вариант.',
+         unit='занятий', rows=lambda r: [('«Утро»', r.choice([1600, 1800, 2000]), r.choice([4, 5, 6]), r.choice([350, 400, 450])),
+                                        ('«День»', r.choice([2900, 3200, 3500]), r.choice([8, 10]), r.choice([300, 320, 350])),
+                                        ('«Безлимит»', r.choice([4500, 4800, 5200]), None, None)],
+         u=lambda r: r.randint(5, 18)),
+    dict(intro='Сервис облачного хранения предлагает три тарифа. Семья собирается хранить {u} ГБ фотографий и выбирает самый дешёвый вариант.',
+         unit='ГБ', rows=lambda r: [('«Базовый»', r.choice([99, 149]), r.choice([50, 100]), r.choice([2, 3])),
+                                     ('«Семейный»', r.choice([249, 299]), r.choice([200, 250]), r.choice([1, 2])),
+                                     ('«Про»', r.choice([549, 599, 699]), None, None)],
+         u=lambda r: r.randint(60, 400)),
+]
+
+
+@proto('og05-plan-tariff', 'oge', 5, 'Выбор самого дешёвого тарифа при заданном потреблении',
+       invariant='Несколько тарифов: абонентская плата с включённым объёмом и доплата за каждую единицу сверх; безлимитный тариф. Найти плату по самому дешёвому тарифу.',
+       varies='Сюжет (интернет, абонемент, облако), цены, включённые объёмы, ожидаемое потребление.',
+       answer_rule='Для каждого тарифа: плата + (потребление − включённое)·цену единицы, если потребление больше включённого; берём минимум.',
+       fipi=r'(предлагает три тарифных плана|тарифный план).{0,400}Сколько рублей',
+       mistakes=['забывают доплату сверх пакета', 'выбирают тариф с наименьшей абонентской платой'], svg=True,
+       kim=KP(5, ['1.2', '8.1', '3.3'], [8, 14], 5))
+def gen_og05_plan_tariff(r):
+    pl = r.choice(PLANS)
+    u = pl['u'](r)
+    rows = pl['rows'](r)
+    costs = []
+    trow = [['Тариф', 'Абонентская плата, руб.', f'Включено, {pl["unit"]}', f'Сверх пакета, руб. за 1 {pl["unit"].replace("занятий", "занятие")}']]
+    for name, fee, inc, extra in rows:
+        c = fee if inc is None else fee + max(0, u - inc) * extra
+        costs.append(c)
+        trow.append([name, str(fee), 'без ограничений' if inc is None else str(inc), '—' if extra is None else str(extra)])
+    if len(set(costs)) < 3 or costs.index(min(costs)) == 0 and u <= rows[0][2]:
+        return None
+    ans = min(costs)
+    q = pl['intro'].format(u=u) + ' Условия приведены в таблице. Сколько рублей придётся заплатить за месяц, если потребление окажется ровно таким, как ожидалось?'
+    e = '; '.join(f'{rows[i][0]}: {costs[i]} руб' for i in range(3)) + f'. Наименьшая плата — {ans} руб.'
+    svg = svg_table(trow, colw=[100, 170, 130, 190])
+    return pcard(q, num(ans), e=e, svg=svg), lambda: ans == min(fee + (sp.Max(0, u - inc) * extra if inc is not None else 0) for _, fee, inc, extra in rows)
+
+
+# ---------------------------------------------------------------- сюжет «план местности: дороги»
+
+TRIPS = [
+    dict(who='Лена с мамой', how='едут на машине', places=[('Сосновка', 'Сосновки', 'Сосновку'), ('Каменка', 'Каменки', 'Каменку'),
+                                                             ('Озёрное', 'Озёрного', 'Озёрное'), ('Ягодное', 'Ягодного', 'Ягодное')],
+         road=(('шоссе', 'по шоссе'), ('грунтовая дорога', 'по грунтовой дороге')), v=[(60, 30), (70, 35), (80, 40), (90, 45), (60, 40)], car=True),
+    dict(who='Артём с отцом', how='едут на велосипедах', places=[('лагерь', 'лагеря', 'лагерь'), ('родник', 'родника', 'родник'),
+                                                                   ('мельница', 'мельницы', 'мельницу'), ('водопад', 'водопада', 'водопад')],
+         road=(('велодорожка', 'по велодорожке'), ('лесная тропа', 'по лесной тропе')), v=[(15, 10), (18, 12), (20, 10), (16, 12)], car=False),
+    dict(who='Соня с дедушкой', how='едут на машине', places=[('Липки', 'Липок', 'Липки'), ('Бор', 'Бора', 'Бор'),
+                                                                ('Заречье', 'Заречья', 'Заречье'), ('Дальний', 'Дальнего', 'Дальний')],
+         road=(('асфальтовая дорога', 'по асфальтовой дороге'), ('просёлочная дорога', 'по просёлочной дороге')), v=[(60, 30), (75, 25), (80, 40), (90, 30)], car=True),
+    dict(who='Туристы', how='идут на лыжах', places=[('база отдыха', 'базы отдыха', 'базу отдыха'), ('смотровая площадка', 'смотровой площадки', 'смотровую площадку'),
+                                                   ('охотничий домик', 'охотничьего домика', 'охотничий домик'), ('турбаза «Кедр»', 'турбазы «Кедр»', 'турбазу «Кедр»')],
+         road=(('накатанная лыжня', 'по лыжне'), ('снежная целина', 'по целине')), v=[(12, 6), (10, 5), (12, 8), (9, 6)], car=False),
+]
+MAPGEO = [(12, 16, 7), (12, 16, 11), (12, 9, 4), (8, 15, 9), (15, 20, 12), (6, 8, 0), (9, 12, 0), (12, 5, 0)]
+
+
+def _map_block(r):
+    ctx = r.choice(TRIPS)
+    b_, a_, p_ = r.choice(MAPGEO)
+    if p_ == 0:
+        p_ = r.randint(1, a_ - 1)
+        tri = False
+    else:
+        tri = True
+    s = r.choice([1, 1, 2]) if a_ <= 16 else 1
+    x0, y0 = 1, 1
+    cols, rows = x0 + a_ + 2, y0 + b_ + 2
+    q_ = r.randint(1, b_ - 1)
+    S, V, C, W, T = (x0, y0), (x0 + p_, y0), (x0 + a_, y0), (x0 + a_, y0 + q_), (x0 + a_, y0 + b_)
+    pl = ctx['places']
+    digits = list(range(1, 5))
+    r.shuffle(digits)
+    vh, vd = r.choice(ctx['v'])
+    (hw, hw_by), (dr, dr_by) = ctx['road']
+    desc = (f'{ctx["who"]} {ctx["how"]}: старт — {pl[0][0]}, финиш — {pl[3][0]}. Сторона клетки на плане — {s} км. '
+            f'Основная дорога ({hw}, сплошная линия) идёт от старта на восток мимо пункта «{pl[1][0]}», затем поворачивает на север, '
+            f'проходит мимо пункта «{pl[2][0]}» и приводит к финишу. Кроме того, есть {dr} (пунктир) — прямо от старта к финишу'
+            + (f', а также от пункта «{pl[1][0]}» к финишу.' if tri else '.'))
+    names = [p[0] for p in pl]
+    return dict(ctx=ctx, S=S, V=V, C=C, W=W, T=T, a=a_, b=b_, p=p_, q=q_, s=s, tri=tri, cols=cols, rows=rows, names=names, pl=pl,
+                digits=digits, desc=desc, vh=vh, vd=vd, hw_by=hw_by, dr_by=dr_by)
+
+
+def _map_svg(b):
+    cell = min(22, 420 // max(b['cols'], b['rows']))
+    W, H = b['cols'] * cell + 20, b['rows'] * cell + 20
+    sx = lambda x: 10 + x * cell
+    sy = lambda y: 10 + (b['rows'] - y) * cell
+    g = ''.join(f'<line x1="{sx(i)}" y1="{sy(0)}" x2="{sx(i)}" y2="{sy(b["rows"])}"/>' for i in range(b['cols'] + 1))
+    g += ''.join(f'<line x1="{sx(0)}" y1="{sy(j)}" x2="{sx(b["cols"])}" y2="{sy(j)}"/>' for j in range(b['rows'] + 1))
+    out = f'<g stroke="{GRID}" stroke-width="1">{g}</g>'
+    S, V, C, W_, T = b['S'], b['V'], b['C'], b['W'], b['T']
+    out += f'<polyline points="{sx(S[0])},{sy(S[1])} {sx(C[0])},{sy(C[1])} {sx(T[0])},{sy(T[1])}" fill="none" stroke="{INK}" stroke-width="3"/>'
+    dashes = [(S, T)] + ([(V, T)] if b['tri'] else [])
+    out += ''.join(f'<line x1="{sx(p[0])}" y1="{sy(p[1])}" x2="{sx(q[0])}" y2="{sy(q[1])}" stroke="#9A6B3C" stroke-width="2.4" stroke-dasharray="7 5"/>' for p, q in dashes)
+    for i, P in enumerate([S, V, W_, T]):
+        dx = -16 if i in (0,) else 8
+        dy = 18 if i in (0, 1) else -6
+        out += f'<circle cx="{sx(P[0])}" cy="{sy(P[1])}" r="5" fill="{RED}"/><text x="{sx(P[0]) + dx}" y="{sy(P[1]) + dy}" font-size="15" font-weight="bold">{b["digits"][i]}</text>'
+    return _svg(W, H, out)
+
+
+KMAP = dict(kes=['7.5', '3.3'], kt=[8, 11])
+
+
+@proto('og01-map-match', 'oge', 1, 'План местности: какими цифрами обозначены пункты',
+       invariant='По описанию маршрута (сначала на восток мимо одного пункта, после поворота — мимо другого) определить цифры пунктов на плане.',
+       varies='Сюжет (машина, велосипеды, лыжи), форма маршрута, нумерация.',
+       answer_rule='Прослеживаем дорогу на плане от начального пункта и сопоставляем описанию.',
+       fipi=r'какими цифрами на плане обозначены (деревни|населённые пункты)',
+       mistakes=['путают направления (восток/север)', 'путают пункты на двух участках дороги'], svg=True, card_kind='match',
+       kim=KP(1, ['7.1', '6.2'], [9, 10], 3, answer='соответствие'))
+def gen_og01_map_match(r):
+    b = _map_block(r)
+    left = [{'id': LET[j], 't': nm} for j, nm in enumerate(b['names'])]
+    right = [{'id': str(d), 't': f'цифра {d} на плане'} for d in range(1, 5)]
+    a = {LET[j]: str(b['digits'][j]) for j in range(4)}
+    q = b['desc'] + '\nОпределите, какой цифрой на плане обозначен каждый пункт.'
+    e = '; '.join(f'{nm} — {b["digits"][j]}' for j, nm in enumerate(b['names'])) + '.'
+    pts = [b['S'], b['V'], b['W'], b['T']]
+
+    def chk():  # начало — самая юго-западная точка; конец — самая северная; второй — на горизонтальном участке
+        order = [min(range(4), key=lambda i: pts[i][0] + pts[i][1]), [i for i in range(4) if pts[i][1] == pts[0][1] and pts[i] != pts[0]][0],
+                 [i for i in range(4) if pts[i][0] == pts[3][0] and pts[i] != pts[3]][0], max(range(4), key=lambda i: pts[i][1])]
+        return all(a[LET[j]] == str(b['digits'][order[j]]) for j in range(4))
+    return pcard(q, a, e=e, k='match', o={'left': left, 'right': right}, svg=_map_svg(b)), chk
+
+
+@proto('og02-map-road', 'oge', 2, 'План местности: расстояние по дороге',
+       invariant='Длина пути по дороге, идущей по линиям сетки: сумма горизонтальных и вертикальных участков × сторона клетки.',
+       varies='Сюжет, план, начальный и конечный пункты.',
+       answer_rule='Считаем клетки вдоль дороги и умножаем на сторону клетки.',
+       fipi=r'Найдите расстояние от .{3,30} по шоссе|Сколько километров проедут',
+       mistakes=['считают по прямой вместо дороги', 'забывают масштаб клетки'], svg=True, kim=KP(2, **KMAP, minutes=3))
+def gen_og02_map_road(r):
+    b = _map_block(r)
+    P = {0: b['S'], 1: b['V'], 2: b['W'], 3: b['T']}
+    along = lambda A, B: abs(A[0] - B[0]) + abs(A[1] - B[1])
+    pairs = [(0, 3), (0, 2), (1, 3), (1, 2), (0, 1)]
+    i, j = r.choice(pairs)
+    via = lambda A, B: along(A, b['C']) + along(b['C'], B) if A[1] == b['S'][1] and B[0] == b['C'][0] else along(A, B)
+    d = via(P[i], P[j]) * b['s']
+    nm = b['names']
+    pl = b['pl']
+    q = b['desc'] + f'\nСколько километров составляет путь {b["hw_by"]} от пункта «{pl[i][0]}» до пункта «{pl[j][0]}»?'
+    e = f'По клеткам: {via(P[i], P[j])} кл. × {b["s"]} км = {d} км.'
+    return pcard(q, num(d), e=e, svg=_map_svg(b)), lambda: d == (sp.Abs(P[i][0] - b['C'][0]) + sp.Abs(P[i][1] - b['C'][1]) + sp.Abs(P[j][0] - b['C'][0]) + sp.Abs(P[j][1] - b['C'][1])) * b['s'] \
+        if (P[i][1] == b['S'][1] and P[j][0] == b['C'][0]) else d == (sp.Abs(P[i][0] - P[j][0]) + sp.Abs(P[i][1] - P[j][1])) * b['s']
+
+
+@proto('og03-map-straight', 'oge', 3, 'План местности: расстояние по прямой',
+       invariant='Расстояние по прямой между пунктами — гипотенуза прямоугольного треугольника с катетами по клеткам.',
+       varies='Сюжет, план (пифагоровы тройки), пара пунктов, сторона клетки.',
+       answer_rule='Катеты в клетках → теорема Пифагора → умножаем на сторону клетки.',
+       fipi=r'по прямой\. Ответ дайте в километрах',
+       mistakes=['складывают катеты', 'забывают масштаб'], svg=True, kim=KP(3, ['7.2', '7.5'], [11], 3))
+def gen_og03_map_straight(r):
+    b = _map_block(r)
+    cand = [(0, 3)] + ([(1, 3)] if b['tri'] else [])
+    i, j = r.choice(cand)
+    P = {0: b['S'], 1: b['V'], 3: b['T']}
+    dx, dy = abs(P[i][0] - P[j][0]), abs(P[i][1] - P[j][1])
+    h = math.isqrt(dx * dx + dy * dy)
+    if h * h != dx * dx + dy * dy:
+        return None
+    d = h * b['s']
+    nm = b['names']
+    q = b['desc'] + f'\nНайдите расстояние по прямой между пунктами «{nm[i]}» и «{nm[j]}». Ответ дайте в километрах.'
+    e = f'Катеты: {dx * b["s"]} и {dy * b["s"]} км; √({(dx * b["s"]) ** 2} + {(dy * b["s"]) ** 2}) = {d} км.'
+    return pcard(q, num(d), e=e, svg=_map_svg(b)), lambda: same(num(d), sp.sqrt((dx * b['s']) ** 2 + (dy * b['s']) ** 2))
+
+
+@proto('og04-map-time', 'oge', 4, 'План местности: время в пути по маршруту',
+       invariant='Маршрут состоит из участков с разной скоростью; время = сумма (длина участка / скорость), перевести в минуты.',
+       varies='Сюжет, скорости по дороге и по бездорожью, выбранный маршрут.',
+       answer_rule='Длины участков из плана (клетки, Пифагор), делим на соответствующие скорости, складываем, ×60.',
+       fipi=r'Сколько минут затратят на дорогу',
+       mistakes=['берут одну скорость для всего пути', 'забывают перевести часы в минуты'], svg=True, kim=KP(4, ['3.3', '7.5'], [8, 11], 5))
+def gen_og04_map_time(r):
+    b = _map_block(r)
+    s, vh, vd = b['s'], b['vh'], b['vd']
+    routes = [(f'всё время {b["hw_by"]}', [((b['a'] + b['b']) * s, vh)])]
+    routes.append((f'напрямик {b["dr_by"]}', [(math.hypot(b['a'], b['b']) * s, vd)]))
+    if b['tri']:
+        routes.append((f'сначала {b["hw_by"]} до пункта «{b["names"][1]}», а затем {b["dr_by"]}',
+                       [(b['p'] * s, vh), (math.hypot(b['a'] - b['p'], b['b']) * s, vd)]))
+    name, legs = r.choice(routes)
+    if any(abs(L - round(L)) > 1e-9 for L, _ in legs):
+        return None
+    legs = [(int(round(L)), v) for L, v in legs]
+    t = sum(F(L, v) for L, v in legs) * 60
+    if t.denominator != 1:
+        return None
+    q = (b['desc'] + f' {b["hw_by"].capitalize()} они движутся со скоростью {vh} км/ч, {b["dr_by"]} — {vd} км/ч.\n'
+         f'Сколько минут займёт путь от старта до финиша, если двигаться {name}?')
+    e = ' + '.join(f'{L}/{v}' for L, v in legs) + f' ч = {t} мин.'
+    return pcard(q, num(t), e=e, svg=_map_svg(b)), lambda: same(num(t), sum(sp.Rational(L, v) for L, v in legs) * 60)
+
+
+@proto('og05-map-fuel', 'oge', 5, 'План местности: расход топлива на бездорожье',
+       invariant='Два маршрута требуют одинакового количества бензина; по известному расходу на шоссе найти расход на грунтовой дороге (л на 100 км).',
+       varies='Сюжет (машина), план, расход на шоссе, пара маршрутов.',
+       answer_rule='Приравниваем: расход₁·длина шоссе = расход₁·(шоссейная часть) + расход₂·(грунтовая часть); выражаем расход₂.',
+       fipi=r'расходует .{0,20}литра бензина на 100 км',
+       mistakes=['делят не на ту длину', 'забывают шоссейный участок второго маршрута'], svg=True, maxdec=2,
+       kim=KP(5, ['3.3', '7.5'], [8, 11], 6))
+def gen_og05_map_fuel(r):
+    b = _map_block(r)
+    if not b['ctx']['car']:
+        return None
+    s = b['s']
+    c1 = F(r.randint(50, 90), 10)
+    L1 = (b['a'] + b['b']) * s
+    use_tri = b['tri'] and r.random() < 0.6
+    if use_tri:
+        hw = b['p'] * s
+        dirt = math.isqrt((b['a'] - b['p']) ** 2 + b['b'] ** 2) * s
+        second = f'до пункта «{b["names"][1]}» {b["hw_by"]}, а дальше {b["dr_by"]}'
+    else:
+        hw = 0
+        dh = math.hypot(b['a'], b['b'])
+        if abs(dh - round(dh)) > 1e-9:
+            return None
+        dirt = int(round(dh)) * s
+        second = f'напрямик {b["dr_by"]}'
+    c2 = c1 * (L1 - hw) / dirt
+    if not nice(c2, 1):
+        return None
+    q = (b['desc'] + f'\n{b["hw_by"].capitalize()} машина расходует {tnum(c1)} л бензина на 100 км. Путь от старта до финиша {b["hw_by"]} и путь {second} '
+         f'требуют одинакового количества бензина. Сколько литров бензина на 100 км машина расходует, когда едет {b["dr_by"]}?')
+    e = (f'{tnum(c1)}·{L1} = {tnum(c1)}·{hw} + x·{dirt}' if hw else f'{tnum(c1)}·{L1} = x·{dirt}') + f' ⇒ x = {tnum(c2)}.'
+    x = sp.Symbol('x')
+    return pcard(q, num(c2), e=e, svg=_map_svg(b)), lambda: same(num(c2), sp.solve(sp.Eq(R(c1) * L1, R(c1) * hw + x * dirt), x)[0])
+
+
+SHOPS = [
+    dict(items=[('молоко (1 л)', 60, 95), ('хлеб (1 батон)', 35, 60), ('сыр (1 кг)', 550, 800), ('яблоки (1 кг)', 90, 160), ('гречка (1 кг)', 70, 120)], unit=['л', 'бат.', 'кг', 'кг', 'кг']),
+    dict(items=[('вода (5 л)', 90, 150), ('печенье (1 уп.)', 60, 110), ('чай (1 уп.)', 110, 200), ('сахар (1 кг)', 60, 95), ('мёд (1 банка)', 300, 480)], unit=['шт.', 'уп.', 'уп.', 'кг', 'банк.']),
+]
+
+
+@proto('og05-map-shop', 'oge', 5, 'Выбор магазина с самой дешёвой покупкой',
+       invariant='Таблица цен в четырёх магазинах; стоимость набора (количества × цены) в каждом, выбрать наименьшую.',
+       varies='Товары, цены, количества в наборе, названия пунктов.',
+       answer_rule='Для каждого магазина считаем сумму количеств × цен, берём минимум.',
+       fipi=r'В каком магазине такой набор продуктов будет стоить дешевле всего',
+       mistakes=['сравнивают только одну позицию', 'забывают умножить на количество'], svg=True, lim=100000,
+       kim=KP(5, ['1.3', '8.1'], [8, 14], 5))
+def gen_og05_map_shop(r):
+    b = _map_block(r)
+    sh = r.choice(SHOPS)
+    items = r.sample(sh['items'], 4)
+    prices = [[r.randint(lo // 5, hi // 5) * 5 for _, lo, hi in items] for _ in range(4)]
+    qty = [r.randint(1, 4) for _ in range(3)] + [0]
+    r.shuffle(qty)
+    tot = [sum(p * k for p, k in zip(pr, qty)) for pr in prices]
+    if sorted(tot)[0] == sorted(tot)[1]:
+        return None
+    ans = min(tot)
+    rows = [['Товар'] + [nm.split(' ')[-1] if False else f'п. {j + 1}' for j in range(4)]]
+    for i, (nm, _, _) in enumerate(items):
+        rows.append([nm] + [str(prices[j][i]) for j in range(4)])
+    buy = ', '.join(f'{k} × {items[i][0].split(" (")[0]}' for i, k in enumerate(qty) if k)
+    q = (f'В каждом из четырёх пунктов маршрута ({", ".join("«" + n + "»" for n in b["names"])} — в таблице п. 1–4 в этом порядке) есть магазин. '
+         f'Цены (в рублях) приведены в таблице. {b["ctx"]["who"]} хотят купить: {buy}. В каком магазине такой набор обойдётся дешевле всего? '
+         'В ответ запишите стоимость набора в этом магазине в рублях.')
+    q = q.replace('Группа туристов хотят', 'Туристы хотят')
+    e = '; '.join(f'п. {j + 1}: {tot[j]}' for j in range(4)) + f'. Дешевле всего — {ans} руб.'
+    svg = svg_table(rows, colw=[150, 60, 60, 60, 60])
+    return pcard(q, num(ans), e=e, svg=svg), lambda: ans == min(sum(sp.Integer(p) * k for p, k in zip(pr, qty)) for pr in prices)
+
+
+# ---------------------------------------------------------------- сюжет «подписка с пакетом минут» (диаграмма по месяцам)
+
+MONTHS = ['январь', 'февраль', 'март', 'апрель', 'май', 'июнь', 'июль', 'август', 'сентябрь', 'октябрь', 'ноябрь', 'декабрь']
+MONTHS_P = ['январе', 'феврале', 'марте', 'апреле', 'мае', 'июне', 'июле', 'августе', 'сентябре', 'октябре', 'ноябре', 'декабре']
+MONTHS_G = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря']
+SUBS = [
+    dict(who='Кирилл пользуется каршерингом по подписке', what='минут аренды', one='минута', fee=(990, 1490, 1990), inc=(200, 300, 400), extra=(8, 9, 10, 12), rng=(80, 600), step=10),
+    dict(who='Марина ездит на прокатных электросамокатах по месячной подписке', what='минут поездок', one='минута', fee=(299, 399, 499), inc=(150, 200, 300), extra=(3, 4, 5), rng=(40, 420), step=10),
+    dict(who='Семья смотрит фильмы в онлайн-кинотеатре по подписке', what='часов просмотра', one='час', fee=(249, 299, 399), inc=(30, 40, 50), extra=(5, 6, 8), rng=(10, 90), step=1),
+]
+
+
+def svg_month_bars(vals, width=380, height=230, limit=None):
+    """Столбчатая диаграмма по месяцам с подписями значений над столбцами; limit — горизонтальная линия пакета."""
+    vmax = max(vals + ([limit] if limit else []))
+    step = next(s_ for s_ in (5, 10, 20, 25, 50, 100, 200) if vmax / s_ <= 8)
+    top = (vmax // step + 1) * step
+    L, B, T = 40, 26, 14
+    ph, pw = height - B - T, width - L - 8
+    sy = lambda v: T + (top - v) / top * ph
+    bw = pw / 12
+    out = ''
+    v = 0
+    while v <= top:
+        out += f'<line x1="{L}" y1="{sy(v):.1f}" x2="{width - 8}" y2="{sy(v):.1f}" stroke="{GRID}"/><text x="{L - 5}" y="{sy(v) + 4:.1f}" text-anchor="end" font-size="10">{v}</text>'
+        v += step
+    for i, val in enumerate(vals):
+        x = L + i * bw
+        out += f'<rect x="{x + bw * 0.15:.1f}" y="{sy(val):.1f}" width="{bw * 0.7:.1f}" height="{sy(0) - sy(val):.1f}" fill="{BLUE}"/>'
+        out += f'<text x="{x + bw / 2:.1f}" y="{sy(val) - 3:.1f}" text-anchor="middle" font-size="9">{val}</text>'
+        out += f'<text x="{x + bw / 2:.1f}" y="{height - 8}" text-anchor="middle" font-size="10">{i + 1}</text>'
+    if limit:
+        out += f'<line x1="{L}" y1="{sy(limit):.1f}" x2="{width - 8}" y2="{sy(limit):.1f}" stroke="{RED}" stroke-width="1.6" stroke-dasharray="6 4"/>'
+    return _svg(width, height, out)
+
+
+def _sub_block(r):
+    c = r.choice(SUBS)
+    fee, inc, ex = r.choice(c['fee']), r.choice(c['inc']), r.choice(c['extra'])
+    lo, hi = c['rng']
+    st = c['step']
+    v = r.randint(lo, (lo + hi) // 2) // st * st
+    vals = []
+    for _ in range(12):
+        vals.append(v)
+        v = max(lo, min(hi, v + r.choice([-1, 1]) * r.randint(1, 6) * st * (1 if st > 1 else 2)))
+    if not any(v > inc for v in vals) or all(v > inc for v in vals):
+        return None
+    intro = (f'{c["who"]}. Подписка стоит {fee} руб. в месяц и включает {inc} {c["what"]}; {"каждая минута" if c["one"] == "минута" else "каждый час"} сверх пакета оплачивается отдельно — {ex} руб. '
+             f'На диаграмме показано, сколько {c["what"]} было израсходовано в каждом месяце прошлого года (номера месяцев под столбцами; пунктир — объём пакета).')
+    return dict(c=c, fee=fee, inc=inc, ex=ex, vals=vals, intro=intro, svg=svg_month_bars(vals, limit=inc))
+
+
+def _sub_cost(b, m):
+    return b['fee'] + max(0, b['vals'][m] - b['inc']) * b['ex']
+
+
+@proto('og01-sub-months', 'oge', 1, 'Диаграмма по месяцам: каким месяцам соответствуют значения',
+       invariant='По столбчатой диаграмме найти номера месяцев, в которые израсходовано указанное количество.',
+       varies='Сюжет (каршеринг, самокаты, онлайн-кинотеатр), значения по месяцам, выбранные значения.',
+       answer_rule='Находим столбец с нужной высотой (подписью) и записываем номер месяца.',
+       fipi=r'Определите, какие месяцы соответствуют указанному',
+       mistakes=['путают номер месяца со значением'], svg=True, card_kind='match',
+       kim=KP(1, ['8.1'], [14], 3, answer='соответствие'))
+def gen_og01_sub_months(r):
+    b = _sub_block(r)
+    if not b:
+        return None
+    uniq = [m for m in range(12) if b['vals'].count(b['vals'][m]) == 1]
+    if len(uniq) < 4:
+        return None
+    ms = r.sample(uniq, 4)
+    left = [{'id': LET[j], 't': f'{b["vals"][m]} {b["c"]["what"]}'} for j, m in enumerate(ms)]
+    right = [{'id': str(i + 1), 't': MONTHS[i]} for i in range(12)]
+    a = {LET[j]: str(m + 1) for j, m in enumerate(ms)}
+    q = b['intro'] + '\nОпределите, в каком месяце было израсходовано каждое из указанных количеств.'
+    e = '; '.join(f'{b["vals"][m]} — {MONTHS[m]}' for m in ms) + '.'
+    return pcard(q, a, e=e, k='match', o={'left': left, 'right': right}, svg=b['svg']), lambda: all(b['vals'][int(a[LET[j]]) - 1] == b['vals'][m] and b['vals'].count(b['vals'][m]) == 1 for j, m in enumerate(ms))
+
+
+@proto('og02-sub-cost', 'oge', 2, 'Подписка с пакетом: плата за месяц',
+       invariant='Плата = абонентская плата + (расход − пакет) × цена единицы, если расход больше пакета.',
+       varies='Сюжет, месяц, условия подписки.',
+       answer_rule='Смотрим расход в месяце по диаграмме, сравниваем с пакетом и считаем доплату.',
+       fipi=r'Сколько рублей потратил абонент на услуги связи',
+       mistakes=['берут весь расход, а не превышение', 'забывают абонентскую плату'], svg=True, kim=KP(2, ['8.1', '1.2'], [8, 14], 3))
+def gen_og02_sub_cost(r):
+    b = _sub_block(r)
+    if not b:
+        return None
+    over = [m for m in range(12) if b['vals'][m] > b['inc']]
+    m = r.choice(over) if r.random() < 0.8 else r.randrange(12)
+    ans = _sub_cost(b, m)
+    q = b['intro'] + f'\nСколько рублей было заплачено за подписку и доплаты в {MONTHS_P[m]}?'
+    e = f'Расход {b["vals"][m]}, пакет {b["inc"]}: ' + (f'{b["fee"]} + ({b["vals"][m]} − {b["inc"]})·{b["ex"]} = {ans} руб.' if b['vals'][m] > b['inc'] else f'доплаты нет, {ans} руб.')
+    return pcard(q, num(ans), e=e, svg=b['svg']), lambda: ans == b['fee'] + sp.Max(0, b['vals'][m] - b['inc']) * b['ex']
+
+
+@proto('og03-sub-count', 'oge', 3, 'Диаграмма: сколько месяцев выполнено условие',
+       invariant='Подсчитать месяцы, в которые расход превысил пакет (не превысил, оказался в заданных границах).',
+       varies='Сюжет, данные, условие.',
+       answer_rule='Сравниваем каждый столбец с линией пакета (границей) и считаем подходящие.',
+       fipi=r'Сколько месяцев в .{0,30}году абонент',
+       mistakes=['считают «равно» как превышение'], svg=True, kim=KP(3, ['8.1'], [14], 3))
+def gen_og03_sub_count(r):
+    b = _sub_block(r)
+    if not b:
+        return None
+    kind = r.randrange(3)
+    if kind == 0:
+        ans = sum(v > b['inc'] for v in b['vals'])
+        ask = f'В течение скольких месяцев израсходованный объём превысил пакет?'
+        f = lambda v: v > b['inc']
+    elif kind == 1:
+        ans = sum(v <= b['inc'] for v in b['vals'])
+        ask = f'Сколько месяцев в году обошлись без доплат (объём не превысил пакет)?'
+        f = lambda v: v <= b['inc']
+    else:
+        lo_ = r.choice(sorted(b['vals'])[2:6])
+        hi_ = r.choice(sorted(b['vals'])[6:10])
+        ans = sum(lo_ <= v <= hi_ for v in b['vals'])
+        ask = f'Сколько было месяцев, в которых израсходовано не меньше {lo_} и не больше {hi_} {b["c"]["what"].split(" ")[0]}?'
+        f = lambda v: lo_ <= v <= hi_
+    q = b['intro'] + '\n' + ask
+    return pcard(q, num(ans), e=f'Подходящих месяцев: {ans}.', svg=b['svg']), lambda: ans == len([v for v in b['vals'] if f(v)])
+
+
+@proto('og04-sub-percent', 'oge', 4, 'Диаграмма: на сколько процентов изменился расход',
+       invariant='Процент изменения расхода между двумя месяцами (или изменения цены подписки).',
+       varies='Сюжет, пара месяцев, рост или снижение.',
+       answer_rule='(новое − старое)/старое · 100%.',
+       fipi=r'На сколько процентов (увеличился|уменьшился|выросла|повысилась)',
+       mistakes=['делят на новое значение'], svg=True, maxdec=1, kim=KP(4, ['1.2', '8.1'], [8, 14], 4))
+def gen_og04_sub_percent(r):
+    b = _sub_block(r)
+    if not b:
+        return None
+    if r.random() < 0.7:
+        m = r.randrange(11)
+        v0 = b['vals'][m]
+        ok = [p_ for p_ in (5, 10, 15, 20, 25, 30, 40, 50, 60, 75) if (v0 * p_) % (100 * b['c']['step']) == 0]
+        if not ok:
+            return None
+        p_ = r.choice(ok)
+        v1 = v0 + r.choice([1, -1]) * v0 * p_ // 100
+        if v1 <= 0:
+            return None
+        b['vals'][m + 1] = v1
+        b['svg'] = svg_month_bars(b['vals'], limit=b['inc'])
+        pct = F(abs(v1 - v0) * 100, v0)
+        q = b['intro'] + f'\nНа сколько процентов {"увеличился" if v1 > v0 else "уменьшился"} расход в {MONTHS_P[m + 1]} по сравнению с {"январём" if m == 0 else MONTHS_P[m].replace("е", "ем", 0)}?'
+        q = q.replace(f'по сравнению с {MONTHS_P[m]}', f'по сравнению с {["январём", "февралём", "мартом", "апрелем", "маем", "июнем", "июлем", "августом", "сентябрём", "октябрём", "ноябрём"][m]}')
+        e = f'{v0} → {v1}: |{v1} − {v0}| : {v0} · 100% = {tnum(pct)}%.'
+        chk = lambda: same(num(pct), sp.Abs(sp.Rational(v1, v0) - 1) * 100)
+    else:
+        new = b['fee'] + r.choice([10, 20, 30, 40, 50, 60, 100, 150]) * (1 if b['fee'] > 300 else 1)
+        pct = F((new - b['fee']) * 100, b['fee'])
+        if not nice(pct, 1):
+            return None
+        q = b['intro'] + f'\nВ новом году подписка подорожала и стала стоить {new} руб. в месяц. На сколько процентов выросла её цена?'
+        e = f'({new} − {b["fee"]}) : {b["fee"]} · 100% = {tnum(pct)}%.'
+        chk = lambda: same(num(pct), (sp.Rational(new, b['fee']) - 1) * 100)
+    return pcard(q, num(pct), e=e, svg=b['svg']), chk
+
+
+@proto('og05-sub-switch', 'oge', 5, 'Подписка: выгоднее ли другой тариф за год',
+       invariant='По расходу за 12 месяцев посчитать годовую плату по текущей и по новой подписке; найти экономию (или годовую плату по выгодному тарифу).',
+       varies='Сюжет, условия новой подписки, данные диаграммы.',
+       answer_rule='Для каждого месяца: плата + доплата за превышение; суммируем за год для обоих тарифов и сравниваем.',
+       fipi=r'Перейдёт ли абонент на новый тариф',
+       mistakes=['считают только абонентскую плату', 'забывают месяцы без превышения'], svg=True, lim=10 ** 6,
+       kim=KP(5, ['3.3', '8.1', '1.2'], [8, 14], 7))
+def gen_og05_sub_switch(r):
+    b = _sub_block(r)
+    if not b:
+        return None
+    fee2 = b['fee'] + r.choice([100, 200, 300, 500]) if b['fee'] > 400 else b['fee'] + r.choice([50, 100, 150])
+    inc2 = b['inc'] + r.choice([50, 100, 150, 200]) * (1 if b['c']['step'] == 10 else 0) + (r.choice([10, 20, 30]) if b['c']['step'] == 1 else 0)
+    ex2 = b['ex'] + r.choice([-1, 0, 1, 2])
+    y1 = sum(_sub_cost(b, m) for m in range(12))
+    y2 = sum(fee2 + max(0, v - inc2) * ex2 for v in b['vals'])
+    if y1 == y2:
+        return None
+    ask_diff = r.random() < 0.5
+    ans = abs(y1 - y2) if ask_diff else min(y1, y2)
+    q = (b['intro'] + f'\nВ конце года предложили другую подписку: {fee2} руб. в месяц, в неё входит {inc2} {b["c"]["what"]}, {"каждая минута" if b["c"]["one"] == "минута" else "каждый час"} сверх пакета — {ex2} руб. '
+         + ('На сколько рублей за прошлый год отличались бы расходы по новой подписке от фактических?' if ask_diff else
+            'Посчитайте, сколько стоил бы прошлый год по каждой подписке, и запишите в ответ наименьшую из этих сумм (в рублях).'))
+    e = f'Фактически за год: {y1} руб.; по новой подписке: {y2} руб.'
+    return pcard(q, num(ans), e=e, svg=b['svg']), lambda: ans == (abs(y1 - y2) if ask_diff else min(y1, y2)) and y1 == sum(b['fee'] + sp.Max(0, v - b['inc']) * b['ex'] for v in b['vals'])
+
+
+# ---------------------------------------------------------------- сюжет «выбор печи (камина) по объёму помещения»
+
+STOVES = [
+    dict(room='гостиной загородного дома', thing='камин', things='камины', obj='камина', inst_w='устройство дымохода', inst_e='подвод отдельной электролинии'),
+    dict(room='столярной мастерской', thing='отопительную печь', things='печи', obj='печи', inst_w='монтаж дымохода', inst_e='прокладка силового кабеля'),
+    dict(room='веранды на даче', thing='печь-камин', things='печи-камины', obj='печи-камина', inst_w='дымоход с защитным экраном', inst_e='установка силовой розетки'),
+    dict(room='гаражной мастерской', thing='обогреватель', things='обогреватели', obj='обогревателя', inst_w='монтаж дымохода', inst_e='прокладка электропроводки'),
+]
+
+
+def _stove_block(r):
+    c = r.choice(STOVES)
+    L = F(r.randint(20, 60), 10)
+    Wd = F(r.randint(20, 50), 10)
+    Hh = F(r.choice([22, 24, 25, 26, 27, 28, 30]), 10)
+    V = L * Wd * Hh
+    if not nice(V, 3) or V > 80:
+        return None
+    Vr = F(math.ceil(V))
+    rows = [['№', 'Тип', 'Объём помещения, м³', 'Масса, кг', 'Цена, руб.']]
+    models = []
+    masses = r.sample(range(30, 90), 4)
+    lo_fit = max(4, int(V) - r.randint(2, 6))
+    bands = [(lo_fit, int(V) + r.randint(2, 10)), (lo_fit + r.randint(0, 3), int(V) + r.randint(1, 8))]
+    types = ['дровяной', 'электрический'] if r.random() < 0.5 else ['электрический', 'дровяной']
+    for k in range(4):
+        tp = types[k % 2]
+        if k < 2:
+            lo, hi = bands[k]
+        else:
+            lo, hi = (int(V) + r.randint(2, 8), int(V) + r.randint(12, 25)) if r.random() < 0.5 else (max(2, int(V) - r.randint(20, 30)), int(V) - r.randint(2, 6))
+            if hi <= lo:
+                return None
+        price = r.randint(150, 600) * 100
+        models.append(dict(n=k + 1, tp=tp, lo=lo, hi=hi, m=masses[k], price=price))
+    r.shuffle(models)
+    for i, m in enumerate(models):
+        m['n'] = i + 1
+        rows.append([str(i + 1), m['tp'], f'{m["lo"]}–{m["hi"]}', str(m['m']), f'{m["price"]:,}'.replace(',', ' ')])
+    fit = [m for m in models if m['lo'] <= V <= m['hi']]
+    if sorted(m['tp'] for m in fit) != ['дровяной', 'электрический']:
+        return None
+    iw, ie = r.randint(10, 40) * 500, r.randint(4, 20) * 500
+    intro = (f'Для {c["room"]} выбирают {c["thing"]}. Размеры помещения: длина {tnum(L)} м, ширина {tnum(Wd)} м, высота {tnum(Hh)} м. '
+             f'Характеристики подходящих моделей приведены в таблице; модель годится, если объём помещения попадает в указанный диапазон. '
+             f'Кроме цены самой модели, нужно оплатить установку: для дровяной — {c["inst_w"]} ({iw} руб.), для электрической — {c["inst_e"]} ({ie} руб.).')
+    return dict(c=c, L=L, W=Wd, H=Hh, V=V, models=models, fit=fit, iw=iw, ie=ie, intro=intro, svg=svg_table(rows, colw=[30, 110, 150, 80, 90]))
+
+
+@proto('og01-stove-match', 'oge', 1, 'Выбор печи: соответствие характеристик и номеров моделей',
+       invariant='По таблице моделей сопоставить указанные массы (или цены) номерам моделей.',
+       varies='Сюжет (камин, печь, обогреватель), таблица, спрашиваемая характеристика.',
+       answer_rule='Находим в таблице строку с нужным значением и записываем номер модели.',
+       fipi=r'Установите соответствие между (массами|стоимостями) и номерами печей',
+       mistakes=['читают соседнюю строку'], svg=True, card_kind='match', kim=KP(1, ['8.1'], [14], 2, answer='соответствие'))
+def gen_og01_stove_match(r):
+    b = _stove_block(r)
+    if not b:
+        return None
+    key = r.choice(['m', 'price'])
+    ms = r.sample(b['models'], 3)
+    lab = (lambda m: f'{m["m"]} кг') if key == 'm' else (lambda m: f'{m["price"]:,} руб.'.replace(',', ' '))
+    left = [{'id': LET[j], 't': lab(m)} for j, m in enumerate(ms)]
+    right = [{'id': str(i + 1), 't': f'модель № {i + 1}'} for i in range(4)]
+    a = {LET[j]: str(m['n']) for j, m in enumerate(ms)}
+    q = b['intro'] + f'\nУстановите соответствие между {"массами" if key == "m" else "ценами"} и номерами моделей.'
+    e = '; '.join(f'{lab(m)} — № {m["n"]}' for m in ms) + '.'
+    return pcard(q, a, e=e, k='match', o={'left': left, 'right': right}, svg=b['svg']), lambda: all(
+        [mm for mm in b['models'] if mm[key] == m[key]][0]['n'] == int(a[LET[j]]) for j, m in enumerate(ms))
+
+
+@proto('og02-stove-volume', 'oge', 2, 'Выбор печи: объём (площадь) помещения',
+       invariant='Объём помещения — произведение длины, ширины и высоты (площадь пола — длины на ширину).',
+       varies='Сюжет, размеры (десятые доли метра), спрашиваемая величина.',
+       answer_rule='V = a·b·h, S = a·b.',
+       fipi=r'Найдите (объём|площадь пола) парного отделения',
+       mistakes=['забывают высоту', 'ошибаются в умножении десятичных'], svg=True, maxdec=3, kim=KP(2, ['7.5', '1.2'], [11], 3))
+def gen_og02_stove_volume(r):
+    b = _stove_block(r)
+    if not b:
+        return None
+    if r.random() < 0.6:
+        ans = b['V']
+        q = b['intro'] + '\nНайдите объём помещения. Ответ дайте в кубических метрах.'
+        e = f'{tnum(b["L"])}·{tnum(b["W"])}·{tnum(b["H"])} = {tnum(ans)} м³.'
+        chk = lambda: same(num(ans), R(b['L']) * R(b['W']) * R(b['H']))
+    else:
+        ans = b['L'] * b['W']
+        q = b['intro'] + '\nНайдите площадь пола помещения. Ответ дайте в квадратных метрах.'
+        e = f'{tnum(b["L"])}·{tnum(b["W"])} = {tnum(ans)} м².'
+        chk = lambda: same(num(ans), R(b['L']) * R(b['W']))
+    return pcard(q, num(ans), e=e, svg=b['svg']), chk
+
+
+@proto('og03-stove-cheaper', 'oge', 3, 'Выбор печи: на сколько дешевле подходящая модель с учётом установки',
+       invariant='Отобрать модели, подходящие по объёму помещения; сравнить полную стоимость (цена + установка) дровяной и электрической.',
+       varies='Сюжет, таблица моделей, стоимость установки.',
+       answer_rule='Считаем объём, находим подходящие модели, к цене прибавляем установку, находим разность.',
+       fipi=r'обойдётся дешевле .{0,40}с учётом установки',
+       mistakes=['не проверяют диапазон объёма', 'забывают стоимость установки'], svg=True, lim=10 ** 6,
+       kim=KP(3, ['1.2', '3.3', '8.1'], [8, 14], 5))
+def gen_og03_stove_cheaper(r):
+    b = _stove_block(r)
+    if not b:
+        return None
+    w = [m for m in b['fit'] if m['tp'] == 'дровяной'][0]
+    el = [m for m in b['fit'] if m['tp'] == 'электрический'][0]
+    tw, te = w['price'] + b['iw'], el['price'] + b['ie']
+    if tw == te:
+        return None
+    ans = abs(tw - te)
+    cheap = 'дровяная' if tw < te else 'электрическая'
+    q = b['intro'] + f'\nНа сколько рублей подходящая по объёму {cheap} модель вместе с установкой обойдётся дешевле подходящей {"электрической" if cheap == "дровяная" else "дровяной"}?'
+    e = f'V = {tnum(b["V"])} м³; дровяная № {w["n"]}: {w["price"]} + {b["iw"]} = {tw}; электрическая № {el["n"]}: {el["price"]} + {b["ie"]} = {te}; разница {ans} руб.'
+    def chk():  # заново отбираем модели по объёму (sympy) и сравниваем полные стоимости
+        V = R(b['L']) * R(b['W']) * R(b['H'])
+        tot = {m['tp']: m['price'] + (b['iw'] if m['tp'] == 'дровяной' else b['ie']) for m in b['models'] if m['lo'] <= V <= m['hi']}
+        return ans == abs(tot['дровяной'] - tot['электрический'])
+    return pcard(q, num(ans), e=e, svg=b['svg']), chk
+
+
+@proto('og04-stove-discount', 'oge', 4, 'Выбор печи: цена со скидкой',
+       invariant='На модель (заданную массой или номером) сделали скидку p%; найти новую цену.',
+       varies='Сюжет, модель, процент скидки.',
+       answer_rule='Новая цена = цена · (100 − p)/100.',
+       fipi=r'сделали скидку \d+%',
+       mistakes=['вычитают p рублей вместо процентов', 'находят величину скидки, а не новую цену'], svg=True, lim=10 ** 6,
+       kim=KP(4, ['1.2'], [8], 3))
+def gen_og04_stove_discount(r):
+    b = _stove_block(r)
+    if not b:
+        return None
+    m = r.choice(b['models'])
+    p_ = r.choice([5, 10, 12, 15, 20, 25, 30])
+    ans = F(m['price'] * (100 - p_), 100)
+    if not nice(ans, 2, 10 ** 6):
+        return None
+    q = b['intro'] + f'\nНа модель массой {m["m"]} кг сделали скидку {p_}%. Сколько рублей стала стоить эта модель?'
+    e = f'Это модель № {m["n"]}: {m["price"]}·{100 - p_}/100 = {tnum(ans)} руб.'
+    return pcard(q, num(ans), e=e, svg=b['svg']), lambda: same(num(ans), [mm for mm in b['models'] if mm['m'] == m['m']][0]['price'] * sp.Rational(100 - p_, 100))
+
+
+ARCH = [(15, 20), (18, 24), (21, 28), (24, 32), (30, 40), (20, 21), (12, 35), (27, 36), (16, 30), (24, 45)]
+
+
+def svg_arch(half, h, R_):
+    """Портал: прямоугольник шириной 2·half и высотой h, сверху дуга окружности радиуса R_ с центром в середине низа."""
+    k = 150 / R_
+    cx, cy = 180, 30 + R_ * k
+    xl, xr = cx - half * k, cx + half * k
+    yt = cy - h * k
+    out = (f'<path d="M{xl:.1f} {cy:.1f} L{xl:.1f} {yt:.1f} A{R_ * k:.1f} {R_ * k:.1f} 0 0 1 {xr:.1f} {yt:.1f} L{xr:.1f} {cy:.1f} Z" '
+           f'fill="{BLUE}" fill-opacity="0.12" stroke="{INK}" stroke-width="2"/>')
+    out += f'<line x1="{cx}" y1="{cy}" x2="{xr:.1f}" y2="{yt:.1f}" stroke="{RED}" stroke-width="1.6" stroke-dasharray="5 4"/>'
+    out += f'<circle cx="{cx}" cy="{cy}" r="3" fill="{RED}"/><text x="{cx + (xr - cx) / 2 + 6:.1f}" y="{(cy + yt) / 2:.1f}" font-size="14" font-style="italic" fill="{RED}">R</text>'
+    out += f'<text x="{cx}" y="{cy + 18:.1f}" text-anchor="middle" font-size="13">{2 * half}</text>'
+    out += f'<text x="{xl - 8:.1f}" y="{(cy + yt) / 2 + 4:.1f}" text-anchor="end" font-size="13">{h}</text>'
+    return _svg(360, cy + 30, out)
+
+
+@proto('og05-stove-arch', 'oge', 5, 'Арка над проёмом: радиус дуги',
+       invariant='Верх проёма — дуга окружности с центром в середине нижнего края; радиус — гипотенуза треугольника с катетами «половина ширины» и «высота боковой стенки».',
+       varies='Сюжет (портал камина, дверца печи, экран обогревателя), размеры (пифагоровы тройки).',
+       answer_rule='R = √((ширина/2)² + h²).',
+       fipi=r'радиус закругления арки',
+       mistakes=['берут всю ширину вместо половины', 'складывают катеты'], svg=True, kim=KP(5, ['7.2', '7.4', '7.5'], [11], 5))
+def gen_og05_stove_arch(r):
+    c = r.choice(STOVES)
+    a_, h = r.choice(ARCH)
+    if r.random() < 0.5:
+        a_, h = h, a_
+    R_ = math.isqrt(a_ * a_ + h * h)
+    q = (f'Лицевую часть {c["obj"]} обрамляет металлический портал: снизу и по бокам он прямой, а сверху — дуга окружности, центр которой находится '
+         f'в середине нижнего края портала (см. рисунок, размеры в сантиметрах). Ширина портала {2 * a_} см, высота его боковых сторон {h} см. '
+         'Найдите радиус дуги R в сантиметрах.')
+    e = f'R = √({a_}² + {h}²) = {R_} см.'
+    return pcard(q, num(R_), e=e, svg=svg_arch(a_, h, R_)), lambda: same(num(R_), sp.sqrt(sp.Integer(2 * a_) ** 2 / 4 + h ** 2))

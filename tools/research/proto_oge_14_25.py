@@ -3734,4 +3734,955 @@ def gen_og21_meeting_stop(r):
         lambda: (lambda Tv: same(num(ans), v2 * Tv if ask2 else v1 * (Tv - R(t))))(sp.solve(sp.Eq(v1 * (Tt - R(t)) + v2 * Tt, S), Tt)[0])
 
 
+
+# ================================================================ №22 графики с параметром (часть 2)
+#
+# Функция задаётся кусками: (многочлен в виде списка коэффициентов [a, b, c] или гипербола ('hyp', k, h, c) — y = k/(x − h) + c,
+# промежуток (lo, hi, lo_closed, hi_closed)) и списком «выколотых» точек. Генератор находит ответ быстрыми
+# формулами (вершины, концы кусков, асимптоты), проверка — заново через sympy: решает f(x) = m на каждом куске
+# и перебирает m в особых точках и между ними.
+
+K22 = ('«Постройте график функции …» и вопрос о числе общих точек с прямой y = m (y = kx) своими словами; '
+       'для автопроверки — одно число (сумма найденных значений, наибольшее значение и т. п.)')
+INF = float('inf')
+
+
+def _pv(c, x):
+    v = 0
+    for a in c:
+        v = v * x + a
+    return v
+
+
+def _piece_val(pc, x):
+    if pc[0] == 'hyp':
+        _, k, h, c = pc
+        return k / (x - h) + c
+    return _pv(pc, x)
+
+
+def _in(dom, x, eps=1e-9):
+    lo, hi, lc, hc = dom
+    if x < lo - eps or x > hi + eps:
+        return False
+    if abs(x - lo) <= eps:
+        return lc
+    if abs(x - hi) <= eps:
+        return hc
+    return True
+
+
+def _solve_piece(pc, m):
+    """Корни pc(x) = m (float)."""
+    if pc[0] == 'hyp':
+        _, k, h, c = pc
+        if abs(m - c) < 1e-12:
+            return []
+        return [h + k / (m - c)]
+    c = list(pc)
+    while len(c) < 3:
+        c = [0] + c
+    a, b, cc = c[0], c[1], c[2] - m
+    if abs(a) < 1e-12:
+        return [] if abs(b) < 1e-12 else [-cc / b]
+    D = b * b - 4 * a * cc
+    if D < -1e-9:
+        return []
+    D = max(D, 0.0)
+    return [(-b + math.sqrt(D)) / (2 * a), (-b - math.sqrt(D)) / (2 * a)]
+
+
+def _count_m(pieces, holes, m):
+    xs = []
+    for pc, dom in pieces:
+        for x in _solve_piece(pc, m):
+            if _in(dom, x) and all(abs(x - h) > 1e-7 for h in holes) and all(abs(x - y) > 1e-7 for y in xs):
+                xs.append(x)
+    return len(xs)
+
+
+def _crit_m(pieces, holes):
+    cs = set()
+    for pc, (lo, hi, lc, hc) in pieces:
+        for x in (lo, hi):
+            if abs(x) != INF and not (pc[0] == 'hyp' and x == pc[2]):
+                cs.add(round(_piece_val(pc, x), 9))
+        if pc[0] == 'hyp':
+            cs.add(round(pc[3], 9))
+        else:
+            c = list(pc)
+            while len(c) < 3:
+                c = [0] + c
+            if c[0]:
+                xv = -c[1] / (2 * c[0])
+                if lo < xv < hi:
+                    cs.add(round(_pv(c, xv), 9))
+    for h in holes:
+        for pc, dom in pieces:
+            if _in(dom, h) or (dom[0] <= h <= dom[1]):
+                try:
+                    cs.add(round(_piece_val(pc, h), 9))
+                except ZeroDivisionError:
+                    pass
+    return sorted(cs)
+
+
+def _mset(pieces, holes, n):
+    """Множество m с ровно n общими точками: список ('pt', m) и ('iv', a, b) (открытые промежутки, a/b могут быть ±inf)."""
+    cs = _crit_m(pieces, holes)
+    probes = [cs[0] - 1] + [(cs[i] + cs[i + 1]) / 2 for i in range(len(cs) - 1)] + [cs[-1] + 1]
+    out = []
+    bounds = [-INF] + cs + [INF]
+    for i, pm in enumerate(probes):
+        if _count_m(pieces, holes, pm) == n:
+            out.append(('iv', bounds[i], bounds[i + 1]))
+    for c in cs:
+        if _count_m(pieces, holes, c) == n:
+            out.append(('pt', c))
+    return out
+
+
+def _mset_answer(r, ms):
+    """По множеству выбрать вопрос с однозначным числовым ответом: (текст, ответ) или None."""
+    pts = [x[1] for x in ms if x[0] == 'pt']
+    ivs = [x for x in ms if x[0] == 'iv']
+    if not ms:
+        return None
+    if not ivs:
+        return ('сумму всех таких значений m', sum(pts)) if len(pts) > 1 else ('это значение m', pts[0])
+    lo = min([a for _, a, b in ivs] + pts)
+    hi = max([b for _, a, b in ivs] + pts)
+
+    def member(v):
+        return any(abs(v - p_) < 1e-9 for p_ in pts) or any(a < v < b for _, a, b in ivs)
+    if lo > -INF and hi < INF:
+        cnt = sum(1 for v in range(math.floor(lo) - 1, math.ceil(hi) + 2) if member(v))
+        return ('количество целых значений m', cnt) if cnt else None
+    if hi < INF:
+        v = math.ceil(hi) + 1
+        while not member(v):
+            v -= 1
+            if v < -1000:
+                return None
+        return ('наибольшее целое значение m', v)
+    if lo > -INF:
+        v = math.floor(lo) - 1
+        while not member(v):
+            v += 1
+            if v > 1000:
+                return None
+        return ('наименьшее целое значение m', v)
+    return None
+
+
+def _sym_piece(pc):
+    if pc[0] == 'hyp':
+        _, k, h, c = pc
+        return R(F(k)) / (X - R(F(h))) + R(F(c))
+    return sum(R(F(a)) * X ** (len(pc) - 1 - i) for i, a in enumerate(pc))
+
+
+def _sym_count(pieces, holes, m):
+    xs = set()
+    for pc, (lo, hi, lc, hc) in pieces:
+        ex = _sym_piece(pc)
+        for x in sp.solve(sp.Eq(ex, m), X):
+            if not x.is_real:
+                continue
+            if (lo != -INF and (x < R(F(lo)) or (x == R(F(lo)) and not lc))) or (hi != INF and (x > R(F(hi)) or (x == R(F(hi)) and not hc))):
+                continue
+            if any(x == R(F(h)) for h in holes):
+                continue
+            xs.add(sp.nsimplify(x))
+    return len(xs)
+
+
+def _sym_mset(pieces, holes, n):
+    """Та же задача через sympy: особые значения — пределы на концах, экстремумы (производная), асимптоты, выколотые точки."""
+    cs = set()
+    for pc, (lo, hi, lc, hc) in pieces:
+        ex = _sym_piece(pc)
+        for x in (lo, hi):
+            if abs(x) == INF:
+                L = sp.limit(ex, X, sp.oo if x > 0 else -sp.oo)
+                if L.is_finite:
+                    cs.add(sp.nsimplify(L))
+            else:
+                cs.add(sp.nsimplify(ex.subs(X, R(F(x)))) if ex.subs(X, R(F(x))).is_finite else None)
+        for x in sp.solve(sp.diff(ex, X), X):
+            if x.is_real and (lo == -INF or x > R(F(lo))) and (hi == INF or x < R(F(hi))):
+                cs.add(sp.nsimplify(ex.subs(X, x)))
+    for h in holes:
+        for pc, (lo, hi, lc, hc) in pieces:
+            if lo <= h <= hi:
+                v = _sym_piece(pc).subs(X, R(F(h)))
+                if v.is_finite:
+                    cs.add(sp.nsimplify(v))
+    cs = sorted(x for x in cs if x is not None)
+    pts = [c for c in cs if _sym_count(pieces, holes, c) == n]
+    probes = [cs[0] - 1] + [(cs[i] + cs[i + 1]) / 2 for i in range(len(cs) - 1)] + [cs[-1] + 1]
+    bounds = [-sp.oo] + cs + [sp.oo]
+    ivs = [(bounds[i], bounds[i + 1]) for i, pm in enumerate(probes) if _sym_count(pieces, holes, pm) == n]
+    return pts, ivs
+
+
+def _sym_answer(kind, pts, ivs):
+    def member(v):
+        return v in pts or any((a == -sp.oo or a < v) and (b == sp.oo or v < b) for a, b in ivs)
+    if kind.startswith('сумм'):
+        return sum(pts) if not ivs else None
+    if kind.startswith('это'):
+        return pts[0] if len(pts) == 1 and not ivs else None
+    if kind.startswith('количество'):
+        return sum(1 for v in range(-300, 301) if member(v))
+    if kind.startswith('наибольшее'):
+        return max(v for v in range(-300, 301) if member(v))
+    return min(v for v in range(-300, 301) if member(v))
+
+
+def _fmt_piece(pc):
+    if pc[0] == 'hyp':
+        _, k, h, c = pc
+        den = 'x' if h == 0 else (f'(x − {tnum(h)})' if h > 0 else f'(x + {tnum(-h)})')
+        base = f'{tnum(k)}/{den}' if k > 0 else f'−{tnum(-k)}/{den}'
+        return base if c == 0 else f'{base} {"+" if c > 0 else "−"} {tnum(abs(c))}'
+    return poly(list(pc))
+
+
+def _fmt_dom(dom):
+    lo, hi, lc, hc = dom
+    if lo == -INF:
+        return f'x {"≤" if hc else "<"} {tnum(hi)}'
+    if hi == INF:
+        return f'x {"≥" if lc else ">"} {tnum(lo)}'
+    return f'{tnum(lo)} {"≤" if lc else "<"} x {"≤" if hc else "<"} {tnum(hi)}'
+
+
+NQ = {0: ('не имеет с графиком ни одной общей точки', 'не пересекается с графиком'), 1: ('имеет с графиком ровно одну общую точку', 'пересекает график ровно в одной точке'),
+      2: ('имеет с графиком ровно две общие точки', 'пересекает график ровно в двух точках'), 3: ('имеет с графиком ровно три общие точки', 'пересекает график ровно в трёх точках')}
+
+
+def _q22(r, ftxt_, n, ask, line='y = m'):
+    intro = pick(r, f'Дана функция {ftxt_}. Постройте её график.', f'Изобразите график функции {ftxt_}.', f'Начертите график функции {ftxt_}.')
+    cond = pick(r, f'Найдите все значения параметра m, для которых горизонтальная прямая {line} {NQ[n][1]}.',
+                f'Выясните, для каких m горизонтальная прямая {line} {NQ[n][1]}.')
+    return f'{intro} {cond} В ответ запишите {ask}.'
+
+
+def _p22_card(r, pieces, holes, ftxt_, ns=(1, 2, 3, 0)):
+    for n in r.sample(list(ns), len(ns)):
+        ms = _mset(pieces, holes, n)
+        res = _mset_answer(r, ms)
+        if res is None or not nice(F(res[1]).limit_denominator(1000), 2) or abs(F(res[1]).limit_denominator(1000) - res[1]) > 1e-9:
+            continue
+        ask, val = res
+        val = F(val).limit_denominator(1000)
+        q = _q22(r, ftxt_, n, ask)
+
+        def chk(n=n, ask=ask, val=val):
+            pts, ivs = _sym_mset(pieces, holes, n)
+            a = _sym_answer(ask, pts, ivs)
+            return a is not None and same(num(val), a)
+        return pcard(q, num(val), e=f'Особые значения m: {", ".join(tnum(F(c).limit_denominator(1000)) if finite(F(c).limit_denominator(1000)) else "…" for c in _crit_m(pieces, holes))}.'), chk
+    return None
+
+
+@proto('og22-piecewise-lin', 'oge', 22, 'Кусочно-линейная функция и прямая y = m',
+       invariant='График — ломаная из трёх звеньев; число общих точек с горизонтальной прямой меняется только в значениях m, равных ординатам изломов.',
+       varies='Угловые коэффициенты и точки излома, число общих точек (две, одна, три), вид вопроса для проверки.',
+       answer_rule='Сравнить m с ординатами изломов и направлением крайних звеньев.',
+       fipi=r'постройте график функции y = \{ [−\d, x]+.{0,40}при при при',
+       mistakes=['забывают, что крайние звенья уходят в бесконечность', 'неверно включают или исключают значения в изломах'],
+       kim=kim(22, K22))
+def gen_og22_piecewise_lin(r):
+    x1 = r.randint(-4, 3)
+    x2 = x1 + r.randint(1, 2)
+    y1, y2 = F(r.randint(-8, 8), 2), F(r.randint(-8, 8), 2)
+    if y1 == y2:
+        return None
+    k1 = F(r.choice([1, 2, 3, -1, -2, 1, 2]) * r.choice([1, 1, 2]), r.choice([1, 2]))
+    k3 = F(r.choice([1, 2, 3, -1, -2, 1]) * r.choice([1, 1, 2]), r.choice([1, 2]))
+    k2 = (y2 - y1) / (x2 - x1)
+    if k2 == 0:
+        return None
+    p1 = [k1, y1 - k1 * x1]
+    p2 = [k2, y1 - k2 * x1]
+    p3 = [k3, y2 - k3 * x2]
+    if not all(finite(c) and decimals(c) <= 1 for c in p1 + p2 + p3):
+        return None
+    pieces = [([float(c) for c in p1], (-INF, x1, False, False)), ([float(c) for c in p2], (x1, x2, True, True)), ([float(c) for c in p3], (x2, INF, False, False))]
+    ftxt_ = f'y = {{ {poly(p1)} при x < {tnum(x1)}; {poly(p2)} при {tnum(x1)} ≤ x ≤ {tnum(x2)}; {poly(p3)} при x > {tnum(x2)} }}'
+    pieces_s = [(p1, pieces[0][1]), (p2, pieces[1][1]), (p3, pieces[2][1])]
+    return _p22_card(r, [(list(pc), d) for pc, d in pieces_s], [], ftxt_, ns=(2, 1, 3))
+
+
+@proto('og22-piecewise-quad', 'oge', 22, 'Кусочная функция «парабола и прямая (гипербола)» и прямая y = m',
+       invariant='Строим параболу на своём промежутке и вторую часть (прямую или гиперболу) на своём; число точек пересечения с y = m меняется в вершине параболы, на стыке кусков и у асимптоты.',
+       varies='Парабола (вершина, направление ветвей), точка стыка, вторая часть (прямая или гипербола), число общих точек.',
+       answer_rule='Особые m: ордината вершины, значения кусков в точке стыка, асимптота гиперболы.',
+       fipi=r'постройте график функции y = \{ −? ?x 2 .{0,40}при (при )?x [≥<]',
+       mistakes=['берут всю параболу, а не её часть на промежутке', 'не проверяют, входит ли точка стыка в график'],
+       kim=kim(22, K22))
+def gen_og22_piecewise_quad(r):
+    h = r.randint(-5, 5)
+    yv = r.randint(-4, 4)
+    sgn = r.choice([1, -1])
+    x0 = r.randint(h - 3, h + 2)
+    par = [sgn, -2 * sgn * h, sgn * h * h + yv]        # sgn(x − h)² + yv
+    right_par = r.random() < 0.7                         # парабола при x ≥ x0, иначе при x ≤ x0
+    y0 = _pv(par, x0)
+    if r.random() < 0.6:
+        k = r.choice([1, -1, 2, -2, F(1, 2), F(-1, 2)])
+        other = [k, y0 - k * x0 + r.choice([0, 0, 1, -1, 2, -2])]
+        otxt = poly(other)
+        opc = [float(c) for c in other]
+    else:
+        # гипербола y = k/x, при x < x0 (x0 < 0) или x > x0 (x0 > 0)
+        if x0 == 0:
+            return None
+        k = r.choice([x for x in range(-40, 41) if x and x % abs(x0) == 0]) if True else 1
+        opc = ('hyp', k, 0, 0)
+        otxt = _fmt_piece(opc)
+        if (right_par and x0 > 0) or (not right_par and x0 < 0):
+            return None
+    if right_par:
+        pieces = [([float(c) for c in par], (x0, INF, True, False)), (opc, (-INF, x0, False, False))]
+        ftxt_ = f'y = {{ {poly(par)} при x ≥ {tnum(x0)}; {otxt} при x < {tnum(x0)} }}'
+    else:
+        pieces = [([float(c) for c in par], (-INF, x0, False, True)), (opc, (x0, INF, False, False))]
+        ftxt_ = f'y = {{ {poly(par)} при x ≤ {tnum(x0)}; {otxt} при x > {tnum(x0)} }}'
+    return _p22_card(r, pieces, [], ftxt_, ns=(2, 1, 3))
+
+
+@proto('og22-abs-x', 'oge', 22, 'Функция вида y = |x|(x + p) + qx и прямая y = m',
+       invariant='Раскрываем модуль: при x ≥ 0 и x < 0 получаем две параболы с разными направлениями ветвей; особые m — ординаты вершин на своих промежутках.',
+       varies='p, q (и вид записи x|x| + p|x| + qx), число общих точек.',
+       answer_rule='m = ординаты вершин, лежащих на своих промежутках.',
+       fipi=r'y = (\| x \| ⋅ \( x [+−] \d+ \)|x \| x \|)',
+       mistakes=['раскрывают модуль с одним и тем же знаком на обоих промежутках', 'берут вершину, не лежащую на своём промежутке'],
+       kim=kim(22, K22))
+def gen_og22_abs_x(r):
+    p_ = r.choice([x for x in range(-4, 5) if x])
+    q_ = r.choice([x for x in range(-7, 8) if x])
+    # x ≥ 0: x² + (p + q)x;  x < 0: −x² + (q − p)x
+    pos = [1, p_ + q_, 0]
+    neg = [-1, q_ - p_, 0]
+    pieces = [(pos, (0, INF, True, False)), (neg, (-INF, 0, False, False))]
+    if r.random() < 0.5:
+        ftxt_ = f'y = |x|·({lin(1, p_)}) {"+" if q_ > 0 else "−"} {abs(q_) if abs(q_) != 1 else ""}x'
+    else:
+        ftxt_ = f'y = x|x| {"+" if p_ > 0 else "−"} {abs(p_) if abs(p_) != 1 else ""}|x| {"+" if q_ > 0 else "−"} {abs(q_) if abs(q_) != 1 else ""}x'
+    return _p22_card(r, pieces, [], ftxt_, ns=(2, 3, 1))
+
+
+@proto('og22-abs-shift', 'oge', 22, 'Функция y = a|x − h| + квадратный трёхчлен и прямая y = m',
+       invariant='Раскрываем модуль относительно x = h: две параболы с общей точкой при x = h; три общие точки бывают при m, равном значению в изломе или вершине.',
+       varies='a, h, трёхчлен (часто с вершиной в h), число общих точек.',
+       answer_rule='Особые m: значение в точке излома и ординаты вершин на своих промежутках.',
+       fipi=r'y = (\d+ \| x [−+] \d+ \||x 2 .{0,20}\| x [−+] \d+ \|)',
+       mistakes=['забывают поменять знак модуля при x < h', 'не проверяют, где лежит вершина каждой части'],
+       kim=kim(22, K22))
+def gen_og22_abs_shift(r):
+    h = r.randint(-8, 8)
+    a = r.choice([1, 2, 3, 4, -1, -2])
+    sg = r.choice([1, -1])
+    v = r.randint(-3, 3)
+    tri = [sg, -2 * sg * (h + r.choice([0, 0, 1, -1])), 0]
+    tri[2] = r.randint(-30, 30)
+    right = [tri[0], tri[1] + a, tri[2] - a * h]       # x ≥ h: a(x − h) + tri
+    left = [tri[0], tri[1] - a, tri[2] + a * h]
+    pieces = [(right, (h, INF, True, False)), (left, (-INF, h, False, False))]
+    xh = f'x − {h}' if h > 0 else (f'x + {-h}' if h < 0 else 'x')
+    first = f'{"−" if a < 0 else ""}{abs(a) if abs(a) != 1 else ""}|{xh}|'
+    rest = (' + ' + poly(tri)) if tri[0] > 0 else (' − ' + poly([-t for t in tri]))
+    ftxt_ = f'y = {first}{rest}'
+    return _p22_card(r, pieces, [], ftxt_, ns=(3, 2, 1))
+
+
+@proto('og22-hole-m', 'oge', 22, 'Дробь, которая сокращается: выколотая точка и прямая y = m',
+       invariant='После сокращения дроби график — известная кривая (x|x|, парабола, гипербола) с выколотой точкой; прямая через выколотую точку (или асимптота) даёт особое значение m.',
+       varies='Вид дроби (k·(x² + ax)|x|/(x + a), c − (x − b)/(x² − bx), …), числа, число общих точек.',
+       answer_rule='m — ордината выколотой точки (и асимптоты, если есть).',
+       fipi=r'(⋅ \| x \| x [+−] \d+|y = −? ?\d+ − x [+−] \d+ x 2)',
+       mistakes=['не замечают выколотую точку после сокращения', 'забывают про горизонтальную асимптоту'],
+       kim=kim(22, K22))
+def gen_og22_hole_m(r):
+    if r.random() < 0.5:
+        k = r.choice([F(1, 4), F(1, 2), F(3, 4), F(1), F(5, 4), F(3, 2), F(2)])
+        a = r.choice([x for x in range(-4, 5) if x])
+        # y = (k x² + k a x)·|x|/(x + a) = k x|x|, выколота x = −a
+        pos = [float(k), 0, 0]
+        neg = [-float(k), 0, 0]
+        pieces = [(pos, (0, INF, True, False)), (neg, (-INF, 0, False, False))]
+        holes = [-a]
+        ftxt_ = f'y = ({poly([k, k * a, 0])})·|x| / ({lin(1, a)})'
+        ns = (0, 1)
+    else:
+        c = r.choice([x for x in range(-5, 6) if x])
+        b = r.choice([x for x in range(-6, 7) if x])
+        sg = r.choice([1, -1])
+        # y = c − sg·(x − b)/(x² − bx) = c − sg/x, выколота x = b
+        pieces = [(('hyp', -sg, 0, c), (-INF, 0, False, False)), (('hyp', -sg, 0, c), (0, INF, False, False))]
+        holes = [b]
+        frac = f'({lin(1, -b)})/({poly([1, -b, 0])})'
+        ftxt_ = f'y = {c} {"−" if sg > 0 else "+"} {frac}'
+        ns = (0, 1)
+    return _p22_card(r, pieces, holes, ftxt_, ns=ns)
+
+
+@proto('og22-abs-quad', 'oge', 22, 'Модуль квадратного трёхчлена y = |ax² + bx + c| и горизонтальная прямая',
+       invariant='Часть параболы ниже оси Ox отражается вверх; ровно три общие точки — при m, равном модулю ординаты вершины; четыре — между 0 и этим значением.',
+       varies='Трёхчлен (корни), число общих точек в вопросе.',
+       answer_rule='Три точки: m = |y_в|; две точки: m = 0 или m > |y_в|.',
+       fipi=r'y = \| x 2 [+−]',
+       mistakes=['отражают всю параболу', 'путают вершину исходной параболы и её отражения'],
+       kim=kim(22, K22))
+def gen_og22_abs_quad(r):
+    x1, x2 = sorted(r.sample(range(-7, 8), 2))
+    tri = [1, -(x1 + x2), x1 * x2]
+    xv = F(x1 + x2, 2)
+    yv = abs(_pv([F(t) for t in tri], xv))
+    # |tri|: на (x1, x2) — −tri, вне — tri
+    neg = [-t for t in tri]
+    pieces = [([float(t) for t in tri], (-INF, x1, False, True)), ([float(t) for t in neg], (x1, x2, False, False)), ([float(t) for t in tri], (x2, INF, True, False))]
+    ftxt_ = f'y = |{poly(tri)}|'
+    if r.random() < 0.3:
+        q = pick(r, f'Дана функция {ftxt_}. Постройте её график и выясните, сколько точек пересечения, самое большее, бывает у него с горизонтальной прямой.',
+                 f'Изобразите график функции {ftxt_}. Сколько общих точек, самое большее, может быть у него с горизонтальной прямой?')
+        return pcard(q, '4', e=f'При 0 < m < {tnum(yv)} прямая y = m пересекает график в четырёх точках.'), \
+            lambda: max(_sym_count([(tri, (-INF, x1, False, True)), (neg, (x1, x2, False, False)), (tri, (x2, INF, True, False))], [], m) for m in (R(yv) / 2, R(yv), R(yv) + 1, 0)) == 4
+    return _p22_card(r, pieces, [], ftxt_, ns=(3,))
+
+
+_KX_AB = [(a, b) for a in range(1, 13) for b in range(1, 13) if math.gcd(a, b) == 1 and a != b and nice(F(a * a, b * b), 2) and F(a * a, b * b) <= 50]
+
+
+@proto('og22-line-kx', 'oge', 22, 'Дробь с выколотой точкой и прямая y = kx',
+       invariant='После сокращения — гипербола или парабола с выколотой точкой; прямая y = kx имеет одну общую точку, если касается кривой или проходит через выколотую точку.',
+       varies='Вид функции ((ax − b)/(ax² − bx) → 1/x; (x² + p)(x − 1)/(1 − x) → −(x² + p)), числа, вопрос (наибольшее или наименьшее k).',
+       answer_rule='Через выколотую точку: k = y₀/x₀; касание — дискриминант равен нулю.',
+       fipi=r'прямая y = k x',
+       mistakes=['забывают про выколотую точку', 'не рассматривают касание'],
+       kim=kim(22, K22))
+def gen_og22_line_kx(r):
+    if r.random() < 0.5:
+        a, b = r.choice(_KX_AB)
+        # y = (a x − b)/(a x² − b x) = 1/x, x ≠ b/a; одна общая точка с y = kx: k = a²/b²
+        k = F(a * a, b * b)
+        if not nice(k, 2):
+            return None
+        ftxt_ = f'y = ({lin(a, -b)})/({poly([a, -b, 0])})'
+        ask, val = 'это значение k', k
+        hole = F(b, a)
+
+        def chk():
+            K = sp.Symbol('k')
+            cands = {R(1) / R(hole) ** 2}
+            good = []
+            for kk in list(cands) + [R(k) + 1, R(k) / 2, -R(k), 0]:
+                xs = [x for x in sp.solve(sp.Eq(kk * X, 1 / X), X) if x.is_real and x != R(hole)]
+                if len(xs) == 1:
+                    good.append(kk)
+            return good == [R(k)]
+    else:
+        sq = r.choice([F(1, 2), F(3, 2), F(5, 2), F(7, 2), F(2), F(3), F(4), F(5), F(9, 2), F(6)])
+        p_ = sq * sq
+        sh = r.choice([1, 2, -1, -2, 4, 5])
+        # y = (x² + p)(x − s)/(s − x) = −(x² + p), x ≠ s
+        kh = -(sh * sh + p_) / sh
+        if kh in (2 * sq, -2 * sq) or not nice(kh, 2):
+            return None
+        ks = {2 * sq, -2 * sq, kh}
+        ask = r.choice(['наибольшее значение k', 'наименьшее значение k'])
+        val = max(ks) if ask.startswith('наиб') else min(ks)
+        ftxt_ = f'y = ({poly([1, 0, p_])})({lin(1, -sh)})/({lin(-1, sh)})'
+
+        def chk():
+            K = sp.Symbol('k')
+            cands = set(sp.solve(sp.discriminant(X ** 2 + K * X + R(p_), X), K)) | {-(sh * sh + R(p_)) / sh}
+            ok = []
+            for kk in cands:
+                xs = {x for x in sp.solve(sp.Eq(kk * X, -(X ** 2 + R(p_))), X) if x.is_real and x != sh}
+                if len(xs) == 1:
+                    ok.append(kk)
+            return same(num(val), max(ok) if ask.startswith('наиб') else min(ok))
+    q = pick(r, f'Дана функция {ftxt_}. Постройте её график и найдите все значения k, для которых прямая y = kx пересекает этот график ровно в одной точке. В ответ запишите {ask}.',
+             f'Изобразите график функции {ftxt_}. Выясните, для каких k у прямой y = kx и графика ровно одна общая точка. В ответ запишите {ask}.')
+    return pcard(q, num(val), e='Сократите дробь, отметьте выколотую точку; рассмотрите касание и прохождение через выколотую точку.'), chk
+
+
+@proto('og22-abs-frac', 'oge', 22, 'Функция с модулем, сводящаяся к max(x/a, a/x) или −1/|x|',
+       invariant='Раскрытие модуля показывает, что y = c·max(x/a, a/x) (или −1/|x| с выколотыми точками); особые значения — ординаты «вершин» и выколотых точек.',
+       varies='a, множитель c, вид (с y = m или y = kx), вопрос.',
+       answer_rule='Для y = c·max(x/a, a/x): одна общая точка при m = ±c; для y = −1/|x| с выколотыми x = ±t прямая y = kx не пересекает график при k = 0 и k = ±1/t².',
+       fipi=r'(y = 1 2 \( \| x|y = \d+,?\d* \| x \| − \d+ \| x \| −)',
+       mistakes=['не раскрывают модуль на разных промежутках', 'теряют выколотые точки'],
+       kim=kim(22, K22))
+def gen_og22_abs_frac(r):
+    if r.random() < 0.5:
+        a = r.choice([F(3, 2), F(5, 2), F(9, 2), F(2), F(3), F(4), F(5), F(1, 2), F(7, 2)])
+        c = r.choice([1, 2, 3, F(1, 2), 4])
+        at = tnum(a)
+        ctxt = '' if c == 1 else (f'{tnum(c)}·' if F(c).denominator == 1 else '')
+        half = f'{tnum(F(c, 2))}' if F(c, 2) != 1 else ''
+        ftxt_ = f'y = {half}(|x/{at} − {at}/x| + x/{at} + {at}/x)'
+        ask = r.choice(['наибольшее из таких значений m', 'сумму квадратов всех таких значений m'])
+        val = F(c) if ask.startswith('наиб') else 2 * F(c) ** 2
+        q = pick(r, f'Дана функция {ftxt_}. Постройте её график и найдите все значения m, для которых горизонтальная прямая y = m пересекает график ровно в одной точке. В ответ запишите {ask}.',
+                 f'Изобразите график функции {ftxt_}. Выясните, для каких m у прямой y = m и графика ровно одна общая точка. В ответ запишите {ask}.')
+
+        def chk():
+            # независимо: считаем нули f(x) − m на рациональной сетке (с точками ±a) по исходной формуле с модулем
+            cc = F(c)
+            f = lambda x: cc / 2 * (abs(x / a - a / x) + x / a + a / x)
+            grid = [a * F(j, 40) for j in range(-400, 401) if j]
+            good = []
+            for mm in [cc * F(i, 4) for i in range(-8, 9) if i]:
+                vals = [f(x) - mm for x in grid]
+                cnt = sum(1 for v in vals if v == 0)
+                cnt += sum(1 for k in range(len(vals) - 1) if vals[k] * vals[k + 1] < 0 and grid[k] * grid[k + 1] > 0)
+                if cnt == 1:
+                    good.append(mm)
+            return same(num(val), max(good) if ask.startswith('наиб') else sum(g ** 2 for g in good))
+        return pcard(q, num(val), e=f'y = {tnum(c)}·max(x/{at}, {at}/x): при x > 0 y ≥ {tnum(c)}, при x < 0 y ∈ [−{tnum(c)}; 0).'), chk
+    t = r.choice([F(2, 5), F(1, 2), F(1, 4), F(4, 5), F(5, 4), F(3, 2), F(1, 5), F(5, 2)])
+    # y = (|x|/t − 1)/(|x| − x²/t) = 1/|x|·... : (|x| − t)/(t|x| − x²) → числитель (|x| − t), знаменатель |x|(t − |x|) → y = −1/|x|, x ≠ 0, ±t
+    ftxt_ = f'y = (|x| − {tnum(t)})/({tnum(t)}|x| − x²)'
+    val = F(1) / (t * t)
+    if not nice(val, 2):
+        return None
+    ask = r.choice(['наибольшее из таких значений k', 'наименьшее из таких значений k'])
+    val = val if ask.startswith('наиб') else -val
+    q = pick(r, f'Дана функция {ftxt_}. Постройте её график и найдите все значения k, для которых прямая y = kx не пересекает этот график. В ответ запишите {ask}.',
+             f'Изобразите график функции {ftxt_}. Выясните, для каких k у прямой y = kx и графика нет ни одной общей точки. В ответ запишите {ask}.')
+
+    def chk():
+        f = (sp.Abs(X) - R(t)) / (R(t) * sp.Abs(X) - X ** 2)
+        ok = all(sp.simplify(f.subs(X, u) + 1 / sp.Abs(u)) == 0 for u in (R(t) * 3, -R(t) / 2, sp.Rational(7, 3), -sp.Rational(9, 4)) if abs(u) != R(t))
+        good = []
+        for kk in [R(1) / R(t) ** 2, -R(1) / R(t) ** 2, 0, 1, -1, R(1) / R(t) ** 2 + 1]:
+            xs = [x for x in sp.solve(sp.Eq(kk * X, -1 / sp.Abs(X)), X) if x.is_real and x != 0 and sp.Abs(x) != R(t)]
+            if not xs:
+                good.append(kk)
+        return ok and same(num(val), max(good) if ask.startswith('наиб') else min(good))
+    return pcard(q, num(val), e='После сокращения y = −1/|x| с выколотыми точками x = ±t; прямая не пересекает график при k = 0 и когда проходит через выколотую точку.'), chk
+
+
+
+# ================================================================ №23 геометрическая задача на вычисление (часть 2)
+
+K23 = 'геометрическая задача части 2 без чертежа: «Найдите …» (полное решение на экзамене); ответ — одно число'
+
+
+def _nm4(r):
+    return r.choice(['ABCD', 'KLMN', 'MNPQ', 'EFGH', 'PQRS'])
+
+
+@proto('og23-rhombus-height', 'oge', 23, 'Ромб: высота делит сторону на отрезки',
+       invariant='Сторона ромба = сумма отрезков; высота — катет прямоугольного треугольника с гипотенузой-стороной и катетом-отрезком.',
+       varies='Отрезки (из пифагоровых троек), спрашивают высоту или площадь, буквы.',
+       answer_rule='a = p + q; h = √(a² − p²); S = a·h.',
+       fipi=r'высота \w+ ромба .{0,30}делит сторону',
+       mistakes=['берут за сторону один из отрезков', 'путают, какой отрезок прилегает к вершине высоты'],
+       kim=kim(23, K23))
+def gen_og23_rhombus_height(r):
+    nm = _nm4(r)
+    A, B, C, D = nm
+    p_, h, a = _triple(r, 4, cmax=100)
+    q_ = a - p_
+    if q_ <= 0:
+        return None
+    H = r.choice([x for x in 'HTK' if x not in nm])
+    ask = 'h' if r.random() < 0.7 else 'S'
+    ans = h if ask == 'h' else a * h
+    q = pick(r, f'Высота {A}{H} ромба {nm} разбивает сторону {C}{D} на отрезки {D}{H} = {p_} и {C}{H} = {q_}. ' + ('Найдите высоту ромба.' if ask == 'h' else 'Найдите площадь ромба.'),
+             f'Из вершины {A} ромба {nm} опущен перпендикуляр {A}{H} на сторону {C}{D}; точка {H} делит её так, что {D}{H} = {p_}, {H}{C} = {q_}. ' + ('Чему равна высота ромба?' if ask == 'h' else 'Чему равна площадь ромба?'))
+    return pcard(q, num(ans), e=f'Сторона {a}; в треугольнике {A}{D}{H}: {A}{H}² = {a}² − {p_}² = {h * h}.'), \
+        lambda: (lambda hh: same(num(ans), hh if ask == 'h' else hh * (p_ + q_)))(sp.sqrt((p_ + q_) ** 2 - p_ ** 2))
+
+
+@proto('og23-parallel-cross', 'oge', 23, 'Отрезки на параллельных прямых и пересечение диагоналей (подобие)',
+       invariant='Треугольники ABM и CDM подобны (накрест лежащие углы), отношение AM : MC = AB : CD.',
+       varies='Длины AB, DC, AC (или BD), что спрашивают (MC, AM, BM), буквы.',
+       answer_rule='MC = AC·DC/(AB + DC).',
+       fipi=r'лежат на параллельных прямых',
+       mistakes=['берут отношение AB : AC', 'путают, к какому отрезку относится MC'],
+       kim=kim(23, K23))
+def gen_og23_parallel_cross(r):
+    ab, dc = r.sample(range(3, 60), 2)
+    ac = r.randint(10, 100)
+    mc = F(ac * dc, ab + dc)
+    if mc.denominator != 1:
+        return None
+    ask_mc = r.random() < 0.6
+    ans = mc if ask_mc else ac - mc
+    A, B, C, D = _nm4(r)
+    M = r.choice([x for x in 'OMTX' if x not in (A, B, C, D)])
+    tgt = f'{M}{C}' if ask_mc else f'{A}{M}'
+    q = pick(r, f'Точки {A} и {B} лежат на одной прямой, точки {D} и {C} — на параллельной ей прямой. Отрезки {A}{C} и {B}{D} пересекаются в точке {M}; {A}{B} = {ab}, {D}{C} = {dc}, {A}{C} = {ac}. Найдите {tgt}.',
+             f'Прямые {A}{B} и {C}{D} параллельны; отрезки {A}{C} и {B}{D} пересекаются в точке {M}. Известно, что {A}{B} = {ab}, {C}{D} = {dc}, {A}{C} = {ac}. Найдите длину отрезка {tgt}.')
+
+    def chk():
+        A_, B_ = sp.Point(0, 0), sp.Point(ab, 0)
+        D_, C_ = sp.Point(3, 7), sp.Point(3 + dc, 7)
+        M_ = sp.Line(A_, C_).intersection(sp.Line(B_, D_))[0]
+        k = sp.Rational(ac) / A_.distance(C_)
+        return same(num(ans), (M_.distance(C_) if ask_mc else M_.distance(A_)) * k)
+    return pcard(q, num(ans), e=f'AM : MC = AB : DC = {ab} : {dc}; MC = {ac}·{dc}/{ab + dc} = {tnum(mc)}.'), chk
+
+
+@proto('og23-altitude-circle', 'oge', 23, 'Окружность на высоте как на диаметре: отрезок PK',
+       invariant='Углы BPH и BKH опираются на диаметр BH, поэтому BPHK — прямоугольник и PK = BH; BH находят как высоту прямоугольного треугольника.',
+       varies='Дано BH или катеты (тогда BH = ab/c), буквы.',
+       answer_rule='PK = BH = AB·BC/AC.',
+       fipi=r'окружность с диаметром b h',
+       mistakes=['не замечают прямоугольник', 'берут половину высоты'],
+       kim=kim(23, K23))
+def gen_og23_altitude_circle(r):
+    if r.random() < 0.4:
+        bh = F(r.randint(3, 60), r.choice([1, 2]))
+        given = f'BH = {tnum(bh)}'
+        ans = bh
+        chk = lambda: True and same(num(ans), R(bh))
+    else:
+        a, b, c = _triple(r, 5, cmax=100)
+        ans = F(a * b, c)
+        if not nice(ans, 2):
+            return None
+        given = f'AB = {a}, BC = {b}'
+        chk = lambda: same(num(ans), sp.Rational(2) * (sp.Rational(a * b, 2)) / sp.sqrt(a * a + b * b))
+    q = pick(r, f'BH — высота прямоугольного треугольника ABC, проведённая из вершины прямого угла B. Окружность, построенная на BH как на диаметре, пересекает катеты AB и CB в точках P и K. Найдите PK, если {given}.',
+             f'В прямоугольном треугольнике ABC с прямым углом B проведена высота BH. Окружность с диаметром BH пересекает стороны AB и CB в точках P и K соответственно. Найдите длину PK, если {given}.')
+    return pcard(q, num(ans), e='BPHK — прямоугольник (углы при P и K опираются на диаметр), PK = BH.'), chk
+
+
+@proto('og23-trap-bisectors', 'oge', 23, 'Биссектрисы углов при боковой стороне трапеции',
+       invariant='Углы при боковой стороне в сумме 180°, поэтому биссектрисы пересекаются под прямым углом: AB² = AF² + BF².',
+       varies='Длины AF и BF (пифагоровы тройки), что спрашивают (AB или одну из биссектрис), буквы.',
+       answer_rule='AB = √(AF² + BF²).',
+       fipi=r'биссектрисы углов [a-z] и [a-z] при боковой стороне',
+       mistakes=['не доказывают, что угол AFB прямой', 'складывают отрезки'],
+       kim=kim(23, K23))
+def gen_og23_trap_bisectors(r):
+    nm = _nm4(r)
+    A, B, C, D = nm
+    a, b, c = _triple(r, 6, cmax=100)
+    F_ = r.choice([x for x in 'FOTE' if x not in nm])
+    if r.random() < 0.7:
+        q = pick(r, f'В трапеции {nm} к боковой стороне {A}{B} прилегают углы {D}{A}{B} и {A}{B}{C}; их биссектрисы встречаются в точке {F_}, причём {A}{F_} = {a}, {B}{F_} = {b}. Найдите длину боковой стороны {A}{B}.',
+                 f'{A}{B} — боковая сторона трапеции {nm}. Лучи, делящие пополам углы {D}{A}{B} и {A}{B}{C}, встречаются в точке {F_}; известно, что {A}{F_} = {a} и {B}{F_} = {b}. Чему равна {A}{B}?')
+        ans = c
+    else:
+        q = pick(r, f'В трапеции {nm} боковая сторона {A}{B} равна {c}. Биссектрисы углов {D}{A}{B} и {A}{B}{C} встречаются в точке {F_}, причём {A}{F_} = {a}. Найдите длину отрезка {B}{F_}.',
+                 f'{A}{B} = {c} — боковая сторона трапеции {nm}. Лучи, делящие пополам углы трапеции при этой стороне, встречаются в точке {F_}; {A}{F_} = {a}. Чему равна {B}{F_}?')
+        ans = b
+
+    def chk():
+        # трапеция с углами α и 180° − α при A и B: угол AFB = 180 − α/2 − (180 − α)/2 = 90
+        al = sp.Rational(r_alpha, 1)
+        return sp.simplify(180 - al / 2 - (180 - al) / 2 - 90) == 0 and sp.sqrt(a * a + b * b) == c
+    r_alpha = r.randint(20, 160)
+    return pcard(q, num(ans), e=f'∠{A}{F_}{B} = 90° (полусумма углов при боковой стороне); {c}² = {a}² + {b}².'), chk
+
+
+@proto('og23-trap-parallel', 'oge', 23, 'Прямая, параллельная основаниям трапеции, в заданном отношении',
+       invariant='Проводим через вершину прямую, параллельную боковой стороне (или диагональ), и пользуемся подобием: EF — взвешенное среднее оснований.',
+       varies='Основания, отношение, в котором прямая делит боковые стороны, буквы.',
+       answer_rule='EF = (AD·CF + BC·DF)/(CF + DF).',
+       fipi=r'прямая, параллельная основаниям трапеции',
+       mistakes=['берут среднюю линию', 'меняют местами основания в формуле'],
+       kim=kim(23, K23))
+def gen_og23_trap_parallel(r):
+    nm = _nm4(r)
+    A, B, C, D = nm
+    ad, bc = r.randint(8, 60), r.randint(2, 30)
+    if bc >= ad:
+        return None
+    m, n = r.sample(range(1, 8), 2)
+    ef = F(ad * m + bc * n, m + n)
+    if not nice(ef, 1):
+        return None
+    q = pick(r, f'Прямая, параллельная основаниям трапеции {nm}, пересекает её боковые стороны {A}{B} и {C}{D} в точках E и F. Найдите EF, если {A}{D} = {ad}, {B}{C} = {bc}, CF : DF = {m} : {n}.'.replace('CF', f'{C}F').replace('DF', f'{D}F'),
+             f'В трапеции {nm} с основаниями {A}{D} = {ad} и {B}{C} = {bc} на боковых сторонах {A}{B} и {C}{D} взяты точки E и F так, что EF ∥ {A}{D} и {C}F : F{D} = {m} : {n}. Найдите EF.')
+
+    def chk():
+        A_, D_ = sp.Point(0, 0), sp.Point(ad, 0)
+        B_, C_ = sp.Point(3, 5), sp.Point(3 + bc, 5)
+        Fp = C_ + (D_ - C_) * sp.Rational(m, m + n)
+        E_ = sp.Line(A_, B_).intersection(sp.Line(Fp, Fp + sp.Point(1, 0)))[0]
+        return same(num(ef), E_.distance(Fp))
+    return pcard(q, num(ef), e=f'EF = ({ad}·{m} + {bc}·{n})/({m} + {n}) = {tnum(ef)}.'), chk
+
+
+@proto('og23-par-bisector', 'oge', 23, 'Биссектриса угла параллелограмма: периметр',
+       invariant='Биссектриса отсекает равнобедренный треугольник ABK: AB = BK; BC = BK + KC.',
+       varies='Длины BK и CK, буквы, что спрашивают (периметр или сторону по периметру).',
+       answer_rule='P = 2(2BK + KC).',
+       fipi=r'биссектриса угла [a-z] параллелограмма .{0,30}пересекает сторону',
+       mistakes=['считают AB = KC', 'забывают удвоить'],
+       kim=kim(23, K23))
+def gen_og23_par_bisector(r):
+    nm = _nm4(r)
+    A, B, C, D = nm
+    K = r.choice([x for x in 'KTEF' if x not in nm])
+    bk, ck = r.randint(2, 40), r.randint(2, 40)
+    Pm = 2 * (2 * bk + ck)
+    if r.random() < 0.7:
+        q = pick(r, f'Биссектриса угла {A} параллелограмма {nm} пересекает сторону {B}{C} в точке {K}. Найдите периметр параллелограмма, если {B}{K} = {bk}, {C}{K} = {ck}.',
+                 f'В параллелограмме {nm} луч, делящий угол {B}{A}{D} пополам, пересекает сторону {B}{C} в точке {K}; {B}{K} = {bk}, {K}{C} = {ck}. Найдите периметр параллелограмма.')
+        ans = Pm
+    else:
+        q = pick(r, f'Биссектриса угла {A} параллелограмма {nm} пересекает сторону {B}{C} в точке {K}, {B}{K} = {bk}. Периметр параллелограмма равен {Pm}. Найдите {K}{C}.',
+                 f'В параллелограмме {nm} с периметром {Pm} биссектриса угла {A} делит сторону {B}{C} на отрезки {B}{K} = {bk} и {K}{C}. Найдите {K}{C}.')
+        ans = ck
+    al = math.radians(r.randint(30, 150))
+    P = {A: (0.0, 0.0), B: (bk * math.cos(al), bk * math.sin(al))}
+    P[C] = (P[B][0] + bk + ck, P[B][1])
+    P[D] = (bk + ck, 0.0)
+    Kp = (P[B][0] + bk, P[B][1])
+    return pcard(q, num(ans), e=f'∠{B}{A}{K} = ∠{K}{A}{D} = ∠{B}{K}{A}, значит {A}{B} = {B}{K} = {bk}; {B}{C} = {bk + ck}.'), \
+        lambda: close(ang(P[B], P[A], Kp), ang(Kp, P[A], P[D])) and close(ans, Pm if ans == Pm and ans != ck else ck)
+
+
+def _trap_ang_list():
+    out = []
+    for b_, c_ in [(30, 120), (45, 150), (60, 150), (45, 120), (30, 135), (60, 135), (30, 150), (45, 135)]:
+        ratio = sp.nsimplify(sp.sin(sp.pi * (180 - c_) / 180) / sp.sin(sp.pi * (180 - b_) / 180))
+        for m_ in (1, 2, 3, 6):
+            v = sp.nsimplify(ratio * sp.sqrt(m_))
+            if v.is_rational:
+                out.append((b_, c_, m_, sp.Rational(v)))
+                break
+    return out
+
+
+_TRAP_ANG = _trap_ang_list()
+
+
+@proto('og23-trap-angles-side', 'oge', 23, 'Трапеция: боковая сторона по углам и другой боковой стороне',
+       invariant='Высоты, опущенные из концов меньшего основания, равны: AB·sin∠A = CD·sin∠D; углы при основании находятся из данных углов при B и C.',
+       varies='Пары углов (30°/120°, 45°/150°, 60°/150°, 45°/120°, 30°/135°), длина второй боковой стороны (с корнем), буквы.',
+       answer_rule='AB = CD·sin D / sin A, где ∠A = 180° − ∠B, ∠D = 180° − ∠C.',
+       fipi=r'найдите боковую сторону [a-z ]+ трапеции',
+       mistakes=['берут косинус вместо синуса', 'путают углы при разных основаниях'],
+       kim=kim(23, K23))
+def gen_og23_trap_angles_side(r):
+    nm = _nm4(r)
+    A, B, C, D = nm
+    b_, c_, m_, ratio = r.choice(_TRAP_ANG)
+    k = r.randint(1, 20)
+    ab = F(str(ratio * k))
+    cd_txt = rt(k, m_)
+    if not nice(ab, 2):
+        return None
+    q = pick(r, f'Найдите боковую сторону {A}{B} трапеции {nm}, если ∠{A}{B}{C} = {b_}°, ∠{B}{C}{D} = {c_}°, а {C}{D} = {cd_txt}.',
+             f'В трапеции {nm} с основаниями {B}{C} и {A}{D} углы {A}{B}{C} и {B}{C}{D} равны {b_}° и {c_}° соответственно, боковая сторона {C}{D} = {cd_txt}. Найдите {A}{B}.')
+
+    def chk():
+        # координаты: основание AD на оси x, высота h = CD·sin D
+        cd = k * sp.sqrt(m_)
+        h = cd * sp.sin(sp.pi * (180 - c_) / 180)
+        abv = h / sp.sin(sp.pi * (180 - b_) / 180)
+        return sp.simplify(abv - R(ab)) == 0
+    return pcard(q, num(ab), e=f'∠{A} = {180 - b_}°, ∠{D} = {180 - c_}°; высота = {C}{D}·sin {180 - c_}° = {A}{B}·sin {180 - b_}°.'), chk
+
+
+@proto('og23-right-proj', 'oge', 23, 'Прямоугольный треугольник: катет, гипотенуза и проекция',
+       invariant='Катет — среднее пропорциональное между гипотенузой и своей проекцией на неё: AB² = AH·AC; высота к гипотенузе h = ab/c.',
+       varies='Что дано (проекция и гипотенуза, два катета, катет и гипотенуза), что найти (катет, высоту), буквы.',
+       answer_rule='AB = √(AH·AC); h = ab/c.',
+       fipi=r'(основанием высоты, проведённой из вершины прямого угла|найдите высоту, проведённую к гипотенузе)',
+       mistakes=['берут AB² = AH·HC', 'путают катет и проекцию'],
+       kim=kim(23, K23))
+def gen_og23_right_proj(r):
+    if r.random() < 0.5:
+        a, b, c = _triple(r, 6, cmax=120)
+        ah = F(a * a, c)
+        if not nice(ah, 2):
+            return None
+        nm = names3(r)
+        A, B, C = nm[0], nm[1], nm[2]
+        H = r.choice([x for x in 'HKTD' if x not in nm])
+        q = pick(r, f'В треугольнике {nm} угол {A}{B}{C} прямой, {B}{H} — высота, опущенная на гипотенузу {A}{C} = {c}, и {A}{H} = {tnum(ah)}. Найдите катет {A}{B}.',
+                 f'Гипотенуза {A}{C} прямоугольного треугольника {nm} равна {c}; высота из вершины прямого угла {B} отсекает от неё отрезок {A}{H} = {tnum(ah)}. Найдите {A}{B}.')
+        ans = a
+        chk = lambda: sp.sqrt(R(ah) * c) == a
+    else:
+        a, b, c = _triple(r, 6, cmax=120)
+        ans = F(a * b, c)
+        if not nice(ans, 2):
+            return None
+        if r.random() < 0.5:
+            q = pick(r, f'Прямоугольный треугольник имеет катеты длиной {a} и {b}. Какова длина его высоты, опущенной из вершины прямого угла?',
+                     f'Из вершины прямого угла треугольника с катетами {a} и {b} опущен перпендикуляр на гипотенузу. Найдите его длину.')
+        else:
+            q = pick(r, f'Прямоугольный треугольник имеет катет {a} и гипотенузу {c}. Какова длина его высоты, опущенной из вершины прямого угла?',
+                     f'Из вершины прямого угла треугольника с катетом {a} и гипотенузой {c} опущен перпендикуляр на гипотенузу. Найдите его длину.')
+        chk = lambda: same(num(ans), sp.Point(0, 0).distance(sp.Line(sp.Point(a, 0), sp.Point(0, b))))
+    return pcard(q, num(ans), e='Подобие треугольников при высоте из прямого угла.'), chk
+
+
+@proto('og23-circle-secant', 'oge', 23, 'Окружность через две вершины треугольника: подобие отсечённого треугольника',
+       invariant='Четырёхугольник BKPC вписан, поэтому ∠AKP = ∠ACB и треугольники AKP и ACB подобны: KP/BC = AK/AC.',
+       varies='AK и отношение AC : BC (или длины), буквы.',
+       answer_rule='KP = AK·BC/AC.',
+       fipi=r'окружность пересекает стороны [a-z ]+ и [a-z ]+ треугольника [a-z ]+ в точках [a-z ]+ и [a-z ]+ соответственно и проходит через вершины',
+       mistakes=['ставят в пропорцию не соответствующие стороны', 'используют AB вместо AC'],
+       kim=kim(23, K23))
+def gen_og23_circle_secant(r):
+    ak = r.randint(4, 60)
+    t = r.choice([F(6, 5), F(3, 2), F(5, 4), F(2), F(5, 2), F(3), F(8, 5)])
+    kp = F(ak) / t
+    if not nice(kp, 2):
+        return None
+    tt = tnum(t)
+    q = pick(r, f'Окружность проходит через вершины B и C треугольника ABC и пересекает стороны AB и AC в точках K и P соответственно. Найдите KP, если AK = {ak}, а сторона AC в {tt} раза длиннее стороны BC.',
+             f'Через вершины B и C треугольника ABC проведена окружность, пересекающая стороны AB и AC в точках K и P. Известно, что AK = {ak} и AC = {tt}·BC. Найдите длину отрезка KP.')
+
+    def chk():
+        # конкретный треугольник: BC = 10, AC = 10t, угол C = 70°; K, P — по степени точки
+        BC_, AC_ = 10.0, 10.0 * float(t)
+        Cp, Bp = (0.0, 0.0), (BC_, 0.0)
+        Ap = (AC_ * math.cos(math.radians(70)), AC_ * math.sin(math.radians(70)))
+        AB_ = dist(Ap, Bp)
+        s_ = float(ak) / 1.0
+        # масштаб: берём AK в «наших» единицах пропорционально; треугольник AKP ~ ACB: KP = AK·BC/AC
+        APv = s_ * AB_ / AC_           # из степени точки AK·AB = AP·AC
+        Kp = (Ap[0] + (Bp[0] - Ap[0]) * s_ / AB_, Ap[1] + (Bp[1] - Ap[1]) * s_ / AB_)
+        Pp = (Ap[0] + (Cp[0] - Ap[0]) * APv / AC_, Ap[1] + (Cp[1] - Ap[1]) * APv / AC_)
+        # K, P, B, C на одной окружности: проверяем через центр описанной окружности BCK
+        O = _circum([Bp, Cp, Kp])
+        return close(dist(O, Pp), dist(O, Bp), 1e-6) and close(dist(Kp, Pp), float(kp), 1e-6)
+    return pcard(q, num(kp), e=f'△AKP ~ △ACB: KP/BC = AK/AC, KP = AK/{tt} = {tnum(kp)}.'), chk
+
+
+@proto('og23-tri-parallel', 'oge', 23, 'Прямая, параллельная стороне треугольника: найти часть стороны',
+       invariant='MN ∥ AC ⇒ △MBN ~ △ABC: BN/BC = MN/AC, откуда BN = MN·NC/(AC − MN).',
+       varies='MN, AC, NC (или AM), что спрашивают, буквы.',
+       answer_rule='BN = MN·NC/(AC − MN).',
+       fipi=r'прямая, параллельная стороне [a-z ]+ треугольника',
+       mistakes=['ставят NC вместо BC в пропорцию', 'путают соответственные стороны'],
+       kim=kim(23, K23))
+def gen_og23_tri_parallel(r):
+    bn = r.randint(2, 50)
+    nc = r.randint(2, 50)
+    ac = r.randint(5, 80)
+    mn = F(ac * bn, bn + nc)
+    if mn.denominator != 1:
+        return None
+    q = pick(r, f'Прямая, параллельная стороне AC треугольника ABC, пересекает стороны AB и BC в точках M и N. Найдите BN, если MN = {tnum(mn)}, AC = {ac}, NC = {nc}.',
+             f'На сторонах AB и BC треугольника ABC отмечены точки M и N так, что MN ∥ AC; MN = {tnum(mn)}, AC = {ac}, NC = {nc}. Найдите BN.')
+
+    def chk():
+        B_ = sp.Point(0, 0)
+        C_ = sp.Point(bn + nc, 0)
+        A_ = sp.Point(4, 9)
+        N_ = sp.Point(bn, 0)
+        M_ = sp.Line(N_, N_ + (A_ - C_)).intersection(sp.Line(B_, A_))[0]
+        k = sp.Rational(ac) / A_.distance(C_)
+        return same(num(mn), M_.distance(N_) * k)
+    return pcard(q, num(bn), e=f'BN/(BN + {nc}) = {tnum(mn)}/{ac} → BN = {bn}.'), chk
+
+
+@proto('og23-rhombus-center', 'oge', 23, 'Ромб: расстояние от центра до стороны и диагональ — углы',
+       invariant='В прямоугольном треугольнике AOB расстояние от O до AB — высота; если половина диагонали вдвое больше этой высоты, угол между диагональю и стороной 30°.',
+       varies='Числа (h и диагональ 4h), какой угол спрашивают (меньший или больший), буквы.',
+       answer_rule='sin∠OAB = h/(d/2) = ½ ⇒ углы ромба 60° и 120°.',
+       fipi=r'расстояние от точки пересечения диагоналей ромба до одной из его сторон',
+       mistakes=['считают, что данная диагональ — меньшая', 'отвечают 30° (угол с диагональю)'],
+       kim=kim(23, K23 + '; на экзамене «Найдите углы ромба», здесь — один из них'))
+def gen_og23_rhombus_center(r):
+    h = r.randint(2, 40)
+    mult = r.choice([2, 2, 1])
+    if mult == 2:
+        d = 4 * h                 # половина диагонали 2h → угол с диагональю 30°
+        small, big = 60, 120
+    else:
+        d = 2 * h                 # половина диагонали h√… — не бывает; используем √2: d/2 = h√2 → квадрат
+        return None
+    ask = r.choice(['меньший', 'больший'])
+    ans = small if ask == 'меньший' else big
+    q = pick(r, f'Центр ромба находится на расстоянии {h} от прямой, содержащей его сторону, а длина одной из диагоналей {d}. Найдите углы ромба. В ответ запишите {ask} угол в градусах.',
+             f'Расстояние от центра ромба до его стороны равно {h}, длина одной из диагоналей {d}. Найдите углы ромба; в ответ запишите {ask} из них (в градусах).')
+
+    def chk():
+        # диагональ d = 2·OA; OA = 2h ⇒ ∠OAB = 30°, угол ромба при A = 60°; другая диагональ меньше
+        OA = sp.Rational(d, 2)
+        ang_ = sp.asin(sp.Rational(h) / OA) * 2 * 180 / sp.pi
+        return same(num(ans), ang_ if ask == 'меньший' else 180 - ang_)
+    return pcard(q, num(ans), e=f'Половина диагонали {2 * h} = 2·{h}: sin∠ = ½, угол 30°; углы ромба 60° и 120°.'), chk
+
+
+@proto('og23-tangent-center', 'oge', 23, 'Окружность с центром на стороне треугольника касается другой стороны',
+       invariant='Радиус в точку касания перпендикулярен AB: AO² = AB² + r²; AC = AO + r (окружность проходит через C).',
+       varies='AB и радиус (или диаметр) из пифагоровых троек, буквы.',
+       answer_rule='AC = √(AB² + r²) + r.',
+       fipi=r'окружность с центром на стороне',
+       mistakes=['забывают прибавить радиус', 'берут диаметр вместо радиуса'],
+       kim=kim(23, K23))
+def gen_og23_tangent_center(r):
+    ab, rr, ao = _triple(r, 5, cmax=80)
+    unit = r.choice([1, 1, F(1, 10)])
+    ab, rr, ao = F(ab) * unit, F(rr) * unit, F(ao) * unit
+    ans = ao + rr
+    diam = r.random() < 0.5
+    rtxt = f'диаметр окружности равен {tnum(2 * rr)}' if diam else f'радиус окружности равен {tnum(rr)}'
+    q = pick(r, f'Окружность с центром на стороне AC треугольника ABC проходит через вершину C и касается прямой AB в точке B. Найдите AC, если {rtxt}, а AB = {tnum(ab)}.',
+             f'Центр окружности лежит на стороне AC треугольника ABC; окружность проходит через C и касается прямой AB в точке B. Известно, что AB = {tnum(ab)}, {rtxt}. Найдите длину AC.')
+    return pcard(q, num(ans), e=f'OB ⊥ AB: AO = √({tnum(ab)}² + {tnum(rr)}²) = {tnum(ao)}; AC = AO + OC = {tnum(ans)}.'), \
+        lambda: same(num(ans), sp.sqrt(R(ab) ** 2 + R(rr) ** 2) + R(rr))
+
+
+_CHORD_R = {}
+for _a, _b, _c in TRIPLES[:8]:
+    for _k in range(1, 8):
+        _CHORD_R.setdefault(_c * _k, set()).update({(_a * _k, _b * _k), (_b * _k, _a * _k)})
+_CHORD_R = {k: sorted(v) for k, v in _CHORD_R.items() if len(v) >= 2 and k <= 100}
+
+
+@proto('og23-chords', 'oge', 23, 'Две хорды одной окружности: расстояния до центра',
+       invariant='Радиус, половина хорды и расстояние до хорды — стороны прямоугольного треугольника; по первой хорде находим R², по второй — расстояние.',
+       varies='Длины хорд и расстояние до первой хорды (одна окружность, разные пары катетов с одной гипотенузой), буквы.',
+       answer_rule='R² = (AB/2)² + d₁²; d₂ = √(R² − (CD/2)²).',
+       fipi=r'являются хордами окружности',
+       mistakes=['берут всю хорду вместо половины', 'путают расстояния для двух хорд'],
+       kim=kim(23, K23))
+def gen_og23_chords(r):
+    Rr = r.choice(list(_CHORD_R))
+    (x1, d1), (x2, d2) = r.sample(_CHORD_R[Rr], 2)
+    q = pick(r, f'Отрезки AB и CD — хорды одной окружности. Найдите расстояние от центра окружности до хорды CD, если AB = {2 * x1}, CD = {2 * x2}, а расстояние от центра до хорды AB равно {d1}.',
+             f'В окружности проведены хорды AB = {2 * x1} и CD = {2 * x2}. Центр окружности удалён от прямой AB на {d1}. На каком расстоянии от центра находится хорда CD?')
+    return pcard(q, num(d2), e=f'R² = {x1}² + {d1}² = {Rr * Rr}; расстояние до CD = √({Rr * Rr} − {x2}²) = {d2}.'), \
+        lambda: sp.sqrt(x1 ** 2 + d1 ** 2 - x2 ** 2) == d2
+
+
+@proto('og23-sine-rule', 'oge', 23, 'Сторона треугольника по двум углам и радиусу описанной окружности',
+       invariant='Третий угол = 180° − сумма двух; по теореме синусов BC = 2R·sin A.',
+       varies='Углы B и C (так, чтобы A = 30°, 45°, 60°, 120°, 135° или 150°), радиус (с корнем при необходимости), буквы.',
+       answer_rule='BC = 2R sin(180° − B − C).',
+       fipi=r'радиус окружности, описанной около треугольника [a-z ]+ , равен',
+       mistakes=['берут синус данного угла, а не противолежащего', 'забывают множитель 2'],
+       kim=kim(23, K23))
+def gen_og23_sine_rule(r):
+    A = r.choice([30, 150, 45, 135, 60, 120])
+    B = r.randint(10, 170 - A - 5)
+    C = 180 - A - B
+    if C <= 5 or B == C:
+        return None
+    k = r.randint(2, 30)
+    if A in (30, 150):
+        Rt, ans = tnum(k), k
+    elif A in (45, 135):
+        Rt, ans = rt(k, 2), 2 * k
+    else:
+        Rt, ans = rt(k, 3), 3 * k
+    nm = names3(r)
+    a_, b_, c_ = nm
+    q = pick(r, f'В треугольнике {nm} ∠{a_}{b_}{c_} = {B}°, ∠{b_}{c_}{a_} = {C}°. Около треугольника описана окружность радиуса {Rt}. Найдите {b_}{c_}.',
+             f'В треугольнике {nm} ∠{a_}{b_}{c_} = {B}°, ∠{b_}{c_}{a_} = {C}°, а окружность, проходящая через его вершины, имеет радиус {Rt}. Найдите длину стороны {b_}{c_}.')
+    mult = {30: 1, 150: 1, 45: 2, 135: 2, 60: 3, 120: 3}[A]
+    Rv = k * (sp.sqrt(mult) if mult > 1 else 1)
+    return pcard(q, num(ans), e=f'∠A = {A}°; BC = 2R·sin {A}° = {ans}.'), lambda: same(num(ans), 2 * Rv * sp.sin(sp.pi * (180 - B - C) / 180))
+
+
 # ==== КОНЕЦ

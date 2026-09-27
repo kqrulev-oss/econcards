@@ -3084,8 +3084,9 @@ def subset_sums(items):
 
 
 COIN_CTX = [
-    dict(head='В кошельке {n1} {w1} по {v1} {u1} и {n2} {w2} по {v2} {u2}.', one='монета', few='монеты', many='монет',
-         U=('рубль', 'рубля', 'рублей'), make='набрать без сдачи сумму ровно {s} {us}', add='монет по 1 рублю',
+    dict(head='В кошельке лежат монеты двух видов: {n1} достоинством {v1} {u1} и {n2} достоинством {v2} {u2}.',
+         one='монета', few='монеты', many='монет',
+         U=('рубль', 'рубля', 'рублей'), make='заплатить этими монетами без сдачи ровно {s} {us}', add='монет по 1 рублю',
          need='чтобы без сдачи можно было набрать любую целую сумму от 1 до {t} рублей включительно'),
     dict(head='В наборе {n1} {w1} массой по {v1} {u1} и {n2} {w2} массой по {v2} {u2}.', one='гиря', few='гири', many='гирь',
          U=('кг', 'кг', 'кг'), make='уравновесить на чашечных весах груз массой {s} {us} (гири кладут на одну чашу)',
@@ -3137,7 +3138,7 @@ def gen_ep20_coins(r):
     uu = lambda v: plural(v, *ctx['U'])
     head = ctx['head'].format(n1=n1, w1=w(n1), v1=v1, n2=n2, w2=w(n2), v2=v2, u1=uu(v1), u2=uu(v2))
     q = q20(r, head, f'Можно ли {ctx["make"].format(s=sa, us=uu(sa))}?', f'Можно ли {ctx["make"].format(s=sb, us=uu(sb))}?',
-            f'Какое наименьшее количество {ctx["add"]} нужно добавить, {ctx["need"].format(t=T)}?')
+            f'Сколько {ctx["add"]} как минимум нужно добавить, {ctx["need"].format(t=T)}?')
     e = (f'а) {"да" if A >> sa & 1 else "нет"}; б) {"да" if A >> sb & 1 else "нет"}. в) Наибольший промежуток между '
          f'соседними набираемыми суммами (от 0 до {T}) равен {k}, поэтому нужно {k} (меньше — не хватит, '
          f'столько — хватит).')
@@ -3615,12 +3616,12 @@ def gen_ep20_digits_sum(r):
         return None
     ans = best[S]
     sa, sb = r.randint(50, 300), r.randint(50, 300)
-    head = pick(r, f'На доске написано несколько различных натуральных чисел, в десятичной записи которых встречаются '
-                   f'только цифры {d1} и {d2} (возможно, только одна из них).',
-                f'Из цифр {d1} и {d2} составили несколько различных натуральных чисел (в записи каждого числа — только эти '
-                f'цифры, возможно, одна из них).')
-    q = q20(r, head, f'Может ли сумма этих чисел быть равна {sa}?', f'Может ли сумма этих чисел быть равна {sb}?',
-            f'Какое наименьшее количество чисел может быть на доске, если их сумма равна {S}?')
+    head = pick(r, f'Петя записал в тетрадь несколько попарно различных натуральных чисел, используя лишь цифры {d1} и {d2} '
+                   f'(число может состоять и из одной повторяющейся цифры).',
+                f'Из карточек с цифрами {d1} и {d2} (карточек каждого вида сколько угодно) сложили несколько попарно '
+                f'различных натуральных чисел.')
+    q = q20(r, head, f'Могла ли сумма полученных чисел оказаться равной {sa}?', f'Могла ли сумма полученных чисел оказаться равной {sb}?',
+            f'Сумма полученных чисел равна {S}. Найдите наименьшее возможное количество этих чисел.')
     e = f'в) Наименьшее количество различных слагаемых с суммой {S} равно {ans} (оценка по величине и последней цифре + пример).'
 
     def chk():
@@ -3657,11 +3658,13 @@ def gen_ep20_pair_moves(r):
     ans = best_sum - a0 - b0
     S = a0 + b0 + r.randint(20, 150)
     k_a = r.randint(10, 60)
-    q = q20(r, f'Из пары натуральных чисел (a; b) за один ход получают пару (a + 2; b − 1) или пару (a − 1; b + 2), '
-               f'если оба числа новой пары положительны. Сначала была пара ({a0}; {b0}).',
-            f'Можно ли за {k_a} ходов получить пару, в которой одно из чисел равно {a0 + 2 * k_a - r.randint(0, 3)}?',
-            f'За какое количество ходов получится пара, сумма чисел в которой равна {S}?',
-            f'Какое наибольшее количество ходов можно сделать так, чтобы после каждого хода оба числа не превосходили {M}?')
+    q = q20(r, f'Робот хранит пару натуральных чисел (a; b). За один шаг он заменяет её на (a + 2; b − 1) или на '
+               f'(a − 1; b + 2), причём оба числа после замены должны остаться натуральными. В начале у робота пара '
+               f'({a0}; {b0}).',
+            f'Может ли робот за {k_a} шагов получить пару, одно из чисел которой равно {a0 + 2 * k_a - r.randint(0, 3)}?',
+            f'Через сколько шагов сумма чисел пары станет равной {S}?',
+            f'Какое наибольшее число шагов может сделать робот, если после каждого шага ни одно из чисел пары не должно '
+            f'превышать {M}?')
     e = (f'Сумма растёт на 1 за ход, разность меняется на ±3. в) Наибольшая сумма пары с числами ≤ {M} и нужным '
          f'остатком разности — {best_sum}, значит, ходов не больше {ans}; пример строится чередованием ходов.')
 
@@ -3708,11 +3711,13 @@ def gen_ep20_endings(r):
     if not ks or ks[0] == 0:
         return None
     ans = ks[0]
-    head = (f'На доске написано {n} различных натуральных чисел, десятичная запись каждого из которых заканчивается '
-            f'цифрой {d1} или цифрой {d2}. Сумма написанных чисел равна {S}.')
-    q = q20(r, head, f'Может ли на доске быть поровну чисел, оканчивающихся на {d1} и на {d2}?',
-            f'Может ли на доске быть ровно одно число, оканчивающееся на {d2}?',
-            f'Какое наименьшее количество чисел, оканчивающихся на {d2}, может быть на доске?')
+    head = pick(r, f'Учитель выписал {n} попарно различных натуральных чисел; последняя цифра каждого из них — {d1} или {d2}, '
+                   f'а сумма всех выписанных чисел равна {S}.',
+                f'Имеется набор из {n} попарно различных натуральных чисел с суммой {S}; каждое число набора имеет '
+                f'последнюю цифру {d1} либо {d2}.')
+    q = q20(r, head, f'Могло ли чисел с последней цифрой {d1} оказаться столько же, сколько чисел с последней цифрой {d2}?',
+            f'Могло ли среди них оказаться ровно одно число с последней цифрой {d2}?',
+            f'Найдите наименьшее возможное количество чисел с последней цифрой {d2}.')
     e = f'в) Нужны совпадение последней цифры суммы и оценка снизу суммы различных чисел; наименьшее количество — {ans}.'
 
     def chk():
@@ -3949,7 +3954,7 @@ def sc_pyr4_m(r):
     mdesc = 'Точка M — середина ребра SC.' if p == q else f'Точка M лежит на ребре SC, причём SM : MC = {ratio_txt(p, q)}.'
 
     def build(sq, Q):
-        S_ = mk_pyr4(a, sq(Q(h2)), sq, Q)
+        S_ = mk_pyr4(a, sq(Q(h2.numerator) / Q(h2.denominator)), sq, Q)
         M = lerp(S_.pts['S'], S_.pts['C'], Q(p) / (p + q))
         return S_, {'M': M}
     text = pick(r, f'Дана правильная четырёхугольная пирамида SABCD, у которой AB = {a}, SA = {l}.',
@@ -3974,7 +3979,7 @@ def sc_pyr4_mk(r):
         return None
 
     def build(sq, Q):
-        S_ = mk_pyr4(a, sq(Q(h2)), sq, Q)
+        S_ = mk_pyr4(a, sq(Q(h2.numerator) / Q(h2.denominator)), sq, Q)
         M = lerp(S_.pts['A'], S_.pts['B'], Q(1) / 2)
         K = lerp(S_.pts['S'], S_.pts['D'], Q(1) / 2)
         return S_, {'M': M, 'K': K}
@@ -4001,7 +4006,7 @@ def sc_pyr3(r):
     p, q = r.choice([(1, 1), (1, 2), (2, 1), (1, 1)])
 
     def build(sq, Q):
-        S_ = mk_pyr3(a, sq(Q(h2)), sq, Q)
+        S_ = mk_pyr3(a, sq(Q(h2.numerator) / Q(h2.denominator)), sq, Q)
         M = lerp(S_.pts['A'], S_.pts['B'], Q(1) / 2)
         K = lerp(S_.pts['S'], S_.pts['C'], Q(p) / (p + q))
         return S_, {'M': M, 'K': K}
@@ -4029,7 +4034,7 @@ def sc_prism3(r):
     text = pick(r, f'В правильной треугольной призме ABCA₁B₁C₁ сторона основания AB = {a}, а боковое ребро AA₁ = {h}. '
                    f'Точка M — середина ребра A₁B₁.',
                 f'Дана правильная треугольная призма ABCA₁B₁C₁, у которой AB = {a}, AA₁ = {h}; M — середина A₁B₁.')
-    a_st = 'Докажите, что прямые C₁M и AB перпендикулярны, а также прямые CM и AB.'
+    a_st = 'Докажите, что прямые CM и AB перпендикулярны.'
 
     def a_chk(P):
         return sp.simplify(v_dot(v_sub(P['M'], P['C']), v_sub(P['B'], P['A']))) == 0
@@ -4048,9 +4053,9 @@ def sc_tet(r):
         S_ = Solid(P, [('A', 'B'), ('B', 'C'), ('C', 'A'), ('D', 'A'), ('D', 'B'), ('D', 'C')],
                    ['ABC', 'DAB', 'DBC', 'DCA'], 'tet')
         return S_, {'M': lerp(P['A'], P['B'], Q(1) / 2), 'N': lerp(P['C'], P['D'], Q(1) / 2)}
-    text = pick(r, f'Все рёбра правильного тетраэдра ABCD равны {a}. Точки M и N — середины рёбер AB и CD.',
+    text = pick(r, f'Ребро правильного тетраэдра ABCD равно {a}. Отметим середину M ребра AB и середину N ребра CD.',
                 f'Дан правильный тетраэдр ABCD с ребром {a}; M — середина AB, N — середина CD.')
-    a_st = 'Докажите, что прямая MN перпендикулярна прямым AB и CD.'
+    a_st = 'Докажите, что отрезок MN — общий перпендикуляр прямых AB и CD.'
 
     def a_chk(P):
         u = v_sub(P['N'], P['M'])
@@ -4139,17 +4144,18 @@ def sc_pyr6(r):
     def build(sq, Q):
         S_ = mk_pyr6(a, sq(Q(l * l - a * a)), sq, Q)
         P = S_.pts
-        return S_, {'M': lerp(P['S'], P['A'], Q(1) / 2), 'K': lerp(P['S'], P['D'], Q(1) / 2)}
-    text = pick(r, f'В правильной шестиугольной пирамиде SABCDEF сторона основания равна {a}, боковое ребро равно {l}. '
-                   f'Точки M и K — середины рёбер SA и SD.',
-                f'Дана правильная шестиугольная пирамида SABCDEF: AB = {a}, SA = {l}; M и K — середины боковых рёбер SA и SD.')
-    a_st = 'Докажите, что прямые BC и MK параллельны.'
+        return S_, {'M': lerp(P['S'], P['B'], Q(1) / 2), 'K': lerp(P['S'], P['E'], Q(1) / 2)}
+    text = pick(r, f'Основание пирамиды SABCDEF — правильный шестиугольник со стороной {a}, все боковые рёбра пирамиды '
+                   f'равны {l}. На рёбрах SB и SE взяты их середины M и K.',
+                f'У правильной шестиугольной пирамиды SABCDEF ребро основания равно {a}, а боковое — {l}; '
+                f'точка M — середина SB, точка K — середина SE.')
+    a_st = 'Докажите, что прямая MK параллельна прямой CD.'
 
     def a_chk(P):
-        c = v_cross(v_sub(P['C'], P['B']), v_sub(P['K'], P['M']))
+        c = v_cross(v_sub(P['D'], P['C']), v_sub(P['K'], P['M']))
         return all(sp.simplify(x) == 0 for x in c)
-    Q_ = [('vol', 'MABF'), ('app', 'BMC', 'ABC'), ('dpp', 'A', 'SBC'), ('alp', 'SB', 'ABC'), ('seg', 'MK'),
-          ('sec', 'BMK'), ('app', 'SAB', 'ABC')]
+    Q_ = [('vol', 'MBCD'), ('app', 'SCD', 'ABC'), ('dpp', 'A', 'SBC'), ('alp', 'SB', 'ABC'), ('seg', 'MK'),
+          ('sec', 'MKC'), ('dpp', 'S', 'MKC')]
     return dict(build=build, text=text, a=a_st, a_chk=a_chk, queries=Q_, name='пирамиды', show='SABCDEFMK')
 
 
@@ -4211,3 +4217,1180 @@ def poly_area(pts, n, sq=math.sqrt):
     for i in range(len(ordered)):
         tot = v_add(tot, v_cross(ordered[i], ordered[(i + 1) % len(ordered)]))
     return v_len(tot, sq) / 2
+
+
+def names_of(s_):
+    return plane_pts(s_)
+
+
+def q_text(kind, a1, a2, sc):
+    L = lambda s_: ''.join(lab(x) for x in names_of(s_))
+    if kind == 'dpp':
+        return f'Найдите расстояние от точки {lab(a1)} до плоскости {L(a2)}.'
+    if kind == 'dpl':
+        return f'Найдите расстояние от точки {lab(a1)} до прямой {L(a2)}.'
+    if kind == 'dll':
+        return f'Найдите расстояние между прямыми {L(a1)} и {L(a2)}.'
+    if kind == 'seg':
+        return f'Найдите длину отрезка {L(a1)}.'
+    if kind == 'alp':
+        return f'Найдите угол между прямой {L(a1)} и плоскостью {L(a2)}.'
+    if kind == 'app':
+        return f'Найдите угол между плоскостями {L(a1)} и {L(a2)}.'
+    if kind == 'all':
+        return f'Найдите угол между прямыми {L(a1)} и {L(a2)}.'
+    if kind == 'sec':
+        return f'Найдите площадь сечения {sc["name"]} плоскостью {L(a1)}.'
+    if kind == 'vol':
+        return f'Найдите объём пирамиды {L(a1)}.'
+    raise ValueError(kind)
+
+
+def q_float(kind, P, S_, a1, a2):
+    """Значение (float) или (sin, cos, tan) для углов — генератор."""
+    g = lambda n: P[n]
+    if kind == 'dpp':
+        Y, Z, W = (g(n) for n in names_of(a2))
+        n = v_cross(v_sub(Z, Y), v_sub(W, Y))
+        return abs(v_dot(n, v_sub(g(a1), Y))) / v_len(n)
+    if kind == 'dpl':
+        Y, Z = (g(n) for n in names_of(a2))
+        return v_len(v_cross(v_sub(g(a1), Y), v_sub(Z, Y))) / v_len(v_sub(Z, Y))
+    if kind == 'dll':
+        A, B = (g(n) for n in names_of(a1))
+        C, D = (g(n) for n in names_of(a2))
+        w = v_cross(v_sub(B, A), v_sub(D, C))
+        if v_len(w) < 1e-12:
+            return None
+        return abs(v_dot(v_sub(C, A), w)) / v_len(w)
+    if kind == 'seg':
+        A, B = (g(n) for n in names_of(a1))
+        return v_len(v_sub(B, A))
+    if kind in ('alp', 'app', 'all'):
+        if kind == 'alp':
+            A, B = (g(n) for n in names_of(a1))
+            u = v_sub(B, A)
+            X_, Y__, Z_ = (g(n) for n in names_of(a2))
+            n = v_cross(v_sub(Y__, X_), v_sub(Z_, X_))
+            s = abs(v_dot(u, n)) / (v_len(u) * v_len(n))
+            c = math.sqrt(max(0.0, 1 - s * s))
+        else:
+            if kind == 'app':
+                p1 = [g(n) for n in names_of(a1)]
+                p2 = [g(n) for n in names_of(a2)]
+                u = v_cross(v_sub(p1[1], p1[0]), v_sub(p1[2], p1[0]))
+                v = v_cross(v_sub(p2[1], p2[0]), v_sub(p2[2], p2[0]))
+            else:
+                A, B = (g(n) for n in names_of(a1))
+                C, D = (g(n) for n in names_of(a2))
+                u, v = v_sub(B, A), v_sub(D, C)
+            c = abs(v_dot(u, v)) / (v_len(u) * v_len(v))
+            s = math.sqrt(max(0.0, 1 - c * c))
+        return (s, c, s / c if c > 1e-12 else None)
+    if kind == 'sec':
+        pts, n = section(P, S_, names_of(a1))
+        if len(pts) < 3:
+            return None
+        return poly_area(pts, n)
+    if kind == 'vol':
+        X_, Y__, Z_, W = (g(n) for n in names_of(a1))
+        return abs(v_dot(v_sub(Y__, X_), v_cross(v_sub(Z_, X_), v_sub(W, X_)))) / 6
+    raise ValueError(kind)
+
+
+def q_exact(kind, P, S_, a1, a2):
+    """Точное значение (sympy) другим способом — для проверки. Для углов → (sin, cos)."""
+    g = lambda n: P[n]
+    sq = sp.sqrt
+
+    def tri_area(A, B, C):
+        return sq(v_dot(v_cross(v_sub(B, A), v_sub(C, A)), v_cross(v_sub(B, A), v_sub(C, A)))) / 2
+
+    def dist_pp(X_, pl):
+        Y, Z, W = pl
+        V = abs(v_dot(v_sub(Y, X_), v_cross(v_sub(Z, X_), v_sub(W, X_)))) / 6
+        return 3 * V / tri_area(Y, Z, W)
+
+    def signed_pp(X_, pl):
+        Y, Z, W = pl
+        V = v_dot(v_sub(Y, X_), v_cross(v_sub(Z, X_), v_sub(W, X_))) / 6
+        return 3 * V / tri_area(Y, Z, W)
+    if kind == 'dpp':
+        return dist_pp(g(a1), [g(n) for n in names_of(a2)])
+    if kind == 'dpl':
+        Y, Z = (g(n) for n in names_of(a2))
+        u = v_sub(Z, Y)
+        t = v_dot(v_sub(g(a1), Y), u) / v_dot(u, u)
+        Fp = v_add(Y, v_mul(u, t))
+        return sq(v_dot(v_sub(g(a1), Fp), v_sub(g(a1), Fp)))
+    if kind == 'dll':
+        A, B = (g(n) for n in names_of(a1))
+        C, D = (g(n) for n in names_of(a2))
+        s_, t_ = sp.symbols('s t')
+        Pp = v_add(A, v_mul(v_sub(B, A), s_))
+        Qp = v_add(C, v_mul(v_sub(D, C), t_))
+        w = v_sub(Pp, Qp)
+        sol = sp.solve([v_dot(w, v_sub(B, A)), v_dot(w, v_sub(D, C))], [s_, t_], dict=True)[0]
+        ww = [sp.simplify(x.subs(sol)) for x in w]
+        return sq(v_dot(ww, ww))
+    if kind == 'seg':
+        A, B = (g(n) for n in names_of(a1))
+        return sq(sum((x - y) ** 2 for x, y in zip(A, B)))
+    if kind == 'alp':
+        A, B = (g(n) for n in names_of(a1))
+        pl = [g(n) for n in names_of(a2)]
+        s = abs(signed_pp(A, pl) - signed_pp(B, pl)) / sq(v_dot(v_sub(B, A), v_sub(B, A)))
+        return s, sq(1 - s * s)
+    if kind == 'app':
+        def normal(pts):
+            a, b, c = sp.symbols('na nb nc')
+            eqs = [a * (p[0] - pts[0][0]) + b * (p[1] - pts[0][1]) + c * (p[2] - pts[0][2]) for p in pts[1:]]
+            for fix in ((a, 1), (b, 1), (c, 1)):
+                sol = sp.solve(eqs + [fix[0] - fix[1]], [a, b, c], dict=True)
+                if sol:
+                    return [sol[0][a], sol[0][b], sol[0][c]]
+            raise ValueError
+        u = normal([g(n) for n in names_of(a1)])
+        v = normal([g(n) for n in names_of(a2)])
+        c = abs(v_dot(u, v)) / (sq(v_dot(u, u)) * sq(v_dot(v, v)))
+        return sq(1 - c * c), c
+    if kind == 'all':
+        A, B = (g(n) for n in names_of(a1))
+        C, D = (g(n) for n in names_of(a2))
+        u, v = v_sub(B, A), v_sub(D, C)
+        lu, lv, lw = v_dot(u, u), v_dot(v, v), v_dot(v_sub(u, v), v_sub(u, v))
+        c = abs((lu + lv - lw) / (2 * sq(lu) * sq(lv)))
+        return sq(1 - c * c), c
+    if kind == 'sec':
+        pts, n = section(P, S_, names_of(a1), exact=True)
+        # площадь веером треугольников от первой точки (после упорядочения по углу)
+        cx = [sum(float(sp.N(p[i])) for p in pts) / len(pts) for i in range(3)]
+        nf = [float(sp.N(x)) for x in n]
+        ref = [float(sp.N(x)) - c for x, c in zip(pts[0], cx)]
+        ax2 = v_cross(nf, ref)
+        ordered = sorted(pts, key=lambda p: math.atan2(v_dot([float(sp.N(x)) - c for x, c in zip(p, cx)], ax2),
+                                                        v_dot([float(sp.N(x)) - c for x, c in zip(p, cx)], ref)))
+        return sum(tri_area(ordered[0], ordered[i], ordered[i + 1]) for i in range(1, len(ordered) - 1))
+    if kind == 'vol':
+        X_, Y__, Z_, W = (g(n) for n in names_of(a1))
+        return tri_area(Y__, Z_, W) * dist_pp(X_, [Y__, Z_, W]) / 3
+    raise ValueError(kind)
+
+
+ANGLE_K = ('alp', 'app', 'all')
+
+
+def gen15(r, kinds):
+    """Общий генератор №15: сценарий с верным пунктом а + вопрос б из заданных видов."""
+    sc = r.choice(SCEN15)(r)
+    if not sc:
+        return None
+    opts = [qq for qq in sc['queries'] if qq[0] in kinds]
+    if not opts:
+        return None
+    kind, a1, *rest = r.choice(opts)
+    a2 = rest[0] if rest else None
+    S_, extra = sc['build'](math.sqrt, float)
+    P = dict(S_.pts)
+    P.update(extra)
+    val = q_float(kind, P, S_, a1, a2)
+    if val is None:
+        return None
+    rep = pick_repr(r, val, 'ang' if kind in ANGLE_K else 'len')
+    if not rep:
+        return None
+    ans, how = rep
+    if how in ('sq', 'tg2', 'cos2', 'sin2') and r.random() < 0.5:
+        return None                     # чаще берём конфигурации с «хорошим» ответом, как в банке
+    if how == 'sq' and ans > 1000:
+        return None
+    q = f'{sc["text"]}\nа) {sc["a"]}\nб) {q_text(kind, a1, a2, sc)}\n{ASK15[how]}'
+    used = set(names_of(a1)) | (set(names_of(a2)) if a2 else set())
+    segs = []
+    for nm in (a1, a2):
+        if not nm:
+            continue
+        pts_ = names_of(nm)
+        if len(pts_) >= 2 and kind != 'dpp' or nm == a2 and kind == 'dpp':
+            segs += [(pts_[i], pts_[(i + 1) % len(pts_)]) for i in range(len(pts_) if len(pts_) > 2 else 1)]
+    svg = proj_svg(S_, [lab(n) for n in (list(sc['show']) if not isinstance(sc['show'], list) else sc['show'])],
+                   extra_pts=extra, segs=segs)
+    e = f'б) Метод координат (или построение): искомая величина {"" if how in ("", "deg") else "(" + ASK15[how].split("запишите ")[1].rstrip(".") + ") "}равна {tnum(ans)}.'
+
+    def chk():
+        Se, ex = sc['build'](sp.sqrt, sp.Integer)
+        Pe = dict(Se.pts)
+        Pe.update(ex)
+        if not sc['a_chk'](Pe):
+            return False
+        v = q_exact(kind, Pe, Se, a1, a2)
+        if kind in ANGLE_K:
+            s_, c_ = v
+            if how == 'deg':
+                return abs(math.degrees(math.atan2(float(sp.N(s_)), float(sp.N(c_)))) - float(ans)) < 1e-7
+            return same(num(ans), ang_value(how, s_, c_))
+        return same(num(ans), v * v if how == 'sq' else v)
+    return pcard(q, num(ans), e, svg=svg), chk
+
+
+KES15 = ['7.2', '7.3']
+M15 = ['ошибка в координатах точек правильной пирамиды/призмы', 'путают расстояние до плоскости и до прямой',
+       'находят не тот угол (например, с ребром вместо проекции)']
+
+
+def reg15(pid, title, kinds, inv, ans_rule, fipi, extra_m=()):
+    def fn(r):
+        return gen15(r, kinds)
+    fn.__name__ = 'gen_' + pid.replace('-', '_')
+    proto(pid, 'ege-prof', 15, title, invariant=inv,
+          varies='Многогранник (куб, параллелепипед, правильные призма и пирамиды, тетраэдр, прямоугольный тетраэдр), '
+                 'размеры, положение точек на рёбрах, какая величина спрашивается; сюжет пункта а соответствует фигуре.',
+          answer_rule=ans_rule, fipi=fipi, mistakes=list(extra_m) + M15, svg=True,
+          kim=kim(K15, 'Как в КИМ: описание многогранника с числами, «а) Докажите, что …», «б) Найдите …»; '
+                       'итог пункта б — число (при иррациональном ответе — квадрат величины или тригонометрическая функция угла).'))(fn)
+    return fn
+
+
+reg15('ep15-dist-plane', 'Расстояние от точки до плоскости', ('dpp',),
+      'Расстояние от точки до плоскости: через объём тетраэдра (d = 3V/S), через перпендикуляр к плоскости или координатами.',
+      'd = |n·(X − A)|/|n| или 3V/S; итог — d (или d²).', r'Найдите расстояние от (точки|вершины) \w+ до плоскости')
+reg15('ep15-dist-line', 'Расстояние от точки до прямой и между скрещивающимися прямыми', ('dpl', 'dll', 'seg'),
+      'Расстояние до прямой — высота треугольника; между скрещивающимися прямыми — общий перпендикуляр или '
+      'расстояние от прямой до параллельной ей плоскости.',
+      'd = |AX × AB|/|AB| или |(C − A)·(u × v)|/|u × v|; итог — d (или d²).',
+      r'Найдите расстояние (от точки \w+ до прямой|между прямыми)|Найдите длину отрезка')
+reg15('ep15-angle-lp', 'Угол между прямой и плоскостью', ('alp',),
+      'Угол между прямой и её проекцией на плоскость: sin φ = расстояние от точки прямой до плоскости / длина отрезка.',
+      'sin φ = |u·n|/(|u||n|); итог — тригонометрическая функция угла или градусы.', r'Найдите угол между прямой \w+ и плоскостью')
+reg15('ep15-angle-pp', 'Угол между плоскостями', ('app',),
+      'Двугранный угол: линейный угол (перпендикуляры к линии пересечения) или угол между нормалями.',
+      'cos φ = |n₁·n₂|/(|n₁||n₂|); итог — тригонометрическая функция угла или градусы.',
+      r'Найдите (косинус |тангенс )?угл[а-я]* между плоскост|угол между плоскостями')
+reg15('ep15-angle-ll', 'Угол между скрещивающимися прямыми', ('all',),
+      'Параллельный перенос одной прямой до пересечения с другой, теорема косинусов (или векторы направлений).',
+      'cos φ = |u·v|/(|u||v|); итог — тригонометрическая функция угла или градусы.', r'угол между прямыми \w+ и \w+')
+reg15('ep15-section', 'Площадь сечения многогранника плоскостью', ('sec',),
+      'Строим сечение по трём точкам (следы на гранях, параллельность), определяем вид многоугольника и находим площадь.',
+      'Площадь многоугольника сечения (по сторонам и высотам или через проекцию S = S_пр / cos φ).',
+      r'Найдите площадь сечения')
+reg15('ep15-volume', 'Объём пирамиды с вершинами в точках многогранника', ('vol',),
+      'V = S·h/3: основание и высота выбираются удобно (часто высота — половина высоты пирамиды для середины ребра).',
+      'V = |det|/6 или S·h/3; итог — объём (или его квадрат).', r'Найдите объём (пирамиды|тетраэдра|многогранника)')
+
+
+@proto('ep15-cylinder', 'ege-prof', 15, 'Цилиндр: точки на окружностях оснований, отрезок через ось',
+       invariant='Если отрезок AC₁ пересекает ось, то A и проекция C точки C₁ диаметрально противоположны; вписанный '
+                 'угол ABC прямой, BB₁ ⟂ основанию, поэтому угол ABC₁ прямой; диаметр² = AB² + BC², BC = B₁C₁.',
+       varies='Длины AB, BB₁, B₁C₁ (тройки чисел), спрашиваемая величина: объём, площадь боковой поверхности, '
+              'расстояние от B до AC₁, угол между BB₁ и AC₁.',
+       answer_rule='R = √(AB² + B₁C₁²)/2, H = BB₁; V = πR²H, S = 2πRH (в ответ — V/π или S/π); d = AB·BC₁/AC₁.',
+       fipi=r'В цилиндре образующая перпендикулярна плоскости основания',
+       mistakes=['берут AB за диаметр', 'забывают деление на π в ответе', 'путают BC₁ и B₁C₁'],
+       svg=True,
+       kim=kim(K15, 'Как в КИМ: «В цилиндре образующая перпендикулярна плоскости основания… а) Докажите, что угол ABC₁ '
+                    'прямой. б) Найдите …»; итог — число (для объёма и площади — делённое на π).', kes=['7.4', '7.2']))
+def gen_ep15_cylinder(r):
+    trip = [(3, 4, 5), (6, 8, 10), (5, 12, 13), (8, 15, 17), (7, 24, 25), (20, 21, 29), (12, 16, 20), (9, 12, 15)]
+    ab, bc, dia = r.choice(trip)
+    if r.random() < 0.5:
+        ab, bc = bc, ab
+    H = r.choice([2, 3, 4, 5, 6, 8, 9, 10, 12, 15, 16, 20, 24])
+    ask = r.choice(['V', 'S', 'd', 'tg'])
+    R_ = F(dia, 2)
+    if ask == 'V':
+        val = R_ * R_ * H
+        qtxt, ins = 'Найдите объём цилиндра.', 'В ответ запишите объём, делённый на π.'
+    elif ask == 'S':
+        val = 2 * R_ * H
+        qtxt, ins = 'Найдите площадь боковой поверхности цилиндра.', 'В ответ запишите площадь, делённую на π.'
+    elif ask == 'd':
+        bc1 = math.sqrt(bc * bc + H * H)
+        v = ab * bc1 / math.sqrt(ab * ab + bc1 * bc1)
+        val = fnice(v)
+        how = ''
+        if val is None:
+            val = fnice(v * v)
+            how = 'sq'
+        if val is None:
+            return None
+        qtxt = 'Найдите расстояние от точки B до прямой AC₁.'
+        ins = ASK15[how]
+    else:
+        val = F(dia, H)
+        if not nice(val, 2):
+            return None
+        qtxt, ins = 'Найдите угол между прямыми BB₁ и AC₁.', 'В ответ запишите тангенс найденного угла.'
+    if not nice(val, 2):
+        return None
+    head = pick(r, 'Образующая цилиндра перпендикулярна плоскости его основания. На окружности нижнего основания отмечены '
+                   'точки A и B, на окружности верхнего — точки B₁ и C₁, причём BB₁ — образующая, а отрезок AC₁ '
+                   'пересекает ось цилиндра.',
+                'Точки A и B лежат на окружности одного основания прямого кругового цилиндра, точки B₁ и C₁ — на окружности '
+                'другого основания; BB₁ — образующая цилиндра, отрезок AC₁ проходит через точку на оси цилиндра.')
+    head += f' Известно, что AB = {ab}, BB₁ = {H}, B₁C₁ = {bc}.'
+    q = f'{head}\nа) Докажите, что угол ABC₁ прямой.\nб) {qtxt}\n{ins}'
+    # чертёж: окружности-эллипсы заменяем многоугольниками
+    import cmath
+    k = 0.35
+    pts = {}
+    ang_a = math.pi * 0.9
+    Ax, Ay = R_ * math.cos(ang_a), R_ * math.sin(ang_a)
+    Cx, Cy = -Ax, -Ay
+    # B на окружности с AB = ab: угол между A и B
+    th = 2 * math.asin(ab / float(dia))
+    Bx, By = float(R_) * math.cos(ang_a + th), float(R_) * math.sin(ang_a + th)
+    pr = lambda x, y, z: (float(x), float(y) * k + float(z))
+    pts['A'], pts['B'], pts['C'] = pr(Ax, Ay, 0), pr(Bx, By, 0), pr(Cx, Cy, 0)
+    pts['B₁'], pts['C₁'] = pr(Bx, By, H * 0.6), pr(Cx, Cy, H * 0.6)
+    ring = [pr(float(R_) * math.cos(2 * math.pi * i / 24), float(R_) * math.sin(2 * math.pi * i / 24), 0) for i in range(24)]
+    ring2 = [(x, y + H * 0.6) for x, y in ring]
+    for i, p_ in enumerate(ring + ring2):
+        pts[chr(0xE100 + i)] = p_
+    segs = [chr(0xE100 + i) + chr(0xE100 + (i + 1) % 24) for i in range(24)] + \
+           [chr(0xE100 + 24 + i) + chr(0xE100 + 24 + (i + 1) % 24) for i in range(24)]
+    segs += ['AB', 'BB₁'.replace('B₁', chr(0xE200)), ]
+    pts[chr(0xE200)] = pts.pop('B₁')
+    pts[chr(0xE201)] = pts.pop('C₁')
+    segs = segs[:-1] + ['B' + chr(0xE200), chr(0xE200) + chr(0xE201), 'A' + chr(0xE201)]
+    svg = svg_geom(pts, segs=segs, labels=['A', 'B', chr(0xE200), chr(0xE201)], width=260)
+    svg = svg.replace(f'>{chr(0xE200)}<', '>B₁<').replace(f'>{chr(0xE201)}<', '>C₁<')
+    e = (f'∠ABC = 90° (опирается на диаметр AC), BB₁ ⟂ BC… AC = √({ab}² + {bc}²) = {dia}, R = {fr(R_)}, H = {H}; '
+         f'ответ {tnum(val)}.')
+
+    def chk():
+        # координаты: A и C диаметрально противоположны; B на окружности; проверяем через векторы
+        Rr = R_
+        Ap = sp.Matrix([-Rr, 0, 0])
+        Cp = sp.Matrix([Rr, 0, 0])
+        # B: |AB| = ab, на окружности x² + y² = R²
+        bx = sp.Rational(ab * ab, 2 * 1) / (2 * Rr) - Rr   # из |B − A|² = ab²: 2R(bx + R) = ab²
+        bx = sp.Rational(ab * ab) / (2 * R(Rr)) - R(Rr)
+        by = sp.sqrt(R(Rr) ** 2 - bx ** 2)
+        Bp = sp.Matrix([bx, by, 0])
+        B1 = Bp + sp.Matrix([0, 0, H])
+        C1 = Cp + sp.Matrix([0, 0, H])
+        if sp.simplify((B1 - C1).norm() - bc) != 0:
+            return False
+        if sp.simplify((Ap - Bp).dot(C1 - Bp)) != 0:       # пункт а
+            return False
+        if ask == 'V':
+            return same(num(val), (Cp - Ap).norm() ** 2 / 4 * H)
+        if ask == 'S':
+            return same(num(val), (Cp - Ap).norm() * H)
+        if ask == 'd':
+            u = C1 - Ap
+            t = (Bp - Ap).dot(u) / u.dot(u)
+            dd = (Bp - (Ap + t * u)).norm()
+            return same(num(val), dd * dd if 'квадрат' in ins else dd)
+        u, v = B1 - Bp, C1 - Ap
+        c = u.dot(v) / (u.norm() * v.norm())
+        return same(num(val), sp.sqrt(1 - c * c) / c)
+    return pcard(q, num(val), e, svg=svg), chk
+
+
+@proto('ep15-inverse', 'ege-prof', 15, 'Обратная задача: высота (ребро) по заданному углу',
+       invariant='Угол между прямой (плоскостью) и основанием выражается через высоту и проекцию; по известному углу '
+                 '(30°, 45°, 60°) и стороне основания находим высоту пирамиды или призмы.',
+       varies='Многогранник и отрезок (середины рёбер), сторона основания, угол.',
+       answer_rule='tg φ = (часть высоты)/(длина проекции) ⇒ h; итог — h (или h²).',
+       fipi=r'Найдите (высоту|объём) (пирамиды|призмы),? если .*угол между',
+       mistakes=['берут не ту проекцию', 'путают tg и sin', 'для середины бокового ребра берут всю высоту'],
+       svg=True,
+       kim=kim(K15, 'Как в КИМ: «б) Найдите высоту пирамиды, если AB = 12, а угол между прямой MK и плоскостью основания '
+                    'равен 30°»; итог — число.'))
+def gen_ep15_inverse(r):
+    a = r.choice([2, 3, 4, 6, 8, 9, 12, 16, 18, 24])
+    phi = r.choice([30, 45, 60])
+    t = {30: 1 / math.sqrt(3), 45: 1.0, 60: math.sqrt(3)}[phi]
+    s2, s3 = math.sqrt(2), math.sqrt(3)
+    # (вид, проекция, множитель высоты, конструктор, пункт а, что за угол, текст фигуры, площадь основания)
+    cfgs = [
+        ('mk', a * math.sqrt(10) / 4, 2, 'pyr4', 'Докажите, что прямая MK параллельна плоскости SBC.',
+         ('alp', 'MK', 'ABC'), 'прямой MK и плоскостью основания',
+         'В правильной четырёхугольной пирамиде SABCD точки M и K — середины рёбер AB и SD соответственно.', a * a),
+        ('edge4', a / s2, 1, 'pyr4', 'Докажите, что прямая BD перпендикулярна плоскости SAC.', ('alp', 'SB', 'ABC'),
+         'боковым ребром и плоскостью основания', 'Дана правильная четырёхугольная пирамида SABCD с основанием ABCD.', a * a),
+        ('face4', a / 2, 1, 'pyr4', 'Докажите, что плоскости SAC и SBD перпендикулярны.', ('app', 'SBC', 'ABC'),
+         'боковой гранью и плоскостью основания', 'Дана правильная четырёхугольная пирамида SABCD с основанием ABCD.', a * a),
+        ('edge3', a / s3, 1, 'pyr3', 'Докажите, что прямые SA и BC перпендикулярны.', ('alp', 'SA', 'ABC'),
+         'боковым ребром и плоскостью основания', 'Дана правильная треугольная пирамида SABC с основанием ABC.', a * a * s3 / 4),
+        ('face3', a / (2 * s3), 1, 'pyr3', 'Докажите, что прямые SA и BC перпендикулярны.', ('app', 'SBC', 'ABC'),
+         'боковой гранью и плоскостью основания', 'Дана правильная треугольная пирамида SABC с основанием ABC.', a * a * s3 / 4),
+        ('prism', a * s3 / 2, 1, 'prism3', 'Докажите, что сечение призмы плоскостью ABC₁ — равнобедренный треугольник.',
+         ('app', 'ABC1', 'ABC'), 'плоскостью ABC₁ и плоскостью основания',
+         'Дана правильная треугольная призма ABCA₁B₁C₁.', a * a * s3 / 4),
+        ('edge6', a, 1, 'pyr6', 'Докажите, что прямые SA и SD образуют с основанием равные углы.', ('alp', 'SA', 'ABC'),
+         'боковым ребром и плоскостью основания', 'Дана правильная шестиугольная пирамида SABCDEF с основанием ABCDEF.',
+         3 * s3 * a * a / 2),
+    ]
+    kind, proj, mult, body, stmt, qa, what, pre, Sb = r.choice(cfgs)
+    h = mult * t * proj
+    ask = r.choice(['h', 'h', 'V']) if body != 'prism3' else 'h'
+    fig = 'призмы' if body == 'prism3' else 'пирамиды'
+    val = h if ask == 'h' else Sb * h / 3
+    rep = pick_repr(r, val, 'len')
+    if not rep:
+        return None
+    ans, how = rep
+    if how == 'sq' and ans > 3000:
+        return None
+    base_side = 'AB'
+    qd = (f'Найдите {"высоту" if ask == "h" else "объём"} {fig}, если {base_side} = {a}, а угол между {what} равен {phi}°.')
+    q = f'{pre}\nа) {stmt}\nб) {qd}\n{ASK15[how]}'
+
+    def build(hh, sq, Q):
+        if body == 'pyr4':
+            S_ = mk_pyr4(a, hh, sq, Q)
+        elif body == 'pyr3':
+            S_ = mk_pyr3(a, hh, sq, Q)
+        elif body == 'pyr6':
+            S_ = mk_pyr6(a, hh, sq, Q)
+        else:
+            S_ = mk_prism3(a, hh, sq, Q)
+        P = dict(S_.pts)
+        if body == 'pyr4':
+            P['M'] = lerp(P['A'], P['B'], Q(1) / 2)
+            P['K'] = lerp(P['S'], P['D'], Q(1) / 2)
+        return S_, P
+    S_, Pf = build(h, math.sqrt, float)
+    extra = {k_: v_ for k_, v_ in Pf.items() if k_ in ('M', 'K')} if kind == 'mk' else {}
+    show = [n for n in Pf if len(n) == 1 or n.endswith('1')]
+    svg = proj_svg(S_, [lab(n) for n in show], extra_pts=extra, segs=[('M', 'K')] if kind == 'mk' else [])
+    e = f'tg {phi}° выражаем через высоту и проекцию; получаем {"h" if ask == "h" else "V"} = {("√" if how == "sq" else "") + tnum(ans)}.'
+
+    def chk():
+        if ask == 'h':
+            hh = sp.sqrt(R(ans)) if how == 'sq' else R(ans)
+        else:
+            Vv = sp.sqrt(R(ans)) if how == 'sq' else R(ans)
+            Sbe = {'pyr4': sp.Integer(a * a), 'pyr3': sp.sqrt(3) * a * a / 4, 'pyr6': 3 * sp.sqrt(3) * a * a / 2}[body]
+            hh = 3 * Vv / Sbe
+        Se, Pe = build(hh, sp.sqrt, sp.sympify)
+        s_, c_ = q_exact(qa[0], Pe, Se, qa[1], qa[2])
+        return abs(float(sp.N(s_ / c_)) - math.tan(math.radians(phi))) < 1e-9
+    return pcard(q, num(ans), e, svg=svg), chk
+
+
+# ================================================================ №18: планиметрия
+
+ASK18 = {'': 'В ответ запишите найденное значение.', 'sq': 'В ответ запишите квадрат найденной величины.'}
+
+
+def rep18(v):
+    """float → (ответ, вид) или None."""
+    x = fnice(v)
+    if x is not None and x > 0:
+        return x, ''
+    x = fnice(v * v)
+    if x is not None and x > 0 and x <= 2000:
+        return x, 'sq'
+    return None
+
+
+def sqrt_txt(n):
+    """√n в упрощённом виде: 12 → 2√3, 16 → 4, 7 → √7 (n — целое)."""
+    k, m = sqfree(int(n))
+    if m == 1:
+        return str(k)
+    return (str(k) if k > 1 else '') + f'√{m}'
+
+
+def fig18(points, polys=(), segs=(), circles=()):
+    return svg_geom({k: (float(x), float(y)) for k, (x, y) in points.items()}, polys=polys, segs=segs,
+                    circles=[((float(c[0]), float(c[1])), float(rr)) for c, rr in circles], width=280)
+
+
+def dist2(P, Q):
+    return (P[0] - Q[0]) ** 2 + (P[1] - Q[1]) ** 2
+
+
+TRIPLES_ALL = [(3, 4, 5), (5, 12, 13), (8, 15, 17), (7, 24, 25), (20, 21, 29), (9, 40, 41), (12, 35, 37)]
+
+
+@proto('ep18-trap-perp', 'ege-prof', 18, 'Трапеция с перпендикулярными диагоналями: высота по диагоналям и сумме оснований',
+       invariant='Параллельный перенос диагонали на вектор основания даёт треугольник со сторонами d₁, d₂ и a + b; '
+                 'если d₁² + d₂² = (a + b)², он прямоугольный (диагонали перпендикулярны), а высота трапеции — '
+                 'высота этого треугольника: h = d₁d₂/(a + b).',
+       varies='Пифагоровы тройки и их кратные, спрашиваемая величина (высота, площадь, средняя линия × высота).',
+       answer_rule='h = d₁·d₂/(a + b); S = d₁·d₂/2.',
+       fipi=r'Сумма оснований трапеции равна \d+, а её диагонали равны',
+       mistakes=['считают перпендикулярность очевидной без переноса диагонали', 'путают высоту с диагональю',
+                 'делят произведение диагоналей не на ту сумму'],
+       svg=True,
+       kim=kim(K18, 'Как в КИМ: «а) Докажите, что диагонали трапеции перпендикулярны. б) Найдите высоту трапеции»; итог — число.'))
+def gen_ep18_trap_perp(r):
+    t = r.choice(TRIPLES_ALL[:5])
+    k = F(r.choice([1, 1, 2, 3, 4, 5])) / r.choice([1, 1, 2])
+    d1, d2, s = t[0] * k, t[1] * k, t[2] * k
+    if r.random() < 0.5:
+        d1, d2 = d2, d1
+    if not all(nice(v, 1) for v in (d1, d2, s)):
+        return None
+    h = d1 * d2 / s
+    ask = r.choice(['h', 'h', 'S'])
+    val = h if ask == 'h' else d1 * d2 / 2
+    if not nice(val, 2):
+        return None
+    head = pick(r, f'Основания трапеции в сумме дают {tnum(s)}, а её диагонали имеют длины {tnum(d1)} и {tnum(d2)}.',
+                f'Диагонали трапеции равны {tnum(d1)} и {tnum(d2)}, а сумма длин её оснований равна {tnum(s)}.')
+    q = (f'{head}\nа) Докажите, что диагонали этой трапеции перпендикулярны.\n'
+         f'б) Найдите {"высоту" if ask == "h" else "площадь"} трапеции.\n{ASK18[""]}')
+    # чертёж: A(0,0), D' (s, 0), C (d1²/s, h); верхнее основание b = s/3
+    b = s / 3
+    C = (d1 * d1 / s, h)
+    B = (C[0] - b, h)
+    D = (s - b, F(0))
+    pts = {'A': (0, 0), 'B': B, 'C': C, 'D': D}
+    svg = fig18(pts, polys=['ABCD'], segs=['AC', 'BD'])
+    e = f'Сдвинем диагональ BD на вектор BC: треугольник со сторонами {tnum(d1)}, {tnum(d2)}, {tnum(s)} прямоугольный; h = {tnum(d1)}·{tnum(d2)}/{tnum(s)}.'
+
+    def chk():
+        A_ = sp.Matrix([0, 0])
+        Cc = sp.Matrix([R(d1) ** 2 / R(s), sp.Symbol('y', positive=True)])
+        y = sp.solve(sp.Eq(Cc.dot(Cc), R(d1) ** 2), sp.Symbol('y', positive=True))[0]
+        Cc = sp.Matrix([R(d1) ** 2 / R(s), y])
+        bb = R(s) / 3
+        Bb = Cc - sp.Matrix([bb, 0])
+        Dd = sp.Matrix([R(s) - bb, 0])
+        ok = sp.simplify((Dd - Bb).norm() - R(d2)) == 0 and sp.simplify((Cc - A_).dot(Dd - Bb)) == 0
+        area = (Dd[0] + bb) * y / 2
+        return ok and same(num(val), y if ask == 'h' else area)
+    return pcard(q, num(val), e, svg=svg), chk
+
+
+@proto('ep18-angle-circle', 'ege-prof', 18, 'Окружность, вписанная в угол, и диаметр через точку касания',
+       invariant='Касательные NA = NB, NO ⟂ AB; вписанный угол BAC опирается на диаметр, поэтому AC ⟂ AB и AC ∥ NO; '
+                 'из подобия (или OB² = OM·ON) NO = R²/OM, где OM = AC/2.',
+       varies='Длины AC и AB (тройки), спрашиваемая величина: NO, расстояние от N до AB, NA.',
+       answer_rule='BC = √(AB² + AC²), R = BC/2, OM = AC/2, NO = R²/OM, NM = NO − OM, NA = √(NO² − R²).',
+       fipi=r'касается сторон угла с вершиной N в точках A и B',
+       mistakes=['путают OM и AC', 'берут AB за диаметр', 'ошибка в подобии треугольников'],
+       svg=True,
+       kim=kim(K18, 'Как в КИМ: окружность, вписанная в угол, диаметр BC; «а) Докажите, что AC ∥ биссектрисе угла … '
+                    'б) Найдите NO»; итог — число.'))
+def gen_ep18_angle_circle(r):
+    t = r.choice(TRIPLES_ALL)
+    k = r.choice([1, 2, 3, 4])
+    ac, ab, bc = t[0] * k, t[1] * k, t[2] * k
+    if r.random() < 0.5:
+        ac, ab = ab, ac
+    Rr = F(bc, 2)
+    om = F(ac, 2)
+    no = Rr * Rr / om
+    ask = r.choice(['NO', 'NM', 'NA'])
+    if ask == 'NO':
+        val = no
+    elif ask == 'NM':
+        val = no - om
+    else:
+        val2 = no * no - Rr * Rr
+        v = math.sqrt(val2)
+        rr_ = rep18(v)
+        if not rr_:
+            return None
+        val = rr_[0] if not rr_[1] else None
+        if val is None:
+            return None
+    if not nice(val, 2):
+        return None
+    head = pick(r, f'Окружность с центром O вписана в угол с вершиной N и касается его сторон в точках A и B. '
+                   f'Отрезок BC — диаметр окружности, AC = {ac}, AB = {ab}.',
+                f'Стороны угла с вершиной N касаются окружности с центром O в точках A и B; BC — диаметр этой '
+                f'окружности. Известно, что AB = {ab}, AC = {ac}.')
+    qd = {'NO': 'Найдите длину отрезка NO.', 'NM': 'Найдите расстояние от точки N до прямой AB.',
+          'NA': 'Найдите длину отрезка NA.'}[ask]
+    q = f'{head}\nа) Докажите, что прямая AC параллельна прямой NO.\nб) {qd}\n{ASK18[""]}'
+    # координаты: O(0,0), B(0, −R), C(0, R); A на окружности с |AB| = ab
+    Rf = float(Rr)
+    ya = ab * ab / (2 * Rf) - Rf           # |A − B|² = 2R² + 2R·yA
+    xa = math.sqrt(Rf * Rf - ya * ya)
+    # касательные в A и B пересекаются в N
+    # касательная в B: y = −R; в A: xa·x + ya·y = R²
+    xn = (Rf * Rf + ya * Rf) / xa
+    pts = {'O': (0, 0), 'B': (0, -Rf), 'C': (0, Rf), 'A': (xa, ya), 'N': (xn, -Rf)}
+    svg = fig18(pts, segs=['NA', 'NB', 'BC', 'AC', 'AB', 'NO'], circles=[((0, 0), Rf)])
+    e = f'BC = √({ab}² + {ac}²) = {bc}, OM = AC/2 = {fr(om)}, NO = R²/OM = {fr(no)}.'
+
+    def chk():
+        Rs = R(Rr)
+        ya_ = sp.Rational(ab * ab) / (2 * Rs) - Rs
+        xa_ = sp.sqrt(Rs ** 2 - ya_ ** 2)
+        A_ = sp.Matrix([xa_, ya_])
+        Cc = sp.Matrix([0, Rs])
+        if sp.simplify((A_ - Cc).norm() - ac) != 0:
+            return False
+        xn_ = (Rs ** 2 + ya_ * Rs) / xa_
+        N_ = sp.Matrix([xn_, -Rs])
+        if sp.simplify((N_ - A_).dot(A_)) != 0:          # NA — касательная
+            return False
+        # пункт а: AC ∥ NO
+        if sp.simplify((A_ - Cc)[0] * N_[1] - (A_ - Cc)[1] * N_[0]) != 0:
+            return False
+        if ask == 'NO':
+            return same(num(val), N_.norm())
+        if ask == 'NA':
+            return same(num(val), (N_ - A_).norm())
+        Bm = sp.Matrix([0, -Rs])
+        u = A_ - Bm
+        d = abs(u[0] * (N_ - Bm)[1] - u[1] * (N_ - Bm)[0]) / u.norm()
+        return same(num(val), d)
+    return pcard(q, num(val), e, svg=svg), chk
+
+
+ANG = {15: (sp.sqrt(6) - sp.sqrt(2)) / 4, 30: sp.Rational(1, 2), 45: sp.sqrt(2) / 2, 60: sp.sqrt(3) / 2,
+       75: (sp.sqrt(6) + sp.sqrt(2)) / 4, 90: sp.Integer(1), 105: (sp.sqrt(6) + sp.sqrt(2)) / 4,
+       120: sp.sqrt(3) / 2, 135: sp.sqrt(2) / 2, 150: sp.Rational(1, 2)}
+
+
+def tri_by_angles(a_len, A, B, C, exact=False):
+    """Треугольник по стороне BC = a и углам (градусы): B(0,0), C(a,0), A сверху."""
+    if exact:
+        s = lambda d: sp.sin(sp.pi * d / 180)
+        c_ = lambda d: sp.cos(sp.pi * d / 180)
+    else:
+        s = lambda d: math.sin(math.radians(d))
+        c_ = lambda d: math.cos(math.radians(d))
+    c_len = a_len * s(C) / s(A)             # AB
+    Bp = (0, 0)
+    Cp = (a_len, 0)
+    Ap = (c_len * c_(B), c_len * s(B))
+    return Ap, Bp, Cp
+
+
+@proto('ep18-ninepoint', 'ege-prof', 18, 'Середины сторон и основание высоты лежат на одной окружности',
+       invariant='C₁B₁ ∥ BC, а A₁B₁ = C₁H (медиана прямоугольного треугольника AHB), поэтому A₁B₁C₁H — '
+                 'равнобокая трапеция и вписана в окружность; A₁H = |BH − BA₁| = |AB·cos B − BC/2|.',
+       varies='Углы треугольника (стандартные), длина BC, какой отрезок спрашивается.',
+       answer_rule='По теореме синусов AB = BC·sin C/sin A; BH = AB·cos B; A₁H = |BH − BC/2|.',
+       fipi=r'середины сторон BC , AC и AB соответственно, AH — высота',
+       mistakes=['берут неверный знак при BH − BA₁', 'путают стороны в теореме синусов', 'не учитывают тупой угол'],
+       svg=True,
+       kim=kim(K18, 'Как в КИМ: «а) Докажите, что точки A₁, B₁, C₁ и H лежат на одной окружности. б) Найдите A₁H»; итог — число.'))
+def gen_ep18_ninepoint(r):
+    A = r.choice([30, 45, 60, 120, 135, 90])
+    Cc = r.choice([15, 30, 45, 60, 75])
+    B = 180 - A - Cc
+    if B <= 0 or B == Cc or B == 90 or B not in ANG and B not in (165,):
+        return None
+    k = r.randint(1, 12)
+    m = r.choice([1, 2, 3, 6])
+    a_len = k * math.sqrt(m)
+    Ap, Bp, Cp = tri_by_angles(a_len, A, B, Cc)
+    val = abs(Ap[0] - a_len / 2)
+    rr_ = rep18(val)
+    if not rr_:
+        return None
+    ans, how = rr_
+    bc_txt = f'{k if k > 1 or m == 1 else ""}{"√" + str(m) if m > 1 else ""}'
+    head = pick(r, f'В треугольнике ABC угол BAC равен {A}°, угол ACB равен {Cc}°; A₁, B₁, C₁ — середины сторон BC, CA, AB, '
+                   f'а AH — высота треугольника.',
+                f'Дан треугольник ABC, в котором ∠A = {A}°, ∠C = {Cc}°. Точки A₁, B₁ и C₁ — середины его сторон BC, AC '
+                f'и AB, точка H — основание высоты, проведённой из вершины A.')
+    q = (f'{head}\nа) Докажите, что точки A₁, B₁, C₁ и H лежат на одной окружности.\n'
+         f'б) Найдите длину отрезка A₁H, если BC = {bc_txt}.\n{ASK18[how]}')
+    pts = {'A': Ap, 'B': Bp, 'C': Cp, 'H': (Ap[0], 0), 'M': (a_len / 2, 0)}
+    svg = fig18(pts, polys=['ABC'], segs=['AH'])
+    svg = svg.replace('>M<', '>A₁<')
+    e = f'AB = BC·sin C / sin A, BH = AB·cos B, A₁H = |BH − BC/2| = {("√" if how else "") + tnum(ans)}.'
+
+    def chk():
+        a_ = k * sp.sqrt(m)
+        Ae, Be, Ce = tri_by_angles(a_, A, B, Cc, exact=True)
+        H = (Ae[0], 0)
+        A1 = (a_ / 2, 0)
+        B1 = ((Ae[0] + Ce[0]) / 2, Ae[1] / 2)
+        C1 = (Ae[0] / 2, Ae[1] / 2)
+        # пункт а: вписанность через равенство A₁B₁ = C₁H и C₁B₁ ∥ A₁H
+        if sp.simplify(dist2(A1, B1) - dist2(C1, H)) != 0:
+            return False
+        v = sp.sqrt(dist2(A1, H))
+        return same(num(ans), v * v if how else v)
+    return pcard(q, num(ans), e, svg=svg), chk
+
+
+@proto('ep18-chords', 'ege-prof', 18, 'Вписанный четырёхугольник с тремя равными сторонами',
+       invariant='Равные хорды стягивают равные дуги: ∠CAD = ∠ACB (опираются на равные дуги), значит BC ∥ AD; '
+                 'центральный угол θ: sin(θ/2) = c/(2R), AD = 2R·|sin(3θ/2)| = |3c − c³/R²|.',
+       varies='Радиус R и длина равных хорд c.',
+       answer_rule='AD = |3c − c³/R²| (формула тройного угла).',
+       fipi=r'вписан в окружность радиуса R = \d+ . Известно, что AB = BC = CD',
+       mistakes=['считают AD = 3c', 'неверно применяют формулу тройного угла', 'забывают модуль (дуга больше 180°)'],
+       svg=True,
+       kim=kim(K18, 'Как в КИМ: «Четырёхугольник ABCD вписан в окружность радиуса R, AB = BC = CD = … а) Докажите, что BC ∥ AD. '
+                    'б) Найдите AD»; итог — число.'))
+def gen_ep18_chords(r):
+    Rr = r.randint(2, 20)
+    c = r.randint(1, 2 * Rr - 1)
+    if F(c, 2 * Rr) >= F(866, 1000):
+        return None
+    ad = abs(3 * c - F(c ** 3, Rr * Rr))
+    if not nice(ad, 2) or ad == 0:
+        return None
+    head = pick(r, f'Около четырёхугольника ABCD описана окружность радиуса {Rr}, причём AB = BC = CD = {c}.',
+                f'Четырёхугольник ABCD вписан в окружность, радиус которой равен {Rr}; его стороны AB, BC и CD равны {c}.')
+    q = f'{head}\nа) Докажите, что прямые BC и AD параллельны.\nб) Найдите длину стороны AD.\n{ASK18[""]}'
+    th = 2 * math.asin(c / (2 * Rr))
+    pts = {n: (Rr * math.cos(i * th - 1.5 * th + math.pi / 2), Rr * math.sin(i * th - 1.5 * th + math.pi / 2))
+           for i, n in enumerate('ABCD')}
+    pts['O'] = (0, 0)
+    svg = fig18(pts, polys=['ABCD'], circles=[((0, 0), Rr)])
+    e = f'sin(θ/2) = {c}/{2 * Rr}, AD = 2R|sin(3θ/2)| = |3·{c} − {c}³/{Rr}²| = {tnum(ad)}.'
+
+    def chk():
+        cth = 1 - sp.Rational(c * c, 2 * Rr * Rr)          # cos θ
+        sth = sp.sqrt(1 - cth ** 2)
+        P = [sp.Matrix([Rr, 0])]
+        rot = sp.Matrix([[cth, -sth], [sth, cth]])
+        for _ in range(3):
+            P.append(rot * P[-1])
+        if any(sp.simplify((P[i + 1] - P[i]).norm() - c) != 0 for i in range(3)):
+            return False
+        # пункт а: BC ∥ AD
+        u, v = P[2] - P[1], P[3] - P[0]
+        if sp.simplify(u[0] * v[1] - u[1] * v[0]) != 0:
+            return False
+        return same(num(ad), (P[3] - P[0]).norm())
+    return pcard(q, num(ad), e, svg=svg), chk
+
+
+@proto('ep18-trap-isosc', 'ege-prof', 18, 'Трапеция, которую диагональ делит на два равнобедренных треугольника',
+       invariant='AB = BD = BC; ∠BCA = ∠BAC и ∠BCA = ∠CAD (накрест лежащие) ⇒ AC — биссектриса; в координатах '
+                 'CD² = 4BD² − AC² (параллелограмм, достроенный по диагоналям, или теорема косинусов).',
+       varies='Длины диагоналей (пифагоровы тройки AC, CD, 2BD), спрашиваемая сторона.',
+       answer_rule='CD = √(4BD² − AC²).',
+       fipi=r'Диагональ BD разбивает её на два равнобедренных треугольника',
+       mistakes=['путают основания равнобедренных треугольников', 'ошибка в теореме косинусов', 'берут 2BD за AC'],
+       svg=True,
+       kim=kim(K18, 'Как в КИМ: «а) Докажите, что луч AC — биссектриса угла BAD. б) Найдите CD, если AC = … и BD = …».'))
+def gen_ep18_trap_isosc(r):
+    t = r.choice(TRIPLES_ALL)
+    k = F(r.choice([1, 1, 2, 3])) / r.choice([1, 2])
+    ac, cd, dd = t[1] * k, t[0] * k, t[2] * k        # AC — больший катет (нужно AC > √2·BD)
+    bd = dd / 2
+    if not (ac * ac > 2 * bd * bd and ac < 2 * bd):
+        ac, cd = cd, ac
+        if not (ac * ac > 2 * bd * bd and ac < 2 * bd):
+            return None
+    if not all(nice(v, 1) for v in (ac, bd, cd)):
+        return None
+    head = pick(r, f'В трапеции ABCD с основаниями AD и BC диагональ BD делит трапецию на два равнобедренных треугольника: '
+                   f'ABD с основанием AD и BCD с основанием CD. Диагонали равны AC = {tnum(ac)} и BD = {tnum(bd)}.',
+                f'Трапеция ABCD (AD ∥ BC) такова, что AB = BD и BC = BD. Её диагонали AC и BD равны {tnum(ac)} и {tnum(bd)}.')
+    q = f'{head}\nа) Докажите, что AC — биссектриса угла BAD.\nб) Найдите боковую сторону CD.\n{ASK18[""]}'
+    d = float(bd)
+    p_ = (float(ac) ** 2 - 2 * d * d) / (2 * d)
+    hh = math.sqrt(d * d - p_ * p_)
+    pts = {'A': (-p_, 0), 'D': (p_, 0), 'B': (0, hh), 'C': (d, hh)}
+    svg = fig18(pts, polys=['ABCD'], segs=['AC', 'BD'])
+    e = f'CD² = 4BD² − AC² = {tnum(4 * bd * bd)} − {tnum(ac * ac)}, CD = {tnum(cd)}.'
+
+    def chk():
+        d_ = R(bd)
+        p2 = (R(ac) ** 2 - 2 * d_ ** 2) / (2 * d_)
+        h_ = sp.sqrt(d_ ** 2 - p2 ** 2)
+        A_, D_, B_, C_ = sp.Matrix([-p2, 0]), sp.Matrix([p2, 0]), sp.Matrix([0, h_]), sp.Matrix([d_, h_])
+        ok = sp.simplify((A_ - B_).norm() - d_) == 0 and sp.simplify((C_ - B_).norm() - d_) == 0
+        ok = ok and sp.simplify((C_ - A_).norm() - R(ac)) == 0
+        # биссектриса: углы CAB и CAD равны (сравниваем косинусы)
+        u, v, w = B_ - A_, C_ - A_, D_ - A_
+        ok = ok and sp.simplify(u.dot(v) / u.norm() - w.dot(v) / w.norm()) == 0
+        return ok and same(num(cd), (D_ - C_).norm())
+    return pcard(q, num(cd), e, svg=svg), chk
+
+
+@proto('ep18-orthic', 'ege-prof', 18, 'Отрезок, соединяющий основания высот: подобие и расстояние от центра описанной окружности',
+       invariant='Треугольник AB₁C₁ подобен ABC с коэффициентом |cos A| (B₁, C₁ — основания высот); '
+                 'B₁C₁ = BC·|cos A|, расстояние от центра описанной окружности до BC равно R·|cos A| = B₁C₁/(2 sin A).',
+       varies='Угол A (30°, 45°, 60°), длина B₁C₁ (с корнем, согласованным с углом), остальные углы, спрашиваемая величина.',
+       answer_rule='BC = B₁C₁/cos A, R = BC/(2 sin A), d = R·cos A.',
+       fipi=r'Высоты BB1 и CC1 остроугольного треугольника ABC пересекаются',
+       mistakes=['берут коэффициент подобия sin A вместо cos A', 'путают R и расстояние до стороны', 'ошибка с корнями'],
+       svg=True,
+       kim=kim(K18, 'Как в КИМ: «а) Докажите, что треугольник AB₁C₁ подобен треугольнику ABC. б) Найдите расстояние от '
+                    'центра описанной окружности до стороны BC, если B₁C₁ = … и ∠BAC = …».'))
+def gen_ep18_orthic(r):
+    A = r.choice([30, 45, 60])
+    B = r.choice([b for b in (45, 60, 75) if 0 < 180 - A - b < 90])
+    Cc = 180 - A - B
+    k = r.randint(1, 15)
+    m = {30: 1, 45: 2, 60: 3}[A]
+    b1c1 = k * math.sqrt(m) if r.random() < 0.7 else k
+    txt = f'{k if k > 1 or b1c1 == k else ""}{"√" + str(m) if m > 1 and b1c1 != k else ""}' if not (b1c1 == k) else str(k)
+    ask = r.choice(['d', 'R', 'BC'])
+    cosA = math.cos(math.radians(A))
+    sinA = math.sin(math.radians(A))
+    BC = b1c1 / cosA
+    Rr = BC / (2 * sinA)
+    val = {'d': Rr * cosA, 'R': Rr, 'BC': BC}[ask]
+    rr_ = rep18(val)
+    if not rr_:
+        return None
+    ans, how = rr_
+    head = pick(r, f'В остроугольном треугольнике ABC проведены высоты BB₁ и CC₁; угол BAC равен {A}°, а B₁C₁ = {txt}.',
+                f'Дан остроугольный треугольник ABC с углом {A}° при вершине A. Его высоты BB₁ и CC₁ проведены к сторонам '
+                f'AC и AB, причём B₁C₁ = {txt}.')
+    qd = {'d': 'Найдите расстояние от центра окружности, описанной около треугольника ABC, до прямой BC.',
+          'R': 'Найдите радиус окружности, описанной около треугольника ABC.', 'BC': 'Найдите длину стороны BC.'}[ask]
+    q = f'{head}\nа) Докажите, что треугольник AB₁C₁ подобен треугольнику ABC.\nб) {qd}\n{ASK18[how]}'
+    Ap, Bp, Cp = tri_by_angles(BC, A, B, Cc)
+    svg = fig18({'A': Ap, 'B': Bp, 'C': Cp}, polys=['ABC'])
+    e = f'Коэффициент подобия |cos A|: BC = B₁C₁/cos {A}°, R = BC/(2 sin {A}°), d = R·cos {A}° = B₁C₁/(2 sin {A}°).'
+
+    def chk():
+        # строим треугольник с найденной BC и заданными углами, находим B₁, C₁ и проверяем B₁C₁
+        bc_ = sp.nsimplify(BC) if False else None
+        cA = ANG[90 - A] if False else sp.cos(sp.pi * A / 180)
+        target = k * sp.sqrt(m) if b1c1 != k else sp.Integer(k)
+        a_ = target / cA
+        Ae, Be, Ce = tri_by_angles(a_, A, B, Cc, exact=True)
+        Ae, Be, Ce = [sp.Matrix(p) for p in (Ae, Be, Ce)]
+
+        def foot(Pt, U, V):
+            u = V - U
+            t = (Pt - U).dot(u) / u.dot(u)
+            return U + t * u
+        B1 = foot(Be, Ae, Ce)
+        C1 = foot(Ce, Ae, Be)
+        if abs(sp.N((B1 - C1).norm() - target, 30)) > 1e-20:
+            return False
+        # центр описанной окружности: пересечение серединных перпендикуляров
+        ox = a_ / 2
+        oy = sp.Symbol('oy')
+        oy = sp.solve(sp.Eq((ox - Ae[0]) ** 2 + (oy - Ae[1]) ** 2, ox ** 2 + oy ** 2), oy)[0]
+        v = {'d': abs(oy), 'R': sp.sqrt(ox ** 2 + oy ** 2), 'BC': a_}[ask]
+        return same(num(ans), v * v if how else v)
+    return pcard(q, num(ans), e, svg=svg), chk
+
+
+@proto('ep18-aho', 'ege-prof', 18, 'Ортоцентр и центр описанной окружности при угле 60° или 120°',
+       invariant='AH = 2R|cos A|; при A = 60° или 120° получаем AH = R = AO; угол HAO равен |B − C|; '
+                 'S(AHO) = R²·sin|B − C|/2, R = BC/(2 sin A).',
+       varies='Угол A (60° или 120°), углы B и C, длина BC (целая или k√3), спрашиваемая величина.',
+       answer_rule='R = BC/√3, S = R²·sin|B − C|/2 (или HO² = 2R²(1 − cos|B − C|)).',
+       fipi=r'Прямые, содержащие высоты .* пересекаются в точке H . Точка O — центр окружности',
+       mistakes=['берут AH = 2R', 'неверно находят угол HAO', 'путают R и BC'],
+       svg=True,
+       kim=kim(K18, 'Как в КИМ: «а) Докажите, что AH = AO. б) Найдите площадь треугольника AHO, если BC = …, ∠ABC = …».'))
+def gen_ep18_aho(r):
+    A, B = r.choice([(120, 15), (120, 45), (60, 45), (60, 75), (60, 15), (60, 105)])
+    Cc = 180 - A - B
+    if r.random() < 0.5:
+        k = r.randint(1, 14)
+        bct, bc = f'{k}√3' if k > 1 else '√3', k * math.sqrt(3)
+    else:
+        k = r.choice([3, 6, 9, 12, 15, 18, 21, 24, 2, 4])
+        bct, bc = str(k), float(k)
+    Rr = bc / math.sqrt(3)
+    d = abs(B - Cc)
+    ask = r.choice(['S', 'S', 'HO'])
+    if ask == 'S':
+        val = Rr * Rr * math.sin(math.radians(d)) / 2
+    else:
+        val = math.sqrt(2 * Rr * Rr * (1 - math.cos(math.radians(d))))
+    rr_ = rep18(val)
+    if not rr_:
+        return None
+    ans, how = rr_
+    head = pick(r, f'В треугольнике ABC угол A равен {A}°, угол ABC равен {B}°, BC = {bct}. Прямые, на которых лежат '
+                   f'высоты треугольника, пересекаются в точке H, O — центр описанной около треугольника окружности.',
+                f'Дан треугольник ABC: ∠A = {A}°, ∠B = {B}°, BC = {bct}. Точка H — ортоцентр треугольника (точка '
+                f'пересечения прямых, содержащих высоты), точка O — центр его описанной окружности.')
+    qd = 'Найдите площадь треугольника AHO.' if ask == 'S' else 'Найдите длину отрезка HO.'
+    q = f'{head}\nа) Докажите, что AH = AO.\nб) {qd}\n{ASK18[how]}'
+    Ap, Bp, Cp = tri_by_angles(bc, A, B, Cc)
+    svg = fig18({'A': Ap, 'B': Bp, 'C': Cp}, polys=['ABC'])
+    e = f'AH = 2R|cos A| = R = AO, ∠HAO = |B − C| = {d}°, R = BC/√3.'
+
+    def chk():
+        a_ = k * sp.sqrt(3) if '√' in bct else sp.Integer(k)
+        Ae, Be, Ce = [sp.Matrix(p) for p in tri_by_angles(a_, A, B, Cc, exact=True)]
+        # ортоцентр: H = A + B + C − 2O для центра O описанной окружности
+        ox = a_ / 2
+        oy = sp.Symbol('oy')
+        oy = sp.solve(sp.Eq((ox - Ae[0]) ** 2 + (oy - Ae[1]) ** 2, ox ** 2 + oy ** 2), oy)[0]
+        O = sp.Matrix([ox, oy])
+        H = Ae + Be + Ce - 2 * O
+        # проверка: H на высоте из A (x = A_x) и AH = AO
+        if abs(sp.N(H[0] - Ae[0], 30)) > 1e-20 or abs(sp.N((H - Ae).norm() - (O - Ae).norm(), 30)) > 1e-20:
+            return False
+        if ask == 'S':
+            u, v = H - Ae, O - Ae
+            v_ = abs(u[0] * v[1] - u[1] * v[0]) / 2
+        else:
+            v_ = (H - O).norm()
+        return same(num(ans), v_ * v_ if how else v_)
+    return pcard(q, num(ans), e, svg=svg), chk
+
+
+@proto('ep18-tangent-seg', 'ege-prof', 18, 'Отрезок, отсекающий подобный треугольник и касающийся вписанной окружности',
+       invariant='MN ∥ AC отсекает треугольник MBN, подобный ABC с коэффициентом t; четырёхугольник AMNC описан около '
+                 'окружности: AM + NC = MN + AC ⇒ (1 − t)(AB + BC) = (1 + t)AC.',
+       varies='Коэффициент t (середины сторон или деление в отношении), периметр, прямой угол, спрашиваемая величина.',
+       answer_rule='AB + BC = k·AC, k = (1 + t)/(1 − t); с прямым углом C: BC = AC(k² − 1)/(2k); P = (k + 1)AC.',
+       fipi=r'касается окружности, вписанной в треугольник|Окружность, вписанная в треугольник ABC , касается отрезка MN',
+       mistakes=['путают стороны в свойстве описанного четырёхугольника', 'неверный коэффициент подобия',
+                 'забывают, что MN = t·AC'],
+       svg=True,
+       kim=kim(K18, 'Как в КИМ: «а) Докажите, что AB + BC = 3AC. б) Найдите площадь треугольника ABC, если … ∠ACB = 90°».'))
+def gen_ep18_tangent_seg(r):
+    t = r.choice([F(1, 2), F(1, 2), F(3, 5), F(1, 3), F(2, 3), F(3, 4)])
+    k = (1 + t) / (1 - t)
+    if k.denominator != 1 and r.random() < 0.3:
+        return None
+    b = F(r.randint(2, 30))
+    a = b * (k * k - 1) / (2 * k)              # BC (катет), C — прямой угол
+    c = k * b - a                              # AB (гипотенуза)
+    if not (a > 0 and c > a and c > b):
+        return None
+    P = a + b + c
+    ask = r.choice(['S', 'r', 'P'])
+    val = {'S': a * b / 2, 'r': (a + b - c) / 2, 'P': P}[ask]
+    if not nice(val, 2) or not nice(P, 2):
+        return None
+    if t == F(1, 2):
+        pre = 'Точки M и N — середины сторон AB и BC треугольника ABC.'
+    else:
+        pn = (1 - t) / t if False else None
+        u = t / (1 - t)          # BM : MA = t : (1 − t)
+        pre = (f'На сторонах AB и BC треугольника ABC взяты точки M и N так, что BM : MA = BN : NC = '
+               f'{u.numerator} : {u.denominator}.')
+    given = {'S': f'периметр треугольника равен {tnum(P)}', 'r': f'периметр треугольника равен {tnum(P)}',
+             'P': f'AC = {tnum(b)}'}[ask]
+    qd = {'S': 'Найдите площадь треугольника ABC', 'r': 'Найдите радиус вписанной окружности треугольника ABC',
+          'P': 'Найдите периметр треугольника ABC'}[ask]
+    kt = tnum(k) if k.denominator == 1 else fr(k)
+    q = (f'{pre} Отрезок MN касается окружности, вписанной в треугольник ABC.\n'
+         f'а) Докажите, что AB + BC = {kt}·AC.\nб) {qd}, если угол ACB прямой, а {given}.\n{ASK18[""]}').replace(
+        f'= 1·AC', '= AC')
+    pts = {'C': (0, 0), 'A': (b, 0), 'B': (0, a)}
+    pts['M'] = lerp(pts['B'], pts['A'], t)
+    pts['N'] = lerp(pts['B'], pts['C'], t)
+    rr = (a + b - c) / 2
+    svg = fig18(pts, polys=['ABC'], segs=['MN'], circles=[((rr, rr), rr)])
+    e = f'AMNC описан: AM + NC = MN + AC ⇒ AB + BC = {kt}·AC; с ∠C = 90°: AC = {fr(b)}, BC = {fr(a)}, AB = {fr(c)}.'
+
+    def chk():
+        # восстанавливаем треугольник только по данным условия: ∠C = 90°, AB + BC = k·AC, периметр/AC
+        x, y = sp.symbols('x y', positive=True)    # x = AC, y = BC
+        hyp = sp.sqrt(x ** 2 + y ** 2)
+        eqs = [sp.Eq(hyp + y, R(k) * x)]
+        eqs.append(sp.Eq(x + y + hyp, R(P)) if ask != 'P' else sp.Eq(x, R(b)))
+        sol = sp.solve(eqs, [x, y], dict=True)
+        if len(sol) != 1:
+            return False
+        X_, Y_v = sol[0][x], sol[0][y]
+        Cp, Ap, Bp = sp.Matrix([0, 0]), sp.Matrix([X_, 0]), sp.Matrix([0, Y_v])
+        M = Bp + R(t) * (Ap - Bp)
+        N = Bp + R(t) * (Cp - Bp)
+        rin = (X_ + Y_v - sp.sqrt(X_ ** 2 + Y_v ** 2)) / 2
+        I = sp.Matrix([rin, rin])
+        u = N - M
+        dist = abs(u[0] * (I - M)[1] - u[1] * (I - M)[0]) / u.norm()
+        if sp.simplify(dist - rin) != 0:
+            return False
+        v = {'S': X_ * Y_v / 2, 'r': rin, 'P': X_ + Y_v + sp.sqrt(X_ ** 2 + Y_v ** 2)}[ask]
+        return same(num(val), v)
+    return pcard(q, num(val), e, svg=svg), chk
+
+
+@proto('ep18-rhombus', 'ege-prof', 18, 'Ромб и прямая, перпендикулярная стороне: косинус угла и длины',
+       invariant='В координатах с центром ромба в начале: M на AC, N на BD, условие MN ⟂ BC даёт отношение диагоналей; '
+                 'отсюда cos∠BAD = (u² − v²)/(u² + v²) и связь MN со стороной.',
+       varies='Отношения AM : MC и BN : ND, длина MN, спрашиваемая величина (сторона, площадь).',
+       answer_rule='Полудиагонали u, v: x_M·u + y_N·v = 0 (скалярное произведение); сторона² = u² + v²; S = 2uv.',
+       fipi=r'Прямая, перпендикулярная стороне BC ромба ABCD',
+       mistakes=['неверные координаты точек деления', 'путают диагонали', 'ошибка в знаке при скалярном произведении'],
+       svg=True,
+       kim=kim(K18, 'Как в КИМ: «а) Докажите, что cos∠BAD = 1/5. б) Найдите площадь ромба (сторону), если MN = …».'))
+def gen_ep18_rhombus(r):
+    m1, m2 = r.choice([(1, 2), (1, 3), (2, 3), (1, 4), (3, 5), (2, 5)])
+    n1, n2 = r.choice([(1, 3), (1, 2), (1, 4), (2, 3), (1, 5), (3, 5)])
+    if r.random() < 0.5:
+        m1, m2 = m1, m2
+    # A(−u,0), C(u,0), B(0,v), D(0,−v); M = A + (AM/AC)(C − A): x_M = u(m1 − m2)/(m1 + m2)
+    alpha = F(m1 - m2, m1 + m2)        # x_M = α·u
+    beta = F(n2 - n1, n1 + n2)         # y_N = β·v (N от B к D)
+    # MN ⟂ BC: BC = (u, −v); MN = (−αu, βv); (−αu)·u + (βv)(−v) = 0 → −α u² − β v² = 0 → v²/u² = −α/β
+    rho2 = -alpha / beta
+    if rho2 <= 0 or rho2 == 1:
+        return None
+    cosA = (1 - rho2) / (1 + rho2)
+    ask = r.choice(['side', 'S'])
+    # MN² = α²u² + β²v² = u²(α² + β²ρ²)
+    gam = alpha * alpha + beta * beta * rho2
+    side = r.randint(2, 20)
+    u2 = F(side * side) / (1 + rho2)
+    mn2 = u2 * gam
+    if ask == 'side':
+        val, how = F(side), ''
+    else:
+        S2 = 4 * u2 * u2 * rho2            # S² = 4u²v²
+        s = fnice(math.sqrt(float(S2)))
+        if s is not None and s ** 2 == S2:
+            val, how = s, ''
+        elif nice(S2, 2) and S2 <= 5000:
+            val, how = S2, 'sq'
+        else:
+            return None
+    # MN как текст: √(mn2)
+    if mn2.denominator != 1:
+        return None
+    mn_t = sqrt_txt(mn2)
+    ct = fr(cosA) if cosA.denominator != 1 else tnum(cosA)
+    head = pick(r, f'Прямая, перпендикулярная стороне BC ромба ABCD, пересекает диагональ AC в точке M, а диагональ BD — '
+                   f'в точке N, причём AM : MC = {m1} : {m2}, BN : ND = {n1} : {n2}.',
+                f'В ромбе ABCD через точку M диагонали AC и точку N диагонали BD провели прямую MN, перпендикулярную '
+                f'стороне BC. Известно, что AM : MC = {m1} : {m2} и BN : ND = {n1} : {n2}.')
+    qd = f'Найдите {"сторону ромба" if ask == "side" else "площадь ромба"}, если MN = {mn_t}.'
+    q = f'{head}\nа) Докажите, что cos∠BAD = {ct}.\nб) {qd}\n{ASK18[how]}'
+    uf = math.sqrt(float(u2))
+    vf = uf * math.sqrt(float(rho2))
+    pts = {'A': (-uf, 0), 'B': (0, vf), 'C': (uf, 0), 'D': (0, -vf), 'M': (float(alpha) * uf, 0), 'N': (0, float(beta) * vf)}
+    svg = fig18(pts, polys=['ABCD'], segs=['AC', 'BD', 'MN'])
+    e = f'v²/u² = {fr(rho2)}, cos∠BAD = (u² − v²)/(u² + v²) = {ct}; MN² = {fr(gam)}·u².'
+
+    def chk():
+        uu, vv = sp.symbols('uu vv', positive=True)
+        A_, B_, C_, D_ = sp.Matrix([-uu, 0]), sp.Matrix([0, vv]), sp.Matrix([uu, 0]), sp.Matrix([0, -vv])
+        M = A_ + sp.Rational(m1, m1 + m2) * (C_ - A_)
+        N = B_ + sp.Rational(n1, n1 + n2) * (D_ - B_)
+        sol = sp.solve([sp.Eq((N - M).dot(C_ - B_), 0), sp.Eq((N - M).dot(N - M), R(mn2))], [uu, vv], dict=True)
+        sol = [s_ for s_ in sol if s_[uu].is_positive and s_[vv].is_positive]
+        if len(sol) != 1:
+            return False
+        U, V = sol[0][uu], sol[0][vv]
+        AB, AD = B_ - A_, D_ - A_
+        cos_ = (AB.dot(AD) / (AB.norm() * AD.norm())).subs({uu: U, vv: V})
+        if sp.simplify(cos_ - R(cosA)) != 0:
+            return False
+        v = sp.sqrt(U ** 2 + V ** 2) if ask == 'side' else 2 * U * V
+        return same(num(val), v * v if how else v)
+    return pcard(q, num(val), e, svg=svg), chk
+
+
+@proto('ep18-iso-trap', 'ege-prof', 18, 'Равнобедренная трапеция с кратными основаниями: высота делит основание, расстояния',
+       invariant='В равнобедренной трапеции высота CH делит AD на AH = (AD + BC)/2 и HD = (AD − BC)/2; '
+                 'при AD = k·BC отношение (k + 1) : (k − 1); далее координаты или теорема Пифагора.',
+       varies='Кратность k, основания, диагональ (через корень) или боковая сторона, точка (середина BD, середина OD).',
+       answer_rule='Высота из AC² = AH² + h², затем расстояние от C до середины отрезка по координатам.',
+       fipi=r'В равнобедренной трапеции ABCD основание AD в (два|три) раза больше основания BC',
+       mistakes=['путают AH и HD', 'неверно находят точку пересечения диагоналей', 'ошибка в координатах середины'],
+       svg=True,
+       kim=kim(K18, 'Как в КИМ: «а) Докажите, что высота CH делит AD на отрезки в отношении 2 : 1. б) Найдите расстояние от C '
+                    'до середины BD, если AD = …, AC = …».'))
+def gen_ep18_iso_trap(r):
+    k = r.choice([2, 3, 4, 5])
+    b = r.randint(2, 12)
+    a = k * b
+    h = r.randint(2, 16)
+    target = r.choice(['BD', 'OD'])
+    A, D = (F(0), F(0)), (F(a), F(0))
+    B, C = (F(a - b, 2), F(h)), (F(a + b, 2), F(h))
+    if target == 'BD':
+        Pm = ((B[0] + D[0]) / 2, (B[1] + D[1]) / 2)
+        tname = 'середины диагонали BD'
+    else:
+        # O — пересечение диагоналей: делит BD в отношении BC : AD = 1 : k
+        O = (B[0] + (D[0] - B[0]) / (k + 1), B[1] + (D[1] - B[1]) / (k + 1))
+        Pm = ((O[0] + D[0]) / 2, (O[1] + D[1]) / 2)
+        tname = 'середины отрезка OD, где O — точка пересечения диагоналей'
+    d2 = dist2(C, Pm)
+    rr_ = rep18(math.sqrt(float(d2)))
+    if not rr_:
+        return None
+    ans, how = rr_
+    ac2 = dist2(A, C)
+    if ac2.denominator != 1:
+        return None
+    head = pick(r, f'Дана равнобедренная трапеция ABCD, у которой большее основание AD в {k} {plural(k, "раз", "раза", "раз")} '
+                   f'длиннее меньшего основания BC.',
+                f'Основание AD равнобедренной трапеции ABCD в {k} {plural(k, "раз", "раза", "раз")} больше её основания BC.')
+    g_ = math.gcd(k + 1, k - 1)
+    q = (f'{head}\nа) Докажите, что высота CH делит основание AD на отрезки, длины которых относятся как {(k + 1) // g_} : {(k - 1) // g_}.\n'
+         f'б) Найдите расстояние от вершины C до {tname}, если AD = {a}, AC = {sqrt_txt(ac2)}.\n{ASK18[how]}').replace(
+        'как 2 : 1', 'как 2 : 1')
+    pts = {'A': A, 'B': B, 'C': C, 'D': D, 'H': (C[0], F(0))}
+    svg = fig18(pts, polys=['ABCD'], segs=['AC', 'BD', 'CH'])
+    e = f'AH = {tnum(F(a + b, 2))}, HD = {tnum(F(a - b, 2))}; высота h = {h}; искомое расстояние = {("√" if how else "") + tnum(ans)}.'
+
+    def chk():
+        bb, hh = sp.symbols('bb hh', positive=True)
+        Ae, De = sp.Matrix([0, 0]), sp.Matrix([a, 0])
+        Be, Ce = sp.Matrix([(a - bb) / 2, hh]), sp.Matrix([(a + bb) / 2, hh])
+        sol = sp.solve([sp.Eq(k * bb, a), sp.Eq((Ce - Ae).dot(Ce - Ae), R(ac2))], [bb, hh], dict=True)
+        if len(sol) != 1:
+            return False
+        s_ = sol[0]
+        Be, Ce = Be.subs(s_), Ce.subs(s_)
+        if target == 'BD':
+            Pp = (Be + De) / 2
+        else:
+            # пересечение диагоналей AC и BD
+            t1, t2 = sp.symbols('t1 t2')
+            ss = sp.solve(list(Ae + t1 * (Ce - Ae) - (Be + t2 * (De - Be))), [t1, t2], dict=True)[0]
+            Oe = Ae + ss[t1] * (Ce - Ae)
+            Pp = (Oe + De) / 2
+        v = (Ce - Pp).norm()
+        # пункт а
+        H_ = sp.Matrix([Ce[0], 0])
+        if sp.simplify(H_[0] * (k - 1) - (De[0] - H_[0]) * (k + 1)) != 0:
+            return False
+        return same(num(ans), v * v if how else v)
+    return pcard(q, num(ans), e, svg=svg), chk
+
+
+@proto('ep18-similar-circle', 'ege-prof', 18, 'Окружность через две вершины треугольника: подобие и отношение площадей',
+       invariant='B, C, B₁, C₁ на одной окружности ⇒ ∠AB₁C₁ = ∠ABC, треугольники AB₁C₁ и ABC подобны; отношение '
+                 'площадей = k², откуда BC = B₁C₁/k.',
+       varies='Угол A (для чертежа и контекста), B₁C₁, во сколько раз площадь четырёхугольника больше площади треугольника.',
+       answer_rule='S(ABC) = (n + 1)·S(AB₁C₁) ⇒ k = 1/√(n + 1), BC = B₁C₁·√(n + 1).',
+       fipi=r'Окружность проходит через вершины В и С треугольника АВС и пересекает АВ и АС',
+       mistakes=['берут отношение площадей n вместо n + 1', 'коэффициент подобия равен отношению площадей',
+                 'путают соответственные стороны'],
+       svg=True,
+       kim=kim(K18, 'Как в КИМ: «а) Докажите, что треугольник AB₁C₁ подобен треугольнику ABC. б) Найдите BC, если …».'))
+def gen_ep18_similar_circle(r):
+    n = r.choice([3, 8, 15, 24, 3, 8])
+    A = r.choice([30, 45, 60, 75, 120, 135])
+    b1c1 = r.randint(2, 15)
+    kk = math.isqrt(n + 1)
+    bc = b1c1 * kk
+    head = pick(r, f'Окружность проходит через вершины B и C треугольника ABC и вторично пересекает стороны AB и AC в точках '
+                   f'C₁ и B₁ соответственно. Угол BAC равен {A}°, B₁C₁ = {b1c1}.',
+                f'Через вершины B и C треугольника ABC (∠A = {A}°) проведена окружность, которая пересекает отрезки AB и AC '
+                f'в точках C₁ и B₁; известно, что B₁C₁ = {b1c1}.')
+    q = (f'{head}\nа) Докажите, что треугольники AB₁C₁ и ABC подобны.\n'
+         f'б) Найдите BC, если площадь четырёхугольника BCB₁C₁ в {n} {plural(n, "раз", "раза", "раз")} больше площади '
+         f'треугольника AB₁C₁.\n{ASK18[""]}')
+    # чертёж: A(0,0), AB вдоль оси, AC под углом A
+    ab = 3.0
+    ac = 2.2
+    Ap = (0, 0)
+    Bp = (ab, 0)
+    Cp = (ac * math.cos(math.radians(A)), ac * math.sin(math.radians(A)))
+    k = 1 / kk
+    C1 = (ac * k, 0)
+    B1 = (ab * k * math.cos(math.radians(A)), ab * k * math.sin(math.radians(A)))
+    svg = fig18({'A': Ap, 'B': Bp, 'C': Cp, 'C₁': C1, 'B₁': B1}, polys=['ABC'], segs=[])
+    e = f'Подобие с коэффициентом k: S(ABC) = {n + 1}·S(AB₁C₁) ⇒ k = 1/{kk}, BC = {b1c1}·{kk} = {bc}.'
+
+    def chk():
+        # треугольник с углом A и произвольными AB, AC; ищем k по условию площадей и проверяем вписанность
+        ABv, ACv = sp.Integer(5), sp.Integer(3)
+        cA = sp.cos(sp.pi * A / 180)
+        sA = sp.sin(sp.pi * A / 180)
+        Ae, Be, Ce = sp.Matrix([0, 0]), sp.Matrix([ABv, 0]), sp.Matrix([ACv * cA, ACv * sA])
+        kv = sp.Symbol('kv', positive=True)
+        C1e = sp.Matrix([ACv * kv, 0])                  # AC₁ = k·AC
+        B1e = sp.Matrix([ABv * kv * cA, ABv * kv * sA])  # AB₁ = k·AB
+        area = lambda P, Q, W: abs((Q - P)[0] * (W - P)[1] - (Q - P)[1] * (W - P)[0]) / 2
+        sol = sp.solve(sp.Eq(area(Ae, Be, Ce), (n + 1) * area(Ae, B1e, C1e)), kv)
+        if len(sol) != 1:
+            return False
+        kv_ = sol[0]
+        # вписанность B, C, B₁, C₁: степень точки A: AB·AC₁ = AC·AB₁
+        if sp.simplify(ABv * ACv * kv_ - ACv * ABv * kv_) != 0:
+            return False
+        ratio = (Be - Ce).norm() / (B1e - C1e).subs(kv, kv_).norm()
+        return same(num(bc), b1c1 * ratio)
+    return pcard(q, num(bc), e, svg=svg), chk
