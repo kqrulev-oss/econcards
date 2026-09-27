@@ -123,8 +123,10 @@ def eqv(f):
                                                                                 key=lambda t: 'CHON'.find(t[0]))))
     if s and s.get('org'):
         v = s.get('view') or pretty(f)
-        if '(цикл)' in v or '(1,' in v or '(орто' in v or '(пара' in v or '(мета' in v:
-            return s['name']
+        if '(цикл)' in v:
+            return pretty(hill(parse_formula(f))) + f' ({s["name"]})'
+        if '(1,' in v or '(орто' in v or '(пара' in v or '(мета' in v:
+            return pretty(f)
         return v
     if f == 'Ag(NH3)2OH':
         return '[Ag(NH₃)₂]OH'
@@ -1368,7 +1370,23 @@ PROD_Q = [  # (ключ реагента, фильтр реакции, опис�
     ('CuO', lambda r: True, 'которые в результате окисления оксидом меди(II) дают'),
 ]
 PCLASS = {'альдегиды': 'альдегид', 'кетоны': 'кетон', 'одноатомные спирты': 'одноатомный спирт',
-          'многоатомные спирты': 'двухатомный спирт', 'карбоновые кислоты': 'карбоновая кислота'}
+          'многоатомные спирты': 'двухатомный спирт', 'карбоновые кислоты': 'карбоновую кислоту'}
+
+
+def acc(name):
+    """Винительный падеж названия (дают … «пропановую кислоту», «ацетон», «глюкозу»)."""
+    out = []
+    for w in name.split(' '):
+        m = re.match(r'^(.*?)(-[\d,]+)?$', w)
+        b, t = m.group(1), m.group(2) or ''
+        if b.endswith('ая'):
+            b = b[:-2] + 'ую'
+        elif b.endswith('а') and not b.endswith('ва'):
+            b = b[:-1] + 'у'
+        elif b.endswith('ва'):
+            b = b[:-1] + 'у'
+        out.append(b + t)
+    return ' '.join(out)
 
 
 def _prods(f, rk, flt):
@@ -1418,6 +1436,8 @@ def g12_product(rng):
     rk, flt, text = PROD_Q[fi]
     cand = [f for f in POOL12 if known(f, rk) is not None]
     prods = {f: _prods(f, rk, flt) for f in cand}
+    # вещество, которое реагирует, но продукт этой реакции в базе не записан, в вариантах не используем
+    cand = [f for f in cand if known(f, rk) is False or prods[f]]
     # цель: либо конкретный продукт, либо класс продукта
     by_c = defaultdict(set)
     by_f = defaultdict(set)
@@ -1439,7 +1459,7 @@ def g12_product(rng):
         tf = rng.choice(opts_)
         tc = None
         good_set = by_f[tf]
-        target_txt = nm(tf) if tf != 'CO2' else 'углекислый газ'
+        target_txt = acc(nm(tf)) if tf != 'CO2' else 'углекислый газ'
     if len(good_set) < 2:
         raise Retry
     k = rng.randint(2, min(4, len(good_set)))
