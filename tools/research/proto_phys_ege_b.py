@@ -714,7 +714,7 @@ def g14_lor(rng):
     items.append((f'Период обращения {PART_GEN[other]} в этом поле {cmp_txt(wr)} у {PART_GEN[part]}.',
                   {'t': 'r', 'q': 'T_x', 'v': fr(wr)}, wr == xT, f'T ∝ m/q: отношение {ru(xT)}'))
     B = rng.choice([10, 20, 40, 50, 80, 100, 200])
-    q = (f'{part[0].upper() + part[1:]} влетает в однородное магнитное поле с индукцией {B} мТл перпендикулярно линиям индукции '
+    q = (f'{cap1(part)} влетает в однородное магнитное поле с индукцией {B} мТл перпендикулярно линиям индукции '
          f'и движется по окружности. Действием силы тяжести пренебречь. {Q_MANY}')
     return many_card('ph-ege-14-lorentz', rng, q, items, {'part': part, 'other': other, 'kv': kv, 'kb': kb})
 
@@ -755,6 +755,10 @@ def g14_lens(rng):
     if exact(abs(f), 1) is None or exact(G, 2) is None or exact(D, 2) is None or abs(f) > 300:
         raise Retry
     real = f > 0
+    wfs = [x for x in (Fr(d * F, d + F), Fr(d * F, abs(d - F)) if d != F else None, abs(f) * 2, Fr(abs(d - F))) if x and x != abs(f) and exact(x, 1)]
+    if not wfs:
+        raise Retry
+    wf = rng.choice(wfs)
     items = [
         (f'Изображение предмета {"действительное" if real else "мнимое"}.', {'t': 'is', 'q': 'real', 'v': 'действ' if real else 'мним'}, True,
          'd > F у собирающей линзы' if real else ('d < F' if kind == 'соб' else 'рассеивающая линза даёт мнимые изображения')),
@@ -762,8 +766,7 @@ def g14_lens(rng):
          f'f {"> 0" if real else "< 0"}'),
         (f'Изображение находится на расстоянии {ru(abs(f))} см от линзы.', {'t': 'v', 'q': 'f', 'v': fr(abs(f))}, True,
          f'из формулы линзы |f| = {ru(abs(f))} см'),
-        (f'Изображение находится на расстоянии {ru(Fr(d * F, d + F) if kind == "соб" else Fr(d * F, abs(d - F)))} см от линзы.',
-         {'t': 'v', 'q': 'f', 'v': fr(Fr(d * F, d + F) if kind == 'соб' else Fr(d * F, abs(d - F)))}, False, 'ошибка знака в формуле линзы'),
+        (f'Изображение находится на расстоянии {ru(wf)} см от линзы.', {'t': 'v', 'q': 'f', 'v': fr(wf)}, False, 'ошибка в формуле линзы'),
         (f'Изображение {"увеличенное" if G > 1 else "уменьшенное" if G < 1 else "того же размера, что и предмет"}.',
          {'t': 'is', 'q': 'size', 'v': 'увел' if G > 1 else 'умен' if G < 1 else 'равн'}, True, f'Γ = f/d = {ru(G)}'),
         (f'Изображение {"уменьшенное" if G >= 1 else "увеличенное"}.', {'t': 'is', 'q': 'size', 'v': 'умен' if G >= 1 else 'увел'}, False,
