@@ -2923,25 +2923,29 @@ def _oleum_inv(p):
     nr = Fr(p['V']) * Fr(p['c']) / 1000
     left = (nr - nac) * Mi(salt)
     rest = m + Fr(p['V']) * Fr(p['rho']) - nac * Mi('BaSO4')
-    return left / (Fr(p['wf']) / 100) - rest
+    F = left / (Fr(p['wf']) / 100)
+    return [(nac, 3), (nac * Mi('BaSO4'), 2), (F, 1), (F - rest, 0)]
 
 
-def _solve_34_oleum(p):
+def _oleum_calc(p):
     if p['mode'] == 'inverse':
-        return rs(_oleum_inv(p), 0)
+        return _oleum_inv(p)
     m, pr = Fr(p['m']), Fr(p['p'])
     n = m * (100 - pr) / 100 / Mi('H2SO4') + m * pr / 100 / Mi('SO3')
     W = Fr(p['W'])
     if p['mode'] == 'acid':
-        return rs(n * Mi('H2SO4') / (m + W) * 100, 1)
+        return [(n, 3), (m + W, 2), (n * Mi('H2SO4') / (m + W) * 100, 1)]
     nr = Fr(p['mr']) * Fr(p['wr']) / 100 / Mi(p['reag'])
     if p['reag'] == 'KOH':
         total = m + W + Fr(p['mr'])
         val = n * Mi('K2SO4') if p['target'] == 'K2SO4' else (nr - 2 * n) * Mi('KOH')
-        return rs(val / total * 100, 1)
+        return [(n, 3), (2 * n, 3), (total, 2), (val / total * 100, 1)]
     total = m + W + Fr(p['mr']) - n * Mi('BaSO4')
     val = 2 * n * Mi('HCl') if p['target'] == 'HCl' else (nr - n) * Mi('BaCl2')
-    return rs(val / total * 100, 1)
+    return [(n, 3), (n * Mi('BaSO4'), 2), (total, 2), (val / total * 100, 1)]
+
+
+_solve_34_oleum = _last(_oleum_calc)
 
 
 @proto('ch-ege-34-oleum', 'ЕГЭ', 34, 'Олеум: растворение в воде и дальнейшая реакция',
@@ -2968,9 +2972,12 @@ def g34_oleum(rng):
         wel_exact = (16 * (4 * a_ + 3 * b_) if el == 'O' else 32 * (a_ + b_)) / m * 100
         wel = Fr(round(wel_exact * 100), 100)
         salt = rng.choice(['BaCl2', 'Ba(NO3)2'])
-        c = Fr(rng.choice([20, 25, 30, 35, 40, 42, 50]), 100)
-        V = Fr(rng.choice([250, 300, 400, 500, 600, 750, 1000]))
-        rho = Fr(rng.choice([104, 105, 106, 108, 110]), 100)
+        c = Fr(rng.choice([15, 20, 24, 25, 28, 30, 35, 36, 40, 45]), 100)
+        V = Fr(rng.choice([200, 250, 300, 350, 400, 600, 700, 750, 800]))
+        w_s = c * M(salt) / 10                                  # ≈ массовая доля соли, %
+        if not w_ok(salt, w_s):
+            raise Retry
+        rho = Fr(round((1 + Fr(9, 1000) * w_s) * 100), 100)     # реалистичная плотность раствора
         nac = a_ + b_
         if V * c / 1000 <= nac * Fr(11, 10):
             raise Retry
@@ -2986,6 +2993,11 @@ def g34_oleum(rng):
         if abs(val - Wt) > 1 or val <= 0:
             raise Retry
         ans = fmt(val, 0)
+        F_ex = m + Wt + V * rho - nac * M('BaSO4')
+        steps = [('n(H₂SO₄) после растворения олеума, моль', fmt(nac, 3)), ('m(BaSO₄), г', fmt(nac * M('BaSO4'), 2)),
+                 ('m(конечного раствора), г', fmt(F_ex, 1)), ('V(воды), мл', ans)]
+        if [v for _, v in steps] != [rs(v, d) for v, d in _oleum_inv(p)]:
+            raise Retry             # данные условия округлены — шаги должны совпадать с пересчётом по условию
         elw = 'атомов кислорода' if el == 'O' else 'атомов серы'
         q = (f'Олеум массой {ru(m)} г, в котором на долю {elw} приходится {ru(wel)} % массы, растворили в воде. Весь '
              f'полученный раствор прибавили к {ru(V)} мл раствора {_gw(salt)} с молярной концентрацией {ru(c)} моль/л '
@@ -2997,7 +3009,7 @@ def g34_oleum(rng):
              f'находим массу раствора и массу воды ≈ {ans} г (мл).')
         wrong = W([val + nac * M('BaSO4'), val - m, val + V * rho / 10], 0)
         eqs = [eqp(['SO3', 'H2O'], ['H2SO4'])[1], eqp(['H2SO4', salt], ['BaSO4', 'HCl' if salt == 'BaCl2' else 'HNO3'])[1]]
-        return pcard('ch-ege-34-oleum', q, ans, e, p=p, wrong=wrong, eqs=eqs)
+        return pcard('ch-ege-34-oleum', q, ans, e, p=p, wrong=wrong, eqs=eqs, steps=steps)
     if mode == 'acid':
         exact = n * M('H2SO4') / (m + Wt) * 100
         p = dict(m=str(m), p=pr, W=str(Wt), mode='acid')
@@ -3005,21 +3017,26 @@ def g34_oleum(rng):
              f'Рассчитайте массовую долю серной кислоты в полученном растворе. ' + KIM34 + '(Запишите число с точностью до десятых.)')
         eqs = [eqp(['SO3', 'H2O'], ['H2SO4'])[1]]
         wrong = W([m * (100 - pr) / 100 / (m + Wt) * 100, n * M('H2SO4') / Wt * 100, m / (m + Wt) * 100], 1)
+        mid = [('n(H₂SO₄) после растворения, моль', fmt(n, 3)), ('m(раствора), г', fmt(m + Wt, 2))]
     else:
         reag = 'KOH' if mode == 'KOH' else 'BaCl2'
         need = 2 * n if reag == 'KOH' else n
         nr = need * Fr(rng.choice([11, 12, 13, 15, 16, 18, 20]), 10)
-        wr = pick(rng, [5, 8, 10, 12, 15, 20])
+        wr = pick(rng, [w for w in (5, 8, 10, 12, 15, 20) if w_ok(reag, w)])
         mr = Fr(math.ceil(nr * M(reag) * 100 / wr))
         nr = mr * wr / 100 / M(reag)
         target = pick(rng, ['K2SO4', 'KOH'] if reag == 'KOH' else ['HCl', 'BaCl2'])
         if reag == 'KOH':
             total = m + Wt + mr
             val = n * M('K2SO4') if target == 'K2SO4' else (nr - 2 * n) * M('KOH')
+            mid = [('n(H₂SO₄) после растворения, моль', fmt(n, 3)), ('n(KOH), вступившего в реакцию, моль', fmt(2 * n, 3)),
+                   ('m(конечного раствора), г', fmt(total, 2))]
             eqs = [eqp(['SO3', 'H2O'], ['H2SO4'])[1], eqp(['H2SO4', 'KOH'], ['K2SO4', 'H2O'])[1]]
         else:
             total = m + Wt + mr - n * M('BaSO4')
             val = 2 * n * M('HCl') if target == 'HCl' else (nr - n) * M('BaCl2')
+            mid = [('n(H₂SO₄) после растворения, моль', fmt(n, 3)), ('m(BaSO₄), г', fmt(n * M('BaSO4'), 2)),
+                   ('m(конечного раствора), г', fmt(total, 2))]
             eqs = [eqp(['SO3', 'H2O'], ['H2SO4'])[1], eqp(['H2SO4', 'BaCl2'], ['BaSO4', 'HCl'])[1]]
         exact = val / total * 100
         p = dict(m=str(m), p=pr, W=str(Wt), mode='react', reag=reag, mr=str(mr), wr=wr, target=target)
@@ -3033,7 +3050,8 @@ def g34_oleum(rng):
         raise Retry
     ans = rnd(exact, 1)
     e = f'n(H₂SO₄) = {ru(m)}·{100 - pr}/100/98 + {ru(m)}·{pr}/100/80 = {fmt(n, 4)} моль (SO₃ + H₂O = H₂SO₄) ⇒ ω ≈ {ans} %.'
-    return pcard('ch-ege-34-oleum', q, ans, e, p=p, wrong=wrong, eqs=eqs)
+    steps = mid + [('ω, %', ans)]
+    return pcard('ch-ege-34-oleum', q, ans, e, p=p, wrong=wrong, eqs=eqs, steps=steps)
 
 
 # ======================================================================= ОГЭ 18. Массовая доля элемента
@@ -3224,12 +3242,12 @@ DOSE19 = [  # (формула, название (род. п.), что (им. п.
     ('CaHPO4', 'гидрофосфата кальция', 'таблетка', 'Ca', [100, 150, 200, 250, 300], 'таблетке'),
     ('CuSO4', 'сульфата меди(II)', 'таблетка', 'Cu', [2, 3, 4, 5], 'таблетке'),
 ]
-AGRO19 = [  # (формула, название удобрения (им. п.), элемент)
-    ('NH4NO3', 'аммиачная селитра (NH₄NO₃)', 'N'), ('KNO3', 'калийная селитра (KNO₃)', 'K'),
-    ('Ca(NO3)2', 'кальциевая селитра (Ca(NO₃)₂)', 'N'), ('K2SO4', 'сульфат калия (K₂SO₄)', 'K'),
+AGRO19 = [  # (формула, название удобрения (вин. п.), элемент)
+    ('NH4NO3', 'аммиачную селитру (NH₄NO₃)', 'N'), ('KNO3', 'калийную селитру (KNO₃)', 'K'),
+    ('Ca(NO3)2', 'кальциевую селитру (Ca(NO₃)₂)', 'N'), ('K2SO4', 'сульфат калия (K₂SO₄)', 'K'),
     ('KCl', 'хлорид калия (KCl)', 'K'), ('Ca(H2PO4)2', 'двойной суперфосфат (Ca(H₂PO₄)₂)', 'P'),
     ('(NH4)2HPO4', 'диаммофос ((NH₄)₂HPO₄)', 'N'), ('CO(NH2)2', 'карбамид (CO(NH₂)₂)', 'N'),
-    ('K2CO3', 'поташ (K₂CO₃)', 'K'), ('CaCO3·MgCO3', 'доломитовая мука (CaCO₃·MgCO₃)', 'Mg'),
+    ('K2CO3', 'поташ (K₂CO₃)', 'K'), ('CaCO3·MgCO3', 'доломитовую муку (CaCO₃·MgCO₃)', 'Mg'),
 ]
 NORM19 = {'Fe': [10, 12, 14, 15, 18, 20], 'Zn': [8, 10, 12, 15], 'Ca': [200, 250, 300, 400, 500, 600],
           'Mg': [100, 150, 200, 250, 300], 'I': [Fr(1, 10), Fr(15, 100), Fr(2, 10)], 'F': [1, Fr(3, 2), 2],
@@ -3323,15 +3341,15 @@ def goge19_agro(rng):
     d18 = rng.choice([0, 1])
     w = _w_round(f, el, d18)
     div = rng.choice([1, 1, 10])
-    norm = Fr(rng.choice([2, 3, 4, 5, 6, 8, 10, 12, 15, 20, 25, 30, 40, 50]))
+    norm = Fr(rng.choice([2, 3, 4, 5, 6, 8, 10, 12, 15, 20]) * div)       # как в банке: до 20 г на 1 м² (200 г на 10 м²)
     S = Fr(rng.choice([10, 15, 20, 25, 30, 40, 50, 60, 75, 100, 120, 150, 200, 250, 300, 400]))
     x = norm * S / (w / 100) / div
-    kg = x > 1000 or rng.random() < 0.3
-    dec = rng.choice([0, 1]) if not kg else 1
+    kg = x >= 1000
+    dec = (rng.choice([0, 1]) if x >= 100 else 1) if not kg else 1
     if kg:
         x = x / 1000
     ans = rnd(x, dec)
-    q = (f'Под плодовые деревья вносят удобрение — {gname}; норма внесения — {ru(norm)} г {EL_G[el]} на '
+    q = (f'Под плодовые деревья вносят {gname} из расчёта {ru(norm)} г {EL_G[el]} на '
          f'{"1 м²" if div == 1 else "10 м²"} площади. Какую массу удобрения (в {"килограммах" if kg else "граммах"}) нужно внести на участок площадью '
          f'{ru(S)} м²? {_intro18(f, el, d18)} Запишите число с точностью до {PREC[dec]}.')
     if f == 'CaCO3·MgCO3':
@@ -3403,8 +3421,10 @@ def goge19_sol(rng):
     V1 = Fr(rng.choice([Fr(1, 2), 1, 2, 3, 5]))
     if V1 >= V:
         raise Retry
-    dec = rng.choice([1, 2])
     x = m / V * V1 * w / 100
+    if x < Fr(1, 10):
+        raise Retry
+    dec = 2 if x < 1 else rng.choice([1, 2])
     ans = rnd(x, dec)
     q = (f'{story} {ru(m)} г {gname} растворяют в {ru(V)} л воды (объём раствора считать равным объёму воды). Какая масса '
          f'{EL_G[el]} (в граммах) содержится в {ru(V1)} л такого раствора? {_intro18(f, el, d18)} Запишите число с точностью '
@@ -3430,24 +3450,28 @@ def _oge22_amounts(rng, f, ws=(2, 4, 5, 6, 8, 10, 12, 15, 16, 20, 25)):
     raise Retry
 
 
-def _solve_oge22(p):
+def _oge22_calc(p):
+    """Шаги как в критериях ОГЭ № 22 (после уравнения): масса/количество вещества → количество по уравнению → ответ."""
     k = coef(p['lhs'], p['rhs'])
     t = p['type']
     if t in ('precip', 'gas'):
-        n = Fr(p['m']) * Fr(p['w']) / 100 / Mi(p['sol'])
+        ms = Fr(p['m']) * Fr(p['w']) / 100
+        n = ms / Mi(p['sol'])
         x = n * Fr(k[p['f']], k[p['sol']])
-        return rs(x * (VM if t == 'gas' else Mi(p['f'])), 2)
-    if t == 'omega':
+        return [(ms, 2), (n, 3), (x, 3), (x * (VM if t == 'gas' else Mi(p['f'])), 2)]
+    if t in ('omega', 'msol'):
         nf = Fr(p['pv']) / (VM if p['fby'] == 'V' else Mi(p['f']))
         ns = nf * Fr(k[p['sol']], k[p['f']])
-        return rs(ns * Mi(p['sol']) / Fr(p['m']) * 100, 2)
-    if t == 'msol':
-        nf = Fr(p['pv']) / (VM if p['fby'] == 'V' else Mi(p['f']))
-        ns = nf * Fr(k[p['sol']], k[p['f']])
-        return rs(ns * Mi(p['sol']) * 100 / Fr(p['w']), 2)
-    n = Fr(p['m']) * Fr(p['w']) / 100 / Mi(p['sol'])
+        ms = ns * Mi(p['sol'])
+        last = ms / Fr(p['m']) * 100 if t == 'omega' else ms * 100 / Fr(p['w'])
+        return [(nf, 3), (ns, 3), (ms, 2), (last, 2)]
+    ms = Fr(p['m']) * Fr(p['w']) / 100
+    n = ms / Mi(p['sol'])
     nr = n * Fr(k[p['r']], k[p['sol']])
-    return rs(nr * (VM if p['rby'] == 'V' else Mi(p['r'])), 2)
+    return [(ms, 2), (n, 3), (nr, 3), (nr * (VM if p['rby'] == 'V' else Mi(p['r'])), 2)]
+
+
+_solve_oge22 = _last(_oge22_calc)
 
 
 KIM22 = ('В ответе запишите уравнение реакции, о которой идёт речь в условии задачи, и приведите все необходимые '
@@ -3487,8 +3511,11 @@ def goge22_precip(rng):
     e = f'{eqs}; m({pretty(c["sol"])}) = {ru(m)}·{w}/100 = {ru(m * w / 100)} г; n = {ru(n)} моль; ' \
         f'n({pretty(c["f"])}) = {ru(n * Fr(k[c["f"]], k[c["sol"]]))} моль; m = {ans} г.'
     wrong = W([m / M(c['sol']) * Fr(k[c['f']], k[c['sol']]) * M(c['f']), n * M(c['f']), m * w / 100], 2)
+    nf_ = n * Fr(k[c['f']], k[c['sol']])
+    steps = [(f'm({pretty(c["sol"])}) в растворе, г', fmt(m * w / 100, 2)), (f'n({pretty(c["sol"])}), моль', fmt(n, 3)),
+             (f'n({pretty(c["f"])}), моль', fmt(nf_, 3)), (f'm({pretty(c["f"])}), г', ans)]
     return pcard('ch-oge-22-precip', q, ans, e, p=dict(type='precip', lhs=r['lhs'], rhs=r['rhs'], sol=c['sol'], f=c['f'],
-                                                       m=str(m), w=w), wrong=wrong, eq=eq)
+                                                       m=str(m), w=w), wrong=wrong, eq=eq, steps=steps)
 
 
 @proto('ch-oge-22-gas', 'ОГЭ', 22, 'Объём газа при реакции раствора с заданной долей',
@@ -3522,8 +3549,11 @@ def goge22_gas(rng):
     e = f'{eqs}; m({pretty(c["sol"])}) = {ru(m * w / 100)} г; n = {ru(n)} моль; n(газа) = {ru(n * Fr(k[c["f"]], k[c["sol"]]))} моль; ' \
         f'V = {ans} л.'
     wrong = W([n * VM, m / M(c['sol']) * Fr(k[c['f']], k[c['sol']]) * VM, n * Fr(k[c['f']], k[c['sol']]) * M(c['f'])], 2)
+    nf_ = n * Fr(k[c['f']], k[c['sol']])
+    steps = [(f'm({pretty(c["sol"])}) в растворе, г', fmt(m * w / 100, 2)), (f'n({pretty(c["sol"])}), моль', fmt(n, 3)),
+             (f'n({pretty(c["f"])}), моль', fmt(nf_, 3)), (f'V({pretty(c["f"])}), л', ans)]
     return pcard('ch-oge-22-gas', q, ans, e, p=dict(type='gas', lhs=r['lhs'], rhs=r['rhs'], sol=c['sol'], f=c['f'], m=str(m),
-                                                    w=w), wrong=wrong, eq=eq)
+                                                    w=w), wrong=wrong, eq=eq, steps=steps)
 
 
 @proto('ch-oge-22-omega', 'ОГЭ', 22, 'Массовая доля вещества в исходном растворе по массе осадка или объёму газа',
@@ -3556,8 +3586,10 @@ def goge22_omega(rng):
     eqs, eq = eqp(r['lhs'], r['rhs'])
     e = f'{eqs}; n(продукта) = {ru(nf)} моль ⇒ n({pretty(c["sol"])}) = {ru(n)} моль, m = {ru(n * M(c["sol"]))} г; ω = {ans} %.'
     wrong = W([pv / m * 100, nf * M(c['sol']) / m * 100 if k[c['f']] != k[c['sol']] else Fr(w) * 2, n * M(c['sol'])], 2)
+    steps = [(f'n({pretty(c["f"])}), моль', fmt(nf, 3)), (f'n({pretty(c["sol"])}), моль', fmt(n, 3)),
+             (f'm({pretty(c["sol"])}), г', fmt(n * M(c['sol']), 2)), (f'ω({pretty(c["sol"])}), %', ans)]
     return pcard('ch-oge-22-omega', q, ans, e, p=dict(type='omega', lhs=r['lhs'], rhs=r['rhs'], sol=c['sol'], f=c['f'],
-                                                      m=str(m), pv=str(pv), fby=fby), wrong=wrong, eq=eq)
+                                                      m=str(m), pv=str(pv), fby=fby), wrong=wrong, eq=eq, steps=steps)
 
 
 @proto('ch-oge-22-msol', 'ОГЭ', 22, 'Масса раствора заданной концентрации, необходимая для реакции',
@@ -3589,8 +3621,10 @@ def goge22_msol(rng):
     eqs, eq = eqp(r['lhs'], r['rhs'])
     e = f'{eqs}; n({pretty(c["sol"])}) = {ru(n)} моль, m = {ru(n * M(c["sol"]))} г; m(р-ра) = m/{w}·100 = {ans} г.'
     wrong = W([n * M(c['sol']), n * M(c['sol']) * w / 100, pv * 100 / w], 2)
+    steps = [(f'n({pretty(c["f"])}), моль', fmt(nf, 3)), (f'n({pretty(c["sol"])}), моль', fmt(n, 3)),
+             (f'm({pretty(c["sol"])}), г', fmt(n * M(c['sol']), 2)), ('m(раствора), г', ans)]
     return pcard('ch-oge-22-msol', q, ans, e, p=dict(type='msol', lhs=r['lhs'], rhs=r['rhs'], sol=c['sol'], f=c['f'],
-                                                     w=w, pv=str(pv), fby=fby), wrong=wrong, eq=eq)
+                                                     w=w, pv=str(pv), fby=fby), wrong=wrong, eq=eq, steps=steps)
 
 
 @proto('ch-oge-22-reagent', 'ОГЭ', 22, 'Масса (объём) второго реагента или соли для реакции с раствором',
@@ -3614,15 +3648,44 @@ def goge22_reagent(rng):
     ans = _ans22(x)
     sol_name = {'HCl': 'соляной кислоты'}.get(c['sol'], gen(c['sol']))
     want = f'объём (н.у.) {gen(c["r"])}' if rby == 'V' else f'массу {gen(c["r"])}'
-    q = rng.choice([f'Вычислите {want}, который может полностью прореагировать с {ru(m)} г раствора {sol_name} с массовой '
+    rel, need_w = ('который', 'необходимый') if rby == 'V' else ('которая', 'необходимую')
+    q = rng.choice([f'Вычислите {want}, {rel} может полностью прореагировать с {ru(m)} г раствора {sol_name} с массовой '
                     f'долей растворённого вещества {w} %.',
-                    f'Имеется {ru(m)} г {w} %-ного раствора {sol_name}. Определите {want}, необходимый для полного '
+                    f'Имеется {ru(m)} г {w} %-ного раствора {sol_name}. Определите {want}, {need_w} для полного '
                     f'взаимодействия с этим раствором.'])
-    q = q.replace(f'{want}, который', f'{want}, {"которая" if gnd(c["r"]) == "f" else "который"}') if rby == 'm' and gnd(c['r']) == 'f' else q
     q += ' ' + KIM22 + ' В тренажёре введите ' + ('объём в литрах.' if rby == 'V' else 'массу в граммах.')
     eqs, eq = eqp(r['lhs'], r['rhs'])
     e = f'{eqs}; m({pretty(c["sol"])}) = {ru(m * w / 100)} г, n = {ru(n)} моль; n({pretty(c["r"])}) = {ru(nr)} моль ⇒ {ans}.'
     wrong = W([n * (VM if rby == 'V' else M(c['r'])), m / M(c['sol']) * Fr(k[c['r']], k[c['sol']]) * (VM if rby == 'V' else M(c['r'])),
                nr * (M(c['r']) if rby == 'V' else VM)], 2)
+    steps = [(f'm({pretty(c["sol"])}) в растворе, г', fmt(m * w / 100, 2)), (f'n({pretty(c["sol"])}), моль', fmt(n, 3)),
+             (f'n({pretty(c["r"])}), моль', fmt(nr, 3)), (f'{"V" if rby == "V" else "m"}({pretty(c["r"])}), '
+                                                         f'{"л" if rby == "V" else "г"}', ans)]
     return pcard('ch-oge-22-reagent', q, ans, e, p=dict(type='reag', lhs=r['lhs'], rhs=r['rhs'], sol=c['sol'], r=c['r'],
-                                                        rby=rby, m=str(m), w=w), wrong=wrong, eq=eq)
+                                                        rby=rby, m=str(m), w=w), wrong=wrong, eq=eq, steps=steps)
+
+
+# ======================================================================= шаги развёрнутых решений (частичный балл)
+# Шаги карточки (pcard steps=) пересчитываются независимо (solve_steps) по данным условия. Как шаги ложатся на критерии:
+
+import pc_core as _pc  # noqa: E402
+
+SCORE34 = ('4 балла, как в критериях ФИПИ № 34: 1) уравнения реакций (проверяет эксперт/самопроверка по эталону в '
+           'пояснении); 2) количества исходных веществ — шаги 1–2 (разложившаяся/неразложившаяся часть, n компонентов '
+           'смеси, n соли, n H₂SO₄ из олеума); 3) количества прореагировавших веществ и масса конечного раствора — '
+           'шаги 3–4 (избыток/недостаток, вычет осадка, газа, металла); 4) искомая величина — последний шаг. '
+           'Каждый верный элемент — 1 балл; итоговое число проверяется отдельно.')
+SCORE22 = ('3 балла, как в критериях ОГЭ № 22: 1) уравнение реакции (эталон в пояснении); 2) масса и количество вещества '
+           'в растворе (или по продукту) — шаги 1–2; 3) количество по уравнению и искомая величина — шаги 3–4. '
+           'Частичный балл — по числу верных элементов.')
+for _pid, _calc in [('ch-ege-34-electro', _el_calc), ('ch-ege-34-decomp', _dec_calc), ('ch-ege-34-atoms', _atoms_calc),
+                    ('ch-ege-34-hydrate', _hyd_calc), ('ch-ege-34-solub', _solub_calc), ('ch-ege-34-oleum', _oleum_calc)]:
+    _pc.PROTOS[_pid]['solve_steps'] = _steps(_calc)
+    _pc.PROTOS[_pid]['fidelity']['score'] = SCORE34
+    _pc.PROTOS[_pid]['fidelity']['answer_format'] = ('многошаговая карточка: промежуточные величины (n, массы растворов) '
+                                                     'и итоговое число, % до десятых (объём воды — до целых)')
+for _pid in ('ch-oge-22-precip', 'ch-oge-22-gas', 'ch-oge-22-omega', 'ch-oge-22-msol', 'ch-oge-22-reagent'):
+    _pc.PROTOS[_pid]['solve_steps'] = _steps(_oge22_calc)
+    _pc.PROTOS[_pid]['fidelity']['score'] = SCORE22
+    _pc.PROTOS[_pid]['fidelity']['answer_format'] = ('многошаговая карточка: m и n вещества, n по уравнению, итоговое '
+                                                     'число (точное значение)')
