@@ -2425,7 +2425,7 @@ for b in ['NaOH', 'KOH', 'Ca(OH)2', 'Ba(OH)2', 'LiOH']:
         NR(b, 'р-р', s, 'р-р', 'нет осадка, газа или слабого электролита')
     for s in ['BaSO4', 'CaCO3', 'AgCl', 'BaCO3', 'Ca3(PO4)2', 'CuS', 'FeS', 'PbS']:
         NR(b, 'р-р', s, 'тв.', 'нерастворимая соль не вступает в обмен со щёлочью')
-    for s in ['BaCl2', 'Ba(NO3)2', 'CaCl2', 'Ca(NO3)2', 'SrCl2']:
+    for s in ['BaCl2', 'Ba(NO3)2']:
         if b == 'LiOH':
             continue
         NR(b, 'р-р', s, 'р-р', 'нет осадка, газа или слабого электролита')
@@ -2789,7 +2789,7 @@ def _neg_rule(a, b):
             if alk == 'LiOH' and an in ('PO4', 'CO3', 'F'):
                 return None
             return 'нет осадка, газа или слабого электролита'
-        if ck in ('Ba', 'Ca') and an in ('Cl', 'Br', 'NO3') and alk in ('NaOH', 'KOH', 'LiOH', 'Ba(OH)2'):
+        if ck == 'Ba' and an in ('Cl', 'Br', 'NO3') and alk in ('NaOH', 'KOH', 'LiOH', 'Ba(OH)2'):
             return 'нет осадка, газа или слабого электролита'
         if sol(sl) == 'н' and an in ('SO4', 'Cl', 'Br', 'CO3', 'PO4'):
             return 'нерастворимая соль не вступает в обмен со щёлочью'

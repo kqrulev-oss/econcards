@@ -928,11 +928,15 @@ for _a, _b in _SWAPS:
     SWAP.setdefault(_b, []).append(_a)
 
 
-def _mutations(prod, rng):
+def _mutations(prod, rng, lhs=()):
     out = []
+    allowed = set()
+    for f in list(prod) + list(lhs):
+        allowed |= els(f)
+    allowed |= {'H', 'O'}
     for i, x in enumerate(prod):
         for y in SWAP.get(x, []):
-            if y in SUBS and y not in prod:
+            if y in SUBS and y not in prod and els(y) <= allowed:
                 out.append(prod[:i] + [y] + prod[i + 1:])
     if 'H2O' in prod and len(prod) > 2:
         out.append([x for x in prod if x != 'H2O'])
@@ -1010,8 +1014,8 @@ def gen8(rng, pid, theme):
         raise Retry
     # два дистрактора
     pool_mut = []
-    for pr in prods:
-        pool_mut += _mutations(pr, rng)
+    for pr, d in zip(prods, items):
+        pool_mut += _mutations(pr, rng, USE8[d]['lhs'])
     for d in by_lhs.get(frozenset(USE8[items[0]]['lhs']) - {'H2O'}, []):
         if d not in items:
             pool_mut.append(list(USE8[d]['rhs']))
@@ -2888,7 +2892,7 @@ U24 = [x for x in I.U if x in SUBS and x not in ('Au', 'Pt', 'Hg', 'N2', 'NO', '
 
 
 def _lab24(f):
-    return {'HNO3': 'разб.', 'H2SO4': 'разб.'}.get(f, '')
+    return {'HNO3': 'разб.', 'H2SO4': 'разб.', 'HCl': 'р-р', 'HBr': 'р-р', 'HI': 'р-р'}.get(f, '')
 
 
 SIGN_PAIRS = []
@@ -3291,7 +3295,9 @@ def _solve_6i(p):
     return {'X': str(p['opts'].index(x) + 1), 'Y': str(p['opts'].index(y) + 1)}
 
 
-IONIC6 = [r for r in RX if r.get('aq') and not is_redox(r) and net_key(r) and len(set(r['lhs']) - {'H2O'}) == 2]
+IONIC6 = [r for r in RX if r.get('aq') and not is_redox(r) and net_key(r) and len(set(r['lhs']) - {'H2O'}) == 2
+          and 'недостаток' not in r.get('cond', '') and ':' not in r.get('cond', '')
+          and 'основная соль' not in r.get('tags', [])]
 
 
 @proto('ch-ege-06-ionic', 'ЕГЭ', 6, 'Вещества X и Y по сокращённому ионному уравнению их реакции',
@@ -3354,8 +3360,14 @@ def g_6i(rng):
 
 # ================================================================= 30. Реакции ионного обмена (из перечня)
 
+def _default_cond(r):
+    c = r.get('cond', '')
+    return 'недостаток' not in c and ':' not in c and 'основная соль' not in r.get('tags', [])
+
+
 EXCH30 = [r for r in RX if r.get('aq') and not is_redox(r) and len(set(r['lhs']) - {'H2O'}) == 2 and net_key(r)
-          and not any(FORM_OF(r, x) == 'конц.' for x in r['lhs']) and 'совместный гидролиз' not in r.get('tags', [])]
+          and not any(FORM_OF(r, x) == 'конц.' for x in r['lhs']) and 'совместный гидролиз' not in r.get('tags', [])
+          and _default_cond(r)]
 
 
 def cond30(r):

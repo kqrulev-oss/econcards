@@ -112,6 +112,12 @@ def rs(x, dec):
     return s.replace('.', ',')
 
 
+def sfmt(x, dec):
+    """Промежуточный шаг решения: округление с отбраковкой значений у границы округления."""
+    guard(x, dec, Fr(1, 100))
+    return fmt(Fr(x), dec)
+
+
 def nice(x, dec=2):
     """x — конечная дробь не длиннее dec знаков (для чисел в условии)."""
     return (Fr(x) * 10 ** dec).denominator == 1
@@ -2420,8 +2426,8 @@ def g34_electro(rng):
              f'' + KIM34 + '(Запишите число с точностью до десятых.)')
         p = dict(salt=salt, m0=str(m0), w0=w0, stop=[stop[0], str(stop[2])], reag=reag, mode='portion', mp=str(mp),
                  wr=wr, target='')
-        steps = [('n(разложившейся соли), моль', fmt(x, 3)), ('m(раствора после электролиза), г', fmt(m_after, 2)),
-                 (f'n({pretty(reag)}), необходимое для порции, моль', fmt(need, 3)), (f'm(раствора {pretty(reag)}), г', ans)]
+        steps = [('n(разложившейся соли), моль', sfmt(x, 3)), ('m(раствора после электролиза), г', sfmt(m_after, 2)),
+                 (f'n({pretty(reag)}), необходимое для порции, моль', sfmt(need, 3)), (f'm(раствора {pretty(reag)}), г', ans)]
         e = f'Разложилось {fmt(x, 3)} моль соли; масса раствора после электролиза {fmt(m_after, 2)} г; в порции ' \
             f'{fmt(frac, 3)} часть веществ; n({pretty(reag)}) = {fmt(need, 4)} моль ⇒ m(р-ра) ≈ {ans} г.'
         wrong = W([need * M(reag), ans_v * 2 if reag == 'CuSO4' else ans_v / 2, need * M(reag) * 100 / wr / frac], 1)
@@ -2456,9 +2462,9 @@ def g34_electro(rng):
         used = {'NaOH': H + 2 * metal_ion, 'Na2CO3': nr, 'NaCl': metal_ion, 'CuSO4': nr}[reag]
         lost = {'NaOH': metal_ion * M('Cu(OH)2'), 'Na2CO3': nr * M('CO2'), 'NaCl': metal_ion * M('AgCl'),
                 'CuSO4': nr * M('Cu(OH)2')}[reag]
-        steps = [('n(разложившейся соли), моль', fmt(x, 3)), ('m(раствора после электролиза), г', fmt(m_after, 2)),
-                 (f'n({pretty(reag)}), вступившего в реакцию, моль', fmt(used, 3)),
-                 ('m(конечного раствора), г', fmt(m_after + mr - lost, 2)), (f'ω({pretty(target)}), %', ans)]
+        steps = [('n(разложившейся соли), моль', sfmt(x, 3)), ('m(раствора после электролиза), г', sfmt(m_after, 2)),
+                 (f'n({pretty(reag)}), вступившего в реакцию, моль', sfmt(used, 3)),
+                 ('m(конечного раствора), г', sfmt(m_after + mr - lost, 2)), (f'ω({pretty(target)}), %', ans)]
         q = (f'Раствор {name} массой {ru(m0)} г с массовой долей соли {w0} % подвергли электролизу с инертными '
              f'электродами. Когда {stop[1]}, ток отключили. К оставшемуся раствору прилили {ru(mr)} г {wr} %-ного '
              f'раствора {_gw(reag)}. Рассчитайте массовую долю {_gw(target)} в образовавшемся растворе. '
@@ -2620,8 +2626,8 @@ def g34_decomp(rng):
         '(Запишите число с точностью до десятых.)'
     e = f'Разложилось {fmt(x, 3)} моль {pretty(salt)}, осталось {fmt(r, 3)} моль; из {fmt(nr, 3)} моль взятого ' \
         f'{pretty(reag)} в реакцию вступило {fmt(need, 3)} моль; масса конечного раствора {fmt(total, 2)} г ⇒ ω ≈ {ans} %.'
-    steps = [('n(разложившейся соли), моль', fmt(x, 3)), ('n(неразложившейся соли), моль', fmt(r, 3)),
-             (f'n({pretty(reag)}), вступившего в реакцию, моль', fmt(need, 3)), ('m(конечного раствора), г', fmt(total, 2)),
+    steps = [('n(разложившейся соли), моль', sfmt(x, 3)), ('n(неразложившейся соли), моль', sfmt(r, 3)),
+             (f'n({pretty(reag)}), вступившего в реакцию, моль', sfmt(need, 3)), ('m(конечного раствора), г', sfmt(total, 2)),
              (f'ω({pretty(target)}), %', ans)]
     wrong = W([exact * total / (total + (r * M("CO2") if salt in ("CaCO3", "MgCO3", "BaCO3") else 20)),
                left[target] * M(target) / (mres + mr + water) * 100, exact * 2], 1)
@@ -2746,8 +2752,8 @@ def g34_atoms(rng):
     wrong = W([exact * total / (m + ms), exact * total / ms, exact / 2], 1)
     p = dict(X=X, Y=Y, acid=acid, salt=salt, els=[e1, e2], ratio=[ratio.numerator, ratio.denominator], m=str(m),
              ms=str(ms), ws=ws, target=target)
-    steps = [(f'n({pretty(X)}), моль', fmt(a, 3)), (f'n({pretty(Y)}), моль', fmt(b, 3)),
-             ('m(выделившихся газов), г', fmt(gas_m, 2)), ('m(конечного раствора), г', fmt(total, 2)),
+    steps = [(f'n({pretty(X)}), моль', sfmt(a, 3)), (f'n({pretty(Y)}), моль', sfmt(b, 3)),
+             ('m(выделившихся газов), г', sfmt(gas_m, 2)), ('m(конечного раствора), г', sfmt(total, 2)),
              (f'ω({pretty(salt) if target == "salt" else pretty(acid)}), %', ans)]
     return pcard('ch-ege-34-atoms', q, ans, e, p=p, wrong=wrong, eqs=eqs, steps=steps)
 
@@ -2814,9 +2820,9 @@ def g34_hydrate(rng):
     e = f'n(CuSO₄) = {fmt(n0, 3)} моль; m(р-ра) = {fmt(S0, 2)} г; {pretty(met)} ({fmt(nM, 3)} моль) вытесняет медь, ' \
         f'остаётся {fmt(rest, 3)} моль металла; с кислотой ({fmt(nA, 3)} моль) реагирует {fmt(react, 3)} моль; ' \
         f'масса конечного раствора {fmt(total, 2)} г ⇒ ω ≈ {ans} %.'
-    steps = [('n(CuSO₄), моль', fmt(n0, 3)), ('m(исходного раствора CuSO₄), г', fmt(S0, 2)),
-             (f'n({pretty(met)}), растворившегося в кислоте, моль', fmt(react, 3)),
-             ('m(конечного раствора), г', fmt(total, 2)),
+    steps = [('n(CuSO₄), моль', sfmt(n0, 3)), ('m(исходного раствора CuSO₄), г', sfmt(S0, 2)),
+             (f'n({pretty(met)}), растворившегося в кислоте, моль', sfmt(react, 3)),
+             ('m(конечного раствора), г', sfmt(total, 2)),
              (f'ω({pretty(msalt) if target == "salt" else "H₂SO₄"}), %', ans)]
     wrong = W([exact * total / (total + n0 * M('Cu')), (n0 + react) * M(msalt) / (mh + mA + mM) * 100 if target == 'salt'
                else exact * 2, exact / 2], 1)
@@ -2901,8 +2907,8 @@ def g34_solub(rng):
         f'из раствора уходит {pretty(out)} ({fmt(out_m, 2)} г) ⇒ ω ≈ {ans} %.'
     wrong = W([exact * total / (mp + mr), exact * (100 + S) / 100, exact * 2], 1)
     p = dict(salt=salt, reag=reag, prod=prod, out=out, S=str(S), W=str(Wt), mp=str(mp), mr=str(mr), wr=wr, target=target)
-    steps = [(f'm({pretty(salt)}) в порции, г', fmt(ns * M(salt), 2)), (f'n({pretty(salt)}), моль', fmt(ns, 3)),
-             (f'm({pretty(out)}), удалившегося из раствора, г', fmt(out_m, 2)), ('m(конечного раствора), г', fmt(total, 2)),
+    steps = [(f'm({pretty(salt)}) в порции, г', sfmt(ns * M(salt), 2)), (f'n({pretty(salt)}), моль', sfmt(ns, 3)),
+             (f'm({pretty(out)}), удалившегося из раствора, г', sfmt(out_m, 2)), ('m(конечного раствора), г', sfmt(total, 2)),
              (f'ω({pretty(prod) if target == "prod" else pretty(reag)}), %', ans)]
     return pcard('ch-ege-34-solub', q, ans, e, p=p, wrong=wrong, eq=eqp(lhs, rhs)[1], steps=steps)
 
@@ -2988,14 +2994,14 @@ def g34_oleum(rng):
         if wf <= 0:
             raise Retry
         p = dict(mode='inverse', m=str(m), el=el, wel=str(wel), reag=salt, V=str(V), c=str(c), rho=str(rho), wf=str(wf))
-        val = _oleum_inv(p)
+        val = _oleum_inv(p)[-1][0]
         guard(val, 0, Fr(1, 5))
         if abs(val - Wt) > 1 or val <= 0:
             raise Retry
         ans = fmt(val, 0)
         F_ex = m + Wt + V * rho - nac * M('BaSO4')
-        steps = [('n(H₂SO₄) после растворения олеума, моль', fmt(nac, 3)), ('m(BaSO₄), г', fmt(nac * M('BaSO4'), 2)),
-                 ('m(конечного раствора), г', fmt(F_ex, 1)), ('V(воды), мл', ans)]
+        steps = [('n(H₂SO₄) после растворения олеума, моль', sfmt(nac, 3)), ('m(BaSO₄), г', sfmt(nac * M('BaSO4'), 2)),
+                 ('m(конечного раствора), г', sfmt(F_ex, 1)), ('V(воды), мл', ans)]
         if [v for _, v in steps] != [rs(v, d) for v, d in _oleum_inv(p)]:
             raise Retry             # данные условия округлены — шаги должны совпадать с пересчётом по условию
         elw = 'атомов кислорода' if el == 'O' else 'атомов серы'
@@ -3017,7 +3023,7 @@ def g34_oleum(rng):
              f'Рассчитайте массовую долю серной кислоты в полученном растворе. ' + KIM34 + '(Запишите число с точностью до десятых.)')
         eqs = [eqp(['SO3', 'H2O'], ['H2SO4'])[1]]
         wrong = W([m * (100 - pr) / 100 / (m + Wt) * 100, n * M('H2SO4') / Wt * 100, m / (m + Wt) * 100], 1)
-        mid = [('n(H₂SO₄) после растворения, моль', fmt(n, 3)), ('m(раствора), г', fmt(m + Wt, 2))]
+        mid = [('n(H₂SO₄) после растворения, моль', sfmt(n, 3)), ('m(раствора), г', sfmt(m + Wt, 2))]
     else:
         reag = 'KOH' if mode == 'KOH' else 'BaCl2'
         need = 2 * n if reag == 'KOH' else n
@@ -3029,14 +3035,14 @@ def g34_oleum(rng):
         if reag == 'KOH':
             total = m + Wt + mr
             val = n * M('K2SO4') if target == 'K2SO4' else (nr - 2 * n) * M('KOH')
-            mid = [('n(H₂SO₄) после растворения, моль', fmt(n, 3)), ('n(KOH), вступившего в реакцию, моль', fmt(2 * n, 3)),
-                   ('m(конечного раствора), г', fmt(total, 2))]
+            mid = [('n(H₂SO₄) после растворения, моль', sfmt(n, 3)), ('n(KOH), вступившего в реакцию, моль', sfmt(2 * n, 3)),
+                   ('m(конечного раствора), г', sfmt(total, 2))]
             eqs = [eqp(['SO3', 'H2O'], ['H2SO4'])[1], eqp(['H2SO4', 'KOH'], ['K2SO4', 'H2O'])[1]]
         else:
             total = m + Wt + mr - n * M('BaSO4')
             val = 2 * n * M('HCl') if target == 'HCl' else (nr - n) * M('BaCl2')
-            mid = [('n(H₂SO₄) после растворения, моль', fmt(n, 3)), ('m(BaSO₄), г', fmt(n * M('BaSO4'), 2)),
-                   ('m(конечного раствора), г', fmt(total, 2))]
+            mid = [('n(H₂SO₄) после растворения, моль', sfmt(n, 3)), ('m(BaSO₄), г', sfmt(n * M('BaSO4'), 2)),
+                   ('m(конечного раствора), г', sfmt(total, 2))]
             eqs = [eqp(['SO3', 'H2O'], ['H2SO4'])[1], eqp(['H2SO4', 'BaCl2'], ['BaSO4', 'HCl'])[1]]
         exact = val / total * 100
         p = dict(m=str(m), p=pr, W=str(Wt), mode='react', reag=reag, mr=str(mr), wr=wr, target=target)
@@ -3512,8 +3518,8 @@ def goge22_precip(rng):
         f'n({pretty(c["f"])}) = {ru(n * Fr(k[c["f"]], k[c["sol"]]))} моль; m = {ans} г.'
     wrong = W([m / M(c['sol']) * Fr(k[c['f']], k[c['sol']]) * M(c['f']), n * M(c['f']), m * w / 100], 2)
     nf_ = n * Fr(k[c['f']], k[c['sol']])
-    steps = [(f'm({pretty(c["sol"])}) в растворе, г', fmt(m * w / 100, 2)), (f'n({pretty(c["sol"])}), моль', fmt(n, 3)),
-             (f'n({pretty(c["f"])}), моль', fmt(nf_, 3)), (f'm({pretty(c["f"])}), г', ans)]
+    steps = [(f'm({pretty(c["sol"])}) в растворе, г', sfmt(m * w / 100, 2)), (f'n({pretty(c["sol"])}), моль', sfmt(n, 3)),
+             (f'n({pretty(c["f"])}), моль', sfmt(nf_, 3)), (f'm({pretty(c["f"])}), г', ans)]
     return pcard('ch-oge-22-precip', q, ans, e, p=dict(type='precip', lhs=r['lhs'], rhs=r['rhs'], sol=c['sol'], f=c['f'],
                                                        m=str(m), w=w), wrong=wrong, eq=eq, steps=steps)
 
@@ -3550,8 +3556,8 @@ def goge22_gas(rng):
         f'V = {ans} л.'
     wrong = W([n * VM, m / M(c['sol']) * Fr(k[c['f']], k[c['sol']]) * VM, n * Fr(k[c['f']], k[c['sol']]) * M(c['f'])], 2)
     nf_ = n * Fr(k[c['f']], k[c['sol']])
-    steps = [(f'm({pretty(c["sol"])}) в растворе, г', fmt(m * w / 100, 2)), (f'n({pretty(c["sol"])}), моль', fmt(n, 3)),
-             (f'n({pretty(c["f"])}), моль', fmt(nf_, 3)), (f'V({pretty(c["f"])}), л', ans)]
+    steps = [(f'm({pretty(c["sol"])}) в растворе, г', sfmt(m * w / 100, 2)), (f'n({pretty(c["sol"])}), моль', sfmt(n, 3)),
+             (f'n({pretty(c["f"])}), моль', sfmt(nf_, 3)), (f'V({pretty(c["f"])}), л', ans)]
     return pcard('ch-oge-22-gas', q, ans, e, p=dict(type='gas', lhs=r['lhs'], rhs=r['rhs'], sol=c['sol'], f=c['f'], m=str(m),
                                                     w=w), wrong=wrong, eq=eq, steps=steps)
 
@@ -3586,8 +3592,8 @@ def goge22_omega(rng):
     eqs, eq = eqp(r['lhs'], r['rhs'])
     e = f'{eqs}; n(продукта) = {ru(nf)} моль ⇒ n({pretty(c["sol"])}) = {ru(n)} моль, m = {ru(n * M(c["sol"]))} г; ω = {ans} %.'
     wrong = W([pv / m * 100, nf * M(c['sol']) / m * 100 if k[c['f']] != k[c['sol']] else Fr(w) * 2, n * M(c['sol'])], 2)
-    steps = [(f'n({pretty(c["f"])}), моль', fmt(nf, 3)), (f'n({pretty(c["sol"])}), моль', fmt(n, 3)),
-             (f'm({pretty(c["sol"])}), г', fmt(n * M(c['sol']), 2)), (f'ω({pretty(c["sol"])}), %', ans)]
+    steps = [(f'n({pretty(c["f"])}), моль', sfmt(nf, 3)), (f'n({pretty(c["sol"])}), моль', sfmt(n, 3)),
+             (f'm({pretty(c["sol"])}), г', sfmt(n * M(c['sol']), 2)), (f'ω({pretty(c["sol"])}), %', ans)]
     return pcard('ch-oge-22-omega', q, ans, e, p=dict(type='omega', lhs=r['lhs'], rhs=r['rhs'], sol=c['sol'], f=c['f'],
                                                       m=str(m), pv=str(pv), fby=fby), wrong=wrong, eq=eq, steps=steps)
 
@@ -3621,8 +3627,8 @@ def goge22_msol(rng):
     eqs, eq = eqp(r['lhs'], r['rhs'])
     e = f'{eqs}; n({pretty(c["sol"])}) = {ru(n)} моль, m = {ru(n * M(c["sol"]))} г; m(р-ра) = m/{w}·100 = {ans} г.'
     wrong = W([n * M(c['sol']), n * M(c['sol']) * w / 100, pv * 100 / w], 2)
-    steps = [(f'n({pretty(c["f"])}), моль', fmt(nf, 3)), (f'n({pretty(c["sol"])}), моль', fmt(n, 3)),
-             (f'm({pretty(c["sol"])}), г', fmt(n * M(c['sol']), 2)), ('m(раствора), г', ans)]
+    steps = [(f'n({pretty(c["f"])}), моль', sfmt(nf, 3)), (f'n({pretty(c["sol"])}), моль', sfmt(n, 3)),
+             (f'm({pretty(c["sol"])}), г', sfmt(n * M(c['sol']), 2)), ('m(раствора), г', ans)]
     return pcard('ch-oge-22-msol', q, ans, e, p=dict(type='msol', lhs=r['lhs'], rhs=r['rhs'], sol=c['sol'], f=c['f'],
                                                      w=w, pv=str(pv), fby=fby), wrong=wrong, eq=eq, steps=steps)
 
@@ -3658,8 +3664,8 @@ def goge22_reagent(rng):
     e = f'{eqs}; m({pretty(c["sol"])}) = {ru(m * w / 100)} г, n = {ru(n)} моль; n({pretty(c["r"])}) = {ru(nr)} моль ⇒ {ans}.'
     wrong = W([n * (VM if rby == 'V' else M(c['r'])), m / M(c['sol']) * Fr(k[c['r']], k[c['sol']]) * (VM if rby == 'V' else M(c['r'])),
                nr * (M(c['r']) if rby == 'V' else VM)], 2)
-    steps = [(f'm({pretty(c["sol"])}) в растворе, г', fmt(m * w / 100, 2)), (f'n({pretty(c["sol"])}), моль', fmt(n, 3)),
-             (f'n({pretty(c["r"])}), моль', fmt(nr, 3)), (f'{"V" if rby == "V" else "m"}({pretty(c["r"])}), '
+    steps = [(f'm({pretty(c["sol"])}) в растворе, г', sfmt(m * w / 100, 2)), (f'n({pretty(c["sol"])}), моль', sfmt(n, 3)),
+             (f'n({pretty(c["r"])}), моль', sfmt(nr, 3)), (f'{"V" if rby == "V" else "m"}({pretty(c["r"])}), '
                                                          f'{"л" if rby == "V" else "г"}', ans)]
     return pcard('ch-oge-22-reagent', q, ans, e, p=dict(type='reag', lhs=r['lhs'], rhs=r['rhs'], sol=c['sol'], r=c['r'],
                                                         rby=rby, m=str(m), w=w), wrong=wrong, eq=eq, steps=steps)

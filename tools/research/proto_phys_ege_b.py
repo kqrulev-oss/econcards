@@ -3715,7 +3715,8 @@ def g22_arch(rng):
          f'Равновесие: mg = N + ρж g {ru(phi)} V ⇒ V = (mg − F)/(ρж g·{ru(phi)}) = ({ru(Fr(m, 100))} − {ru(Fr(F).limit_denominator(100))})/({rl}·10·{ru(phi)}) '
          f'≈ {sf(V)} м³. ρ = m/V ≈ {{ANS}} кг/м³.')
     wrong = [m / 1000 / ((m / 1000 * 10 - F) / (rl * 10)), m / 1000 / ((m / 1000 * 10) / (rl * 10 * float(phi))), rl * float(phi)]
-    return num_card('ph-ege-22-archimedes-bottom', q, val, 0, e, {'m': m, 'F': F, 'phi': fr(phi), 'rl': rl}, wrong)
+    steps = [('выталкивающая сила, Н', m / 1000 * 10 - F), ('объём тела, см³', V * 1e6)]
+    return num_card('ph-ege-22-archimedes-bottom', q, val, 0, e, {'m': m, 'F': F, 'phi': fr(phi), 'rl': rl}, wrong, steps=steps)
 
 
 def _s22two(p):
@@ -3757,7 +3758,8 @@ def g22_two(rng):
         e = f'ρV = ρ₁xV + ρ₂(1 − x)V ⇒ x = (ρ − ρ₂)/(ρ₁ − ρ₂) = ({rho} − {hi[1]})/({lo[1]} − {hi[1]}) ≈ {{ANS}} %.'
         wrong = [rho / lo[1] * 100, 100 - val, rho / hi[1] * 100 if rho < hi[1] else None]
         p = {'ask': 'x', 'rho': rho, 'r1': lo[1], 'r2': hi[1]}
-    return num_card('ph-ege-22-float-two-liquids', q, val, 0, e, p, wrong)
+    steps = ([('x·ρ₁, кг/м³', x * lo[1]), ('(1 − x)·ρ₂, кг/м³', (1 - x) * hi[1])] if ask == 'rho' else [('ρ − ρ₂, кг/м³', rho - hi[1]), ('ρ₁ − ρ₂, кг/м³', lo[1] - hi[1])])
+    return num_card('ph-ege-22-float-two-liquids', q, val, 0, e, p, wrong, steps=steps)
 
 
 def _s22kin(p):
@@ -3784,7 +3786,10 @@ def g22_kin(rng):
     v0 = Fr(2 * s) / (t * (1 + k))
     a = (k - 1) * v0 / t
     val = float({'a': abs(a), 'v0': v0, 'v1': k * v0}[ask])
-    if val > 60 or val < 0.05:
+    amax, vmax = {'Автомобиль': (5, 35), 'Поезд': (1, 30), 'Велосипедист': (2, 12), 'Лыжник': (3, 15), 'Мотоциклист': (6, 35), 'Шайба на льду': (2, 15)}[who]
+    if who == 'Шайба на льду' and k > 1:
+        raise Retry
+    if abs(a) > amax or max(v0, k * v0) > vmax or val < 0.05:
         raise Retry
     dec = 1 if exact(val, 1) is None else (0 if exact(val, 0) else 1)
     dec = 2 if ask == 'a' and val < 1 else dec
@@ -3792,10 +3797,12 @@ def g22_kin(rng):
     what = {'a': 'модуль ускорения (в м/с²)', 'v0': 'скорость в начале этого участка (в м/с)', 'v1': 'скорость в конце этого участка (в м/с)'}[ask]
     q = (f'{who}, двигаясь прямолинейно с постоянным ускорением, за {t} с прош{"ла" if who == "Шайба на льду" else "ёл"} путь {s} м, не меняя направления движения, и {verb}. '
          f'Определите {what}. {rq(dec)}')
-    e = (f's = (v₀ + v)t/2, v = {ru(k)}v₀ ⇒ v₀ = 2s/((1 + {ru(k)})t) = {ru(v0) if exact(v0, 3) else f"{sf(float(v0))}"} м/с; v = {sf(float(k * v0), 3)} м/с; '
+    kv = f'{ru(k)}v₀' if k > 1 else f'v₀/{ru(1 / k)}'
+    e = (f's = (v₀ + v)t/2, v = {kv} ⇒ v₀ = 2s/((1 + v/v₀)t) ≈ {sf(float(v0))} м/с; v ≈ {sf(float(k * v0), 3)} м/с; '
          f'|a| = |v − v₀|/t ≈ {sf(float(abs(a)), 3)} м/с². Ответ: {{ANS}}.')
     wrong = [2 * s / t ** 2, s / t, float(abs(a)) * 2, float(v0) * 2]
-    return num_card('ph-ege-22-kinematics', q, val, dec, e, {'s': s, 't': t, 'k': fr(k), 'ask': ask}, wrong)
+    steps = [('средняя скорость на участке, м/с', Fr(s, t))] + ([('скорость в конце участка, м/с', k * v0)] if ask == 'v0' else [('скорость в начале участка, м/с', v0)])
+    return num_card('ph-ege-22-kinematics', q, val, dec, e, {'s': s, 't': t, 'k': fr(k), 'ask': ask}, wrong, steps=steps)
 
 
 def _s22col(p):
@@ -3829,10 +3836,12 @@ def g22_col(rng):
     M1, M2 = m1 * mk, m2 * mk
     u = (M1 * v1 + M2 * v2) / (M1 + M2)
     Q = M1 * v1 ** 2 / 2 + M2 * v2 ** 2 / 2 - (M1 + M2) * u ** 2 / 2
-    if u == 0 or Q <= 0:
+    if u == 0 or Q <= 0 or exact(u, 2) is None:
         raise Retry
     Qunit, Qk = ('мДж', 1000) if Q < 1 else (('кДж', Fr(1, 1000)) if Q > 5000 else ('Дж', 1))
     val = float(abs(u)) if ask == 'u' else float(Q * Qk)
+    if exact(Fr(abs(u)) if ask == 'u' else Q * Qk, 2) is None:
+        raise Retry
     dec = 2
     motion = 'в одном направлении' if same else 'навстречу друг другу'
     q = (f'{name} массами {m1} {unit} и {m2} {unit} движутся по прямой {motion} со скоростями {ru(v1)} м/с и {ru(abs(v2))} м/с соответственно '
@@ -3845,8 +3854,11 @@ def g22_col(rng):
              float((M1 * v1 ** 2 + M2 * v2 ** 2) / 2 * Qk), float(abs(u)) * 2]
     if ask == 'u':
         wrong = [float((M1 * v1 + M2 * abs(v2)) / (M1 + M2)) if not same else float((M1 * v1 - M2 * v2) / (M1 + M2)), float(v1 + v2) / 2, float(abs(u)) * 2]
+    Pt = M1 * v1 + M2 * v2
+    steps = ([('суммарный импульс системы до удара (модуль), кг·м/с', abs(Pt)), ('скорость тел после удара, м/с', abs(u))] if ask == 'Q' else
+             [('импульс первого тела, кг·м/с', M1 * v1), ('импульс второго тела (модуль), кг·м/с', M2 * abs(v2))])
     return num_card('ph-ege-22-inelastic', q, val, dec, e, {'m1': fr(M1), 'm2': fr(M2), 'v1': fr(v1), 'v2': fr(v2), 'ask': ask, 'k': fr(Qk)} if ask == 'Q' else
-                    {'m1': fr(M1), 'm2': fr(M2), 'v1': fr(v1), 'v2': fr(v2), 'ask': ask}, wrong)
+                    {'m1': fr(M1), 'm2': fr(M2), 'v1': fr(v1), 'v2': fr(v2), 'ask': ask}, wrong, steps=steps)
 
 
 def _s22col_fix(p):
@@ -3891,7 +3903,8 @@ def g22_spr(rng):
     e = (f'Закон сохранения энергии: kA²/2 = mv²/2 ⇒ A = v√(m/k) = {ru(v)}·√({ru(Fr(m, 1000))}/{k}) ≈ {sf(A, 4)} м'
          + (f'; Fmax = kA ≈ {sf(k * A, 4)} Н' if ask == 'F' else '') + '. Ответ: {ANS}.')
     wrong = [m / 1000 * float(v), k * float(v) ** 2, val * 2, val / math.sqrt(2)]
-    return num_card('ph-ege-22-spring-oscillation', q, val, dec, e, {'m': m, 'k': k, 'v': float(v), 'ask': ask}, wrong)
+    steps = [('энергия колебаний, мДж', m / 1000 * float(v) ** 2 / 2 * 1000)] + ([('амплитуда, см', A * 100)] if ask == 'F' else [('циклическая частота, рад/с', math.sqrt(k / (m / 1000)))])
+    return num_card('ph-ege-22-spring-oscillation', q, val, dec, e, {'m': m, 'k': k, 'v': float(v), 'ask': ask}, wrong, steps=steps)
 
 
 def _s22con(p):
@@ -3925,7 +3938,8 @@ def g22_con(rng):
     e = (f'Для груза: mg − T = ma; для бруска: T − μMg = Ma ⇒ a = (m − μM)g/(M + m) ≈ {sf(a, 4)} м/с²' +
          (f'; T = m(g − a) ≈ {sf(m / 1000 * (10 - a), 4)} Н' if ask == 'T' else '') + '. Ответ: {ANS}.')
     wrong = [m * 10 / M, m / 100, (m - mu * M) * 10 / M, m / 1000 * 10]
-    return num_card('ph-ege-22-connected-bodies', q, val, dec, e, {'M': M, 'm': m, 'mu': mu, 'ask': ask}, wrong)
+    steps = [('сила трения скольжения, Н', mu * M / 1000 * 10)] + ([('сила натяжения нити, Н', m / 1000 * (10 - a))] if ask == 'a' else [('ускорение, м/с²', a)])
+    return num_card('ph-ege-22-connected-bodies', q, val, dec, e, {'M': M, 'm': m, 'mu': mu, 'ask': ask}, wrong, steps=steps)
 
 
 def _s22el(p):
@@ -3953,7 +3967,8 @@ def g22_el(rng):
          f'Определите удлинение пружины (в см), если груз неподвижен относительно лифта. {rq(1)}')
     e = f'II закон Ньютона (ось вверх): kx − mg = ma, a = {ru(Fr(aa).limit_denominator(10))} м/с² ⇒ x = m(g + a)/k ≈ {sf(val, 4)} см. Ответ: {{ANS}}.'
     wrong = [m / 1000 * 10 / k * 100, m / 1000 * (10 - aa) / k * 100, m / 1000 * aa / k * 100]
-    return num_card('ph-ege-22-elevator', q, val, 1, e, {'m': m, 'k': k, 'a': aa}, wrong)
+    steps = [('сила тяжести груза, Н', m / 1000 * 10), ('сила упругости пружины, Н', m / 1000 * (10 + aa))]
+    return num_card('ph-ege-22-elevator', q, val, 1, e, {'m': m, 'k': k, 'a': aa}, wrong, steps=steps)
 
 
 def _s22pr(p):
@@ -3983,7 +3998,8 @@ def g22_pr(rng):
             't': 'Сколько времени (в с) длится полёт?'}[ask] + f' Сопротивлением воздуха пренебречь. {rq(1)}')
     e = f'Время полёта t = √(2h/g) = {sf(t, 4)} с; дальность L = v₀t = {sf(v0 * t, 4)} м; v = √(v₀² + (gt)²) = {sf(math.hypot(v0, 10 * t), 4)} м/с. Ответ: {{ANS}}.'
     wrong = [v0 + 10 * t, v0 * h / 10, 2 * h / 10, v0 * t * 2]
-    return num_card('ph-ege-22-projectile', q, val, 1, e, {'h': h, 'v0': v0, 'ask': ask}, wrong)
+    steps = [('время полёта, с', t), ('вертикальная составляющая скорости при падении, м/с', 10 * t)]
+    return num_card('ph-ege-22-projectile', q, val, 1, e, {'h': h, 'v0': v0, 'ask': ask}, wrong, steps=steps)
 
 
 # ---------- 23. Молекулярная физика и термодинамика (с 2027 — только этот раздел), 2 балла
@@ -4025,7 +4041,8 @@ def g23_leak(rng):
     e = f'p = nkT = NkT/V, V = const ⇒ N ∝ p/T: N₂/N₁ = p₂T₁/(p₁T₂) = {p2}·{T1}/({p1}·{T2}) ≈ {sf(p2 * T1 / (p1 * T2), 3)}' + \
         ('' if ask == 'ratio' else f'; ушло 1 − N₂/N₁ ≈ {sf(val, 3)} %') + '. Ответ: {ANS}.'
     wrong = [p1 * T2 / (p2 * T1), p2 / p1, T1 / T2, (p2 * T1 / (p1 * T2)) * 100 if ask == 'pct' else None]
-    return num_card('ph-ege-23-leak', q, val, dec, e, {'p1': p1, 'p2': p2, 'T1': T1, 'T2': T2, 'ask': ask}, wrong)
+    steps = [('отношение давлений p₂/p₁', Fr(p2, p1)), ('отношение температур T₁/T₂', Fr(T1, T2))]
+    return num_card('ph-ege-23-leak', q, val, dec, e, {'p1': p1, 'p2': p2, 'T1': T1, 'T2': T2, 'ask': ask}, wrong, steps=steps)
 
 
 def _s23bub(p):
@@ -4059,7 +4076,8 @@ def g23_bub(rng):
     e = (f'Для воздуха в пузырьке pV/T = const. У дна p₁ = p₀ + ρgH = {sf(1e5 + rho * 10 * H)} Па, T₁ = {Tb} К; у поверхности p₂ = p₀, T₂ = {Ts} К. '
          f'V₂/V₁ = p₁T₂/(p₂T₁) ≈ {sf(k)}. Ответ: {{ANS}}.')
     wrong = [rho * 10 * H / 1e5 * (V1 if ask == 'V' else 1), (1e5 + rho * 10 * H) / 1e5 * (V1 if ask == 'V' else 1), Tb / Ts * (V1 if ask == 'V' else 1)]
-    return num_card('ph-ege-23-bubble', q, val, 2 if ask == 'k' else 1, e, {'H': H, 'rho': rho, 'Tb': Tb, 'Ts': Ts, 'V1': V1, 'ask': ask}, wrong)
+    steps = [('давление у дна, кПа', (1e5 + rho * 10 * H) / 1000), ('отношение температур T₂/T₁', Ts / Tb)]
+    return num_card('ph-ege-23-bubble', q, val, 2 if ask == 'k' else 1, e, {'H': H, 'rho': rho, 'Tb': Tb, 'Ts': Ts, 'V1': V1, 'ask': ask}, wrong, steps=steps)
 
 
 def _s23hum(p):
@@ -4105,7 +4123,8 @@ def g23_hum(rng):
         e = f'm = (φ₂ − φ₁)ρнас·V = {ru(Fr(phi2 - phi1, 100))}·{ru(RHO_SAT[t1])}·{ru(V)} ≈ {sf(val)} г. Ответ: {{ANS}}.'
         wrong = [float(Fr(phi2, 100) * RHO_SAT[t1] * V), float(Fr(phi2 - phi1, 100) * RHO_SAT[t1]), float((phi2 - phi1) * RHO_SAT[t1] * V)]
         p = {'t1': t1, 't2': t2, 'phi1': phi1, 'phi2': phi2, 'V': fr(V), 'ask': ask}
-    return num_card('ph-ege-23-humidity', q, val, 0, e, p, wrong)
+    steps = ([('плотность водяного пара, г/м³', Fr(phi1, 100) * RHO_SAT[t1])] if ask == 'phi2' else [('плотность пара вначале, г/м³', Fr(phi1, 100) * RHO_SAT[t1]), ('плотность пара в конце, г/м³', Fr(phi2, 100) * RHO_SAT[t1])])
+    return num_card('ph-ege-23-humidity', q, val, 0, e, p, wrong, steps=steps)
 
 
 C_W, C_I, LAM = 4200, 2100, 330000
@@ -4157,7 +4176,8 @@ def g23_cal(rng):
         e = (f'Теплоты воды при остывании до 0 °C ({sf(Qhot)} Дж) хватает на нагрев и плавление льда ({sf(Qi + Qm)} Дж), остаток идёт на нагрев всей воды: '
              f'θ = (cв mв tв − cл mл|tл| − λmл)/(cв(mв + mл)) ≈ {sf(val)} °C. Ответ: {{ANS}}.')
         wrong = [(Qhot - Qm) / (C_W * mw / 1000), (mw * tw) / (mw + mi), (Qhot - Qi - Qm) / (C_W * mw / 1000)]
-    return num_card('ph-ege-23-calorimetry', q, val, 0 if ask == 'melt' else 1, e, {'mi': mi, 'mw': mw, 'ti': ti, 'tw': tw, 'ask': ask}, wrong)
+    steps = [('теплота, отдаваемая водой при остывании до 0 °C, кДж', Qhot / 1000), ('теплота на нагревание и плавление всего льда, кДж', (Qi + Qm) / 1000)]
+    return num_card('ph-ege-23-calorimetry', q, val, 0 if ask == 'melt' else 1, e, {'mi': mi, 'mw': mw, 'ti': ti, 'tw': tw, 'ask': ask}, wrong, steps=steps)
 
 
 def _s23fl(p):
@@ -4230,7 +4250,8 @@ def g23_con(rng):
          f'Какое давление (в кПа) установится в сосудах? {rq(1)}')
     e = f'Для каждого газа p_iV_i = p_i′·ΣV; по закону Дальтона p = Σp_iV_i/ΣV = {sum(a * b for a, b in zip(P, V))}/{sum(V)} ≈ {sf(val)} кПа. Ответ: {{ANS}}.'
     wrong = [sum(P) / n, sum(P), sum(a * b for a, b in zip(P, V)) / max(V)]
-    return num_card('ph-ege-23-connect-vessels', q, val, 1, e, {'p': P, 'V': V}, wrong)
+    steps = [(f'парциальное давление газа из {i + 1}-го сосуда, кПа', Fr(P[i] * V[i], sum(V))) for i in range(len(P))][:2]
+    return num_card('ph-ege-23-connect-vessels', q, val, 1, e, {'p': P, 'V': V}, wrong, steps=steps)
 
 
 def _s23cyc(p):
@@ -4267,7 +4288,8 @@ def g23_cyc(rng):
     e = (f'A = (p₂ − p₁)(V₂ − V₁) = {sf(A)} Дж. Теплота подводится на 1–2 (Q = 3/2·V₁Δp = {sf(1.5 * V1 * (p2 - p1) * 100)} Дж) и 2–3 '
          f'(Q = 5/2·p₂ΔV = {sf(2.5 * p2 * (V2 - V1) * 100)} Дж); η = A/Qнагр ≈ {sf(A / Qin * 100)} %. Ответ: {{ANS}}.')
     wrong = [A * 2, p2 * (V2 - V1) * 100, (1 - p1 / p2) * 100, A / (2.5 * p2 * (V2 - V1) * 100) * 100]
-    return num_card('ph-ege-23-cycle', q, val, 0 if ask == 'A' else 1, e, {'p1': p1, 'p2': p2, 'V1': V1, 'V2': V2, 'ask': ask}, wrong)
+    steps = ([('работа газа за цикл, Дж', A), ('количество теплоты, полученное от нагревателя, Дж', Qin)] if ask == 'eta' else [('изменение давления, кПа', (p2 - p1) * 100), ('изменение объёма, л', V2 - V1)])
+    return num_card('ph-ege-23-cycle', q, val, 0 if ask == 'A' else 1, e, {'p1': p1, 'p2': p2, 'V1': V1, 'V2': V2, 'ask': ask}, wrong, steps=steps)
 
 
 def _s23mass(p):
@@ -4301,7 +4323,8 @@ def g23_mass(rng):
     e = f'm = pVM/(RT): m₁ ≈ {sf(val / 1000 + p2 * 1e5 * V / 1000 * M / (R_ * T2))} кг, m₂ ≈ {sf(p2 * 1e5 * V / 1000 * M / (R_ * T2))} кг; Δm ≈ {sf(val)} г. Ответ: {{ANS}}.'
     wrong = [(p1 - p2) * 1e5 * V / 1000 * M / (R_ * T1) * 1000, (p1 * 1e5 * V * M / (R_ * t1) - p2 * 1e5 * V * M / (R_ * t2)) / 1000 * 1000 if t2 > 0 else None,
              val * 1000]
-    return num_card('ph-ege-23-released-mass', q, val, 0, e, {'M': M, 'V': V, 'T1': T1, 'T2': T2, 'p1': p1, 'p2': p2}, wrong)
+    steps = [('масса газа вначале, г', p1 * 1e5 * V / 1000 * M / (R_ * T1) * 1000), ('масса газа в конце, г', p2 * 1e5 * V / 1000 * M / (R_ * T2) * 1000)]
+    return num_card('ph-ege-23-released-mass', q, val, 0, e, {'M': M, 'V': V, 'T1': T1, 'T2': T2, 'p1': p1, 'p2': p2}, wrong, steps=steps)
 
 
 # ---------- 24. МКТ и термодинамика, высокий уровень (3 балла)
@@ -4339,7 +4362,8 @@ def g24_part(rng):
     e = (f'В первой части есть вода — пар насыщен: ρнас = mп/V₁. После снятия перегородки вся вода испарится, если (mп + mв)/(V₁ + V₂) < ρнас: '
          f'ρ = mп(1 + 1/{ru(k)})/({V1 + V2}) ⇒ φ = ρ/ρнас = (1 + 1/{ru(k)})·{V1}/{V1 + V2} ≈ {sf(val)} %. Ответ: {{ANS}}.')
     wrong = [V1 / (V1 + V2) * 100, 100.0 if val < 99 else None, float(k) / (1 + float(k)) * 100]
-    return num_card('ph-ege-24-humidity-partition', q, val, 0, e, {'V1': V1, 'V2': V2, 'k': fr(k)}, wrong)
+    steps = [('отношение массы воды и пара к массе пара', 1 + 1 / k), ('отношение объёмов V₁/(V₁ + V₂)', Fr(V1, V1 + V2))]
+    return num_card('ph-ege-24-humidity-partition', q, val, 0, e, {'V1': V1, 'V2': V2, 'k': fr(k)}, wrong, steps=steps)
 
 
 def _s24pist(p):
@@ -4368,7 +4392,8 @@ def g24_pist(rng):
     e = (f'Процесс изобарный: p = p₀ + Mg/S = {sf(pg)} Па. A = pSΔh = {sf(pg * S / 10000 * dh / 100)} Дж, ΔU = 3/2·pΔV = 1,5A; '
          f'Q = ΔU + A = 2,5·pSΔh ≈ {sf(val)} Дж. Ответ: {{ANS}}.')
     wrong = [pg * S / 10000 * dh / 100, 2.5 * 1e5 * S / 10000 * dh / 100, 1.5 * pg * S / 10000 * dh / 100, M * 10 * dh / 100]
-    return num_card('ph-ege-24-piston-heating', q, val, 0, e, {'S': S, 'M': M, 'dh': dh}, wrong)
+    steps = [('давление газа под поршнем, кПа', pg / 1000), ('работа газа, Дж', pg * S / 10000 * dh / 100)]
+    return num_card('ph-ege-24-piston-heating', q, val, 0, e, {'S': S, 'M': M, 'dh': dh}, wrong, steps=steps)
 
 
 def _s24mix(p):
@@ -4401,7 +4426,8 @@ def g24_mix(rng):
     e = (f'Сосуды теплоизолированы, работа не совершается ⇒ U сохраняется: ν₁T₁ + ν₂T₂ = (ν₁ + ν₂)T, T = {sf(T)} К; '
          f'p = (ν₁ + ν₂)RT/(V₁ + V₂) ≈ {sf((n1 + n2) * R_ * T / ((V1 + V2) / 1000) / 1000)} кПа. Ответ: {{ANS}}.')
     wrong = [(T1 + T2) / 2, (n1 * T1 + n2 * T2) / 2, (n1 * R_ * T1 / (V1 / 1000) + n2 * R_ * T2 / (V2 / 1000)) / 2000]
-    return num_card('ph-ege-24-vessels-mixing', q, val, 0 if ask == 'T' else 1, e, {'n1': n1, 'n2': n2, 'T1': T1, 'T2': T2, 'V': V1 + V2, 'ask': ask}, wrong)
+    steps = [('внутренняя энергия газа, кДж', 1.5 * R_ * (n1 * T1 + n2 * T2) / 1000)] + ([('установившаяся температура, К', T)] if ask == 'p' else [('общее количество вещества, моль', n1 + n2)])
+    return num_card('ph-ege-24-vessels-mixing', q, val, 0 if ask == 'T' else 1, e, {'n1': n1, 'n2': n2, 'T1': T1, 'T2': T2, 'V': V1 + V2, 'ask': ask}, wrong, steps=steps)
 
 
 def _s24cmp(p):
@@ -4438,7 +4464,8 @@ def g24_cmp(rng):
          f'Пар: {ru(k)}·pп₁ = {sf(pv1 * k)} кПа' + (' > pнас ⇒ часть пара сконденсируется, pп₂ = pнас' if pv1 * k > ps else '') +
          f'. p₂ = pвозд₂ + pп₂ ≈ {sf(val)} кПа. Ответ: {{ANS}}.')
     wrong = [float(p1 * k), float((p1 - pv1) * k), float(p1 * k - pv1 * k + ps)]
-    return num_card('ph-ege-24-humidity-compress', q, val, 1, e, {'phi': phi, 'k': fr(k), 't': t, 'p1': fr(p1)}, wrong)
+    steps = [('давление воздуха без пара после сжатия, кПа', (p1 - pv1) * k), ('давление пара после сжатия, кПа', min(pv1 * k, ps))]
+    return num_card('ph-ege-24-humidity-compress', q, val, 1, e, {'phi': phi, 'k': fr(k), 't': t, 'p1': fr(p1)}, wrong, steps=steps)
 
 
 def _s24ball(p):
@@ -4512,7 +4539,8 @@ def g25_rails(rng):
          (f'Начало скольжения: BIl = μmg ⇒ B = μmg/(Il) ≈ {sf(Bmin)} Тл.' if ask == 'B' else f'II закон Ньютона: ma = BIl − μmg ⇒ a ≈ {sf(val)} м/с².') + ' Ответ: {ANS}.')
     wrong = [m / 1000 * 10 / (I * l / 100) * 1000, mu * m * 10 / (I * l) * 1000, val * 2] if ask == 'B' else \
         [B * I * l / 100 / (m / 1000), val + mu * 10, val * 2]
-    return num_card('ph-ege-25-ampere-rails', q, val, 0 if ask == 'B' else 2, e, {'m': m, 'l': l, 'mu': mu, 'I': I, 'B': B, 'ask': ask}, wrong)
+    steps = ([('сила тяжести, мН', m * 10), ('сила трения скольжения, мН', mu * m * 10)] if ask == 'B' else [('сила Ампера, мН', B * I * l / 100 * 1000), ('сила трения скольжения, мН', mu * m * 10)])
+    return num_card('ph-ege-25-ampere-rails', q, val, 0 if ask == 'B' else 2, e, {'m': m, 'l': l, 'mu': mu, 'I': I, 'B': B, 'ask': ask}, wrong, steps=steps)
 
 
 def _s25hang(p):
@@ -4548,7 +4576,8 @@ def g25_hang(rng):
     e = ((f'Натяжение нулевое, когда сила Ампера вверх уравновешивает mg: BIl = mg ⇒ I = mg/(Bl) ≈ {sf(I0)} А.') if ask == 'I0' else
          (f'Равновесие: 2T = mg + BIl ⇒ T = (mg + BIl)/2 ≈ {sf(val)} мН.')) + ' Ответ: {ANS}.'
     wrong = [I0 * 2, m * 10 / (B * l), I0 / 2] if ask == 'I0' else [(m / 1000 * 10 + B * I * l / 100) * 1000, (m / 1000 * 10 - B * I * l / 100) / 2 * 1000, m * 10 / 2]
-    return num_card('ph-ege-25-ampere-hanging', q, val, 1 if ask == 'I0' else 0, e, {'m': m, 'l': l, 'B': B, 'I': I, 'ask': ask}, wrong)
+    steps = ([('сила тяжести, мН', m * 10)] if ask == 'I0' else [('сила тяжести, мН', m * 10), ('сила Ампера, мН', B * I * l / 100 * 1000)])
+    return num_card('ph-ege-25-ampere-hanging', q, val, 1 if ask == 'I0' else 0, e, {'m': m, 'l': l, 'B': B, 'I': I, 'ask': ask}, wrong, steps=steps)
 
 
 def _s25ind(p):
@@ -4586,7 +4615,8 @@ def g25_ind(rng):
     e = (f'ε = Blv = {sf(eps)} В, I = ε/R = {sf(I)} А; при v = const внешняя сила равна силе Ампера F = BIl = {sf(B * I * l / 100)} Н; '
          f'P = εI = {sf(eps * I)} Вт. Ответ: {{ANS}}.')
     wrong = [eps * 1000, B * l / 100 * v / R * 1000 * 2, val * 2, val / 2]
-    return num_card('ph-ege-25-moving-rod', q, val, 0 if val >= 10 else 1, e, {'B': B, 'l': l, 'v': v, 'R': R, 'ask': ask}, wrong)
+    steps = [('ЭДС индукции, мВ', eps * 1000)] + ([] if ask == 'I' else [('сила тока, мА', I * 1000)])
+    return num_card('ph-ege-25-moving-rod', q, val, 0 if val >= 10 else 1, e, {'B': B, 'l': l, 'v': v, 'R': R, 'ask': ask}, wrong, steps=steps)
 
 
 PART25 = {'протон': (Fr(167, 100), -27, Fr(16, 10), -19, 'протона'), 'α-частица': (Fr(664, 100), -27, Fr(32, 10), -19, 'α-частицы'),
@@ -4669,8 +4699,9 @@ def g25_cap(rng):
     e = (f'Ток через конденсатор не идёт: I = ℰ/(R₁ + R₂ + r) = {sf(I)} А; напряжение на конденсаторе U = {sf(U)} В; ' +
          (f'q = CU = {sf(val)} мкКл' if ask == 'q' else f'W = CU²/2 = {sf(val)} мкДж') + '. Ответ: {ANS}.')
     wrong = [C * E, C * E / (R1 + R2) * {'R1': R1, 'R2': R2, 'src': R1 + R2}[where], val * 2, C * U * U if ask == 'W' else C * U / 2]
+    steps = [('сила тока в цепи, А', I), ('напряжение на конденсаторе, В', U)]
     return num_card('ph-ege-25-capacitor-dc', q, val, 1, e, {'E': fr(Fr(E).limit_denominator(10)), 'r': fr(Fr(r).limit_denominator(10)), 'R1': R1, 'R2': R2, 'C': C,
-                                                           'where': where, 'ask': ask}, wrong)
+                                                           'where': where, 'ask': ask}, wrong, steps=steps)
 
 
 def _s25lc(p):
@@ -4707,7 +4738,8 @@ def g25_lc(rng):
     e = (f'Энергия сохраняется: CUm²/2 = LIm²/2 ⇒ Im = Um√(C/L) ≈ {sf(Im)} А' +
          ('' if ask == 'Im' else f'; Cu²/2 + Li²/2 = CUm²/2 ⇒ i = Im√(1 − (u/Um)²) ≈ {sf(val / 1000)} А') + '. Ответ: {ANS}.')
     wrong = [Um * math.sqrt(L / 1000 / (C / 1e6)) * 1000, Im * 1000 * (1 - float(k)), Im * 1000 * float(k), val * 2]
-    return num_card('ph-ege-25-lc-energy', q, val, 0 if val >= 10 else 1, e, {'L': L, 'C': C, 'Um': Um, 'k': fr(k), 'ask': ask}, wrong)
+    steps = ([('энергия колебаний, мкДж', C * Um ** 2 / 2)] if ask == 'Im' else [('амплитуда силы тока, мА', Im * 1000), ('энергия конденсатора в этот момент, мкДж', C * (float(k) * Um) ** 2 / 2)])
+    return num_card('ph-ege-25-lc-energy', q, val, 0 if val >= 10 else 1, e, {'L': L, 'C': C, 'Um': Um, 'k': fr(k), 'ask': ask}, wrong, steps=steps)
 
 
 def _s25ball(p):
@@ -4785,7 +4817,8 @@ def g25_heat(rng):
          f'{ru(Fr(m).limit_denominator(10))} кг воды, взятой при температуре {t1} °C, если КПД нагревателя {eta} %? Удельная теплоёмкость воды 4200 Дж/(кг·°C). {rq(1)}')
     e = f'Q = cm(100 − t₁) = {sf(4200 * m * (100 - t1))} Дж; P = U²/R = {sf(P)} Вт; ηPt = Q ⇒ t = Q/(ηP) ≈ {sf(val * 60)} с ≈ {sf(val)} мин. Ответ: {{ANS}}.'
     wrong = [val * eta / 100 * eta / 100, 4200 * m * (100 - t1) / P / 60, val * 60, 4200 * m * 100 / (eta / 100 * P) / 60]
-    return num_card('ph-ege-25-heater', q, val, 1, e, {'m': m, 't1': t1, 'U': U, 'R': R, 'eta': eta}, wrong)
+    steps = [('количество теплоты для нагревания воды, кДж', 4200 * m * (100 - t1) / 1000), ('мощность нагревателя, Вт', P)]
+    return num_card('ph-ege-25-heater', q, val, 1, e, {'m': m, 't1': t1, 'U': U, 'R': R, 'eta': eta}, wrong, steps=steps)
 
 
 # ---------- 26. Механика с обоснованием применимости законов (4 балла)
@@ -4836,7 +4869,8 @@ def g26_spr(rng):
          f'одинаковы, нить и блок невесомы, трения в оси нет — натяжение по всей нити одинаково; длина пружины постоянна — грузы движутся как одно целое. '
          f'Решение: (M + 2m)a = 2mg − μMg ⇒ a = {sf(a)} м/с²; для нижнего груза mg − kΔl = ma ⇒ k = m(g − a)/(L − l) ≈ {sf(val)} Н/м. Ответ: {{ANS}}.')
     wrong = [m / 1000 * 10 / ((L - l) / 100), m / 1000 * (10 + a) / ((L - l) / 100), 2 * m / 1000 * (10 - a) / ((L - l) / 100)]
-    return num_card('ph-ege-26-pulley-spring', q, val, 0, e, {'M': M, 'm': m, 'mu': mu, 'l': l, 'L': L}, wrong)
+    steps = [('ускорение системы, м/с²', a), ('сила упругости пружины, Н', m / 1000 * (10 - a))]
+    return num_card('ph-ege-26-pulley-spring', q, val, 0, e, {'M': M, 'm': m, 'mu': mu, 'l': l, 'L': L}, wrong, steps=steps)
 
 
 def _s26lev(p):
@@ -4882,7 +4916,8 @@ def g26_lev(rng):
          f'в жидкости — сила Архимеда ρgV. До погружения m₁x = m₂(L − x) ⇒ x = {sf(c1)}L; после: (m₁ − ρV)y = (m₂ − ρV)(L − y) ⇒ y = {sf(c2)}L. '
          f'|x − y| = {d} см ⇒ L ≈ {sf(L)} см, x ≈ {sf(val)} см. Ответ: {{ANS}}.')
     wrong = [float(c2 * L), float(L), float((1 - c1) * L), float(d / c1) if c1 else None]
-    return num_card('ph-ege-26-lever-archimedes', q, val, 1, e, {'m1': fr(m1), 'm2': fr(m2), 'V': V, 'd': d, 'rho': rho}, wrong)
+    steps = [('длина рычага, см', L), ('плечо тяжёлого груза после погружения, см', c2 * L)]
+    return num_card('ph-ege-26-lever-archimedes', q, val, 1, e, {'m1': fr(m1), 'm2': fr(m2), 'V': V, 'd': d, 'rho': rho}, wrong, steps=steps)
 
 
 def _s26bul(p):
@@ -4917,7 +4952,8 @@ def g26_bul(rng):
          f'после удара сопротивления нет, натяжение нити перпендикулярно скорости и работы не совершает — механическая энергия сохраняется; ИСО — Земля. '
          f'mv = (m + M)u ⇒ u ≈ {sf(u)} м/с; ' + (f'h = u²/(2g) ≈ {sf(h * 100)} см' if ask == 'h' else f'T = (m + M)(g + u²/l) ≈ {sf(val)} Н') + '. Ответ: {ANS}.')
     wrong = [m / 1000 * v * v / 2 / ((m + M) / 1000 * 10) * 100 if ask == 'h' else (m + M) / 1000 * 10, val * 2, val / 2]
-    return num_card('ph-ege-26-bullet-pendulum', q, val, 1, e, {'m': m, 'M': M, 'v': v, 'l': l, 'ask': ask}, wrong)
+    steps = [('скорость шара с пулей сразу после удара, м/с', u)] + ([('центростремительное ускорение, м/с²', u * u / (l / 100))] if ask == 'T' else [])
+    return num_card('ph-ege-26-bullet-pendulum', q, val, 1, e, {'m': m, 'M': M, 'v': v, 'l': l, 'ask': ask}, wrong, steps=steps)
 
 
 def _s26hem(p):
@@ -4952,7 +4988,8 @@ def g26_hem(rng):
     wrong = [R * 2 / 3 if v0 else R / 2, R, R * (1 - c) if ask == 'h' else 1 - c, R / 3]
     if ask == 'cos':
         wrong = [1 - c, 2 / 3 if v0 else 0.5, c * c]
-    return num_card('ph-ege-26-hemisphere', q, val, 1 if ask == 'h' else 2, e, {'R': R, 'v0': v0, 'ask': ask}, wrong)
+    steps = ([('косинус угла в точке отрыва', c)] if ask == 'h' else []) + [('скорость в момент отрыва, м/с', math.sqrt(10 * R / 100 * c))]
+    return num_card('ph-ege-26-hemisphere', q, val, 1 if ask == 'h' else 2, e, {'R': R, 'v0': v0, 'ask': ask}, wrong, steps=steps)
 
 
 def _s26burst(p):
@@ -4984,7 +5021,8 @@ def g26_burst(rng):
     e = (f'Обоснование: разрыв кратковременный — внешняя сила тяжести за это время импульс не меняет, импульс системы сохраняется; далее осколки — материальные '
          f'точки в поле тяжести, ИСО — Земля. 2mv = m·v₁ + m·v₂ ⇒ v₂ = {v2} м/с; время падения t = √(2H/g) = {sf(t)} с; L = v₂t ≈ {sf(val)} м. Ответ: {{ANS}}.')
     wrong = [v * t, 2 * v * t if k == 'back' else 3 * v * t, v2 * t * 2]
-    return num_card('ph-ege-26-shell-burst', q, val, 0, e, {'H': H, 'v': v, 'k': k}, wrong)
+    steps = [('скорость второго осколка после разрыва, м/с', v2), ('время падения, с', t)]
+    return num_card('ph-ege-26-shell-burst', q, val, 0, e, {'H': H, 'v': v, 'k': k}, wrong, steps=steps)
 
 
 def _s26board(p):
@@ -5019,7 +5057,8 @@ def g26_board(rng):
          f'поступательно — материальные точки; ИСО — Земля. mv₀ = (m + M)u ⇒ u = {sf(u)} м/с; брусок тормозится с ускорением μg: t = (v₀ − u)/(μg) = {sf((v0 - u) / (mu * 10))} с; '
          f'путь относительно доски s = v₀²M/(2μg(m + M)) = {sf(v0 * v0 * M / (2 * mu * 10 * (m + M)) * 100)} см. Ответ: {{ANS}}.')
     wrong = [v0 * v0 / (2 * mu * 10) * 100, v0 / (mu * 10), val * 2] if ask == 's' else [v0 / (mu * 10), u / (mu * 10), val * 2]
-    return num_card('ph-ege-26-board-block', q, val, 1 if ask == 's' else 2, e, {'m': m, 'M': M, 'mu': mu, 'v0': v0, 'ask': ask}, wrong)
+    steps = [('общая скорость бруска и доски, м/с', u), ('модуль ускорения бруска, м/с²', mu * 10)]
+    return num_card('ph-ege-26-board-block', q, val, 1 if ask == 's' else 2, e, {'m': m, 'M': M, 'mu': mu, 'v0': v0, 'ask': ask}, wrong, steps=steps)
 
 
 def _s26str(p):
@@ -5046,7 +5085,8 @@ def g26_str(rng):
     e = (f'Обоснование: сопротивления нет, сила натяжения перпендикулярна скорости и работы не совершает — механическая энергия сохраняется; шарик — материальная '
          f'точка; ИСО — Земля. mv²/2 = mgl(1 − cos α); в нижней точке T − mg = mv²/l ⇒ T = mg(3 − 2cos α) = {sf(val)} Н (длина нити не влияет). Ответ: {{ANS}}.')
     wrong = [m / 1000 * 10, m / 1000 * 10 * (2 - float(c)), m / 1000 * 10 * (1 + 2 * (1 - float(c))) * 2]
-    return num_card('ph-ege-26-string-swing', q, val, 1, e, {'m': m, 'cos': fr(c)}, wrong)
+    steps = [('скорость в нижней точке, м/с', math.sqrt(2 * 10 * l / 100 * (1 - float(c)))), ('центростремительное ускорение, м/с²', 2 * 10 * (1 - float(c)))]
+    return num_card('ph-ege-26-string-swing', q, val, 1, e, {'m': m, 'cos': fr(c)}, wrong, steps=steps)
 
 
 # обоснование: ситуации и утверждения (верно/неверно)
@@ -5291,7 +5331,8 @@ def g22_st(rng):
              f'можно положить на выступающий конец, чтобы она оставалась в равновесии? Сделайте рисунок с указанием сил. {rq(0)}')
         e = f'Ось — край стола. Момент грузика m·g·a уравновешен моментом силы тяжести линейки M·g·(L/2 − a): m = M(L/2 − a)/a = {sf(val)} г. Ответ: {{ANS}}.'
         wrong = [M * float(frac), float(M * (L - a) / a), float(M * (Fr(L, 2)) / a)]
-        return num_card('ph-ege-22-statics', q, val, 0, e, {'kind': 'ruler', 'M': M, 'L': fr(L), 'a': fr(a)}, wrong)
+        steps = [('плечо силы тяжести линейки относительно края стола, см', Fr(L, 2) - a), ('момент силы тяжести линейки, Н·м', M / 1000 * 10 * (Fr(L, 2) - a) / 100)]
+        return num_card('ph-ege-22-statics', q, val, 0, e, {'kind': 'ruler', 'M': M, 'L': fr(L), 'a': fr(a)}, wrong, steps=steps)
     M = rng.choice([20, 30, 40, 50, 60, 75, 80, 100, 120])
     d1 = Fr(rng.choice([10, 15, 20, 25, 30]), 100)
     d2 = Fr(rng.choice([80, 100, 120, 150, 180]), 100)
@@ -5306,7 +5347,8 @@ def g22_st(rng):
          f'в равновесии? Сделайте рисунок с указанием сил. {rq(1)}')
     e = (f'Правило моментов относительно опоры: Mg·d₁ = F·d₂' + ('' if m == 0 else f' + mg·(L/2 − d₁)') + f' ⇒ F ≈ {sf(val)} Н. Ответ: {{ANS}}.')
     wrong = [M * 10 * float(d2 / d1), M * 10, float(M * 10 * d1 / d2) if m else val * 2]
-    return num_card('ph-ege-22-statics', q, val, 1, e, {'kind': 'lever', 'M': M, 'd1': fr(d1), 'd2': fr(d2), 'm': fr(m)}, wrong)
+    steps = [('момент силы тяжести груза, Н·м', M * 10 * d1)] + ([('момент силы тяжести лома, Н·м', m * 10 * (L / 2 - d1))] if m else [])
+    return num_card('ph-ege-22-statics', q, val, 1, e, {'kind': 'lever', 'M': M, 'd1': fr(d1), 'd2': fr(d2), 'm': fr(m)}, wrong, steps=steps)
 
 
 MAT = [('стальной', 7800), ('алюминиевый', 2700), ('медный', 8900), ('свинцовый', 11300), ('чугунный', 7000)]
@@ -5346,7 +5388,8 @@ def g22_bt(rng):
              f'и целиком находится в жидкости. Плотность дерева {rb} кг/м³, жидкости {rl} кг/м³. Найдите силу натяжения нити (в Н). {rq(1)}')
         e = f'Равновесие: ρж g V = mg + T, V = m/ρ ⇒ T = mg(ρж/ρ − 1) ≈ {sf(m * 10 * (rl / rb - 1))} Н. Ответ: {{ANS}}.'
         wrong = [m * 10, m * 10 * rl / rb, m * 10 * (1 + rl / rb)]
-    return num_card('ph-ege-22-buoyancy-thread', q, abs(m * 10 * (1 - rl / rb)), 1, e, {'m': m, 'rb': rb, 'rl': rl}, wrong)
+    steps = [('объём тела, см³', m / rb * 1e6), ('выталкивающая сила, Н', rl * 10 * m / rb)]
+    return num_card('ph-ege-22-buoyancy-thread', q, abs(m * 10 * (1 - rl / rb)), 1, e, {'m': m, 'rb': rb, 'rl': rl}, wrong, steps=steps)
 
 
 # ---------- 23-mercury-tube: столбик ртути в трубке
@@ -5379,7 +5422,8 @@ def g23_mt(rng):
     e = (f'Давление воздуха: открытым концом вверх p₀ + h, вниз p₀ − h, горизонтально p₀ (мм рт. ст.). Закон Бойля–Мариотта: p₁L₁ = p₂L₂ ⇒ '
          f'L₂ = {L1}·{pa[fr_]}/{pa[to]} ≈ {sf(val)} см. Ответ: {{ANS}}.')
     wrong = [L1 * pa[to] / pa[fr_], L1 * p0 / pa[to], L1 + h / 10]
-    return num_card('ph-ege-23-mercury-tube', q, val, 1, e, {'L1': L1, 'h': h, 'p0': p0, 'from': fr_, 'to': to}, wrong)
+    steps = [('давление воздуха вначале, мм рт. ст.', pa[fr_]), ('давление воздуха в конце, мм рт. ст.', pa[to])]
+    return num_card('ph-ege-23-mercury-tube', q, val, 1, e, {'L1': L1, 'h': h, 'p0': p0, 'from': fr_, 'to': to}, wrong, steps=steps)
 
 
 # ---------- 25-circuit-power: мощности в цепи с источником
@@ -5437,7 +5481,8 @@ def g25_cp(rng):
         e = (f'Rвнеш = {sf(Rp) if par else R1 + R2} Ом; I = ℰ/(Rвнеш + r) = {sf(I)} А; U = IRвнеш = {sf(U)} В; ' +
              (f'P₂ = {"U²/R₂" if par else "I²R₂"} = {sf(P2)} Вт' if ask == 'P2' else f'η = U/ℰ = {sf(U / E * 100)} %') + '. Ответ: {ANS}.')
         wrong = [float(E * E / R2), float((E / (R1 + R2)) ** 2 * R2) if not par else float(E * E / R2), val * 2]
-    return num_card('ph-ege-25-circuit-power', q, val, 1, e, {'E': E, 'r': fr(r), 'R1': R1, 'R2': R2, 'par': par, 'ask': ask}, wrong)
+    steps = ([('сопротивление реостата, Ом', r), ('сила тока, А', E / (2 * r))] if ask == 'Pmax' else [('сила тока через источник, А', I), ('напряжение на внешней цепи, В', U)])
+    return num_card('ph-ege-25-circuit-power', q, val, 1, e, {'E': E, 'r': fr(r), 'R1': R1, 'R2': R2, 'par': par, 'ask': ask}, wrong, steps=steps)
 
 
 # ================================================================= дополнения (2): сложные задачи части 2
@@ -5484,7 +5529,8 @@ def g26_inc(rng):
          + ('' if mu == 0 else ' − 2μmg cos α') + f' ⇒ a ≈ {sf(a)} м/с²; для нижнего бруска kx − mg sin α' + ('' if mu == 0 else ' − μmg cos α') +
          f' = ma ⇒ x ≈ {sf(x * 100)} см' + ('' if ask == 'x' else f', L = l₀ + x ≈ {sf(val)} см') + '. Ответ: {ANS}.')
     wrong = [m / 1000 * 10 * s / k * 100 + (l0 if ask == 'L' else 0), 2 * x * 100 + (l0 if ask == 'L' else 0), m / 1000 * a / k * 100 + (l0 if ask == 'L' else 0)]
-    return num_card('ph-ege-26-incline-two-bodies', q, val, 1, e, {'m': m, 'M': M, 'k': k, 'sin': s, 'mu': mu, 'l0': l0, 'ask': ask}, wrong)
+    steps = [('ускорение системы, м/с²', a), ('сила упругости пружины, Н', k * x)]
+    return num_card('ph-ege-26-incline-two-bodies', q, val, 1, e, {'m': m, 'M': M, 'k': k, 'sin': s, 'mu': mu, 'l0': l0, 'ask': ask}, wrong, steps=steps)
 
 
 def _s26cone(p):
@@ -5517,7 +5563,8 @@ def g26_cone(rng):
     e = (f'Обоснование: ИСО — Земля; шайба мала — материальная точка; движется по окружности равномерно — ускорение центростремительное, a = ω²r. '
          f'Поверхность гладкая — действуют mg и N ⟂ образующей. N sin α = mg, N cos α = mω²r ⇒ r = g/(ω² tg α) ≈ {sf(r * 100)} см; h = r/tg α ≈ {sf(r / float(tg) * 100)} см. Ответ: {{ANS}}.')
     wrong = [10 * float(tg) / (w * w) * 100, 10 / (w * w) * 100, val * 2]
-    return num_card('ph-ege-26-rotating-cone', q, val, 1, e, {'w': w, 'tg': fr(tg), 'ask': ask}, wrong)
+    steps = [('центростремительное ускорение шайбы, м/с²', 10 / float(tg))] + ([('радиус окружности, см', r * 100)] if ask == 'h' else [])
+    return num_card('ph-ege-26-rotating-cone', q, val, 1, e, {'w': w, 'tg': fr(tg), 'ask': ask}, wrong, steps=steps)
 
 
 LIQ24 = [('бензол', 'C₆H₆', 80, 396000, 0.078), ('этиловый спирт', 'C₂H₅OH', 78, 846000, 0.046), ('ацетон', 'C₃H₆O', 56, 524000, 0.058),
