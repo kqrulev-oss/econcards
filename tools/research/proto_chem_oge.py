@@ -3870,7 +3870,7 @@ def _chain21(rng):
     out_ = {}
     for (a, b) in E:
         out_.setdefault(a, []).append(b)
-    starts = [a for a in out_ if char_el(a)]
+    starts = [a for a in out_ if char_el(a) and char_el(a) not in ('Cl', 'Br', 'I')]   # цепочки по элементу, как в банке
     for _ in range(200):
         a = rng.choice(starts)
         el = char_el(a)
