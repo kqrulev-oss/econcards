@@ -3003,12 +3003,49 @@ def _reach_n():
 
 
 REACH_N = _reach_n()
+_BACK = defaultdict(list)
+for _r in EDGE_RX:
+    _BACK[_r['rhs'][0]].append(_r)
+N_EDGES = [r for r in EDGE_RX if 'N' in parse_formula(r['rhs'][0]) and 'N' not in parse_formula(r['lhs'][0])]
+
+
+def _walk_n(rng, n, allow):
+    """Цепочка, в которой азот появляется на 2–3-й стадии: от «азотной» стадии назад и вперёд."""
+    for _ in range(80):
+        mid = rng.choice(N_EDGES)
+        if not allow(mid):
+            continue
+        k = rng.choice([1, 2])  # сколько стадий до неё
+        path, seen, ok_ = [mid], {mid['lhs'][0], mid['rhs'][0]}, True
+        cur = mid['lhs'][0]
+        for _ in range(k):
+            opts_ = [r for r in _BACK.get(cur, []) if r['lhs'][0] not in seen and allow(r)]
+            if not opts_:
+                ok_ = False
+                break
+            r = rng.choice(opts_)
+            path.insert(0, r)
+            seen.add(r['lhs'][0])
+            cur = r['lhs'][0]
+        cur = mid['rhs'][0]
+        while ok_ and len(path) < n:
+            opts_ = [r for r in OUT.get(cur, []) if r['rhs'][0] not in seen and allow(r)]
+            if not opts_:
+                ok_ = False
+                break
+            r = rng.choice(opts_)
+            path.append(r)
+            seen.add(r['rhs'][0])
+            cur = r['rhs'][0]
+        if ok_ and len(path) == n:
+            return path
+    raise Retry
 
 
 def _gen32(pid, rng, theme):
     name, ok = THEMES32[theme]
-    start = rng.choice(REACH_N) if theme == 'n' else None
-    path = _walk(rng, 5, start=start, allow=lambda r: ok(r['rhs'][0]) and ok(r['lhs'][0]) and 'Ag2O' not in r['lhs'])
+    allow = lambda r: ok(r['rhs'][0]) and ok(r['lhs'][0]) and 'Ag2O' not in r['lhs']
+    path = _walk_n(rng, 5, allow) if theme == 'n' else _walk(rng, 5, allow=allow)
     chain = [path[0]['lhs'][0]] + [r['rhs'][0] for r in path]
     if theme == 'n' and sum('N' in parse_formula(f) for f in chain[:5]) < 2:
         raise Retry
