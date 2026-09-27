@@ -298,6 +298,9 @@ def cls_sugar(f):
 
 def cls_coarse(f):
     s = SUB[f]
+    a = parse_formula(f)
+    if sum(bool(x) for x in (a.get('O'), a.get('N'), a.get('Cl', 0) + a.get('Br', 0) + a.get('I', 0) + a.get('F', 0))) > 1:
+        return None  # вещество подходит сразу к двум группам (хлоруксусная кислота, нитробензол)
     if s['hom'] in ('жиры',) or s['cls'] not in COARSE:
         return None
     if s['cls'] == 'сложный эфир' and 'N' in parse_formula(f):
@@ -745,8 +748,10 @@ def g11_isomers(rng):
 
 
 def homologs(a, b):
-    """Гомологи: один класс (ряд), брутто различаются на k·CH₂ (k ≥ 1)."""
+    """Гомологи: один класс (ряд), сходное строение, брутто различаются на k·CH₂ (k ≥ 1)."""
     if SUB[a]['hom'] != SUB[b]['hom'] or not cls_fine(a):
+        return False
+    if cls_fine(a) == 'амины' and _n_degree(a) != _n_degree(b):
         return False
     x, y = parse_formula(a), parse_formula(b)
     dc = y['C'] - x['C']
@@ -758,6 +763,8 @@ def homologs(a, b):
 def _solve_homologs(p):
     def hom_s(a, b):
         if SUB[a]['hom'] != SUB[b]['hom']:
+            return False
+        if cls_fine(a) == 'амины' and _n_degree(a) != _n_degree(b):
             return False
         x, y = dict(smi_brutto(a)), dict(smi_brutto(b))
         dc = y['C'] - x['C']
@@ -926,6 +933,12 @@ def gen(name):
             return f'вещества «{name}»'
         return ' '.join(out + [base + tail] + words[k + 1:])
     return f'вещества «{name}»'
+
+
+def _n_degree(f):
+    """Степень замещения амина: число атомов C, связанных с N (по графу SMILES)."""
+    atoms, bonds = D.smiles_info(SMI[f])['graph']
+    return sum(1 for i, j, o in bonds for x, y in ((i, j), (j, i)) if atoms[x][0] == 'N' and atoms[y][0] == 'C')
 
 
 def _sig_word(n):
@@ -1261,12 +1274,25 @@ def _solve_rk_not(p):
     return [str(i + 1) for i, rk in enumerate(p['rks']) if not react_db(p['subs'][0], rk)]
 
 
-def _pick_rks(rng, subs, pool, lo=2, hi=4, want=True, n=5):
+SYN_GROUPS = [{'Na', 'K'}, {'NaOH', 'KOH'}, {'NaHCO3', 'Na2CO3', 'KHCO3', 'K2CO3'}, {'HCl', 'HBr'},
+              {'KOHalc', 'NaOHalc'}, {'CH3OH', 'C2H5OH'}]
+
+
+def syn_ok(rks):
+    """В одном перечне нет однотипных реагентов (Na и K, NaOH и KOH …) и не больше одного «инертного»."""
+    if any(len(g & set(rks)) > 1 for g in SYN_GROUPS):
+        return False
+    return sum(r in INERT for r in rks) <= 1
+
+
+def _pick_rks(rng, subs, pool, lo=2, hi=3, want=True, n=5):
     ok = [rk for rk in pool if all(known(f, rk) is not None for f in subs)]
     if len(ok) < n:
         raise Retry
-    for _ in range(30):
+    for _ in range(60):
         rks = rng.sample(ok, n)
+        if not syn_ok(rks):
+            continue
         good = [i for i, rk in enumerate(rks) if all(known(f, rk) for f in subs) == want] if want else \
             [i for i, rk in enumerate(rks) if known(subs[0], rk) is False]
         if lo <= len(good) <= hi:
@@ -1354,7 +1380,7 @@ def g12_subs_for_rk(rng):
     cand = [f for f in POOL12 if known(f, rk) is not None]
     pos = [f for f in cand if known(f, rk)]
     neg = [f for f in cand if not known(f, rk)]
-    k = rng.randint(2, 4)
+    k = rng.randint(2, 3)
     if len(pos) < k or len(neg) < 5 - k:
         raise Retry
     items = rng.sample(pos, k) + rng.sample(neg, 5 - k)
@@ -1472,7 +1498,7 @@ def g12_product(rng):
         target_txt = acc(nm(tf)) if tf != 'CO2' else 'углекислый газ'
     if len(good_set) < 2:
         raise Retry
-    k = rng.randint(2, min(4, len(good_set)))
+    k = rng.randint(2, min(3, len(good_set)))
     bad = [f for f in cand if f not in good_set and f not in ('CO2',)]
     if len(bad) < 5 - k:
         raise Retry
@@ -1523,7 +1549,7 @@ def g12_schemes(rng):
         by_p[r['rhs'][0]].append(r)
     targets = [p for p, v in by_p.items() if len({rkey(r) for r in v}) >= 2]
     tp = rng.choice(targets)
-    good_r = pick_distinct(rng, by_p[tp], min(len(by_p[tp]), rng.randint(2, 4)), key=rkey)
+    good_r = pick_distinct(rng, by_p[tp], min(len(by_p[tp]), rng.randint(2, 3)), key=rkey)
     if len(good_r) < 2:
         raise Retry
     subs = {r['lhs'][0] for r in good_r}
@@ -1603,7 +1629,7 @@ def g12_type(rng):
     cand = [f for f in POOL12 if type_known(f, t) is not None]
     pos = [f for f in cand if type_known(f, t)]
     neg = [f for f in cand if type_known(f, t) is False]
-    k = rng.randint(2, 4)
+    k = rng.randint(2, 3)
     if len(pos) < k or len(neg) < 5 - k:
         raise Retry
     items = rng.sample(pos, k) + rng.sample(neg, 5 - k)
@@ -1654,6 +1680,8 @@ def _gen_two_rk(pid, rng, pool):
             raise Retry
         bb = rng.sample(b_real, k) + rng.sample(b_inert, 3 - k)
     rks = rng.sample(g, 2) + bb
+    if not syn_ok(rks):
+        raise Retry
     rng.shuffle(rks)
     names = [_rk_text(rng, rk) for rk in rks]
     N = {f: nm(f, rng)}
@@ -1733,7 +1761,11 @@ def g13_compare(rng):
     k_in = max(0, 3 - len(rest_real))
     if k_in > 1:
         raise Retry
+    if 'O2' in fit and len(fit) > 2 and rng.random() < 0.7:
+        fit = [x for x in fit if x != 'O2']
     rks = rng.sample(fit, 2) + rng.sample(rest_real, 3 - k_in) + rng.sample([r for r in rest if r in INERT], k_in)
+    if not syn_ok(rks):
+        raise Retry
     rng.shuffle(rks)
     names = [_rk_text(rng, rk) for rk in rks]
     N = {a: nm(a, rng), b: nm(b, rng)}
@@ -2674,7 +2706,7 @@ def g15_one(rng):
 # ================================================================= задания 16 и 32: генетическая связь (граф превращений)
 
 KES16 = ['3.20']
-EDGE_RX = [r for r in RX if _ok_rx(r) and 'крекинга' not in r['type'] and SUB[r['lhs'][0]]['cls'] not in ('ацетиленид',)
+EDGE_RX = [r for r in RX if _ok_rx(r) and SUB[r['lhs'][0]]['cls'] not in ('ацетиленид',)
            and SUB[r['rhs'][0]]['cls'] not in ('ацетиленид', 'соль амина') and SUB[r['lhs'][0]]['hom'] != 'дипептиды'
            and SUB[r['rhs'][0]]['hom'] != 'дипептиды' and r['rhs'][0] != r['lhs'][0]]
 OUT = defaultdict(list)
@@ -2682,12 +2714,16 @@ for _r in EDGE_RX:
     OUT[_r['lhs'][0]].append(_r)
 
 
-def edge_db(a, b, label=None):
-    """Есть ли в базе одностадийное превращение a → b (при необходимости — с данной подписью реагента)."""
+def edge_db(a, b, keys=None):
+    """Есть ли в базе одностадийное превращение a → b (при необходимости — реагентом с данной химической сутью)."""
     for r in D.REACTIONS:
-        if r['lhs'][0] == a and r['rhs'][0] == b and (label is None or sig_label(dict(r, k=None)) == label):
+        if r['lhs'][0] == a and r['rhs'][0] == b and (keys is None or _canon_db(r) in keys):
             return True
     return False
+
+
+def keys_of(label):
+    return sorted(list(k) for k in label_canons()[label])
 
 
 def _walk(rng, n, start=None, allow=None):
@@ -2717,7 +2753,7 @@ def _solve16_rg(p):
     a, b, c = p['chain']
     out = {}
     for key, (x, y) in zip(XY, ((a, b), (b, c))):
-        good = [n for n, L in enumerate(p['right']) if edge_db(x, y, L)]
+        good = [n for n, keys in enumerate(p['right']) if edge_db(x, y, keys)]
         out[key] = str(good[0] + 1)
     return out
 
@@ -2739,12 +2775,13 @@ def g16_reagents(rng):
     if l1 == l2 or a == c:
         raise Retry
     pool = sorted({sig_label(r) for r in OUT.get(a, []) + OUT.get(b, []) + rng.sample(EDGE_RX, 20)} - {l1, l2})
-    if len(pool) < 3:
+    rng.shuffle(pool)
+    right = _distinct_labels([l1, l2] + pool)[:5]
+    if len(right) < 5 or l1 not in right or l2 not in right:
         raise Retry
-    right = [l1, l2] + rng.sample(pool, 3)
     rng.shuffle(right)
     for x, y in ((a, b), (b, c)):
-        if sum(any(r['lhs'][0] == x and r['rhs'][0] == y and sig_label(r) == L for r in RX) for L in right) != 1:
+        if sum(_fits(x, y, L) for L in right) != 1:
             raise Retry
     disp = lambda f: eqv(f) if rng.random() < 0.6 else nm(f)
     q = (f'Задана схема превращений веществ: {disp(a)} —X→ {disp(b)} —Y→ {disp(c)}.\n'
@@ -2752,7 +2789,7 @@ def g16_reagents(rng):
          'Запишите в таблицу номера выбранных веществ под соответствующими буквами.')
     e = f'{rx_eq(r1)}; {rx_eq(r2)}.'
     return match_card('ch-ege-16-reagents', rng, q, ['вещество X', 'вещество Y'], right,
-                      [right.index(l1), right.index(l2)], e, {'chain': [a, b, c], 'right': right},
+                      [right.index(l1), right.index(l2)], e, {'chain': [a, b, c], 'right': [keys_of(L) for L in right]},
                       eqs=[eqt(r1), eqt(r2)], lids=XY)
 
 
@@ -2807,8 +2844,8 @@ def g16_mid(rng):
 def _solve16_ends(p):
     b = p['b']
     out = {}
-    good_x = [n for n, f in enumerate(p['right']) if edge_db(f, b, p['l1'])]
-    good_y = [n for n, f in enumerate(p['right']) if edge_db(b, f, p['l2'])]
+    good_x = [n for n, f in enumerate(p['right']) if edge_db(f, b, p['k1'])]
+    good_y = [n for n, f in enumerate(p['right']) if edge_db(b, f, p['k2'])]
     out['X'] = str(good_x[0] + 1)
     out['Y'] = str(good_y[0] + 1)
     return out
@@ -2826,15 +2863,18 @@ def g16_ends(rng):
     r1, r2 = _walk(rng, 2)
     x, b, y = r1['lhs'][0], r1['rhs'][0], r2['rhs'][0]
     l1, l2 = sig_label(r1), sig_label(r2)
+    k1, k2 = keys_of(l1), keys_of(l2)
+    if len(canon_prods(b, canon(r2))) != 1:
+        raise Retry
     cand = {r['lhs'][0] for r in EDGE_RX if sig_label(r) == l1} | {r['rhs'][0] for r in EDGE_RX if sig_label(r) == l2}
     cand |= {g for g in ORG if brutto(g) in (brutto(x), brutto(y)) and g not in _POOL10_SKIP}
     cand -= {x, b, y}
-    bad = [f for f in cand if not edge_db(f, b, l1) and not edge_db(b, f, l2) and f in SUB and SUB[f].get('org')]
+    bad = [f for f in cand if not edge_db(f, b, k1) and not edge_db(b, f, k2) and f in SUB and SUB[f].get('org')]
     if len(bad) < 3:
         raise Retry
     right = [x, y] + rng.sample(sorted(bad), 3)
     rng.shuffle(right)
-    if sum(edge_db(f, b, l1) for f in right) != 1 or sum(edge_db(b, f, l2) for f in right) != 1:
+    if sum(edge_db(f, b, k1) for f in right) != 1 or sum(edge_db(b, f, k2) for f in right) != 1:
         raise Retry
     names = [nm(f, rng) for f in right]
     if len(set(names)) < 5 or not l1 or not l2:
@@ -2844,15 +2884,15 @@ def g16_ends(rng):
          'Запишите в таблицу номера выбранных веществ под соответствующими буквами.')
     return match_card('ch-ege-16-start-end', rng, q, ['вещество X', 'вещество Y'], names, [right.index(x),
                                                                                            right.index(y)],
-                      f'{rx_eq(r1)}; {rx_eq(r2)}.', {'b': b, 'l1': l1, 'l2': l2, 'right': right},
+                      f'{rx_eq(r1)}; {rx_eq(r2)}.', {'b': b, 'k1': k1, 'k2': k2, 'right': right},
                       eqs=[eqt(r1), eqt(r2)], lids=XY)
 
 
 def _solve16_fwd(p):
     cur = p['a']
     got = []
-    for L in p['labels']:
-        nxt = {r['rhs'][0] for r in D.REACTIONS if r['lhs'][0] == cur and sig_label(dict(r, k=None)) == L}
+    for keys in p['keys']:
+        nxt = {r['rhs'][0] for r in D.REACTIONS if r['lhs'][0] == cur and _canon_db(r) in keys}
         cur = sorted(nxt)[0]
         got.append(cur)
     return {'X': str(p['right'].index(got[0]) + 1), 'Y': str(p['right'].index(got[1]) + 1)}
@@ -2875,7 +2915,8 @@ def g16_forward(rng):
     if not l1 or not l2:
         raise Retry
     for r, L in ((r1, l1), (r2, l2)):
-        if len({z['rhs'][0] for z in RX if z['lhs'][0] == r['lhs'][0] and sig_label(z) == L}) != 1:
+        ks = label_canons()[L]
+        if len({z['rhs'][0] for z in RX if z['lhs'][0] == r['lhs'][0] and canon(z) in ks}) != 1:
             raise Retry
     conf = {g for g in ORG if (brutto(g) in (brutto(x), brutto(y)) or SUB[g]['hom'] in (SUB[x]['hom'], SUB[y]['hom']))
             and g not in (a, x, y) and g not in _POOL10_SKIP and parse_formula(g).get('C', 0) <= 10}
@@ -2891,7 +2932,7 @@ def g16_forward(rng):
          'Определите, какие из указанных веществ являются веществами X и Y.\n'
          'Запишите в таблицу номера выбранных веществ под соответствующими буквами.')
     return match_card('ch-ege-16-forward', rng, q, ['вещество X', 'вещество Y'], names, [right.index(x), right.index(y)],
-                      f'{rx_eq(r1)}; {rx_eq(r2)}.', {'a': a, 'labels': [l1, l2], 'right': right},
+                      f'{rx_eq(r1)}; {rx_eq(r2)}.', {'a': a, 'keys': [keys_of(l1), keys_of(l2)], 'right': right},
                       eqs=[eqt(r1), eqt(r2)], lids=XY)
 
 

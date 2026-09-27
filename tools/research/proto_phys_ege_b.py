@@ -2613,6 +2613,8 @@ def meter_card(pid, rng, head, scale_txt, pos_txt, unit, step, ndiv, label, j, r
     if rng_ok and not (rng_ok[0] <= val <= rng_ok[1]):
         raise Retry
     err = Fr(given) if given else (price if rule == 'full' else price / 2)
+    if abs(val) < 5 * max(price, err):          # погрешность должна быть в разы меньше показания
+        raise Retry
     if given and (given == price or _dec(price) > _dec(given)):
         raise Retry
     a = _pm_ans(val, err)
@@ -2757,7 +2759,7 @@ def g19_bk(rng):
     head = rng.choice(['В мензурку налили воду.', 'Для определения объёма тела его опустили в мензурку с водой.',
                        'В мерный цилиндр налили подсолнечное масло.', 'В лабораторной работе ученик налил в мензурку раствор соли.'])
     scale_txt = f'Шкала мензурки оцифрована отметками {_lbl(labels, unit)}; промежуток между соседними оцифрованными отметками разделён на {ndv(ndiv, ("равную часть", "равные части", "равных частей"))}.'
-    pos = f'Нижний край мениска жидкости совпадает с {ORD_INS[j]} штрихом выше отметки {ru(L)} {unit}.'
+    pos = f'Нижний край мениска жидкости совпадает с{"о" if j == 2 else ""} {ORD_INS[j]} штрихом выше отметки {ru(L)} {unit}.'
     return meter_card('ph-ege-19-beaker', rng, head, scale_txt, pos, unit, step, ndiv, L, j, rule, ('мензурки', 'объёма'))
 
 
