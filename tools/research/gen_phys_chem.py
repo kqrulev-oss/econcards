@@ -63,8 +63,8 @@ def num(s):
 
 
 def ru(x):
-    """Параметр в тексте условия: 2.5 → «2,5»."""
-    return fmt(Fr(x).limit_denominator(10 ** 6))
+    """Параметр в тексте условия: 2.5 → «2,5», −3 — типографский минус."""
+    return fmt(Fr(x).limit_denominator(10 ** 6)).replace('-', '−')
 
 
 def card(typ, exam, task, t, q, a, e, k='num', o=None, extra=None):
@@ -1048,21 +1048,21 @@ def ch_solution(rng):
         water = rng.choice([20, 30, 50, 70, 100, 150])
         mdd = rng.choice([5, 10, 15, 20, 25, 30])
         w = (solute + mdd) / (m1 + water + mdd) * 100
-        q = f'К {m1} г раствора с массовой долей {name} {w1} % добавили {water} мл воды и {mdd} г этой же соли. Вычислите массовую долю соли в полученном растворе.'
-        e = f'm(соли) = {m1}·{w1}/100 + {mdd} = {ru(solute + mdd)} г; m(р-ра) = {m1} + {water} + {mdd} = {m1 + water + mdd} г; ω = {ru(solute + mdd)}/{m1 + water + mdd}·100 %'
+        q = f'К {m1} г раствора с массовой долей {name} {w1} % добавили {water} мл воды и {mdd} г этого же вещества. Вычислите массовую долю вещества в полученном растворе.'
+        e = f'm(в-ва) = {m1}·{w1}/100 + {mdd} = {ru(solute + mdd)} г; m(р-ра) = {m1} + {water} + {mdd} = {m1 + water + mdd} г; ω = {ru(solute + mdd)}/{m1 + water + mdd}·100 %'
         wrong = [fmt((solute + mdd) / (m1 + mdd) * 100, 0), fmt(solute / (m1 + water + mdd) * 100, 0), fmt((solute + mdd) / (m1 + water) * 100, 0)]
     elif v == 1:
         m2 = rng.choice([50, 100, 150, 200, 250, 300])
         w2 = rng.choice([x for x in (5, 10, 15, 20, 25, 30, 40) if x != w1])
         w = (solute + Fr(m2 * w2, 100)) / (m1 + m2) * 100
-        q = f'Смешали {m1} г {w1} %-го и {m2} г {w2} %-го растворов {name}. Вычислите массовую долю соли в полученном растворе.'
-        e = f'm(соли) = {ru(solute)} + {ru(Fr(m2 * w2, 100))} = {ru(solute + Fr(m2 * w2, 100))} г; m(р-ра) = {m1 + m2} г; ω = m(соли)/m(р-ра)·100 %'
+        q = f'Смешали {m1} г {w1} %-го и {m2} г {w2} %-го растворов {name}. Вычислите массовую долю вещества в полученном растворе.'
+        e = f'm(в-ва) = {ru(solute)} + {ru(Fr(m2 * w2, 100))} = {ru(solute + Fr(m2 * w2, 100))} г; m(р-ра) = {m1 + m2} г; ω = m(в-ва)/m(р-ра)·100 %'
         wrong = [fmt(Fr(w1 + w2, 2), 1), fmt(Fr(w1 + w2), 0), fmt((solute + Fr(m2 * w2, 100)) / max(m1, m2) * 100, 0)]
     elif v == 2:
         ev = rng.choice([x for x in (10, 20, 30, 40, 50, 60, 80, 100) if x < m1 - solute])
         w = solute / (m1 - ev) * 100
-        q = f'Из {m1} г раствора {name} с массовой долей {w1} % выпарили {ev} г воды. Вычислите массовую долю соли в полученном растворе.'
-        e = f'm(соли) = {ru(solute)} г не меняется; m(р-ра) = {m1} − {ev} = {m1 - ev} г; ω = {ru(solute)}/{m1 - ev}·100 %'
+        q = f'Из {m1} г раствора {name} с массовой долей {w1} % выпарили {ev} г воды. Вычислите массовую долю вещества в полученном растворе.'
+        e = f'm(в-ва) = {ru(solute)} г не меняется; m(р-ра) = {m1} − {ev} = {m1 - ev} г; ω = {ru(solute)}/{m1 - ev}·100 %'
         wrong = [fmt(solute / (m1 + ev) * 100, 0), fmt(Fr(w1), 0), fmt((solute - ev) / m1 * 100, 0) if solute > ev else None]
     else:
         wt = rng.choice([x for x in (1, 2, 3, 4, 5) if x < w1])
@@ -1071,7 +1071,7 @@ def ch_solution(rng):
             raise Retry
         q = f'Сколько граммов воды нужно добавить к {m1} г {w1} %-го раствора {name}, чтобы получить {wt} %-й раствор?'
         w = water
-        e = f'm(соли) = {ru(solute)} г; m(нового р-ра) = {ru(solute)}·100/{wt} = {ru(solute * 100 / wt)} г; m(воды) = {ru(solute * 100 / wt)} − {m1}'
+        e = f'm(в-ва) = {ru(solute)} г; m(нового р-ра) = {ru(solute)}·100/{wt} = {ru(solute * 100 / wt)} г; m(воды) = {ru(solute * 100 / wt)} − {m1}'
         wrong = [fmt(solute * 100 / wt, 0), fmt(Fr(m1 * w1, wt), 0), fmt(m1 * Fr(w1 - wt, 100), 0)]
     dec = rng.choice([0, 1])
     ans = fmt(w, dec)
