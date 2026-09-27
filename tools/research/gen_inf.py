@@ -1446,6 +1446,635 @@ def check_oge9(p, c):
     return str(cnt) == c['a']
 
 
+# ---------------------------------------------------------------- ЕГЭ 1: граф и весовая таблица
+
+
+def gen_ege1(rng):
+    n = rng.randint(6, 7)
+    letters = 'АБВГДЕЖ'[:n]
+    while True:
+        edges = set()
+        for i in range(1, n):  # связный граф: остов + случайные рёбра
+            edges.add(frozenset((i, rng.randrange(i))))
+        for _ in range(rng.randint(2, 4)):
+            a, b = rng.sample(range(n), 2)
+            edges.add(frozenset((a, b)))
+        perm = list(range(n))
+        rng.shuffle(perm)  # вершина графа v ↔ пункт таблицы perm[v]+1
+        w = {e: rng.randint(5, 60) for e in edges}
+        x, y = sorted(rng.choice(sorted(edges, key=sorted)))
+        tbl = {frozenset((perm[a] + 1, perm[b] + 1)): w[frozenset((a, b))] for a, b in map(sorted, edges)}
+        # все изоморфизмы граф → таблица: ответ должен совпадать во всех
+        answers = set()
+        for pm in itertools.permutations(range(1, n + 1)):
+            if all(frozenset((pm[a], pm[b])) in tbl for a, b in map(sorted, edges)):
+                answers.add(tbl[frozenset((pm[x], pm[y]))])
+        if len(answers) == 1:
+            break
+    ans = answers.pop()
+    adj = '; '.join(f'{letters[a]}–{letters[b]}' for a, b in sorted(map(sorted, edges)))
+    rows = '; '.join(f'П{i}–П{j}: {v}' for (i, j), v in sorted((tuple(sorted(k)), v) for k, v in tbl.items()))
+    q = (f'Схема дорог (граф) задана списком рёбер: {adj}. В таблице указаны длины дорог между пунктами '
+         f'П1–П{n}, но номера пунктов в таблице не совпадают с буквами на схеме: {rows}. '
+         f'Какова длина дороги из пункта {letters[x]} в пункт {letters[y]}?')
+    ex = ('Сопоставляем вершины по числу дорог (степени) и по соседям: сначала вершины с уникальной степенью, '
+          'затем их соседей. Длину берём из таблицы для найденной пары номеров.')
+    return card('inf-ege-1', 'num', q, str(ans), ex), {'n': n, 'edges': [tuple(sorted(e)) for e in edges],
+                                                        'tbl': {tuple(sorted(k)): v for k, v in tbl.items()},
+                                                        'xy': (x, y)}
+
+
+def check_ege1(p, c):
+    # второй способ: поиск с возвратом по степеням вместо полного перебора перестановок
+    n = p['n']
+    g_adj = {v: set() for v in range(n)}
+    for a, b in p['edges']:
+        g_adj[a].add(b)
+        g_adj[b].add(a)
+    t_adj = {v: set() for v in range(1, n + 1)}
+    for a, b in p['tbl']:
+        t_adj[a].add(b)
+        t_adj[b].add(a)
+    res = set()
+
+    def rec(v, m):
+        if v == n:
+            x, y = p['xy']
+            a, b = sorted((m[x], m[y]))
+            res.add(p['tbl'][a, b])
+            return
+        for u in t_adj:
+            if u in m.values() or len(t_adj[u]) != len(g_adj[v]):
+                continue
+            if all((m[w] in t_adj[u]) == (w in g_adj[v]) for w in m):
+                m[v] = u
+                rec(v + 1, m)
+                del m[v]
+    rec(0, {})
+    return len(res) == 1 and str(res.pop()) == c['a']
+
+
+# ---------------------------------------------------------------- ЕГЭ 3: реляционная БД (мини-версия без файла)
+
+SHOPS3 = {'М1': 'Заречный', 'М2': 'Центральный', 'М3': 'Заречный', 'М4': 'Северный', 'М5': 'Центральный'}
+GOODS3 = {101: ('Кефир', 'Молочные'), 102: ('Сыр', 'Молочные'), 103: ('Батон', 'Хлеб'),
+          104: ('Сушки', 'Хлеб'), 105: ('Яблоки', 'Фрукты'), 106: ('Груши', 'Фрукты')}
+
+
+def gen_ege3(rng):
+    shops = rng.sample(sorted(SHOPS3), 4)
+    goods = rng.sample(sorted(GOODS3), 4)
+    ops = []
+    for i in range(rng.randint(12, 16)):
+        ops.append((i + 1, rng.randint(1, 6), rng.choice(shops), rng.choice(goods),
+                    rng.choice(['поступление', 'продажа']), rng.randint(1, 40)))
+    ask = rng.choice(['district', 'dept', 'balance'])
+    d1, d2 = sorted(rng.sample(range(1, 7), 2))
+    if ask == 'district':
+        dist = rng.choice(sorted({SHOPS3[s] for s in shops}))
+        typ = rng.choice(['поступление', 'продажа'])
+        good = rng.choice(goods)
+        ans = sum(q for _, d, s, g, t, q in ops if SHOPS3[s] == dist and g == good and t == typ and d1 <= d <= d2)
+        tail = (f'Сколько единиц товара «{GOODS3[good][0]}» пришлось на операции «{typ}» в магазинах района '
+                f'{dist} с {d1} по {d2} июня включительно?')
+        par = {'ask': ask, 'dist': dist, 'typ': typ, 'good': good}
+    elif ask == 'dept':
+        dept = rng.choice(sorted({GOODS3[g][1] for g in goods}))
+        ans = sum(q for _, d, s, g, t, q in ops if GOODS3[g][1] == dept and t == 'продажа' and d1 <= d <= d2)
+        tail = f'Сколько единиц товаров отдела «{dept}» продано во всех магазинах с {d1} по {d2} июня включительно?'
+        par = {'ask': ask, 'dept': dept}
+    else:
+        shop = rng.choice(shops)
+        ans = sum((q if t == 'поступление' else -q) for _, d, s, g, t, q in ops if s == shop and d1 <= d <= d2)
+        tail = (f'На сколько единиц изменилось количество товаров в магазине {shop} с {d1} по {d2} июня включительно '
+                '(поступления минус продажи; ответ может быть отрицательным)?')
+        par = {'ask': ask, 'shop': shop}
+    if ans == 0:
+        return gen_ege3(rng)
+    t1 = '; '.join(f'{s} — {SHOPS3[s]}' for s in shops)
+    t2 = '; '.join(f'{g} — {GOODS3[g][0]} ({GOODS3[g][1]})' for g in goods)
+    t3 = '; '.join(f'{i}) {d} июня, {s}, арт. {g}, {t}, {q} шт' for i, d, s, g, t, q in ops)
+    q = (f'Мини-база данных сети магазинов. Магазины (ID — район): {t1}. Товары (артикул — название, отдел): {t2}. '
+         f'Движение товаров: {t3}. {tail}')
+    ex = ('Фильтруем таблицу «Движение» по датам и типу операции, по ID магазина подтягиваем район, по артикулу — '
+          'товар и отдел (в ЭТ — ВПР/фильтр, затем СУММ).')
+    par.update(ops=ops, d1=d1, d2=d2, shops=shops, goods=goods)
+    return card('inf-ege-3', 'num', q, str(ans), ex), par
+
+
+def check_ege3(p, c):
+    # второй способ: настоящий SQL-запрос в sqlite3
+    import sqlite3
+    db = sqlite3.connect(':memory:')
+    db.execute('create table shop(id text, dist text)')
+    db.execute('create table good(id int, name text, dept text)')
+    db.execute('create table op(id int, d int, shop text, good int, typ text, q int)')
+    db.executemany('insert into shop values (?,?)', [(s, SHOPS3[s]) for s in p['shops']])
+    db.executemany('insert into good values (?,?,?)', [(g, *GOODS3[g]) for g in p['goods']])
+    db.executemany('insert into op values (?,?,?,?,?,?)', p['ops'])
+    base = ('from op join shop on op.shop = shop.id join good on op.good = good.id '
+            'where op.d between ? and ?')
+    if p['ask'] == 'district':
+        r = db.execute('select sum(q) ' + base + ' and shop.dist = ? and good.id = ? and typ = ?',
+                       (p['d1'], p['d2'], p['dist'], p['good'], p['typ'])).fetchone()[0]
+    elif p['ask'] == 'dept':
+        r = db.execute('select sum(q) ' + base + " and good.dept = ? and typ = 'продажа'",
+                       (p['d1'], p['d2'], p['dept'])).fetchone()[0]
+    else:
+        r = db.execute("select sum(case typ when 'поступление' then q else -q end) " + base + ' and op.shop = ?',
+                       (p['d1'], p['d2'], p['shop'])).fetchone()[0]
+    return str(r or 0) == c['a']
+
+
+# ---------------------------------------------------------------- ЕГЭ 6: Черепаха, два прямоугольника
+
+
+def gen_ege6(rng):
+    a, b = rng.randint(4, 16), rng.randint(4, 16)
+    e, f = rng.randint(4, 16), rng.randint(4, 16)
+    cy, dx = rng.randint(1, a - 1), rng.randint(1, b - 1)  # второй прямоугольник начинается внутри первого
+    cmds = (f'Повтори 2 [Вперёд {a} Направо 90 Вперёд {b} Направо 90] Поднять хвост Вперёд {cy} Направо 90 '
+            f'Вперёд {dx} Налево 90 Опустить хвост Повтори 2 [Вперёд {e} Направо 90 Вперёд {f} Направо 90]')
+    r1 = (0, b, 0, a)
+    r2 = (dx, dx + f, cy, cy + e)
+    ix = (max(r1[0], r2[0]), min(r1[1], r2[1]))
+    iy = (max(r1[2], r2[2]), min(r1[3], r2[3]))
+    ask = rng.choice(['inter', 'union'])
+    if ask == 'inter':
+        ans = max(0, ix[1] - ix[0] - 1) * max(0, iy[1] - iy[0] - 1)
+        tail = ('Определите, сколько точек с целочисленными координатами находится внутри пересечения областей, '
+                'ограниченных нарисованными линиями. Точки на линиях не учитывайте.')
+    else:
+        closed = lambda r: (r[1] - r[0] + 1) * (r[3] - r[2] + 1)  # noqa: E731
+        both = max(0, ix[1] - ix[0] + 1) * max(0, iy[1] - iy[0] + 1)
+        ans = closed(r1) + closed(r2) - both
+        tail = ('Определите, сколько точек с целочисленными координатами находится внутри объединения областей, '
+                'ограниченных нарисованными линиями, включая точки на линиях.')
+    if ans == 0:
+        return gen_ege6(rng)
+    q = ('Черепаха стоит в начале координат и смотрит вдоль оси ординат (вверх); хвост опущен, при движении '
+         f'остаётся след. Черепахе дан алгоритм: {cmds}. {tail}')
+    ex = ('Рисуем: первая фигура — прямоугольник от (0; 0), вторая начинается в точке, куда черепаха пришла '
+          'с поднятым хвостом. Внутренних целых точек в прямоугольнике w×h: (w − 1)(h − 1), с границей — (w + 1)(h + 1).')
+    return card('inf-ege-6', 'num', q, str(ans), ex), {'cmds': cmds, 'ask': ask}
+
+
+def check_ege6(p, c):
+    # второй способ: исполняем команды черепахи и проверяем каждую точку по многоугольникам
+    toks = re.findall(r'Повтори \d+ \[[^\]]*\]|Поднять хвост|Опустить хвост|Вперёд -?\d+|Направо \d+|Налево \d+',
+                      p['cmds'])
+    x = y = 0
+    hx, hy = 0, 1
+    pen, polys, cur = True, [], []
+
+    def step(t):
+        nonlocal x, y, hx, hy
+        if t.startswith('Вперёд'):
+            k = int(t.split()[1])
+            x, y = x + hx * k, y + hy * k
+            if pen:
+                cur.append((x, y))
+        elif t.startswith('Направо'):
+            for _ in range(int(t.split()[1]) // 90):
+                hx, hy = hy, -hx
+        elif t.startswith('Налево'):
+            for _ in range(int(t.split()[1]) // 90):
+                hx, hy = -hy, hx
+    for t in toks:
+        if t.startswith('Повтори'):
+            k = int(t.split()[1])
+            cur = [(x, y)]
+            for _ in range(k):
+                for s in re.findall(r'(?:Вперёд|Направо|Налево) -?\d+', t):
+                    step(s)
+            polys.append(cur)
+        elif t == 'Поднять хвост':
+            pen = False
+        elif t == 'Опустить хвост':
+            pen = True
+        else:
+            step(t)
+
+    def where(px, py, poly):  # 1 — внутри, 0 — на границе, -1 — снаружи
+        for (x1, y1), (x2, y2) in zip(poly, poly[1:]):
+            if min(x1, x2) <= px <= max(x1, x2) and min(y1, y2) <= py <= max(y1, y2):
+                return 0
+        inside = False
+        for (x1, y1), (x2, y2) in zip(poly, poly[1:]):
+            if (y1 > py) != (y2 > py) and px < x1 + (py - y1) * (x2 - x1) / (y2 - y1):
+                inside = not inside
+        return 1 if inside else -1
+    xs = [q[0] for pl in polys for q in pl]
+    ys = [q[1] for pl in polys for q in pl]
+    cnt = 0
+    for px in range(min(xs) - 1, max(xs) + 2):
+        for py in range(min(ys) - 1, max(ys) + 2):
+            w = [where(px, py, pl) for pl in polys]
+            cnt += all(v == 1 for v in w) if p['ask'] == 'inter' else any(v >= 0 for v in w)
+    return str(cnt) == c['a']
+
+
+# ---------------------------------------------------------------- ЕГЭ 9: электронная таблица (мини-версия)
+
+COND9 = {
+    'pair': 'в строке ровно одно число повторяется дважды, остальные числа различны',
+    'uniq': 'все числа строки различны',
+    'tri': 'три наибольших числа строки (с учётом повторов) могут быть сторонами треугольника: '
+           'наибольшее из них меньше суммы двух других',
+}
+COND9B = {
+    'avg': 'среднее арифметическое повторяющихся чисел больше среднего арифметического неповторяющихся',
+    'maxmin': 'удвоенная сумма наибольшего и наименьшего числа строки не больше суммы трёх остальных',
+    'sum': 'сумма всех чисел строки чётна',
+}
+
+
+def row_ok9(r, c1, c2):
+    cnt = Counter(r)
+    if c1 == 'pair':
+        a = sorted(cnt.values()) == [1] * (len(r) - 2) + [2]
+    elif c1 == 'uniq':
+        a = len(cnt) == len(r)
+    else:
+        s = sorted(r)
+        a = s[-1] < s[-2] + s[-3]
+    if c2 == 'avg':
+        rep = [v for v in r if cnt[v] > 1]
+        uni = [v for v in r if cnt[v] == 1]
+        b = bool(rep) and bool(uni) and sum(rep) / len(rep) > sum(uni) / len(uni)
+    elif c2 == 'maxmin':
+        s = sorted(r)
+        b = 2 * (s[0] + s[-1]) <= sum(s[1:-1])
+    else:
+        b = sum(r) % 2 == 0
+    return a and b
+
+
+def gen_ege9(rng):
+    c1, c2 = rng.choice([('pair', 'avg'), ('uniq', 'maxmin'), ('uniq', 'sum'), ('tri', 'sum'), ('pair', 'sum')])
+    rows = []
+    for _ in range(rng.randint(8, 10)):
+        r = [rng.randint(1, 30) for _ in range(5)]
+        if c1 == 'pair' and rng.random() < 0.6:
+            r[rng.randrange(5)] = r[rng.randrange(5)]
+        rows.append(r)
+    ans = sum(row_ok9(r, c1, c2) for r in rows)
+    if ans == 0:
+        return gen_ege9(rng)
+    q = (f'В каждой строке электронной таблицы записаны пять натуральных чисел: ' +
+         ' / '.join(' '.join(map(str, r)) for r in rows) +
+         f'. Сколько строк удовлетворяют обоим условиям: 1) {COND9[c1]}; 2) {COND9B[c2]}?')
+    ex = ('В ЭТ: СЧЁТЕСЛИ по строке — сколько раз встречается каждое число; затем СУММ/СРЗНАЧ по нужным клеткам '
+          'и общая формула =ЕСЛИ(И(усл1; усл2); 1; 0), в конце — сумма столбца.')
+    return card('inf-ege-9', 'num', q, str(ans), ex), {'rows': rows, 'c1': c1, 'c2': c2}
+
+
+def check_ege9(p, c):
+    # второй способ: попарные сравнения без Counter и без сортировки
+    def ok(r):
+        eq = [sum(1 for y in r if y == x) for x in r]
+        if p['c1'] == 'pair':
+            a = eq.count(2) == 2 and eq.count(1) == len(r) - 2
+        elif p['c1'] == 'uniq':
+            a = all(e == 1 for e in eq)
+        else:
+            import heapq
+            t = heapq.nlargest(3, r)
+            a = t[0] < t[1] + t[2]
+        if p['c2'] == 'avg':
+            rep = [x for x, e in zip(r, eq) if e > 1]
+            uni = [x for x, e in zip(r, eq) if e == 1]
+            b = rep and uni and sum(rep) * len(uni) > sum(uni) * len(rep)
+        elif p['c2'] == 'maxmin':
+            b = 2 * (max(r) + min(r)) <= sum(r) - max(r) - min(r)
+        else:
+            b = not sum(r) & 1
+        return bool(a and b)
+    return str(sum(ok(r) for r in p['rows'])) == c['a']
+
+
+# ---------------------------------------------------------------- ЕГЭ 17: обработка последовательности (мини-версия)
+
+
+def gen_ege17(rng):
+    seq = [rng.randint(-99, 99) for _ in range(rng.randint(12, 16))]
+    k = rng.choice([3, 4, 5, 7])
+    last = rng.randint(1, 9)
+    mode = rng.choice(['div', 'last'])
+    ends = [x for x in seq if abs(x) % 10 == last]
+    if mode == 'last' and not ends:
+        return gen_ege17(rng)
+    lim = max(ends) if mode == 'last' else None
+    pairs = []
+    for x, y in zip(seq, seq[1:]):
+        if mode == 'div':
+            good = (x % k == 0) != (y % k == 0)
+        else:
+            good = (abs(x) % 10 == last or abs(y) % 10 == last) and x + y > lim
+        if good:
+            pairs.append(x + y)
+    if not pairs:
+        return gen_ege17(rng)
+    ans = f'{len(pairs)} {max(pairs)}'
+    cond = (f'ровно одно из двух чисел делится на {k}' if mode == 'div' else
+            f'хотя бы одно из чисел оканчивается на {last}, а сумма пары больше наибольшего из всех чисел '
+            f'последовательности, оканчивающихся на {last}')
+    q = (f'Дана последовательность целых чисел: {" ".join(map(str, seq))}. Парой называются два соседних элемента. '
+         f'Найдите количество пар, в которых {cond}. В ответе запишите через пробел количество таких пар и '
+         'наибольшую из сумм элементов таких пар.')
+    ex = ('Один проход по парам (a[i], a[i+1]). У отрицательных чисел последнюю цифру берите через abs(x) % 10; '
+          'в Python −7 % 3 = 2, а не −1, поэтому «делится» проверяется как x % k == 0.')
+    return card('inf-ege-17', 'text', q, ans, ex), {'seq': seq, 'k': k, 'last': last, 'mode': mode}
+
+
+def check_ege17(p, c):
+    # второй способ: строковая проверка последней цифры и деление через divmod на модулях
+    s = p['seq']
+    endl = lambda x: str(x)[-1] == str(p['last'])  # noqa: E731
+    divk = lambda x: divmod(abs(x), p['k'])[1] == 0  # noqa: E731
+    lim = max((x for x in s if endl(x)), default=None)
+    sums = []
+    for i in range(len(s) - 1):
+        a, b = s[i], s[i + 1]
+        if p['mode'] == 'div':
+            if divk(a) + divk(b) == 1:
+                sums.append(a + b)
+        elif (endl(a) or endl(b)) and a + b > lim:
+            sums.append(a + b)
+    return f'{len(sums)} {max(sums)}' == c['a']
+
+
+# ---------------------------------------------------------------- ЕГЭ 24: обработка строки (мини-версия)
+
+
+def gen_ege24(rng):
+    alpha = rng.choice(['XYZ', 'ABC', 'KLMN', 'ACDO'])
+    s = ''.join(rng.choice(alpha) for _ in range(rng.randint(28, 40)))
+    mode = rng.choice(['run', 'noadj', 'without', 'pairs'])
+    if mode == 'run':
+        ch = rng.choice(alpha)
+        ans = max((len(m) for m in re.findall(ch + '+', s)), default=0)
+        ask = f'Определите максимальное количество идущих подряд символов {ch}.'
+    elif mode == 'noadj':
+        best = cur = 1
+        for i in range(1, len(s)):
+            cur = cur + 1 if s[i] != s[i - 1] else 1
+            best = max(best, cur)
+        ans, ch = best, None
+        ask = 'Определите длину самой длинной подстроки, в которой никакие два соседних символа не совпадают.'
+    elif mode == 'without':
+        ch = rng.choice(alpha)
+        ans = max(len(t) for t in s.split(ch))
+        ask = f'Определите длину самой длинной подстроки, не содержащей символа {ch}.'
+    else:
+        ch = rng.choice(alpha) + rng.choice(alpha)
+        best = cur = 0
+        i = 0
+        while i + 1 < len(s):  # подряд идущие пары ch: ch ch ch …
+            if s[i:i + 2] == ch:
+                cur += 1
+                best = max(best, cur)
+                i += 2
+            else:
+                cur = 0
+                i += 1
+        ans = best
+        ask = (f'Определите наибольшее количество идущих подряд пар символов {ch} (пары не перекрываются: '
+               f'например, в строке {ch * 3} три пары).')
+    if ans < 2:
+        return gen_ege24(rng)
+    q = f'Дана строка из символов {", ".join(alpha)}: {s}. {ask}'
+    ex = 'Один проход по строке со счётчиком текущей серии и максимумом; счётчик сбрасывается, когда серия рвётся.'
+    return card('inf-ege-24', 'num', q, str(ans), ex), {'s': s, 'mode': mode, 'ch': ch}
+
+
+def check_ege24(p, c):
+    # второй способ: перебор всех подстрок (строка короткая)
+    s, ch, m = p['s'], p['ch'], p['mode']
+    n = len(s)
+    best = 0
+    for i in range(n):
+        for j in range(i + 1, n + 1):
+            t = s[i:j]
+            if m == 'run' and set(t) == {ch}:
+                best = max(best, len(t))
+            elif m == 'noadj' and all(a != b for a, b in zip(t, t[1:])):
+                best = max(best, len(t))
+            elif m == 'without' and ch not in t:
+                best = max(best, len(t))
+            elif m == 'pairs' and len(t) % 2 == 0 and t == ch * (len(t) // 2):
+                best = max(best, len(t) // 2)
+    return str(best) == c['a']
+
+
+# ---------------------------------------------------------------- ЕГЭ 25: маски и делители (мини-версия)
+
+
+def mask_expand(mask, maxlen):
+    """Все числа по маске: ? — ровно одна цифра, * — любая последовательность цифр (в т. ч. пустая)."""
+    out = set()
+    free = maxlen - len(mask.replace('*', '').replace('?', '')) - mask.count('?')
+    stars = mask.count('*')
+    for lens in itertools.product(range(free + 1), repeat=stars):
+        if sum(lens) > free:
+            continue
+        slots = mask.count('?') + sum(lens)
+        if slots > 5:
+            continue
+        for fill in itertools.product('0123456789', repeat=slots):
+            it = iter(fill)
+            s = ''
+            li = iter(lens)
+            for chh in mask:
+                if chh == '?':
+                    s += next(it)
+                elif chh == '*':
+                    s += ''.join(next(it) for _ in range(next(li)))
+                else:
+                    s += chh
+            if s[0] != '0':
+                out.add(int(s))
+    return out
+
+
+def gen_ege25(rng):
+    kind = rng.choice(['mask', 'mask', 'div'])
+    if kind == 'mask':
+        d = rng.randint(3, 9)
+        body = [str(rng.randint(1, 9))] + [str(rng.randint(0, 9)) for _ in range(rng.randint(1, 2))]
+        mask = body[0] + ''.join(rng.choice(['?', '*', b]) for b in body[1:]) + rng.choice(['*', '?']) + str(rng.randint(0, 9))
+        if '*' not in mask and '?' not in mask:
+            return gen_ege25(rng)
+        L = 6
+        found = sorted(x for x in mask_expand(mask, L) if x % d == 0)
+        if not 1 <= len(found) <= 400:
+            return gen_ege25(rng)
+        ask = rng.choice(['count', 'min', 'max'])
+        ans = {'count': len(found), 'min': found[0], 'max': found[-1]}[ask]
+        what = {'count': 'количество таких чисел', 'min': 'наименьшее такое число', 'max': 'наибольшее такое число'}[ask]
+        q = (f'Маска числа — последовательность цифр, в которой «?» означает ровно одну цифру, а «*» — любую '
+             f'последовательность цифр, в том числе пустую. Среди натуральных чисел, не превышающих 10⁶, найдите '
+             f'соответствующие маске {mask} и делящиеся на {d}. Укажите {what}.')
+        ex = ('Перебираем кратные d (range(d, 10**6+1, d)) и сверяем строку с маской: fnmatch или регулярное '
+              'выражение, где ? → \\d, * → \\d*. Не забудьте: число не может начинаться с нуля.')
+        return card('inf-ege-25', 'num', q, str(ans), ex), {'kind': kind, 'mask': mask, 'd': d, 'ask': ask}
+    a = rng.randint(100, 2000)
+    b = a + rng.randint(40, 200)
+    k = rng.choice([2, 3])
+    found = []
+    for x in range(a, b + 1):
+        ds = [t for t in range(2, int(x ** 0.5) + 1) if x % t == 0]
+        ds = sorted(set(ds + [x // t for t in ds]))
+        if len(ds) == k:
+            found.append(x)
+    if not found:
+        return gen_ege25(rng)
+    ask = rng.choice(['count', 'max'])
+    ans = len(found) if ask == 'count' else found[-1]
+    q = (f'Среди натуральных чисел от {a} до {b} включительно найдите числа, у которых ровно {k} различных '
+         f'натуральных делителя, не считая единицы и самого числа. Укажите '
+         f'{"их количество" if ask == "count" else "наибольшее такое число"}.')
+    ex = ('Делители ищем до √x и добавляем парный x // t (у квадрата корень считаем один раз). Ровно 2 делителя — это '
+          'p·q или p³, ровно 3 — это p⁴.')
+    return card('inf-ege-25', 'num', q, str(ans), ex), {'kind': kind, 'a': a, 'b': b, 'k': k, 'ask': ask}
+
+
+def check_ege25(p, c):
+    if p['kind'] == 'mask':
+        rx = re.compile('^' + p['mask'].replace('?', r'\d').replace('*', r'\d*') + '$')
+        f = [x for x in range(p['d'], 10 ** 6 + 1, p['d']) if rx.match(str(x))]
+        v = {'count': len(f), 'min': f[0] if f else None, 'max': f[-1] if f else None}[p['ask']]
+        return str(v) == c['a']
+    # второй способ: через разложение на простые — число делителей τ(x) − 2
+    def tau(x):
+        t, m, q = 1, x, 2
+        while q * q <= m:
+            e = 0
+            while m % q == 0:
+                m //= q
+                e += 1
+            t *= e + 1
+            q += 1
+        return t * (2 if m > 1 else 1)
+    f = [x for x in range(p['a'], p['b'] + 1) if tau(x) - 2 == p['k']]
+    return str(len(f) if p['ask'] == 'count' else f[-1]) == c['a']
+
+
+# ---------------------------------------------------------------- ЕГЭ 26: жадный алгоритм (мини-версия)
+
+
+def gen_ege26(rng):
+    sizes = [rng.randint(5, 99) for _ in range(rng.randint(8, 12))]
+    S = rng.randint(sum(sizes) // 4, sum(sizes) * 2 // 3)
+    srt = sorted(sizes)
+    cnt, tot = 0, 0
+    for x in srt:
+        if tot + x <= S:
+            tot, cnt = tot + x, cnt + 1
+        else:
+            break
+    # наибольший файл: заменяем последний взятый на самый большой, который ещё влезает
+    base = tot - srt[cnt - 1]
+    rest = srt[cnt - 1:]
+    mx = max(x for x in rest if base + x <= S)
+    if cnt in (0, len(sizes)):
+        return gen_ege26(rng)
+    q = (f'На диск объёмом {S} Мбайт нужно записать как можно больше файлов пользователей целиком. Размеры файлов '
+         f'(Мбайт): {" ".join(map(str, sizes))}. Определите максимальное число файлов, которые можно записать, и '
+         'максимальный размер файла, который может оказаться на диске при таком максимальном количестве. '
+         'Запишите два числа через пробел.')
+    ex = ('Жадно: сортируем по возрастанию и берём, пока влезают — это максимум штук. Затем выкидываем самый большой '
+          'из взятых и ищем наибольший файл из оставшихся, который помещается в освободившееся место.')
+    return card('inf-ege-26', 'text', q, f'{cnt} {mx}', ex), {'sizes': sizes, 'S': S}
+
+
+def check_ege26(p, c):
+    # второй способ: полный перебор подмножеств
+    best = (0, 0)
+    s = p['sizes']
+    for mask in range(1 << len(s)):
+        sub = [s[i] for i in range(len(s)) if mask >> i & 1]
+        if sum(sub) <= p['S'] and sub:
+            best = max(best, (len(sub), max(sub)))
+    return f'{best[0]} {best[1]}' == c['a']
+
+
+# ---------------------------------------------------------------- ЕГЭ 27: кластеры и центроид (мини-версия)
+
+
+def gen_ege27(rng):
+    k = rng.choice([2, 3])
+    centers = []
+    while len(centers) < k:
+        cx, cy = rng.randint(0, 30), rng.randint(0, 30)
+        if all(math.dist((cx, cy), q) > 12 for q in centers):
+            centers.append((cx, cy))
+    pts, lab = [], []
+    sizes = rng.sample(range(4, 9), k)
+    for ci, ((cx, cy), m) in enumerate(zip(centers, sizes)):
+        while sum(1 for l in lab if l == ci) < m:
+            x, y = round(cx + rng.uniform(-2, 2), 1), round(cy + rng.uniform(-2, 2), 1)
+            if (x, y) not in pts:
+                pts.append((x, y))
+                lab.append(ci)
+    order = list(range(len(pts)))
+    rng.shuffle(order)
+    pts, lab = [pts[i] for i in order], [lab[i] for i in order]
+    # условие обещает: разные кластеры дальше 4, внутри — цепочки шагов ≤ 4; проверяем честно
+    for i, j in itertools.combinations(range(len(pts)), 2):
+        if lab[i] != lab[j] and math.dist(pts[i], pts[j]) <= 4:
+            return gen_ege27(rng)
+    for ci in range(k):
+        mem = [q_ for q_, l in zip(pts, lab) if l == ci]
+        reach, todo = {mem[0]}, [mem[0]]
+        while todo:
+            a = todo.pop()
+            for b in mem:
+                if b not in reach and math.dist(a, b) <= 4:
+                    reach.add(b)
+                    todo.append(b)
+        if len(reach) != len(mem):
+            return gen_ege27(rng)
+    big = max(range(k), key=lambda ci: lab.count(ci))
+    cl = [p_ for p_, l in zip(pts, lab) if l == big]
+    sums = [(sum(math.dist(a, b) for b in cl), a) for a in cl]
+    sums.sort()
+    if len(sums) > 1 and abs(sums[0][0] - sums[1][0]) < 1e-6:
+        return gen_ege27(rng)
+    cen = sums[0][1]
+    q = (f'На плоскости даны точки: ' + '; '.join(f'({x}; {y})' for x, y in pts) +
+         f'. Точки образуют {k} кластера: расстояние между любыми точками разных кластеров больше 4, внутри кластера '
+         'точки связаны цепочками шагов не длиннее 4. Центр кластера — его точка, у которой сумма расстояний до '
+         'остальных точек кластера минимальна. Найдите центр самого многочисленного кластера. Запишите его '
+         'координаты через пробел (с десятичной точкой, как в условии).')
+    ex = ('Делим точки на кластеры (обход графа «расстояние ≤ 4»), в нужном кластере для каждой точки считаем сумму '
+          'расстояний до остальных и берём минимум. В экзамене после этого ещё усредняют координаты центров и умножают на 10 000.')
+    return card('inf-ege-27', 'text', q, f'{cen[0]} {cen[1]}', ex), {'pts': pts}
+
+
+def check_ege27(p, c):
+    # второй способ: кластеры восстанавливаем объединением множеств (DSU) по порогу 4, а не берём из генератора
+    pts = p['pts']
+    par = list(range(len(pts)))
+
+    def f(i):
+        while par[i] != i:
+            par[i] = par[par[i]]
+            i = par[i]
+        return i
+    for i, j in itertools.combinations(range(len(pts)), 2):
+        if math.dist(pts[i], pts[j]) <= 4:
+            par[f(i)] = f(j)
+    groups = {}
+    for i in range(len(pts)):
+        groups.setdefault(f(i), []).append(pts[i])
+    cl = max(groups.values(), key=len)
+    if sorted(map(len, groups.values()))[-2:].count(len(cl)) > 1:
+        return False
+    cen = min(cl, key=lambda a: sum(math.hypot(a[0] - b[0], a[1] - b[1]) for b in cl))
+    return f'{cen[0]} {cen[1]}' == c['a']
+
+
 # ---------------------------------------------------------------- самопроверка
 
 GENERATORS = {
@@ -1454,6 +2083,9 @@ GENERATORS = {
     'ege12': (gen_ege12, check_ege12), 'ege13': (gen_ege13, check_ege13), 'ege14': (gen_ege14, check_ege14),
     'ege15': (gen_ege15, check_ege15), 'ege16': (gen_ege16, check_ege16), 'ege19-21': (gen_ege19, check_ege19),
     'ege18': (gen_ege18, check_ege18), 'ege22': (gen_ege22, check_ege22), 'ege23': (gen_ege23, check_ege23),
+    'ege1': (gen_ege1, check_ege1), 'ege3': (gen_ege3, check_ege3), 'ege6': (gen_ege6, check_ege6),
+    'ege9': (gen_ege9, check_ege9), 'ege17': (gen_ege17, check_ege17), 'ege24': (gen_ege24, check_ege24),
+    'ege25': (gen_ege25, check_ege25), 'ege26': (gen_ege26, check_ege26), 'ege27': (gen_ege27, check_ege27),
     'oge1': (gen_oge1, check_oge1), 'oge2': (gen_oge2, check_oge2), 'oge3': (gen_oge3, check_oge3),
     'oge4': (gen_oge4, check_oge4), 'oge5': (gen_oge5, check_oge5), 'oge6': (gen_oge6, check_oge6),
     'oge7': (gen_oge7, check_oge7), 'oge8': (gen_oge8, check_oge8), 'oge9': (gen_oge9, check_oge9),
