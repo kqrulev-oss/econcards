@@ -1529,6 +1529,22 @@ def proto_check(n=200, seed=2026, fipi_dir=FIPI_DIR, cap_tries=2000, only=None, 
     return rows, cross_dups, examples, {s: v.n for s, v in sims.items()}
 
 
+def fidelity_of(m):
+    """Паспорт соответствия КИМ из модуля + вердикт экзаменационной проверки (data/research/fidelity-review.json)."""
+    f = dict(m.get('fidelity') or {})
+    path = _os.path.join(ROOT, 'data', 'research', 'fidelity-review.json')
+    if _os.path.exists(path):
+        rev = json.load(open(path, encoding='utf-8')).get('reviews', {}).get(m['id'])
+        if rev:
+            f['status'] = rev['status']
+            f['checked'] = rev.get('checked')
+            f['passed'] = rev.get('passed')
+            if rev.get('reason'):
+                f['reason'] = rev['reason']
+    f.setdefault('status', 'unchecked')
+    return f
+
+
 def export_protos(rows, examples):
     """data/source/phys-prototypes.json и chem-prototypes.json — по записи на прототип."""
     out = {'phys': [], 'chem': []}
@@ -1549,6 +1565,7 @@ def export_protos(rows, examples):
             'gen': gen, 'capacity': cap, 'capacity_note': ('≥ (на 2000 попыток новые ещё появлялись)' if r.get('growing') else
                                                            ('оценка' if m['fn'] is None else 'разных условий на 2000 попыток')),
             'fipi_sim_max': None if r.get('sim') is None else round(r['sim'], 3),
+            'fidelity': fidelity_of(m),
             'example': ex,
         })
     for subj, recs in out.items():

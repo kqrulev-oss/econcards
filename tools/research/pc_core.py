@@ -225,7 +225,10 @@ PROTOS = {}
 ID_RE = re.compile(r'^(ph|ch)-(ege|oge)-\d{2}-[a-z0-9-]+$')
 
 
-def _meta(pid, exam, n, title, invariant, varies, answer_rule, mistakes, kind, kes):
+FIDELITY_KEYS = ('answer_format', 'style', 'level', 'time_min', 'scale', 'trap', 'kes', 'score')
+
+
+def _meta(pid, exam, n, title, invariant, varies, answer_rule, mistakes, kind, kes, fidelity=None):
     if not ID_RE.match(pid):
         raise ValueError(f'плохой id прототипа {pid!r}: нужен вид ph-ege-01-slug')
     if pid in PROTOS:
@@ -235,14 +238,29 @@ def _meta(pid, exam, n, title, invariant, varies, answer_rule, mistakes, kind, k
     if exam != ex or int(pid.split('-')[2]) != n:
         raise ValueError(f'{pid}: exam/n не совпадают с id')
     return {'id': pid, 'exam': exam, 'subj': subj, 'n': n, 'title': title, 'invariant': invariant, 'varies': varies,
-            'answer_rule': answer_rule, 'mistakes': list(mistakes), 'kind': kind, 'kes': list(kes or [])}
+            'answer_rule': answer_rule, 'mistakes': list(mistakes), 'kind': kind, 'kes': list(kes or []),
+            'fidelity': _fid(pid, fidelity)}
 
 
-def proto(pid, exam, n, title, *, invariant, varies, answer_rule, mistakes=(), solve=None, kind='param', kes=None):
+def _fid(pid, f):
+    """Соответствие КИМ (заполняет автор прототипа): answer_format — формат ответа как в КИМ 2027; style — формулировка
+    и справочные данные; level — Б/П/В по спецификации; time_min — время на задание; scale — масштаб чисел/веществ как
+    в банке; trap — какая «ловушка»/умение; kes — элементы кодификатора; score — баллы и частичный балл.
+    Статус (pass/fail + причина) ставит экзаменационная проверка (fidelity_review.json)."""
+    if f is None:
+        return None
+    extra = set(f) - set(FIDELITY_KEYS)
+    if extra:
+        raise ValueError(f'{pid}: неизвестные поля fidelity {sorted(extra)}')
+    return dict(f)
+
+
+def proto(pid, exam, n, title, *, invariant, varies, answer_rule, mistakes=(), solve=None, kind='param', kes=None,
+          fidelity=None):
     """Декоратор генератора прототипа. kind: 'param' (формула) или 'dict' (по таблице веществ/фактов).
     solve(p) -> ответ в том же виде, что card['a'] (строка; для many — список id; для match — dict)."""
     def deco(fn):
-        m = _meta(pid, exam, n, title, invariant, varies, answer_rule, mistakes, kind, kes)
+        m = _meta(pid, exam, n, title, invariant, varies, answer_rule, mistakes, kind, kes, fidelity)
         if solve is None:
             raise ValueError(f'{pid}: нужен solve(p) для независимого пересчёта')
         m.update(fn=fn, solve=solve, gen=fn.__name__)
@@ -252,10 +270,10 @@ def proto(pid, exam, n, title, *, invariant, varies, answer_rule, mistakes=(), s
 
 
 def recipe(pid, exam, n, title, *, invariant, varies, answer_rule, mistakes=(), kind='llm', how, check, capacity, example,
-           why=None, kes=None):
+           why=None, kes=None, fidelity=None):
     """Прототип без программного генератора: рецепт для ИИ ('llm') или справочника ('dict') + правило проверки.
     capacity — оценка числа разных аналогов; example — наш пример {q, a, e}; why — почему не param."""
-    m = _meta(pid, exam, n, title, invariant, varies, answer_rule, mistakes, kind, kes)
+    m = _meta(pid, exam, n, title, invariant, varies, answer_rule, mistakes, kind, kes, fidelity)
     m.update(fn=None, solve=None, gen={'kind': kind, 'recipe': how, 'check': check}, capacity=capacity,
              example=example, why=why)
     PROTOS[pid] = m
