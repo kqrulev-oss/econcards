@@ -3026,8 +3026,8 @@ def _g_oge18(rng, pid, key):
     dec = rng.choice([0, 0, 1, 1, 2])
     w = _w_el(f, el)
     ans = rnd(w, dec)
-    fp = '' if '(' in prep or '·' in prep or 'состава' in prep else f' ({pretty(f)})'
-    ask = pick(rng, [f'Вычислите в процентах массовую долю {EL_G[el]} в {prep}{fp}.',
+    fp = '' if pretty(f) in prep else f' ({pretty(f)})'
+    ask = pick(rng, [f'Вычислите массовую долю {EL_G[el]} (в процентах) в {prep}{fp}.',
                      f'Определите, какую долю (в процентах) от массы вещества {pretty(f)} составляет масса {EL_G[el]}.',
                      f'Какова массовая доля элемента {EL_G[el]} в этом веществе ({pretty(f)})? Ответ выразите в процентах.'])
     q = f'{intro} {ask} Запишите число с точностью до {PREC[dec]}.'

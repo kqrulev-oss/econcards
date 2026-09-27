@@ -1618,7 +1618,25 @@ def main():
     ap.add_argument('--fipi', default=FIPI_DIR, help='папка с локальной выгрузкой ФИПИ (*.jsonl) для проверки сходства')
     ap.add_argument('--cap', type=int, default=2000, help='попыток для оценки ёмкости прототипа')
     ap.add_argument('--export', action='store_true', help='записать data/source/{phys,chem}-prototypes.json')
+    ap.add_argument('--review-sample', metavar='PATH', help='выборка для экзаменационной проверки: 5 случайных аналогов на прототип (jsonl)')
     args = ap.parse_args()
+    if args.review_sample:
+        load_protos()
+        with open(args.review_sample, 'w', encoding='utf-8') as f:
+            for pid, m in _pc.PROTOS.items():
+                if args.only and not any(pid.startswith(x) for x in args.only):
+                    continue
+                meta = {k: m[k] for k in ('id', 'exam', 'subj', 'n', 'title', 'invariant', 'varies', 'answer_rule', 'mistakes',
+                                          'kind', 'kes', 'fidelity')}
+                if m['fn'] is None:
+                    meta.update(recipe=m['gen'], example=m['example'], capacity=m['capacity'])
+                    cards = []
+                else:
+                    cards, _, _ = sample_unique(m, random.Random(f'review-{args.seed}-{pid}'), 5)
+                    cards = [{k: c[k] for k in ('k', 'q', 'o', 'a', 'e') if k in c} for c in cards]
+                f.write(json.dumps({'proto': meta, 'cards': cards}, ensure_ascii=False) + '\n')
+        print('записано', args.review_sample)
+        return
     if args.protos or args.export:
         if args.sample:
             load_protos()

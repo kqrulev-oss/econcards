@@ -65,7 +65,7 @@ def cond_ru(c):
 
 def rx_scheme(r, sub_disp=None, show_rhs=False, names=False, rng=None):
     """Схема реакции для условия: «A + реагент (условия) →». sub_disp — как показать субстрат."""
-    a = sub_disp or (nm(r['lhs'][0], rng) if names else vw(r['lhs'][0]))
+    a = sub_disp or (nm(r['lhs'][0], rng) if names else eqv(r['lhs'][0]))
     rg = reagent_label(r, names=names)
     left = a + (f' + {rg}' if rg else '')
     c = scheme_cond(r)
@@ -89,7 +89,7 @@ def reagent_label(r, names=False):
         elif names and x in SUB and SUB[x].get('org'):
             out.append(nm(x))
         else:
-            out.append(pf(x))
+            out.append(eqv(x))
     return ' + '.join(out)
 
 
@@ -98,7 +98,7 @@ def scheme_cond(r):
     if 'KMnO4' in r['lhs'] and r.get('medium') == 'нейтр.' and '0' in c:
         c = '0 °C'
     elif 'KMnO4' in r['lhs']:
-        c = 't' if 't' in c else ''
+        c = 't' if r.get('medium') != 'кисл.' and 't' in c else ''
     c = c.replace('бромная вода', 'водн. р-р').replace('водн. р-р, t', 'водн., t').replace('спирт. р-р, t', 'спирт., t')
     return cond_ru(c)
 
@@ -2259,43 +2259,41 @@ def _solve_reagent(p):
     out = {}
     for i, (sub, prod) in enumerate(p['left']):
         good = []
-        for n, sg in enumerate(p['right']):
-            lhs = [sub] + list(sg[0])
-            if any(r['lhs'] == lhs and r.get('cond', '') == sg[1] and r.get('medium', '') == sg[2]
-                   and r['rhs'][0] == prod for r in D.REACTIONS):
-                good.append(n)
+        for n, group in enumerate(p['right']):
+            for sg in group:
+                lhs = [sub] + list(sg[0])
+                if any(r['lhs'] == lhs and r.get('cond', '') == sg[1] and r.get('medium', '') == sg[2]
+                       and r['rhs'][0] == prod for r in D.REACTIONS):
+                    good.append(n)
+                    break
         out[LET[i]] = str(good[0] + 1)
     return out
 
 
 def _gen_reagent(pid, rng, pool):
+    by_label = defaultdict(set)
+    for r in RX:
+        by_label[sig_label(r)].add(sig(r))
     rs = pick_distinct(rng, pool, 4, key=lambda r: (r['lhs'][0], r['rhs'][0]))
-    sigs = list(dict.fromkeys(sig(r) for r in rs))
-    others = list({sig(r): r for r in pool if sig(r) not in sigs}.values())
+    labels = list(dict.fromkeys(sig_label(r) for r in rs))
+    others = sorted({sig_label(r) for r in pool} - set(labels))
     rng.shuffle(others)
-    right_r = [next(r for r in rs if sig(r) == s_) for s_ in sigs]
-    for r in others:
-        if len(right_r) == 6:
-            break
-        right_r.append(r)
-    if len(right_r) < 6:
+    right = labels + others[:6 - len(labels)]
+    if len(right) < 6:
         raise Retry
-    rng.shuffle(right_r)
-    right = [sig(r) for r in right_r]
-    rt = [sig_label(r) for r in right_r]
-    if len(set(rt)) < 6:
-        raise Retry
+    rng.shuffle(right)
     # однозначность: для каждой строки подходит ровно один реагент из шести (по базе)
     for r in rs:
-        n = sum(any(x['lhs'] == [r['lhs'][0]] + list(sg[0]) and x.get('cond', '') == sg[1] and
-                    x.get('medium', '') == sg[2] and x['rhs'][0] == r['rhs'][0] for x in RX) for sg in right)
+        n = sum(any(x['lhs'][0] == r['lhs'][0] and x['rhs'][0] == r['rhs'][0] and sig_label(x) == L for x in RX)
+                for L in right)
         if n != 1:
             raise Retry
-    lt = [f'{vw(r["lhs"][0])} —X→ {vw(r["rhs"][0])}' for r in rs]
+    lt = [f'{eqv(r["lhs"][0])} —X→ {eqv(r["rhs"][0])}' for r in rs]
     q = mq('схемой превращения и реагентом X, который участвует в этом превращении', 'СХЕМА ПРЕВРАЩЕНИЯ', 'РЕАГЕНТ X')
-    ans = [right.index(sig(r)) for r in rs]
-    return match_card(pid, rng, q, lt, rt, ans, '; '.join(rx_eq(r) for r in rs) + '.',
-                      {'left': [[r['lhs'][0], r['rhs'][0]] for r in rs], 'right': [list(x) for x in right]},
+    ans = [right.index(sig_label(r)) for r in rs]
+    return match_card(pid, rng, q, lt, right, ans, '; '.join(rx_eq(r) for r in rs) + '.',
+                      {'left': [[r['lhs'][0], r['rhs'][0]] for r in rs],
+                       'right': [sorted([list(x) for x in by_label[L]]) for L in right]},
                       eqs=[eqt(r) for r in rs])
 
 
@@ -2481,7 +2479,8 @@ EST_H = [r for r in RX if r['lhs'][0] in SUB and SUB[r['lhs'][0]]['cls'] == 'с�
 
 
 def _pair_txt(fs):
-    return ' и '.join(nm(f) for f in fs)
+    order = {'соль карбоновой кислоты': 0, 'карбоновая кислота': 0, 'фенолят': 2, 'фенол': 2, 'спирт': 1, 'альдегид': 1}
+    return ' и '.join(nm(f) for f in sorted(fs, key=lambda f: (order.get(SUB[f]['cls'], 3), f)))
 
 
 def _solve_ester(p):

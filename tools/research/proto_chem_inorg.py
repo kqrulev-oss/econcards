@@ -1525,3 +1525,421 @@ def rtype(r):
     if len(L) == 2 and not any(map(_SIMPLE, L + Rr)) and not is_redox(r):
         return 'обмена'
     return None
+
+
+# ================================================================= 17. Классификация реакций
+
+_IRREV_TAGS = {'горение', 'металл+кислота', 'металл+вода', 'соль+соль', 'щёлочь+соль', 'кислота+карбонат',
+               'кислота+сульфид', 'кислота+основание', 'гидролиз бинарного соединения', 'металл+кислота-окислитель',
+               'металл+соль', 'кислота+соль (осадок)', 'кислота+силикат', 'кислота+сульфит', 'щёлочь+соль аммония',
+               'аммиачная вода+соль', 'основный оксид+кислота', 'амфотерный оксид+кислота', 'галоген+галогенид',
+               'металл+галоген', 'металл+кислород', 'разложение нитрата', 'разложение соли'}
+
+
+def _phase(r):
+    if r.get('phase'):
+        return r['phase']
+    L = [x for x in dict.fromkeys(r['lhs']) if x != 'H2O']
+    if not L:
+        return None
+    st = lambda x: SUBS.get(x, {}).get('state')
+    if r.get('aq'):
+        ok = lambda x: SUBS[x].get('sol') == 'р' or x in I.ALKALIS or SUBS[x]['cls'] == 'кислота' and x != 'H2SiO3'
+        if all(ok(x) for x in L):
+            return 'гомо'
+        if any(st(x) == 'тв' and not ok(x) for x in L):
+            return 'гетеро'
+        return None
+    if len(L) >= 2 or 'H2O' in r['lhs']:
+        states = {st(x) for x in r['lhs']}
+        if states == {'г'}:
+            return 'гомо'
+        if 'тв' in states and len(states) > 1 or states == {'тв'} and len(L) >= 2:
+            return 'гетеро'
+    return None
+
+
+def attrs(r):
+    T = rtype(r)
+    tags = set(r.get('tags', []))
+    a = {t: (T == t) for t in ('соединения', 'разложения', 'замещения', 'обмена')}
+    if 'совместный гидролиз' in tags or T is None and len(r['lhs']) >= 3:
+        a['обмена'] = None
+    red = is_redox(r)
+    a['окислительно-восстановительная'] = red
+    ph = _phase(r)
+    a['гомогенная'] = None if ph is None else ph == 'гомо'
+    a['гетерогенная'] = None if ph is None else ph == 'гетеро'
+    heat = r.get('heat')
+    if heat is None and 'нейтрализации' in r['type']:
+        heat = 'экзо'
+    if heat is None and tags & {'горение'}:
+        heat = 'экзо'
+    a['экзотермическая'] = None if heat is None else heat == 'экзо'
+    a['эндотермическая'] = None if heat is None else heat == 'эндо'
+    if r.get('rev'):
+        rv = True
+    elif tags & _IRREV_TAGS:
+        rv = False
+    else:
+        rv = None
+    a['обратимая'] = rv
+    a['необратимая'] = None if rv is None else not rv
+    cat = bool(r.get('cat')) or 'кат' in r.get('cond', '')
+    a['каталитическая'] = cat
+    a['некаталитическая'] = not cat
+    a['нейтрализации'] = 'нейтрализации' in r['type']
+    a['ионного обмена'] = (T == 'обмена' and bool(r.get('aq'))) if T == 'обмена' and r.get('aq') is not None \
+        else (False if T != 'обмена' and a['обмена'] is not None else None)
+    a['без изменения степеней окисления'] = not red
+    return a
+
+
+_ADJ = {'конц.': 'концентрированной ', 'разб.': 'разбавленной ', 'оч. разб.': 'очень разбавленной '}
+
+
+def _ins_form(x, form):
+    return (_ADJ.get(form, '') if x in ('HNO3', 'H2SO4', 'HCl') else '') + ins(x)
+
+
+def describe(r):
+    """«взаимодействие оксида натрия с водой», «разложение нитрата меди(II)»."""
+    L = [x for x in dict.fromkeys(r['lhs']) if x != 'H2O']
+    if 'H2O' in r['lhs'] and len(L) == 1:
+        L = L + ['H2O']
+    if len(L) == 1:
+        s = 'разложение ' + gen(L[0])
+        if 't' in r.get('cond', ''):
+            s += ' при нагревании'
+        return s
+    if len(L) != 2:
+        return None
+    a, b = L
+    order = ['простое вещество', 'оксид', 'основание', 'амфотерный гидроксид', 'соль', 'бинарное', 'кислота']
+    if b != 'H2O' and SUBS[a]['cls'] in order and SUBS[b]['cls'] in order and \
+            order.index(SUBS[a]['cls']) > order.index(SUBS[b]['cls']):
+        a, b = b, a
+    if 'горение' in r.get('tags', []) and b == 'O2':
+        return 'горение ' + gen(a) + ' в кислороде'
+    return f'взаимодействие {gen(a)} с {_ins_form(b, FORM_OF(r, b) or "")}'
+
+
+POOL17 = [r for r in RX if describe(r) and 'электролиз' not in r['type'] and
+          len({describe(x) for x in RX if describe(x) == describe(r)}) >= 1]
+_DESC_COUNT = Counter(describe(r) for r in POOL17)
+POOL17 = [r for r in POOL17 if _DESC_COUNT[describe(r)] == 1]   # описание однозначно задаёт реакцию
+ATTR_NAMES = ['соединения', 'разложения', 'замещения', 'обмена', 'окислительно-восстановительная', 'гомогенная',
+              'гетерогенная', 'экзотермическая', 'эндотермическая', 'обратимая', 'необратимая', 'каталитическая',
+              'нейтрализации', 'ионного обмена']
+RX17 = {r['rid']: r for r in POOL17}
+
+
+def _solve_17match(p):
+    ans = {}
+    for i, rid in enumerate(p['rids']):
+        a = attrs(RX_BY_ID[rid])
+        hits = [str(j + 1) for j, (t1, t2) in enumerate(p['opts']) if a.get(t1) and a.get(t2)]
+        if len(hits) != 1:
+            return {'err': rid}
+        ans[LET[i]] = hits[0]
+    return ans
+
+
+_SECOND = ['окислительно-восстановительная', 'гомогенная', 'гетерогенная', 'экзотермическая', 'эндотермическая',
+           'обратимая', 'необратимая', 'каталитическая', 'без изменения степеней окисления']
+
+
+@proto('ch-ege-17-match', 'ЕГЭ', 17, 'Реакция (словесное описание) ↔ пара классификационных признаков',
+       invariant='определить тип реакции по числу/составу реагентов и продуктов и второй признак: ОВР, фазовый '
+                 'состав, тепловой эффект, обратимость, участие катализатора',
+       varies='три реакции неорганической химии (соединения, разложения, замещения, обмена), наборы признаков',
+       answer_rule='каждой реакции — вариант, оба признака которого ей присущи (варианты могут повторяться)',
+       mistakes=['Na₂O + H₂O считают гомогенной', 'гидролиз Al₂S₃ относят к соединению',
+                 'реакцию металла с солью называют обменом', 'горение считают эндотермическим'],
+       solve=_solve_17match, kind='dict', kes=['1.5'],
+       fidelity=FID(17, trap='оба признака должны выполняться; «соединения, гомогенная» vs «соединения, '
+                             'экзотермическая» для Na₂O + H₂O', scale='3 реакции × 4 пары признаков — как демоверсия '
+                             '2027 (оксид натрия с водой, гидролиз сульфида алюминия, хлор с порошком железа)',
+                    kes=['1.5'], fmt_='три цифры под буквами А–В, цифры могут повторяться'))
+def g_17match(rng):
+    pid = 'ch-ege-17-match'
+    rs = []
+    for r in shuffled(rng, POOL17):
+        a = attrs(r)
+        T = rtype(r)
+        if not T or a.get(T) is not True:
+            continue
+        good2 = [x for x in _SECOND if a.get(x) is True]
+        if not good2 or any(rtype(x) == T and x is not r for x in rs) and rng.random() < 0.6:
+            continue
+        rs.append(r)
+        if len(rs) == 3:
+            break
+    if len(rs) < 3:
+        raise Retry
+    opts_ = []
+    for r in rs:
+        a = attrs(r)
+        good2 = [x for x in _SECOND if a.get(x) is True]
+        opts_.append((rtype(r), rng.choice(good2)))
+    types = ['соединения', 'разложения', 'замещения', 'обмена']
+    for _ in range(30):
+        if len(set(opts_)) >= 4:
+            break
+        opts_.append((rng.choice(types), rng.choice(_SECOND)))
+    opts_ = list(dict.fromkeys(opts_))[:4]
+    if len(opts_) < 4:
+        raise Retry
+    rng.shuffle(opts_)
+    ans = {}
+    for i, r in enumerate(rs):
+        a = attrs(r)
+        hits = []
+        for j, (t1, t2) in enumerate(opts_):
+            v1, v2 = a.get(t1), a.get(t2)
+            if v1 is None or (v1 and v2 is None):
+                raise Retry
+            if v1 and v2:
+                hits.append(str(j + 1))
+        if len(hits) != 1:
+            raise Retry
+        ans[LET[i]] = hits[0]
+    left = [describe(r) for r in rs]
+    right = [f'{t1}, {t2}' for t1, t2 in opts_]
+    q = ('Установите соответствие между химической реакцией и типами реакции, к которым она относится: к каждой '
+         'позиции, обозначенной буквой, подберите соответствующую позицию, обозначенную цифрой. Запишите в таблицу '
+         'выбранные цифры под соответствующими буквами.')
+    e = '; '.join(f'{LET[i]}) {eq_text(r["lhs"], r["rhs"])} — {right[int(ans[LET[i]]) - 1]}' for i, r in enumerate(rs))
+    return card(pid, q, ans, e + '.', k='match', o=match_opts(left, right),
+                p={'rids': [r['rid'] for r in rs], 'opts': [list(x) for x in opts_]},
+                eqs=[(r['lhs'], r['rhs'], *r['k']) for r in rs])
+
+
+def _solve_17types(p):
+    a = attrs(RX_BY_ID[p['rid']])
+    return [str(i + 1) for i, t in enumerate(p['types']) if a.get(t)]
+
+
+@proto('ch-ege-17-types', 'ЕГЭ', 17, 'Выбрать все типы, к которым относится данная реакция',
+       invariant='классифицировать одну реакцию сразу по нескольким признакам',
+       varies='реакция (словесно), пять признаков из списка: тип, ОВР, фазы, тепловой эффект, обратимость, '
+              'катализ, нейтрализация, ионный обмен',
+       answer_rule='номера всех признаков, которые выполняются для этой реакции',
+       mistakes=['реакцию металла с кислотой называют обменом', 'не замечают изменения степеней окисления',
+                 'гетерогенность при участии твёрдого вещества'],
+       solve=_solve_17types, kind='dict', kes=['1.5'],
+       fidelity=FID(17, trap='набор признаков, где верны 2–3; «лишний» признак близок по смыслу (обмена/замещения, '
+                             'гомогенная/гетерогенная)', scale='одна реакция и пять признаков — как задания банка '
+                             '«Из предложенного перечня выберите все типы реакций, к которым можно отнести…» '
+                             '(КЭС 1.5, 55 заданий)', kes=['1.5'], fmt_='номера выбранных признаков (все верные)',
+                    style='«Из предложенного перечня выберите все типы реакций, к которым можно отнести '
+                          'взаимодействие…»'))
+def g_17types(rng):
+    pid = 'ch-ege-17-types'
+    r = rng.choice(POOL17)
+    a = attrs(r)
+    known = [t for t in ATTR_NAMES if a.get(t) is not None]
+    yes = [t for t in known if a[t]]
+    no = [t for t in known if not a[t]]
+    if len(yes) < 2 or len(no) < 2:
+        raise Retry
+    k_yes = rng.choice([2, 2, 3]) if len(yes) >= 3 else 2
+    pick = rng.sample(yes, k_yes) + rng.sample(no, 5 - k_yes)
+    if len(set(pick)) < 5:
+        raise Retry
+    rng.shuffle(pick)
+    ans = [str(i + 1) for i, t in enumerate(pick) if a[t]]
+    d = describe(r)
+    q = (f'Из предложенного перечня выберите все типы реакций, к которым можно отнести {d}. '
+         f'Запишите номера выбранных ответов.')
+    e = f'{eq_text(r["lhs"], r["rhs"])}: ' + ', '.join(t for t in pick if a[t]) + '.'
+    return card(pid, q, ans, e, k='many', o=opts([t if t in ('нейтрализации', 'ионного обмена', 'соединения',
+                                                              'разложения', 'замещения', 'обмена') and False else t
+                                                  for t in pick]),
+                p={'rid': r['rid'], 'types': pick}, eqs=[(r['lhs'], r['rhs'], *r['k'])])
+
+
+def _pair_desc(r):
+    L = [x for x in dict.fromkeys(r['lhs']) if x != 'H2O']
+    if 'H2O' in r['lhs'] and len(L) == 1:
+        L.append('H2O')
+    if len(L) != 2:
+        return None
+    return ' и '.join(ru(x) + (f' ({FORM_OF(r, x)})' if FORM_OF(r, x) in ('конц.', 'разб.') else '') for x in L)
+
+
+def _pair_rxs(rid):
+    r = RX_BY_ID[rid]
+    L = frozenset(x for x in r['lhs'] if x != 'H2O') | ({'H2O'} if len(set(r['lhs']) - {'H2O'}) == 1 else set())
+    same = [x for x in RX if (frozenset(y for y in x['lhs'] if y != 'H2O') |
+                               ({'H2O'} if len(set(x['lhs']) - {'H2O'}) == 1 else set())) == L
+            and all((FORM_OF(x, f) or '') == (FORM_OF(r, f) or '') for f in L if f in ('HNO3', 'H2SO4'))]
+    return same
+
+
+def _solve_17pairs(p):
+    out = []
+    for i, rid in enumerate(p['rids']):
+        vals = {attrs(x).get(p['type']) for x in _pair_rxs(rid)}
+        if vals == {True}:
+            out.append(str(i + 1))
+    return out
+
+
+@proto('ch-ege-17-pairs', 'ЕГЭ', 17, 'Выбрать все пары веществ, реакция между которыми относится к заданному типу',
+       invariant='для каждой пары веществ представить продукты и определить тип реакции',
+       varies='тип (соединения, замещения, обмена, ОВР, нейтрализации), пять пар веществ',
+       answer_rule='номера всех пар, взаимодействие которых относится к названному типу',
+       mistakes=['FeCl₂ + Cl₂ относят к замещению', 'KI + Cl₂ — к соединению', 'NH₃ + HCl — к обмену'],
+       solve=_solve_17pairs, kind='dict', kes=['1.5'],
+       fidelity=FID(17, trap='пары с похожим составом, но разным типом (Na + H₂O / Na₂O + H₂O; FeCl₂ + Cl₂ / KI + Cl₂)',
+                    scale='пять пар веществ — как задания банка «Из предложенного перечня выберите все пары '
+                          'веществ, взаимодействие между которыми является реакцией соединения»', kes=['1.5'],
+                    fmt_='номера всех верных пар'))
+def g_17pairs(rng):
+    pid = 'ch-ege-17-pairs'
+    T = rng.choice(['соединения', 'замещения', 'обмена', 'окислительно-восстановительная', 'нейтрализации'])
+    cand = [r for r in POOL17 if _pair_desc(r) and len(r['lhs']) <= 3]
+    yes, no = [], []
+    for r in shuffled(rng, cand):
+        vals = {attrs(x).get(T) for x in _pair_rxs(r['rid'])}
+        if vals == {True} and len(yes) < 3:
+            yes.append(r)
+        elif vals == {False} and len(no) < 4:
+            no.append(r)
+        if len(yes) == 3 and len(no) == 4:
+            break
+    k = rng.choice([2, 3]) if len(yes) >= 3 else 2
+    if len(yes) < k or len(no) < 5 - k:
+        raise Retry
+    items = shuffled(rng, yes[:k] + no[:5 - k])
+    descs = [_pair_desc(r) for r in items]
+    if len(set(descs)) < 5:
+        raise Retry
+    ans = [str(i + 1) for i, r in enumerate(items) if r in yes]
+    phr = {'соединения': 'реакцией соединения', 'замещения': 'реакцией замещения', 'обмена': 'реакцией обмена',
+           'окислительно-восстановительная': 'окислительно-восстановительной реакцией',
+           'нейтрализации': 'реакцией нейтрализации'}[T]
+    q = (f'Из предложенного перечня выберите все пары веществ, взаимодействие между которыми является {phr}. '
+         f'Запишите номера выбранных ответов.')
+    e = '; '.join(eq_text(r['lhs'], r['rhs']) for r in items if r in yes) + f' — {phr}.'
+    return card(pid, q, ans, e, k='many', o=opts(descs), p={'rids': [r['rid'] for r in items], 'type': T},
+                eqs=[(r['lhs'], r['rhs'], *r['k']) for r in items])
+
+
+def _solve_17dec(p):
+    out = []
+    for i, f in enumerate(p['items']):
+        rs = [r for r in RX if r['lhs'] == [f] and 't' in r.get('cond', '')]
+        vals = {is_redox(r) for r in rs}
+        if vals == {True}:
+            out.append(str(i + 1))
+    return out
+
+
+DEC17 = {}
+for _r in RX:
+    if len(_r['lhs']) == 1 and 't' in _r.get('cond', '') and 'электролиз' not in _r['type']:
+        DEC17.setdefault(_r['lhs'][0], []).append(_r)
+
+
+@proto('ch-ege-17-decomposition', 'ЕГЭ', 17, 'Разложение каких веществ является ОВР (или не является)',
+       invariant='представить продукты термического разложения и проверить изменение степеней окисления',
+       varies='пять веществ: нитраты, карбонаты, гидрокарбонаты, соли аммония, гидроксиды, KMnO₄, KClO₃',
+       answer_rule='номера веществ, разложение которых — ОВР (или, в обратной формулировке, — не ОВР)',
+       mistakes=['разложение нитратов и NH₄NO₂ не считают ОВР', 'разложение NH₄Cl считают ОВР',
+                 'разложение Fe(OH)₃ считают ОВР'],
+       solve=lambda p: _solve_17dec_any(p), kind='dict', kes=['1.5'],
+       fidelity=FID(17, trap='нитраты, NH₄NO₃/NH₄NO₂, (NH₄)₂Cr₂O₇, KMnO₄, KClO₃ — ОВР; карбонаты, гидроксиды, '
+                             'NH₄Cl, (NH₄)₂CO₃ — нет', scale='пять веществ — как задания банка «выберите два вещества, '
+                             'разложение которых является окислительно-восстановительной реакцией»', kes=['1.5'],
+                    fmt_='номера выбранных веществ'))
+def g_17dec(rng):
+    pid = 'ch-ege-17-decomposition'
+    red = [f for f, rs in DEC17.items() if {is_redox(r) for r in rs} == {True}]
+    non = [f for f, rs in DEC17.items() if {is_redox(r) for r in rs} == {False}]
+    want = rng.random() < 0.75
+    good, bad = (red, non) if want else (non, red)
+    k = 2
+    items = shuffled(rng, rng.sample(good, k) + rng.sample(bad, 5 - k))
+    ans = [str(i + 1) for i, f in enumerate(items) if f in good]
+    by_name = rng.random() < 0.6
+    txt = [ru(f) if by_name else F(f) for f in items]
+    q = (f'Из предложенного перечня выберите два вещества, реакция разложения которых '
+         f'{"" if want else "не "}является окислительно-восстановительной. Запишите номера выбранных ответов.')
+    e = '; '.join(eq_text(DEC17[f][0]['lhs'], DEC17[f][0]['rhs']) for f in items if f in good) + '.'
+    p = {'items': items}
+    if not want:
+        p['neg'] = True
+    return card(pid, q, ans, e, k='many', o=opts(txt), p=p,
+                eqs=[(DEC17[f][0]['lhs'], DEC17[f][0]['rhs'], *DEC17[f][0]['k']) for f in items])
+
+
+def _solve_17dec_any(p):
+    out = _solve_17dec(p)
+    if p.get('neg'):
+        out = []
+        for i, f in enumerate(p['items']):
+            rs = [r for r in RX if r['lhs'] == [f] and 't' in r.get('cond', '')]
+            if {is_redox(r) for r in rs} == {False}:
+                out.append(str(i + 1))
+    return out
+
+
+PROTOS_FIX = {'ch-ege-17-decomposition': _solve_17dec_any}
+
+
+def _solve_17reag(p):
+    out = []
+    for i, (f, lab) in enumerate(p['items']):
+        rs = pos_rx(p['R'], p['RL'], f, lab)
+        vals = {attrs(r).get(p['type']) for r in rs}
+        if vals == {True}:
+            out.append(str(i + 1))
+    return out
+
+
+@proto('ch-ege-17-reagent', 'ЕГЭ', 17, 'Выбрать все вещества, реакция которых с данным реагентом — нейтрализация/ОВР/обмен',
+       invariant='для каждого вещества представить реакцию с общим реагентом и определить её тип',
+       varies='реагент (щёлочь, кислота, окислитель), тип (нейтрализация, ОВР, соединения, обмена), пять веществ',
+       answer_rule='номера всех веществ, реакция которых с реагентом относится к названному типу',
+       mistakes=['кислотный оксид + щёлочь называют нейтрализацией', 'NO₂ + NaOH не считают ОВР',
+                 'реакцию соли аммония со щёлочью считают нейтрализацией'],
+       solve=_solve_17reag, kind='dict', kes=['1.5'],
+       fidelity=FID(17, trap='нейтрализация — только кислота + основание; с NO₂, Cl₂, S щёлочь реагирует как ОВР',
+                    scale='реагент + пять веществ — как задания банка «выберите все вещества, взаимодействие которых '
+                          'с гидроксидом натрия является реакцией нейтрализации»', kes=['1.5'],
+                    fmt_='номера всех верных веществ'))
+def g_17reag(rng):
+    pid = 'ch-ege-17-reagent'
+    R, RL = rng.choice([('NaOH', ''), ('KOH', ''), ('Ba(OH)2', ''), ('HNO3', 'конц.'), ('HCl', ''), ('H2SO4', 'разб.'),
+                        ('Ca(OH)2', ''), ('HNO3', 'разб.'), ('H2SO4', 'конц.')])
+    T = rng.choice(['нейтрализации', 'окислительно-восстановительная', 'обмена', 'соединения'])
+    yes, no = [], []
+    for x, v in shuffled(rng, list(know(R + ('|' + RL if RL else '')).items())):
+        if not v:
+            continue
+        rs = pos_rx(R, RL, x[0], x[1])
+        vals = {attrs(r).get(T) for r in rs}
+        if vals == {True}:
+            yes.append(x)
+        elif vals == {False}:
+            no.append(x)
+    if len(yes) < 2 or len(no) < 3:
+        raise Retry
+    k = rng.choice([2, 2, 3]) if len(yes) >= 3 else 2
+    items = shuffled(rng, rng.sample(yes, k) + rng.sample(no, 5 - k))
+    if len({x[0] for x in items}) < 5:
+        raise Retry
+    ans = [str(i + 1) for i, x in enumerate(items) if x in yes]
+    phr = {'нейтрализации': 'реакцией нейтрализации', 'окислительно-восстановительная':
+           'окислительно-восстановительной реакцией', 'обмена': 'реакцией обмена', 'соединения': 'реакцией соединения'}[T]
+    rname = (_ADJ.get(RL, '') + ins(R)) if RL else ins(R)
+    rname = rname.replace('ой кислотой', 'ой кислотой')
+    q = (f'Из предложенного перечня выберите все вещества, взаимодействие которых с {rname} является {phr}. '
+         f'Запишите номера выбранных ответов.')
+    txt = [ru(x[0]) + (f' ({x[1]})' if x[1] else '') for x in items]
+    ex = [eq_text(pos_rx(R, RL, x[0], x[1])[0]['lhs'], pos_rx(R, RL, x[0], x[1])[0]['rhs']) for x in items if x in yes]
+    e = '; '.join(ex) + f' — {phr}.'
+    return card(pid, q, ans, e, k='many', o=opts(txt),
+                p={'R': R, 'RL': RL, 'type': T, 'items': [list(x) for x in items]})

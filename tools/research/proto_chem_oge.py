@@ -2994,3 +2994,234 @@ def g16_mix(rng):
     q = STEM16['смеси'] + END16
     e = ' '.join(f'{i + 1}) {"верно" if v else "неверно"}.' for i, (_, _, v) in enumerate(sts)) + f' Ответ: {"".join(a)}.'
     return pcard('ch-oge-16-mixtures', q, a, e, k='many', o=o, p={'st': [list(p_) for _, p_, _ in sts]})
+
+
+# ================================================================= 17. Различение веществ (качественные реакции)
+
+INDICATORS = {'фенолфталеин': {'кислая': 'бесцветный', 'нейтральная': 'бесцветный', 'щелочная': 'малиновый'},
+              'лакмус': {'кислая': 'красный', 'нейтральная': 'фиолетовый', 'щелочная': 'синий'},
+              'метилоранж': {'кислая': 'красный', 'нейтральная': 'оранжевый', 'щелочная': 'жёлтый'}}
+
+
+def medium(f):
+    """Среда раствора без учёта гидролиза (гидролиз в ОГЭ не проверяется): кислоты, щёлочи, соли сильных кислот
+    и щелочей; остальное — None (в заданиях с индикатором не используем)."""
+    if f in STRONG:
+        return 'кислая'
+    if f in ALK or f == 'NH3':
+        return 'щелочная'
+    if f in SALT:
+        c, a, v = SALT[f]
+        if v == 'р' and c in ('Na', 'K', 'Li', 'Ba', 'Ca') and a in ('Cl', 'Br', 'I', 'NO3', 'SO4'):
+            return 'нейтральная'
+    return None
+
+
+def obs17(s, r):
+    if r in INDICATORS:
+        m = medium(s)
+        return None if m is None else frozenset({'окраска:' + INDICATORS[r][m]})
+    return observe(s, r)
+
+
+def _medium_db(f):
+    """solve: среда по классу вещества из базы (сильная кислота / щёлочь / соль щелочного (щ.-з.) металла и сильной кислоты)."""
+    row = SUB.get(f, {})
+    if row.get('cls') == 'кислота' and row.get('strength') == 'сильный':
+        return 'кислая'
+    if row.get('sub') == 'щёлочь':
+        return 'щелочная'
+    if row.get('cls') == 'соль' and row.get('ion'):
+        c, a = row['ion']
+        if c in ('Na', 'K', 'Li', 'Ba', 'Ca') and a in ('Cl', 'Br', 'I', 'NO3', 'SO4'):
+            return 'нейтральная'
+    return None
+
+
+def obs17_db(s, r):
+    if r in INDICATORS:
+        m = _medium_db(s)
+        return None if m is None else frozenset({'окраска:' + INDICATORS[r][m]})
+    return obs_db(s, r)
+
+
+R17_SOL = [f for f in SOL_EL if f not in ('HI', 'HBr')] + ['Cu', 'Zn']
+SOLID17 = [('Al', 'Mg'), ('Zn', 'Cu'), ('Mg', 'Cu'), ('Fe', 'Cu'), ('Al', 'Cu'), ('Zn', 'Ag'), ('Al(OH)3', 'Mg(OH)2'),
+           ('Zn(OH)2', 'Mg(OH)2'), ('Zn(OH)2', 'Cu(OH)2'), ('Al(OH)3', 'Cu(OH)2'), ('CaCO3', 'BaSO4'), ('MgCO3', 'BaSO4'),
+           ('BaCO3', 'BaSO4'), ('MgO', 'ZnO'), ('MgO', 'Al2O3'), ('CuO', 'MgO'), ('CuO', 'ZnO'), ('CaCO3', 'AgCl'),
+           ('FeS', 'CuO'), ('Fe2O3', 'MgO'), ('Fe(OH)3', 'Mg(OH)2'), ('FeS', 'MgO'), ('Al', 'Zn'), ('MgCO3', 'MgO')]
+
+
+def _dist(s1, s2, r, fn):
+    o1, o2 = fn(s1, r), fn(s2, r)
+    if o1 is None or o2 is None:
+        return None
+    return o1 != o2
+
+
+def _gen17(rng, pid, mode):
+    reagents = list(R17_SOL)
+    if mode == 'ind':
+        reagents += list(INDICATORS)
+    for _ in range(80):
+        pairs = []
+        while len(pairs) < 3:
+            if mode == 'solid':
+                pr = list(rng.choice(SOLID17))
+            elif mode == 'ind':
+                pool = [f for f in SOL_EL if medium(f)]
+                pr = rng.sample(pool, 2)
+                if medium(pr[0]) == medium(pr[1]) and rng.random() < 0.6:
+                    continue
+            else:
+                pool = [f for f in SOL_EL if f in SALT or f in ALK or f in STRONG]
+                a = rng.choice(pool)
+                ia = _ions(a)
+                same = [f for f in pool if f != a and _ions(f) and (
+                    _ions(f)[0] == ia[0]) != (_ions(f)[1] == ia[1])]
+                if not same:
+                    continue
+                pr = [a, rng.choice(same)]
+            rng.shuffle(pr)
+            if any(set(pr) & set(p) for p in pairs):
+                continue
+            pairs.append(pr)
+        # для каждой пары — реактив, который её различает
+        opts4 = []
+        for pr in pairs:
+            good = [r for r in reagents if r not in pr and _dist(pr[0], pr[1], r, obs17)]
+            if mode == 'ind':
+                gi = [r for r in good if r in INDICATORS]
+                good = gi if gi and rng.random() < 0.7 else good
+            if not good:
+                break
+            opts4.append(rng.choice(good))
+        else:
+            fill = [r for r in reagents if r not in opts4 and all(r not in p for p in pairs)]
+            rng.shuffle(fill)
+            for r in fill:
+                if len(set(opts4)) >= 4:
+                    break
+                if r not in opts4:
+                    opts4.append(r)
+            opts4 = list(dict.fromkeys(opts4))[:4]
+            if len(opts4) < 4:
+                continue
+            # однозначность: для каждой пары ровно один реактив из четырёх различает её; все наблюдения определены
+            ok = True
+            ans = {}
+            for i, pr in enumerate(pairs):
+                ds = [_dist(pr[0], pr[1], r, obs17) if r not in pr else None for r in opts4]
+                if any(d is None for d in ds) or sum(ds) != 1:
+                    ok = False
+                    break
+                ans[LET[i]] = str(ds.index(True) + 1)
+            if ok:
+                break
+    else:
+        raise Retry
+    order = shuffled(rng, range(4))
+    opts4 = [opts4[k] for k in order]
+    ans = {k: str(order.index(int(v) - 1) + 1) for k, v in ans.items()}
+    sol_tag = mode != 'solid'
+    left = [f'{disp(a)} и {disp(b)}' for a, b in pairs]
+    right = [r if r in INDICATORS else disp(r) + (' (р-р)' if sol_tag and r not in ('Cu', 'Zn') and rng.random() < 0.3 else '')
+             for r in opts4]
+    o = match_opts(left, right)
+    if mode == 'solid':
+        q = ('Установите соответствие между двумя твёрдыми веществами и реактивом, с помощью которого можно различить эти '
+             'вещества: к каждой позиции, обозначенной буквой, подберите соответствующую позицию, обозначенную цифрой.')
+    elif rng.random() < 0.5:
+        q = ('Установите соответствие между двумя веществами, взятыми в виде водных растворов, и реактивом, с помощью '
+             'которого можно различить эти вещества: к каждой позиции, обозначенной буквой, подберите соответствующую '
+             'позицию, обозначенную цифрой.')
+    else:
+        q = ('Установите соответствие между двумя веществами и реактивом, с помощью которого можно различить эти '
+             'вещества: к каждой позиции, обозначенной буквой, подберите соответствующую позицию, обозначенную цифрой.')
+    q += END_M
+    parts = []
+    for i, (a, b) in enumerate(pairs):
+        r = opts4[int(ans[LET[i]]) - 1]
+        oa, ob = obs17(a, r), obs17(b, r)
+        parts.append(f'{LET[i]}) с {r if r in INDICATORS else disp(r)}: {disp(a)} — {_obs_words(oa)}, {disp(b)} — {_obs_words(ob)}.')
+    e = ' '.join(parts) + ' Ответ: ' + ''.join(ans[x] for x in LET[:3]) + '.'
+    return pcard(pid, q, ans, e, k='match', o=o, p={'pairs': pairs, 'reagents': opts4})
+
+
+def _obs_words(t):
+    t = set(t)
+    if t == {'нет'}:
+        return 'нет видимых изменений'
+    w = []
+    for x in sorted(t):
+        k, _, v = x.partition(':')
+        if k == 'окраска':
+            w.append(f'окраска {v}')
+        elif k == 'осадок':
+            col = D.PRECIP_COLOR.get(v)
+            w.append(f'осадок {pretty(v)}' + (f' ({col})' if col else ''))
+        elif k == 'газ':
+            w.append(f'газ {pretty(v)}')
+        elif k == 'растворение':
+            w.append('растворение')
+        elif k == 'раствор':
+            w.append(f'{v} раствор')
+        elif k == 'налёт':
+            w.append(f'налёт {v}')
+    return ', '.join(w)
+
+
+def _solve17(p):
+    a = {}
+    for i, (x, y) in enumerate(p['pairs']):
+        ds = [r not in (x, y) and _dist(x, y, r, obs17_db) for r in p['reagents']]
+        if sum(bool(d) for d in ds) != 1:
+            return f'пара {x}/{y}: различают {ds}'
+        a[LET[i]] = str([bool(d) for d in ds].index(True) + 1)
+    return a
+
+
+_F17 = lambda scale, trap: F(MATCH3 + ' (3 пары, 4 реактива)', 'как в демоверсии 2027 №17: «два вещества — реактив, с помощью '
+                            'которого можно различить эти вещества»', 'П', 7, scale, trap, ['4.2', '4.7', '4.8', '4.9', '4.10'],
+                            SC2)
+
+
+@proto('ch-oge-17-solutions', 'ОГЭ', 17, 'Различение растворов солей, кислот, щелочей реактивом (качественные реакции на ионы)',
+       invariant='три пары растворов с общим ионом; четыре реактива; для каждой пары — реактив, дающий с веществами '
+                 'разный видимый результат',
+       varies='пары (хлорид/сульфат, карбонат/сульфат, соль Mg/Zn/Al/Cu/Fe/NH4, кислота/соль) и реактивы',
+       answer_rule='качественные реакции: SO4 2− — Ba2+ (белый осадок), Cl−/Br−/I− — Ag+, CO3 2−, SO3 2−, S2− — кислота '
+                   '(газ), Cu2+, Fe2+, Fe3+, Mg2+ — щёлочь (осадки разного цвета), Al3+, Zn2+ — осадок, растворимый в '
+                   'избытке щёлочи, NH4+ — щёлочь (аммиак)',
+       mistakes=['берут реактив, дающий одинаковый признак с обоими веществами', 'AgNO3 для различения хлоридов'],
+       solve=_solve17, kind='dict', kes=['4.9', '4.10'],
+       fidelity=_F17('как в банке: «BaCl2 и LiCl», «ZnSO4 и NH4Cl», «Na2SO4 и Na2CO3», «KCl и MgCl2»',
+                     'одинаковый признак с обоими веществами'))
+def g17_sol(rng):
+    return _gen17(rng, 'ch-oge-17-solutions', 'sol')
+
+
+@proto('ch-oge-17-indicators', 'ОГЭ', 17, 'Различение кислоты, щёлочи и нейтральной соли с помощью индикатора или реактива',
+       invariant='три пары растворов (кислота, щёлочь, соль сильных кислоты и основания); среди реактивов — индикаторы',
+       varies='пары веществ, индикатор (фенолфталеин, лакмус, метилоранж), другие реактивы',
+       answer_rule='фенолфталеин — малиновый только в щелочной среде; лакмус — красный в кислой, синий в щелочной; '
+                   'метилоранж — красный в кислой, жёлтый в щелочной',
+       mistakes=['фенолфталеином различают кислоту и нейтральную соль', 'путают окраску лакмуса'],
+       solve=_solve17, kind='dict', kes=['4.10', '5.4'],
+       fidelity=_F17('как в банке: «H2SO4 и KOH — метилоранж», «NaCl и HCl — лакмус», «Ca(OH)2 и NaOH», «HNO3 и HCl»',
+                     'фенолфталеин не различает кислую и нейтральную среду'))
+def g17_ind(rng):
+    return _gen17(rng, 'ch-oge-17-indicators', 'ind')
+
+
+@proto('ch-oge-17-solids', 'ОГЭ', 17, 'Различение твёрдых веществ (металлы, оксиды, гидроксиды, соли) реактивом',
+       invariant='три пары твёрдых веществ; четыре реактива (кислоты, щёлочи, соли); для каждой пары — реактив',
+       varies='пары (Al/Mg, Zn/Cu, Al(OH)3/Mg(OH)2, CaCO3/BaSO4, MgO/ZnO …), реактивы',
+       answer_rule='амфотерные Al, Zn и их оксиды/гидроксиды растворяются в щёлочи; металлы до H растворяются в кислоте '
+                   'с газом; карбонаты — в кислоте с газом, BaSO4 и AgCl — не растворяются',
+       mistakes=['Mg «растворяется в щёлочи»', 'BaSO4 «растворяется в кислоте»'],
+       solve=_solve17, kind='dict', kes=['4.3', '4.7', '4.9'],
+       fidelity=_F17('как в демоверсии 2027: «Al(OH)3 и Mg(OH)2», «CaCO3 и BaSO4»; банк: «Mg и Al», «MgO и ZnO»',
+                     'амфотерность, нерастворимость BaSO4'))
+def g17_solid(rng):
+    return _gen17(rng, 'ch-oge-17-solids', 'solid')
