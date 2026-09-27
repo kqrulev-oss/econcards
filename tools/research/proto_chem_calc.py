@@ -629,7 +629,7 @@ def g26_molar(rng):
                         f'В {V} мл раствора содержится {m} г {name}. Найдите молярную концентрацию раствора (моль/л).'])
         wrong = W([m / Mf / V, m / V * 1000, m / Mf], dec)
         p = dict(f=f, mode=mode, m=str(m), V=str(V), dec=dec)
-        e = f'n = {m}/{ru(Mf)} моль; c = n/V = n/{ru(V / 1000)} л'
+        e = f'n = {m} г / {ru(Mf)} г/моль = {fmt(m / Mf, 4)} моль; c = n/V = n/{ru(V / 1000)} л'
     elif mode == 'm':
         V = Fr(rng.choice([50, 100, 200, 250, 400, 500, 750, 1000, 2000]))
         c = Fr(rng.choice([5, 10, 15, 20, 25, 50, 75, 100, 150, 200, 250]), 100)
@@ -640,7 +640,7 @@ def g26_molar(rng):
                         f'которого равна {ru(c)} моль/л?'])
         wrong = W([c * V * Mf, c * Mf, c * V / 1000], dec)
         p = dict(f=f, mode=mode, c=str(c), V=str(V), dec=dec)
-        e = f'n = c·V = {ru(c)}·{ru(V / 1000)} = {ru(c * V / 1000)} моль; m = n·M'
+        e = f'n = c·V = {ru(c)} моль/л · {ru(V / 1000)} л = {ru(c * V / 1000)} моль; m = n·M = n·{ru(Mf)} г/моль'
     elif mode == 'c_from_w':
         w = rng.choice([2, 4, 5, 8, 10, 12, 15, 20, 25, 30])
         if not w_ok(f, w):
@@ -651,7 +651,8 @@ def g26_molar(rng):
              f'Рассчитайте молярную концентрацию {name} в нём (моль/л).')
         wrong = W([w * 10 / Mf, w * rho / Mf, w * rho * 1000 / Mf], dec)
         p = dict(f=f, mode=mode, w=w, rho=str(rho), dec=dec)
-        e = f'В 1 л: m(р-ра) = 1000·{ru(rho)} г, m(в-ва) = {ru(1000 * rho * w / 100)} г; c = m/M'
+        e = f'В 1 л: m(р-ра) = 1000 мл · {ru(rho)} г/мл = {ru(1000 * rho)} г, m(в-ва) = {ru(1000 * rho * w / 100)} г; ' \
+            f'c = m/M/1 л = {ru(1000 * rho * w / 100)} г / {ru(Mf)} г/моль / 1 л'
     else:
         c = Fr(rng.choice([10, 20, 25, 50, 75, 100, 125, 150, 200, 250, 300]), 100)
         w_est = c * Mf / 10                      # ω при ρ ≈ 1, затем уточняем плотность
@@ -663,12 +664,13 @@ def g26_molar(rng):
              f'Найдите массовую долю {name} в этом растворе (%).')
         wrong = W([c * Mf / 10, c * Mf / rho, c * Mf / rho / 100], dec)
         p = dict(f=f, mode=mode, c=str(c), rho=str(rho), dec=dec)
-        e = f'1 л раствора: m(р-ра) = {ru(1000 * rho)} г, m(в-ва) = {ru(c)}·{ru(Mf)} = {ru(c * Mf)} г; ω = m(в-ва)/m(р-ра)'
+        e = f'1 л раствора: m(р-ра) = {ru(1000 * rho)} г, m(в-ва) = {ru(c)} моль · {ru(Mf)} г/моль = {ru(c * Mf)} г; ' \
+            f'ω = m(в-ва)/m(р-ра)·100 %'
     if x < Fr(1, 100) or x > 10000:
         raise Retry
     ans = rnd(x, dec)
     q += ' ' + tail(dec)
-    e += f' ≈ {ans}.'
+    e += f' ≈ {ans} ' + {'c': 'моль/л', 'm': 'г', 'c_from_w': 'моль/л', 'w_from_c': '%'}[mode] + '.'
     return pcard('ch-ege-26-molar', q, ans, e, p=p, wrong=wrong)
 
 
@@ -1267,7 +1269,7 @@ def _solve_28_rev(p):
                     'прототипа для них нет', 'Б', 4, 'продукт 1–100 г (л), выход 40–95 %',
                     'обратный ход: делить на выход, а не умножать', ['5.5'], '1 балл'))
 def g28_reverse(rng):
-    r = pick(rng, D.YIELD)
+    r = pick(rng, [x for x in D.YIELD if x['calc']['g'] != 'CuO'])
     c = r['calc']
     g, f = c['g'], c['f']
     k = coef(r['lhs'], r['rhs'])
@@ -1279,7 +1281,7 @@ def g28_reverse(rng):
         raise Retry
     eta = Fr(rng.choice([50, 60, 62.5, 64, 70, 75, 80, 85, 90, 92, 95, 96])).limit_denominator(10)
     x = nf * 100 / eta * k[g] / k[f] * _unit(g, gby)
-    dec = rng.choice([0, 1, 2]) if gby == 'V' else rng.choice([0, 1])
+    dec = 2 if x < 1 else (rng.choice([1, 2]) if x < 10 else rng.choice([0, 1]))   # точность по величине ответа
     ans = rnd(x, dec)
     got = f'{ru(pv)} л (н.у.)' if fby == 'V' else f'{ru(pv)} г'
     act = c['act'].format(g=gen(g))
@@ -2897,7 +2899,7 @@ def g34_solub(rng):
     sat = Wt * (100 + S) / 100
     wsat = S / (100 + S)
     k = coef([salt, reag], [prod, out] + (['H2O'] if out == 'CO2' else []))
-    m1 = Fr(rng.choice(range(20, int(sat * Fr(2, 3)), 5)))
+    m1 = Fr(rng.choice(range(20, int(sat * Fr(2, 3)))))
     n1 = m1 * wsat / M(salt)
     pv1 = n1 * Fr(k[out], k[salt]) * (VM if out == 'CO2' else M(out))
     pv1 = Fr(round(pv1 * (1000 if out == 'CO2' else 100)), 1000 if out == 'CO2' else 100)
@@ -2906,6 +2908,8 @@ def g34_solub(rng):
     need = ns * Fr(k[reag], k[salt])
     wr = pick(rng, [w for w in (5, 8, 10, 12, 15, 20, 25) if w_ok(reag, w)])
     mr = Fr(math.ceil(need * Fr(rng.choice([11, 12, 13, 15, 16, 18, 20]), 10) * M(reag) * 100 / wr))
+    if mr > 700:
+        raise Retry
     nr = mr * wr / 100 / M(reag)
     target = rng.choice(['prod', 'prod', 'reag'])
     out_m = ns * Fr(k[out], k[salt]) * M(out)
@@ -3635,8 +3639,8 @@ def goge22_msol(rng):
     nf = n * Fr(k[c['f']], k[c['sol']])
     fby = 'V' if c['kind'] == 'gas' else 'm'
     pv = nf * (VM if fby == 'V' else M(c['f']))
-    if not nice(pv, 3):
-        raise Retry
+    if not nice(pv, 3) or (fby == 'V' and not nice(pv, 2)):
+        raise Retry                  # объём газа при н.у. — «круглый», как в банке (3,36 л; 4,48 л)
     ans = _ans22(m)
     sol_name = 'соляной кислоты' if c['sol'] == 'HCl' else gen(c['sol'])
     got = f'выделилось {ru(pv)} л (н.у.) газа' if fby == 'V' else f'выпал осадок массой {ru(pv)} г'

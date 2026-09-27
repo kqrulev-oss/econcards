@@ -144,6 +144,8 @@ for _r in RX:
     _L = [x for x in dict.fromkeys(_r['lhs'])]
     _base = [x for x in _L if x != 'H2O']
     if len(_base) == 2:
+        if 'H2O' in _L and not _r.get('aq'):
+            continue      # вода — третий реагент (NO₂ + O₂ + H₂O), а не растворитель: пару не считаем
         PAIR.setdefault(frozenset(_base), []).append(_r)
     elif len(_base) == 1 and 'H2O' in _L:
         PAIR.setdefault(frozenset([_base[0], 'H2O']), []).append(_r)
@@ -1781,6 +1783,8 @@ def g_17types(rng):
 
 def _pair_desc(r):
     L = [x for x in dict.fromkeys(r['lhs']) if x != 'H2O']
+    if 'H2O' in r['lhs'] and len(L) == 2:
+        return None
     if 'H2O' in r['lhs'] and len(L) == 1:
         L.append('H2O')
     if len(L) != 2:
