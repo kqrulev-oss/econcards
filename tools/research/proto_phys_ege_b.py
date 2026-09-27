@@ -3987,12 +3987,13 @@ def _s22pr(p):
                       'независимость движений по осям', ['1.1.7', '1.1.8'], 8))
 def g22_pr(rng):
     who = rng.choice(['Камень', 'Мяч', 'Снежок', 'Шарик'])
-    h = rng.choice([1.25, 1.8, 3.2, 5, 7.2, 11.25, 20, 31.25, 45, 80])
+    where, hs = rng.choice([('с балкона', [3.2, 5, 7.2, 11.25]), ('с края обрыва', [11.25, 20, 31.25, 45, 80]), ('с крыши сарая', [1.8, 3.2]),
+                            ('с моста', [5, 7.2, 11.25, 20]), ('с высокого берега реки', [3.2, 5, 7.2])])
+    h = rng.choice(hs)
     v0 = rng.choice([2, 3, 4, 5, 6, 8, 10, 12, 15, 20])
     ask = rng.choice(['L', 'v', 't'])
     t = math.sqrt(2 * h / 10)
     val = {'L': v0 * t, 'v': math.hypot(v0, 10 * t), 't': t}[ask]
-    where = rng.choice(['с балкона', 'с края обрыва', 'с крыши сарая', 'с моста'])
     q = (f'{who} бросили горизонтально {where} с высоты {ru(Fr(h).limit_denominator(100))} м над поверхностью земли с начальной скоростью {v0} м/с. '
          + {'L': 'На каком расстоянии по горизонтали от точки броска он упадёт (в м)?', 'v': 'Определите модуль его скорости непосредственно перед ударом о землю (в м/с).',
             't': 'Сколько времени (в с) длится полёт?'}[ask] + f' Сопротивлением воздуха пренебречь. {rq(1)}')
@@ -4012,6 +4013,7 @@ P_SAT = {10: Fr(123, 100), 15: Fr(171, 100), 20: Fr(234, 100), 25: Fr(317, 100),
 
 
 def _s23leak(p):
+    p = dict(p, p1=_F(p['p1']), p2=_F(p['p2']))
     return fmt(p['p2'] * p['T1'] / (p['p1'] * p['T2']) if p['ask'] == 'ratio' else (1 - p['p2'] * p['T1'] / (p['p1'] * p['T2'])) * 100, p['dec'])
 
 
@@ -4023,26 +4025,30 @@ def _s23leak(p):
        solve=_s23leak, kes=['2.1.9', '2.1.10'],
        fidelity=p2fid(23, 'как демо 2027 №23 (аргон, неплотный кран); график p(T) заменён значениями p и T', 'p ~ 10⁵ Па, T 200–900 К',
                       'учёт изменения числа молекул', ['2.1.9', '2.1.10'], 8))
+def p5x(x):
+    return '10⁵' if x == 1 else f'{ru(x)}·10⁵'
+
+
 def g23_leak(rng):
     gas = rng.choice(['аргон', 'гелий', 'азот', 'неон', 'кислород', 'воздух'])
-    p1 = rng.choice([1, 2, 3, 4, 5, 6])
-    p2 = rng.choice([1, 2, 3, 4, 5, 6])
+    p1 = Fr(rng.choice([5, 10, 15, 20, 25, 30]), 10)
+    p2 = Fr(rng.choice([5, 10, 15, 20, 25, 30]), 10)
     T1 = rng.choice([200, 300, 400, 500, 600])
     T2 = rng.choice([300, 400, 600, 800, 900])
     if p2 * T1 >= p1 * T2 or p2 * T1 * 10 < p1 * T2:
         raise Retry
     ask = rng.choice(['ratio', 'pct'])
-    val = p2 * T1 / (p1 * T2) if ask == 'ratio' else (1 - p2 * T1 / (p1 * T2)) * 100
+    val = float(p2 * T1 / (p1 * T2) if ask == 'ratio' else (1 - p2 * T1 / (p1 * T2)) * 100)
     dec = 2 if ask == 'ratio' else 0
     q = (f'В сосуде неизменного объёма находится разреженный {gas}. Кран сосуда закрыт неплотно, и газ может просачиваться наружу. '
-         f'В начале опыта давление газа было {p1}·10⁵ Па при температуре {T1} К, в конце опыта — {p2}·10⁵ Па при температуре {T2} К. '
+         f'В начале опыта давление газа было {p5x(p1)} Па при температуре {T1} К, в конце опыта — {p5x(p2)} Па при температуре {T2} К. '
          + ('Определите отношение N₂/N₁ числа молекул газа в сосуде в конце и в начале опыта.' if ask == 'ratio' else
             'Какая часть молекул газа (в процентах) покинула сосуд за время опыта?') + f' {rq(dec)}')
-    e = f'p = nkT = NkT/V, V = const ⇒ N ∝ p/T: N₂/N₁ = p₂T₁/(p₁T₂) = {p2}·{T1}/({p1}·{T2}) ≈ {sf(p2 * T1 / (p1 * T2), 3)}' + \
+    e = f'p = nkT = NkT/V, V = const ⇒ N ∝ p/T: N₂/N₁ = p₂T₁/(p₁T₂) = {ru(p2)}·{T1}/({ru(p1)}·{T2}) ≈ {sf(p2 * T1 / (p1 * T2), 3)}' + \
         ('' if ask == 'ratio' else f'; ушло 1 − N₂/N₁ ≈ {sf(val, 3)} %') + '. Ответ: {ANS}.'
-    wrong = [p1 * T2 / (p2 * T1), p2 / p1, T1 / T2, (p2 * T1 / (p1 * T2)) * 100 if ask == 'pct' else None]
-    steps = [('отношение давлений p₂/p₁', Fr(p2, p1)), ('отношение температур T₁/T₂', Fr(T1, T2))]
-    return num_card('ph-ege-23-leak', q, val, dec, e, {'p1': p1, 'p2': p2, 'T1': T1, 'T2': T2, 'ask': ask}, wrong, steps=steps)
+    wrong = [float(p1 * T2 / (p2 * T1)), float(p2 / p1), T1 / T2, float(p2 * T1 / (p1 * T2)) * 100 if ask == 'pct' else None]
+    steps = [('отношение давлений p₂/p₁', p2 / p1), ('отношение температур T₁/T₂', Fr(T1, T2))]
+    return num_card('ph-ege-23-leak', q, val, dec, e, {'p1': fr(p1), 'p2': fr(p2), 'T1': T1, 'T2': T2, 'ask': ask}, wrong, steps=steps)
 
 
 def _s23bub(p):
@@ -4071,7 +4077,7 @@ def g23_bub(rng):
     val = k * (V1 if ask == 'V' else 1)
     tpart = (f'Температура воды у дна {tb} °C, у поверхности {ts} °C.' if ts != tb else f'Температура воды на всех глубинах одинакова ({tb} °C).')
     q = (f'Со дна {place} глубиной {H} м медленно всплывает пузырёк воздуха' + (f' объёмом {V1} мм³' if ask == 'V' else '') + f'. {tpart} '
-         f'Атмосферное давление 10⁵ Па. ' + ('Во сколько раз увеличится объём пузырька к моменту, когда он достигнет поверхности?' if ask == 'k' else
+         f'Атмосферное давление 10⁵ Па, плотность {"морской " if rho != 1000 else ""}воды {rho} кг/м³. ' + ('Во сколько раз увеличится объём пузырька к моменту, когда он достигнет поверхности?' if ask == 'k' else
                                           'Каким станет объём пузырька (в мм³) у поверхности воды?') + f' {rq(2 if ask == "k" else 1)}')
     e = (f'Для воздуха в пузырьке pV/T = const. У дна p₁ = p₀ + ρgH = {sf(1e5 + rho * 10 * H)} Па, T₁ = {Tb} К; у поверхности p₂ = p₀, T₂ = {Ts} К. '
          f'V₂/V₁ = p₁T₂/(p₂T₁) ≈ {sf(k)}. Ответ: {{ANS}}.')
@@ -4181,48 +4187,63 @@ def g23_cal(rng):
 
 
 def _s23fl(p):
-    nu, dT, proc = p['nu'], p['dT'], p['proc']
-    if 'A' in p:
-        A = p['A']
-        dU = 1.5 * A
-        return fmt({'Q': A + dU, 'U': dU}[p['ask']] / 1000, p['dec'])
-    dU = 1.5 * nu * R_ * dT
-    A = nu * R_ * dT if proc == 'p' else 0
-    return fmt({'Q': dU + A, 'U': dU, 'A': A}[p['ask']] / 1000, p['dec'])
+    if p['var'] == 'two':
+        p1, p2, V1, V2 = p['p1'] * 1e5, p['p2'] * 1e5, p['V1'] / 1000, p['V2'] / 1000
+        Q12 = 1.5 * V1 * (p2 - p1)
+        Q23 = 2.5 * p2 * (V2 - V1)
+        return fmt((Q12 + Q23) / 1000, p['dec'])
+    nu, T1, k = p['nu'], p['T1'], _F(p['k'])
+    dT = T1 * (k - 1)
+    return fmt(2.5 * nu * R_ * dT / 1000, p['dec'])
 
 
-@proto('ph-ege-23-first-law', 'ЕГЭ', 23, 'Первый закон термодинамики для одноатомного газа: изобарный/изохорный процесс',
-       invariant='ΔU = 3/2·νRΔT; изобара: A = pΔV = νRΔT, Q = 5/2·νRΔT; изохора: A = 0, Q = ΔU',
-       varies='газ (гелий, неон, аргон), количество вещества, ΔT или работа, процесс, что найти',
-       answer_rule='число в кДж с указанным округлением',
-       mistakes=['Q = ΔU при изобаре', 'для одноатомного газа 5/2 вместо 3/2 в ΔU'],
-       solve=_s23fl, kes=['2.2.6', '2.2.7'],
-       fidelity=p2fid(23, 'КИМ: «Гелий в количестве 3 моль изобарно сжимают, совершая работу 2,4 кДж…»', 'ν 1–5 моль, ΔT 10–200 К, A — кДж',
-                      'связь A и ΔU при изобаре', ['2.2.6', '2.2.7'], 8))
+def _ss_fl(p):
+    if p['var'] == 'two':
+        p1, p2, V1, V2 = p['p1'] * 1e5, p['p2'] * 1e5, p['V1'] / 1000, p['V2'] / 1000
+        return [1.5 * V1 * (p2 - p1), 2.5 * p2 * (V2 - V1)]
+    dT = p['T1'] * (_F(p['k']) - 1)
+    return [dT, p['nu'] * R_ * dT]
+
+
+@proto('ph-ege-23-first-law', 'ЕГЭ', 23, 'Первый закон термодинамики для одноатомного газа: теплота в процессе из двух участков / изобарное расширение в k раз',
+       invariant='ΔU = 3/2·νRΔT = 3/2·Δ(pV); изохора: Q = ΔU; изобара: A = pΔV, Q = 5/2·pΔV; T ∝ V при p = const',
+       varies='газ (гелий, неон, аргон), вид процесса (изохора + изобара; изобарное расширение в k раз), давления, объёмы, ν и T₁',
+       answer_rule='количество теплоты в кДж с указанным округлением',
+       mistakes=['Q = ΔU на изобаре', 'для одноатомного газа 5/2 в ΔU', 'температура конечного состояния без учёта закона Гей-Люссака'],
+       solve=_s23fl, kes=['2.2.6', '2.2.7', '2.1.12'],
+       fidelity=p2fid(23, 'КИМ: «Один моль одноатомного идеального газа совершает процесс 1–2–3…», «Гелий изобарно расширили…»',
+                      'p — 10⁵ Па, V — л, ν 1–5 моль, T 200–400 К', 'на изобаре газ совершает работу, Q = ΔU + A', ['2.2.6', '2.2.7'], 10))
 def g23_fl(rng):
     gas = rng.choice(['гелий', 'неон', 'аргон'])
+    gen = {'гелий': 'гелия', 'неон': 'неона', 'аргон': 'аргона'}[gas]
+    if rng.random() < 0.5:
+        p1 = rng.choice([1, 2, 3])
+        p2 = p1 + rng.choice([1, 2, 3])
+        V1 = rng.choice([1, 2, 3, 4, 5])
+        V2 = V1 + rng.choice([1, 2, 3, 4])
+        Q12 = 1.5 * V1 * (p2 - p1) * 100
+        Q23 = 2.5 * p2 * (V2 - V1) * 100
+        val = (Q12 + Q23) / 1000
+        p5 = lambda x: '10⁵' if x == 1 else f'{x}·10⁵'
+        q = (f'Порцию {gen} (идеальный одноатомный газ) сначала нагревают при постоянном объёме {V1} л, и давление увеличивается от {p5(p1)} Па до {p5(p2)} Па, '
+             f'затем при постоянном давлении расширяют до объёма {V2} л. Какое количество теплоты (в кДж) получил газ в этих двух процессах? {rq(2)}')
+        e = (f'Изохора: A = 0, Q₁₂ = ΔU = 3/2·V₁(p₂ − p₁) = {sf(Q12)} Дж. Изобара: A = p₂ΔV, ΔU = 3/2·p₂ΔV, Q₂₃ = 5/2·p₂(V₂ − V₁) = {sf(Q23)} Дж. '
+             f'Q = Q₁₂ + Q₂₃ ≈ {sf(Q12 + Q23)} Дж. Ответ: {{ANS}}.')
+        wrong = [Q23 / 1000, (Q12 + 1.5 * p2 * (V2 - V1) * 100) / 1000, (Q12 + p2 * (V2 - V1) * 100) / 1000]
+        steps = [('теплота на изохорном участке, Дж', Q12), ('теплота на изобарном участке, Дж', Q23)]
+        return num_card('ph-ege-23-first-law', q, val, 2, e, {'var': 'two', 'p1': p1, 'p2': p2, 'V1': V1, 'V2': V2}, wrong, steps=steps)
     nu = rng.choice([1, 2, 3, 4, 5])
-    proc = rng.choice(['p', 'p', 'V'])
-    if proc == 'p' and rng.random() < 0.5:
-        A = rng.choice([400, 600, 800, 1000, 1200, 1500, 2000, 2400, 3000])
-        ask = rng.choice(['Q', 'U'])
-        val = (A + 1.5 * A if ask == 'Q' else 1.5 * A) / 1000
-        q = (f'{cap1(gas)} в количестве {nu} моль изобарно расширяется, совершая работу {ru(Fr(A, 1000))} кДж. '
-             f'{"Какое количество теплоты получил газ" if ask == "Q" else "На сколько увеличилась внутренняя энергия газа"} (в кДж)? {rq(2)}')
-        e = f'Изобара: A = νRΔT, ΔU = 3/2·νRΔT = 1,5A = {sf(1.5 * A)} Дж; Q = ΔU + A = 2,5A = {sf(2.5 * A)} Дж. Ответ: {{ANS}}.'
-        wrong = [A / 1000, 1.5 * A / 1000 if ask == 'Q' else 2.5 * A / 1000, 5 * A / 1000]
-        return num_card('ph-ege-23-first-law', q, val, 2, e, {'A': A, 'nu': nu, 'dT': 0, 'proc': 'p', 'ask': ask}, wrong)
-    dT = rng.choice([10, 20, 25, 30, 40, 50, 60, 80, 100, 120, 150, 200])
-    ask = rng.choice(['Q', 'U', 'A']) if proc == 'p' else rng.choice(['Q', 'U'])
-    dU = 1.5 * nu * R_ * dT
-    A = nu * R_ * dT if proc == 'p' else 0
-    val = {'Q': dU + A, 'U': dU, 'A': A}[ask] / 1000
-    what = {'Q': 'количество теплоты, сообщённое газу', 'U': 'изменение внутренней энергии газа', 'A': 'работу, совершённую газом'}[ask]
-    q = (f'{nu} моль {({"гелий": "гелия", "неон": "неона", "аргон": "аргона"})[gas]} нагревают {"при постоянном давлении" if proc == "p" else "в закрытом сосуде постоянного объёма"} '
-         f'на {dT} К. Определите {what} (в кДж). {rq(2)}')
-    e = (f'ΔU = 3/2·νRΔT = {sf(dU)} Дж; ' + (f'A = νRΔT = {sf(A)} Дж; Q = ΔU + A = {sf(dU + A)} Дж' if proc == 'p' else 'A = 0, Q = ΔU') + '. Ответ: {ANS}.')
-    wrong = [2.5 * nu * R_ * dT / 1000, nu * R_ * dT / 1000, 1.5 * nu * R_ * dT / 1000, 3 * nu * R_ * dT / 1000]
-    return num_card('ph-ege-23-first-law', q, val, 2, e, {'nu': nu, 'dT': dT, 'proc': proc, 'ask': ask}, wrong)
+    T1 = rng.choice([200, 250, 280, 300, 320, 350, 400])
+    k = rng.choice([Fr(3, 2), Fr(2), Fr(5, 4), Fr(3), Fr(6, 5)])
+    dT = T1 * (k - 1)
+    A = nu * R_ * float(dT)
+    val = 2.5 * A / 1000
+    q = (f'{nu} моль {gen} при температуре {T1} К изобарно расширяют так, что объём газа увеличивается в {ru(k)} {raz(k)}. '
+         f'Какое количество теплоты (в кДж) сообщили газу? {rq(2)}')
+    e = (f'При p = const V ∝ T: T₂ = {ru(k)}·T₁, ΔT = {ru(dT)} К. A = νRΔT = {sf(A)} Дж, ΔU = 3/2·νRΔT, Q = ΔU + A = 5/2·νRΔT ≈ {sf(2.5 * A)} Дж. Ответ: {{ANS}}.')
+    wrong = [1.5 * A / 1000, A / 1000, 2.5 * nu * R_ * T1 * float(k) / 1000]
+    steps = [('изменение температуры, К', dT), ('работа газа, Дж', A)]
+    return num_card('ph-ege-23-first-law', q, val, 2, e, {'var': 'k', 'nu': nu, 'T1': T1, 'k': fr(k)}, wrong, steps=steps)
 
 
 def _s23con(p):
@@ -4470,7 +4491,7 @@ def g24_cmp(rng):
 
 def _s24ball(p):
     V, T0, T, M = p['V'], p['T0'], p['T'], p['M']
-    rho0 = 1e5 * 0.029 / (R_ * T0)
+    rho0 = p['rho0']
     return fmt(rho0 * V * (1 - T0 / T) - M, p['dec'])
 
 
@@ -4488,16 +4509,17 @@ def g24_ball(rng):
     t0 = rng.choice([-3, 0, 7, 17, 27])
     t = rng.choice([77, 87, 97, 107, 127])
     T0, T = t0 + 273, t + 273
-    rho0 = 1e5 * 0.029 / (R_ * T0)
+    rho0 = rng.choice([1.2, 1.25, 1.29, 1.3])
     val = rho0 * V * (1 - T0 / T) - M
     if val < 5:
         raise Retry
     q = (f'Оболочка воздушного шара имеет объём {V} м³ и массу {M} кг. Шар наполняют горячим воздухом, температура которого {t} °C; температура '
-         f'окружающего воздуха {t0} °C, давление внутри и снаружи шара 10⁵ Па. Какой максимальный груз (в кг) может поднять шар? '
-         f'Молярная масса воздуха 29·10⁻³ кг/моль. {rq(0)}').replace('-', '−')
-    e = (f'ρ₀ = p₀M/(RT₀) = {sf(rho0)} кг/м³, ρ = ρ₀T₀/T. Условие подъёма: ρ₀gV ≥ (ρV + Mоб + m)g ⇒ m = ρ₀V(1 − T₀/T) − Mоб ≈ {sf(val)} кг. Ответ: {{ANS}}.')
+         f'окружающего воздуха {t0} °C, его плотность {ru(rho0)} кг/м³. Давление внутри и снаружи шара одинаково. Какой максимальный груз (в кг) может поднять шар? '
+         f'Воздух считать идеальным газом. {rq(0)}').replace('-', '−')
+    e = (f'При одинаковом давлении ρ = ρ₀T₀/T = {sf(rho0 * T0 / T)} кг/м³. Условие подъёма: ρ₀gV ≥ (ρV + Mоб + m)g ⇒ m = ρ₀V(1 − T₀/T) − Mоб ≈ {sf(val)} кг. Ответ: {{ANS}}.')
     wrong = [rho0 * V * (1 - T0 / T), rho0 * V - M, rho0 * V * (1 - t0 / t) - M if t0 > 0 else None]
-    return num_card('ph-ege-24-hot-air-balloon', q, val, 0, e, {'V': V, 'M': M, 'T0': T0, 'T': T}, wrong)
+    steps = [('плотность горячего воздуха, кг/м³', rho0 * T0 / T), ('масса горячего воздуха в шаре, кг', rho0 * T0 / T * V)]
+    return num_card('ph-ege-24-hot-air-balloon', q, val, 0, e, {'V': V, 'M': M, 'T0': T0, 'T': T, 'rho0': rho0}, wrong, steps=steps)
 
 
 # ---------- 25. Электродинамика, высокий уровень (3 балла; без оптики по плану 2027)
@@ -4646,7 +4668,7 @@ def g25_acc(rng):
     mm, me, qm, qe, gen = PART25[part]
     U = rng.choice([100, 200, 400, 500, 800, 1000, 1500, 2000, 5000]) if part != 'электрон' else rng.choice([100, 200, 500, 1000, 1280, 2000])
     B = rng.choice([0.01, 0.02, 0.05, 0.1, 0.2, 0.5]) if part != 'электрон' else rng.choice([0.001, 0.002, 0.005, 0.01])
-    ask = rng.choice(['R', 'R', 'v'])
+    ask = 'R'
     m = float(mm) * 10 ** me
     q = float(qm) * 10 ** qe
     v = math.sqrt(2 * q * U / m)
@@ -4663,7 +4685,8 @@ def g25_acc(rng):
     e = f'Теорема о кинетической энергии: |q|U = mv²/2 ⇒ v = √(2|q|U/m) ≈ {sf(v)} м/с; сила Лоренца — центростремительная: |q|vB = mv²/R ⇒ R = mv/(|q|B) ≈ {sf(R)} м. Ответ: {{ANS}}.'
     wrong = [R * 100 * 2 if ask == 'R' else v / 1000 * 2, (m * math.sqrt(q * U / m) / (q * B)) * 100 if ask == 'R' else math.sqrt(q * U / m) / 1000,
              (m * 2 * q * U / m / (q * B)) * 100 if ask == 'R' else None]
-    return num_card('ph-ege-25-accelerated-particle', q_, val, 1 if ask == 'R' else 0, e, {'part': part, 'U': U, 'B': B, 'ask': ask}, wrong)
+    steps = [('скорость частицы в магнитном поле, км/с', v / 1000), ('модуль импульса частицы, ·10⁻²² кг·м/с', m * v / 1e-22)]
+    return num_card('ph-ege-25-accelerated-particle', q_, val, 1, e, {'part': part, 'U': U, 'B': B, 'ask': ask}, wrong, steps=steps)
 
 
 def _s25cap(p):
@@ -4760,14 +4783,15 @@ def g25_ball(rng):
     qn = rng.choice([1, 2, 4, 5, 8, 10, 20, 40, 50, 100])
     ask = rng.choice(['T', 'tg', 'E'])
     if ask == 'E':
-        tg = rng.choice([Fr(1, 4), Fr(1, 2), Fr(3, 4), Fr(1), Fr(4, 3)])
+        tg = rng.choice([Fr(1, 2), Fr(3, 4), Fr(1), Fr(3, 2), Fr(2)])
         E = 0
         val = m / 1000 * 10 * float(tg) / (qn * 1e-9) / 1000
     else:
         E = rng.choice([1e4, 2e4, 5e4, 1e5, 2e5, 5e5, 1e6])
         tg = 0
         val = math.hypot(m / 1000 * 10, qn * 1e-9 * E) * 1000 if ask == 'T' else qn * 1e-9 * E / (m / 1000 * 10)
-    if ask == 'tg' and not 0.05 < val < 5:
+    ratio = float(tg) if ask == 'E' else qn * 1e-9 * E / (m / 1000 * 10)
+    if not 0.3 <= ratio <= 3:
         raise Retry
     if ask == 'E' and not 0.5 < val < 5000:
         raise Retry
@@ -4783,8 +4807,11 @@ def g25_ball(rng):
          {'T': f'T ≈ {sf(val)} мН', 'tg': f'tg α ≈ {sf(val)}', 'E': f'E = mg·tg α/q ≈ {sf(val)} кВ/м'}[ask] + '. Ответ: {ANS}.')
     wrong = {'T': [m * 10, qn * 1e-9 * E * 1000, (m / 1000 * 10 + qn * 1e-9 * E) * 1000], 'tg': [1 / val, val * 2, val / 2],
              'E': [m / 1000 * 10 / float(tg) / (qn * 1e-9) / 1000 if tg else None, val * 1000, val * 2]}[ask]
+    mg = m * 10
+    qE = mg * float(tg) if ask == 'E' else qn * 1e-9 * E * 1000
+    steps = [('сила тяжести, мН', mg), ('электрическая сила, мН', qE)]
     return num_card('ph-ege-25-charged-ball', q, val, 2 if ask == 'tg' else (1 if val < 100 else 0), e,
-                    {'m': m, 'q': qn, 'E': E, 'tg': float(tg), 'ask': ask}, wrong)
+                    {'m': m, 'q': qn, 'E': E, 'tg': float(tg), 'ask': ask}, wrong, steps=steps)
 
 
 def _s25heat(p):
@@ -4896,6 +4923,8 @@ def g26_lev(rng):
     rv = Fr(rho * V, 1000000)
     m2 = Fr(rng.choice(range(int(rv * 100) + 5, 150, 2)), 100)
     m1 = m2 * rng.choice([2, 3, 4, 5])
+    if m1 / Fr(V, 10 ** 6) > 11300 or m2 / Fr(V, 10 ** 6) < 2000:
+        raise Retry
     c1 = m2 / (m1 + m2)
     c2 = (m2 - rv) / (m1 + m2 - 2 * rv)
     if c2 <= 0 or c1 == c2:
@@ -5086,7 +5115,7 @@ def g26_str(rng):
          f'точка; ИСО — Земля. mv²/2 = mgl(1 − cos α); в нижней точке T − mg = mv²/l ⇒ T = mg(3 − 2cos α) = {sf(val)} Н (длина нити не влияет). Ответ: {{ANS}}.')
     wrong = [m / 1000 * 10, m / 1000 * 10 * (2 - float(c)), m / 1000 * 10 * (1 + 2 * (1 - float(c))) * 2]
     steps = [('скорость в нижней точке, м/с', math.sqrt(2 * 10 * l / 100 * (1 - float(c)))), ('центростремительное ускорение, м/с²', 2 * 10 * (1 - float(c)))]
-    return num_card('ph-ege-26-string-swing', q, val, 1, e, {'m': m, 'cos': fr(c)}, wrong, steps=steps)
+    return num_card('ph-ege-26-string-swing', q, val, 1, e, {'m': m, 'cos': fr(c), 'l': l}, wrong, steps=steps)
 
 
 # обоснование: ситуации и утверждения (верно/неверно)
@@ -5325,9 +5354,10 @@ def g22_st(rng):
         frac = rng.choice([Fr(1, 5), Fr(1, 4), Fr(1, 3), Fr(2, 5)])
         a = L * frac
         M = rng.choice([20, 30, 40, 50, 60, 80, 100, 150, 200])
-        obj = rng.choice(['Деревянная линейка', 'Однородная планка', 'Лёгкая пластмассовая доска-указка'])
+        obj = rng.choice(['Деревянная линейка', 'Однородная планка', 'Однородная пластмассовая указка'])
         val = float(M * (Fr(L, 2) - a) / a)
-        q = (f'{obj} массой {M} г и длиной {L} см лежит на столе и выдвинута за его край на {ru(frac)} своей длины. Какой наибольшей массы грузик (в г) '
+        FRW = {Fr(1, 5): 'одну пятую', Fr(1, 4): 'четверть', Fr(1, 3): 'треть', Fr(2, 5): 'две пятых'}
+        q = (f'{obj} массой {M} г и длиной {L} см лежит на столе и выдвинута за его край на {FRW[frac]} своей длины. Какой наибольшей массы грузик (в г) '
              f'можно положить на выступающий конец, чтобы она оставалась в равновесии? Сделайте рисунок с указанием сил. {rq(0)}')
         e = f'Ось — край стола. Момент грузика m·g·a уравновешен моментом силы тяжести линейки M·g·(L/2 − a): m = M(L/2 − a)/a = {sf(val)} г. Ответ: {{ANS}}.'
         wrong = [M * float(frac), float(M * (L - a) / a), float(M * (Fr(L, 2)) / a)]
@@ -5549,7 +5579,7 @@ def _s26cone(p):
                       'ω 2–20 рад/с, tg α 0,5–2', 'проекции силы нормальной реакции', ['1.1.8', '1.2.4'], 20))
 def g26_cone(rng):
     w = rng.choice([2, 3, 4, 5, 6, 8, 10, 12, 15, 20])
-    tg = rng.choice([Fr(1, 2), Fr(3, 4), Fr(1), Fr(4, 3), Fr(2)])
+    tg = rng.choice([Fr(1, 2), Fr(3, 4), Fr(1), Fr(3, 2), Fr(2)])
     ask = rng.choice(['r', 'h'])
     r = 10 / (w * w * float(tg))
     val = r * 100 if ask == 'r' else r / float(tg) * 100
@@ -5591,7 +5621,7 @@ def g24_ev(rng):
     liq, form, t, L, M = rng.choice(LIQ24)
     Q = rng.choice([200, 400, 500, 800, 1000, 1500, 2000, 3000, 5000])
     S = rng.choice([10, 20, 25, 50, 100])
-    ask = rng.choice(['A', 'dh', 'm'])
+    ask = rng.choice(['A', 'dh'])
     T = t + 273
     m = Q / L
     A = m * R_ * T / M
@@ -5609,7 +5639,8 @@ def g24_ev(rng):
          (f'; Δh = A/(p₀S) ≈ {sf(val)} см' if ask == 'dh' else '') + '. Ответ: {ANS}.')
     wrong = {'A': [Q, m * R_ * t / M, A * 2], 'dh': [Q / (1e5 * S / 10000) * 100, val * 2, m * R_ * t / M / (1e5 * S / 10000) * 100],
              'm': [Q / L * 1e6, (Q - A) / L * 1000 * 2, val * 2]}[ask]
-    return num_card('ph-ege-24-evaporation-piston', q, val, 2, e, {'liq': liq, 'Q': Q, 'S': S, 'ask': ask}, wrong)
+    steps = [('масса образовавшегося пара, г', m * 1000)] + ([('работа пара, Дж', A)] if ask == 'dh' else [('абсолютная температура пара, К', T)])
+    return num_card('ph-ege-24-evaporation-piston', q, val, 2, e, {'liq': liq, 'Q': Q, 'S': S, 'ask': ask}, wrong, steps=steps)
 
 
 def _s25cb(p):
@@ -5638,7 +5669,7 @@ def _s25cb(p):
        fidelity=p2fid(25, 'КИМ: «Конденсатор C₁ заряжен до напряжения 300 В и включён в цепь с незаряженным конденсатором C₂…», «Батарея из конденсаторов…»',
                       'C 0,5–20 мкФ, U 10–500 В', 'закон сохранения заряда, потери энергии', ['3.1.9', '3.1.10', '3.1.11'], 15))
 def g25_cb(rng):
-    sit = rng.choice(['share', 'series', 'mixed'])
+    sit = rng.choice(['share', 'mixed'])
     C1, C2 = rng.choice([1, 2, 3, 4, 5, 6, 10, 20]), rng.choice([1, 2, 3, 4, 5, 6, 10, 20])
     C3 = rng.choice([1, 2, 3, 4, 6]) if sit == 'mixed' else 0
     U = rng.choice([10, 20, 30, 50, 60, 100, 120, 200, 300, 500])
@@ -5673,7 +5704,11 @@ def g25_cb(rng):
     q += f'{what} {rq(1)}'
     e = e0 + ' Ответ: {ANS}.'
     wrong = [float(U) / 2, float(C1 * U) / 1000 if ask == 'Q' else float(C1 * U), val * 2, float(vals['U']) * C1 if ask == 'q2' else None]
-    return num_card('ph-ege-25-capacitor-battery', q, val, 1, e, {k: v for k, v in p.items() if k != 'dec'}, wrong)
+    if sit == 'share':
+        steps = [('заряд первого конденсатора до соединения, мкКл', C1 * U), ('напряжение после соединения, В', Uf)]
+    else:
+        steps = [('ёмкость батареи, мкФ', C), ('заряд батареи, мкКл', qq)]
+    return num_card('ph-ege-25-capacitor-battery', q, val, 1, e, {k: v for k, v in p.items() if k != 'dec'}, wrong, steps=steps)
 
 
 PC25 = {'протон': (1.67e-27, 1.6e-19, '1,67·10⁻²⁷', '1,6·10⁻¹⁹'), 'электрон': (9.1e-31, 1.6e-19, '9,1·10⁻³¹', '1,6·10⁻¹⁹'),
@@ -5727,4 +5762,329 @@ def g25_pc(rng):
     e = (f'Вдоль пластин движение равномерное: t = l/υ; поперёк — равноускоренное с a = qU/(md) = {sf(a)} м/с². ' +
          (f'Частица вылетает, если at²/2 ≤ d/2 ⇒ υmin = (l/d)·√(qU/m) ≈ {sf(vmin)} м/с.' if ask == 'vmin' else f'y = at²/2 ≈ {sf(val)} мм.') + ' Ответ: {ANS}.')
     wrong = [val * math.sqrt(2), val * 2, val / 2] if ask == 'vmin' else [val * 2, val / 2, a * (l / 100 / (v * 1000)) * 1000]
-    return num_card('ph-ege-25-particle-in-capacitor', q, val, dec, e, {'part': part, 'l': l, 'd': d, 'U': U, 'v': v, 'ask': ask}, wrong)
+    tt = l / 100 / vmin if ask == 'vmin' else l / 100 / (v * 1000)
+    steps = [('напряжённость поля в конденсаторе, кВ/м', U / (d / 1000) / 1000), ('время пролёта конденсатора, нс', tt * 1e9)]
+    return num_card('ph-ege-25-particle-in-capacitor', q, val, dec, e, {'part': part, 'l': l, 'd': d, 'U': U, 'v': v, 'ask': ask}, wrong, steps=steps)
+
+
+
+# ================================================================= шаги решения 22–26: независимый пересчёт промежуточных величин
+
+def _F(x):
+    return float(Fr(x))
+
+
+def _ss_arch(p):
+    FA = p['m'] / 1000 * G10 - p['F']
+    return [FA, FA / (p['rl'] * G10 * _F(p['phi'])) * 1e6]
+
+
+def _ss_two(p):
+    if p['ask'] == 'rho':
+        x = _F(p['x'])
+        return [x * p['r1'], (1 - x) * p['r2']]
+    return [p['rho'] - p['r2'], p['r1'] - p['r2']]
+
+
+def _ss_kin(p):
+    s, t, k = _F(p['s']), _F(p['t']), _F(p['k'])
+    vav = s / t
+    v0 = 2 * vav / (1 + k)
+    return [vav, k * v0 if p['ask'] == 'v0' else v0]
+
+
+def _ss_col(p):
+    m1, m2, v1, v2 = [_F(p[k]) for k in ('m1', 'm2', 'v1', 'v2')]
+    if p['ask'] == 'Q':
+        P = m1 * v1 + m2 * v2
+        return [abs(P), abs(P) / (m1 + m2)]
+    return [m1 * v1, m2 * abs(v2)]
+
+
+def _ss_spr(p):
+    m, k, v = p['m'] / 1000, p['k'], p['v']
+    E = m * v * v / 2
+    return [E * 1000, math.sqrt(2 * E / k) * 100 if p['ask'] == 'F' else math.sqrt(k / m)]
+
+
+def _ss_con(p):
+    M, m, mu = p['M'] / 1000, p['m'] / 1000, p['mu']
+    Ftr = mu * M * G10
+    a = (m * G10 - Ftr) / (M + m)
+    return [Ftr, m * G10 - m * a if p['ask'] == 'a' else a]
+
+
+def _ss_el(p):
+    m = p['m'] / 1000
+    return [m * G10, m * G10 + m * p['a']]
+
+
+def _ss_pr(p):
+    t = math.sqrt(2 * p['h'] / G10)
+    return [t, math.sqrt(2 * G10 * p['h'])]
+
+
+def _ss_bt(p):
+    V = p['m'] / p['rb']
+    return [V * 1e6, p['rl'] * G10 * V]
+
+
+def _ss_leak(p):
+    return [_F(p['p2']) / _F(p['p1']), p['T1'] / p['T2']]
+
+
+def _ss_bub(p):
+    return [(1e5 + p['rho'] * G10 * p['H']) / 1000, p['Ts'] / p['Tb']]
+
+
+def _ss_hum(p):
+    r1 = float(RHO_SAT[p['t1']]) * p['phi1'] / 100
+    if p['ask'] == 'phi2':
+        return [r1]
+    return [r1, float(RHO_SAT[p['t1']]) * p['phi2'] / 100]
+
+
+def _ss_cal(p):
+    mi, mw = p['mi'] / 1000, p['mw'] / 1000
+    return [C_W * mw * p['tw'] / 1000, (C_I * mi * (-p['ti']) + LAM * mi) / 1000]
+
+
+def _ss_con23(p):
+    Vt = sum(p['V'])
+    return [p['p'][i] * p['V'][i] / Vt for i in range(len(p['p']))][:2]
+
+
+def _ss_cyc(p):
+    dp, dV = p['p2'] - p['p1'], p['V2'] - p['V1']
+    if p['ask'] == 'eta':
+        return [dp * dV * 100, (1.5 * p['V1'] * dp + 2.5 * p['p2'] * dV) * 100]
+    return [dp * 100, dV]
+
+
+def _ss_rel(p):
+    k = p['V'] / 1000 * p['M'] * 1e5 / R_ * 1000
+    return [k * p['p1'] / p['T1'], k * p['p2'] / p['T2']]
+
+
+def _ss_mt(p):
+    pa = {'up': p['p0'] + p['h'], 'down': p['p0'] - p['h'], 'hor': p['p0']}
+    return [pa[p['from']], pa[p['to']]]
+
+
+def _ss_part(p):
+    k = _F(p['k'])
+    return [1 + 1 / k, p['V1'] / (p['V1'] + p['V2'])]
+
+
+def _ss_pist(p):
+    S = p['S'] / 10000
+    pg = 1e5 + p['M'] * G10 / S
+    return [pg / 1000, pg * S * p['dh'] / 100]
+
+
+def _ss_mix(p):
+    U = 1.5 * R_ * (p['n1'] * p['T1'] + p['n2'] * p['T2'])
+    if p['ask'] == 'p':
+        return [U / 1000, U / (1.5 * R_ * (p['n1'] + p['n2']))]
+    return [U / 1000, p['n1'] + p['n2']]
+
+
+def _ss_cmp(p):
+    ps = P_SAT[p['t']]
+    pv = Fr(p['phi'], 100) * ps
+    k = Fr(p['k'])
+    return [float((Fr(p['p1']) - pv) * k), float(min(pv * k, ps))]
+
+
+def _ss_rails(p):
+    m = p['m']
+    Ftr = p['mu'] * m * G10
+    if p['ask'] == 'B':
+        return [m * G10, Ftr]
+    return [p['B'] * p['I'] * p['l'] * 10, Ftr]
+
+
+def _ss_hang(p):
+    if p['ask'] == 'I0':
+        return [p['m'] * G10]
+    return [p['m'] * G10, p['B'] * p['I'] * p['l'] * 10]
+
+
+def _ss_rod(p):
+    eps = p['B'] * p['l'] / 100 * p['v']
+    return [eps * 1000] + ([] if p['ask'] == 'I' else [eps / p['R'] * 1000])
+
+
+def _ss_capdc(p):
+    E, r, R1, R2 = [_F(p[k]) for k in ('E', 'r', 'R1', 'R2')]
+    I = E / (r + R1 + R2)
+    return [I, {'R1': I * R1, 'R2': I * R2, 'src': E - I * r}[p['where']]]
+
+
+def _ss_lc(p):
+    C, L, Um = p['C'] * 1e-6, p['L'] / 1000, p['Um']
+    W = C * Um * Um / 2
+    if p['ask'] == 'Im':
+        return [W * 1e6]
+    u = _F(p['k']) * Um
+    return [math.sqrt(2 * W / L) * 1000, C * u * u / 2 * 1e6]
+
+
+def _ss_heat(p):
+    return [4200 * p['m'] * (100 - p['t1']) / 1000, p['U'] ** 2 / p['R']]
+
+
+def _ss_pul(p):
+    M, m, mu = p['M'] / 1000, p['m'] / 1000, p['mu']
+    a = G10 * (2 * m - mu * M) / (M + 2 * m)
+    return [a, m * (G10 - a)]
+
+
+def _ss_lev(p):
+    m1, m2, V, d, rho = _F(p['m1']), _F(p['m2']), p['V'], p['d'], p['rho']
+    rv = rho * V / 1e6
+    x = m2 / (m1 + m2)
+    y = (m2 - rv) / (m1 + m2 - 2 * rv)
+    L = d / abs(x - y)
+    return [L, y * L]
+
+
+def _ss_bul(p):
+    m, M = p['m'] / 1000, p['M'] / 1000
+    u = m * p['v'] / (m + M)
+    return [u] + ([u * u / (p['l'] / 100)] if p['ask'] == 'T' else [])
+
+
+def _ss_hem(p):
+    R = p['R'] / 100
+    c = (2 + p['v0'] ** 2 / (G10 * R)) / 3
+    return ([c] if p['ask'] == 'h' else []) + [math.sqrt(G10 * R * c)]
+
+
+def _ss_burst(p):
+    v2 = (2 if p['k'] == 'stop' else 3) * p['v']
+    return [v2, math.sqrt(2 * p['H'] / G10)]
+
+
+def _ss_board(p):
+    m, M = p['m'] / 1000, p['M'] / 1000
+    return [m * p['v0'] / (m + M), p['mu'] * G10]
+
+
+def _ss_str(p):
+    c = _F(p['cos'])
+    v2 = 2 * G10 * p['l'] / 100 * (1 - c)
+    return [math.sqrt(v2), v2 / (p['l'] / 100)]
+
+
+def _ss_inc(p):
+    m, M, k, s_, mu = p['m'] / 1000, p['M'] / 1000, p['k'], p['sin'], p['mu']
+    c = math.sqrt(1 - s_ * s_)
+    a = G10 * (M - 2 * m * (s_ + mu * c)) / (M + 2 * m)
+    return [a, m * (a + G10 * (s_ + mu * c))]
+
+
+def _ss_cone(p):
+    ac = G10 / _F(p['tg'])
+    return [ac] + ([ac / p['w'] ** 2 * 100] if p['ask'] == 'h' else [])
+
+
+def _ss_cp(p):
+    E, r, R1, R2 = [_F(p[k]) for k in ('E', 'r', 'R1', 'R2')]
+    if p['ask'] == 'Pmax':
+        return [r, E / (2 * r)]
+    Re = R1 * R2 / (R1 + R2) if p['par'] else R1 + R2
+    I = E / (Re + r)
+    return [I, I * Re]
+
+
+def _ss_stat(p):
+    if p['kind'] == 'ruler':
+        arm = _F(p['L']) / 2 - _F(p['a'])
+        return [arm, p['M'] / 1000 * G10 * arm / 100]
+    M, d1, d2, m = p['M'], _F(p['d1']), _F(p['d2']), _F(p['m'])
+    return [M * G10 * d1] + ([m * G10 * ((d1 + d2) / 2 - d1)] if m else [])
+
+
+SS.update({'ph-ege-23-first-law': _ss_fl, 'ph-ege-22-archimedes-bottom': _ss_arch, 'ph-ege-22-float-two-liquids': _ss_two, 'ph-ege-22-kinematics': _ss_kin,
+           'ph-ege-22-inelastic': _ss_col, 'ph-ege-22-spring-oscillation': _ss_spr, 'ph-ege-22-connected-bodies': _ss_con,
+           'ph-ege-22-elevator': _ss_el, 'ph-ege-22-projectile': _ss_pr, 'ph-ege-22-buoyancy-thread': _ss_bt, 'ph-ege-22-statics': _ss_stat,
+           'ph-ege-23-leak': _ss_leak, 'ph-ege-23-bubble': _ss_bub, 'ph-ege-23-humidity': _ss_hum, 'ph-ege-23-calorimetry': _ss_cal,
+           'ph-ege-23-connect-vessels': _ss_con23, 'ph-ege-23-cycle': _ss_cyc, 'ph-ege-23-released-mass': _ss_rel, 'ph-ege-23-mercury-tube': _ss_mt,
+           'ph-ege-24-humidity-partition': _ss_part, 'ph-ege-24-piston-heating': _ss_pist, 'ph-ege-24-vessels-mixing': _ss_mix,
+           'ph-ege-24-humidity-compress': _ss_cmp, 'ph-ege-25-ampere-rails': _ss_rails, 'ph-ege-25-ampere-hanging': _ss_hang,
+           'ph-ege-25-moving-rod': _ss_rod, 'ph-ege-25-capacitor-dc': _ss_capdc, 'ph-ege-25-lc-energy': _ss_lc, 'ph-ege-25-heater': _ss_heat,
+           'ph-ege-25-circuit-power': _ss_cp, 'ph-ege-26-pulley-spring': _ss_pul, 'ph-ege-26-lever-archimedes': _ss_lev,
+           'ph-ege-26-bullet-pendulum': _ss_bul, 'ph-ege-26-hemisphere': _ss_hem, 'ph-ege-26-shell-burst': _ss_burst, 'ph-ege-26-board-block': _ss_board,
+           'ph-ege-26-string-swing': _ss_str, 'ph-ege-26-incline-two-bodies': _ss_inc, 'ph-ege-26-rotating-cone': _ss_cone})
+
+
+def _ss_ball24(p):
+    rho = p['rho0'] * p['T0'] / p['T']
+    return [rho, rho * p['V']]
+
+
+def _ss_acc(p):
+    mm, me, qm, qe, _ = PART25[p['part']]
+    m, q = float(mm) * 10 ** me, float(qm) * 10 ** qe
+    pmom = math.sqrt(2 * m * q * p['U'])
+    return [pmom / m / 1000, pmom / 1e-22]
+
+
+def _ss_chb(p):
+    mg = p['m'] * G10
+    return [mg, mg * p['tg'] if p['ask'] == 'E' else p['q'] * 1e-9 * p['E'] * 1000]
+
+
+SS.update({'ph-ege-24-hot-air-balloon': _ss_ball24, 'ph-ege-25-accelerated-particle': _ss_acc, 'ph-ege-25-charged-ball': _ss_chb})
+
+
+def _ss_ev(p):
+    _, _, t, L, M = [x for x in LIQ24 if x[0] == p['liq']][0]
+    m = p['Q'] / L
+    return [m * 1000, m / M * R_ * (t + 273) if p['ask'] == 'dh' else t + 273]
+
+
+def _ss_cb(p):
+    C1, C2, U = Fr(p['C1']), Fr(p['C2']), Fr(p['U'])
+    if p['sit'] == 'share':
+        return [C1 * U, C1 * U / (C1 + C2)]
+    Cp = C2 + Fr(p['C3'])
+    C = 1 / (1 / C1 + 1 / Cp)
+    return [C, C * U]
+
+
+def _ss_pc(p):
+    m, q = PC25[p['part']][:2]
+    l, d, U = p['l'] / 100, p['d'] / 1000, p['U']
+    E = U / d
+    if p['ask'] == 'vmin':
+        a = q * E / m
+        t = math.sqrt(d / a)          # d/2 = a t²/2
+    else:
+        t = l / (p['v'] * 1000)
+    return [E / 1000, t * 1e9]
+
+
+SS.update({'ph-ege-24-evaporation-piston': _ss_ev, 'ph-ege-25-capacitor-battery': _ss_cb, 'ph-ege-25-particle-in-capacitor': _ss_pc})
+
+
+
+# ---------- регистрация пересчёта шагов (solve_steps) и описание связи шагов с критериями
+
+from pc_core import PROTOS as _PROTOS  # noqa: E402
+
+_STEP_NOTE = ('; шаги карточки (gen.steps) — ключевые промежуточные величины полного решения: каждая соответствует записанному закону/формуле '
+              'и выполненному расчёту (элементы критерия «полное правильное решение»); верные шаги при неверном итоге — основание для частичного балла '
+              '(в КИМ: 1 балл за 22–23, 1–2 балла за 24–25, 1–3 балла за 26 при недочётах)')
+
+
+def _mk_ss(fn):
+    return lambda p: [fmt(float(v), d) for v, d in zip(fn(p), p['sd'])]
+
+
+for _pid, _fn in SS.items():
+    _m = _PROTOS[_pid]
+    _m['solve_steps'] = _mk_ss(_fn)
+    if _m.get('fidelity') and _STEP_NOTE not in _m['fidelity'].get('score', ''):
+        _m['fidelity']['score'] = _m['fidelity'].get('score', '') + _STEP_NOTE

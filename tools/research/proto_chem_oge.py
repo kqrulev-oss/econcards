@@ -102,6 +102,11 @@ def name(f):
     return SUB[f]['name']
 
 
+def cap(t):
+    """Заглавная первая буква без порчи остального (иначе «железа(iii)»)."""
+    return t[:1].upper() + t[1:]
+
+
 NOUN_CASES = {  # именительный: (родительный, творительный)
     'литий': ('лития', 'литием'), 'натрий': ('натрия', 'натрием'), 'калий': ('калия', 'калием'),
     'магний': ('магния', 'магнием'), 'кальций': ('кальция', 'кальцием'), 'барий': ('бария', 'барием'),
@@ -177,7 +182,7 @@ def _r_metal(m, y):
         if y == 'H2':
             return True if m in REACTIVE_M else (None if m == 'Mg' else False)
         if y == 'P':
-            return True if m in ('Mg', 'Ca') else (False if m in ('Cu', 'Ag') else None)
+            return True if m in ('Mg', 'Ca') else None
         if y == 'C':
             return True if m in ('Ca', 'Al') else (False if m in ('Cu', 'Ag', 'Zn') else None)
         if y == 'Si':
@@ -765,7 +770,8 @@ def classify(f):
         me = m.group(1) or m.group(2)
         if me in ('Li', 'Na', 'K', 'Rb', 'Cs', 'Ca', 'Sr', 'Ba'):
             return {'основание', 'щёлочь'}
-        if me in ('Zn', 'Be', 'Al', 'Cr'):
+        n_oh = int(re.search(r'\(OH\)(\d)$', f).group(1)) if '(OH)' in f else 1
+        if me in ('Zn', 'Be', 'Al', 'Cr') or (me == 'Fe' and n_oh == 3):
             return {'амфотерный гидроксид'}
         return {'основание', 'нерастворимое основание'}
     if f.startswith('H') and not f.startswith('Hg') and not (els & METALS_ALL):
@@ -807,10 +813,11 @@ CLS7 = {
                                        'H2CO3', 'H2SiO3', 'HClO4']),
     'щёлочь': ('щёлочь', 'щёлочи', ['LiOH', 'NaOH', 'KOH', 'Ba(OH)2', 'Ca(OH)2', 'Sr(OH)2']),
     'нерастворимое основание': ('нерастворимое основание', 'нерастворимого основания',
-                                ['Mg(OH)2', 'Cu(OH)2', 'Fe(OH)2', 'Fe(OH)3', 'Mn(OH)2', 'Ni(OH)2']),
+                                ['Mg(OH)2', 'Cu(OH)2', 'Fe(OH)2', 'Mn(OH)2', 'Ni(OH)2']),
     'основание': ('основание', 'основания', ['LiOH', 'NaOH', 'KOH', 'Ba(OH)2', 'Ca(OH)2', 'Mg(OH)2', 'Cu(OH)2',
-                                            'Fe(OH)2', 'Fe(OH)3', 'Mn(OH)2']),
-    'амфотерный гидроксид': ('амфотерный гидроксид', 'амфотерного гидроксида', ['Zn(OH)2', 'Al(OH)3', 'Be(OH)2', 'Cr(OH)3']),
+                                            'Fe(OH)2', 'Mn(OH)2']),
+    'амфотерный гидроксид': ('амфотерный гидроксид', 'амфотерного гидроксида', ['Zn(OH)2', 'Al(OH)3', 'Be(OH)2', 'Cr(OH)3',
+                                                                           'Fe(OH)3']),
     'соль': ('соль', 'соли', ['NaCl', 'K2SO4', 'CaCO3', 'MgSO4', 'Na3PO4', 'KNO3', 'BaCl2', 'CuSO4', 'Fe2(SO4)3',
                               'Al(NO3)3', 'ZnCl2', 'Na2SiO3', 'K2S', 'NH4Cl', 'AgNO3', 'Na2SO3', 'CaCl2', 'FeCl3',
                               'KMnO4', 'NaNO2', 'Li2SO4', '(NH4)2SO4', 'MgCO3', 'NaAlO2', 'K2CrO4', 'BaSO4']),
@@ -937,7 +944,8 @@ def g7_ox(rng):
 @proto('ch-oge-07-hydroxides', 'ОГЭ', 7, 'Классификация: основание/щёлочь, амфотерный гидроксид, кислота',
        invariant='пять формул; выбрать вещества двух заданных классов гидроксидов/кислот, номера в заданном порядке',
        varies='пара классов (щёлочь, нерастворимое основание, амфотерный гидроксид, кислота), вещества, отвлекающие',
-       answer_rule='щёлочи — растворимые гидроксиды Li, Na, K, Ca, Sr, Ba; Zn(OH)2, Al(OH)3, Be(OH)2, Cr(OH)3 — амфотерные; '
+       answer_rule='щёлочи — растворимые гидроксиды Li, Na, K, Ca, Sr, Ba; Zn(OH)2, Al(OH)3, Be(OH)2, Cr(OH)3, Fe(OH)3 — '
+                   'амфотерные (кодификатор 2027, 4.7); '
                    'кислота — водород + кислотный остаток',
        mistakes=['Cu(OH)2 или Mg(OH)2 считают щёлочью', 'Al(OH)3 считают основанием', 'H2O или NH3 принимают за кислоту/основание'],
        solve=_solve7, kind='dict', kes=['4.1'],
@@ -1058,8 +1066,10 @@ def eq_text(eq):
     return f'{side(lhs, kl)} = {side(rhs, kr)}'
 
 
-STEM8 = ['Из предложенного перечня выберите два вещества, которые вступают в реакцию с {i}.']
-STEM8N = ['Из предложенного перечня выберите два вещества, которые не вступают в реакцию с {i}.']
+METALS8 = ['Li', 'Na', 'K', 'Mg', 'Ca', 'Al', 'Fe']     # простые вещества-металлы плана №8 (КЭС 4.3)
+NONMET8 = ['H2', 'O2', 'Cl2', 'S', 'P', 'C', 'N2', 'Si']  # простые вещества-неметаллы плана №8 (КЭС 4.2)
+STEM8 = ['Какие два из перечисленных веществ вступают в реакцию с {i}?']
+STEM8N = ['Какие два из перечисленных веществ не вступают в реакцию с {i}?']
 
 
 def _gen8(rng, pid, xs):
@@ -1080,7 +1090,7 @@ def _gen8(rng, pid, xs):
     q = stem + ' Запишите номера выбранных ответов.'
     reacting = [f for f in items if R(x, f)]
     eqs = [e for e in (_eq_of(x, f) for f in reacting) if e]
-    e = (f'{name(x).capitalize()} реагирует с ' + ', '.join(disp(f) for f in reacting) + ': ' +
+    e = (f'{cap(name(x))} реагирует с ' + ', '.join(disp(f) for f in reacting) + ': ' +
          '; '.join(eq_text(eq) for eq in eqs) + '. С ' + ', '.join(disp(f) for f in items if f not in reacting) +
          ' не реагирует.' + f' Ответ: {"".join(a)}.')
     return pcard(pid, q, a, e, k='many', o=o, p={'x': x, 'items': items, 'neg': neg}, eqs=eqs)
@@ -1097,7 +1107,7 @@ _F8 = lambda scale, trap: F(MANY2, 'как в демоверсии 2027 №8 и 
 
 @proto('ch-oge-08-metal', 'ОГЭ', 8, 'Химические свойства металла: с какими двумя веществами реагирует (не реагирует)',
        invariant='металл X и пять веществ разных классов; выбрать два, с которыми X реагирует (или не реагирует)',
-       varies='металл (Li, Na, K, Mg, Ca, Ba, Al, Zn, Fe, Cu, Ag), набор веществ, вопрос «реагирует/не реагирует»',
+       varies='металл из плана №8 (Li, Na, K, Mg, Ca, Al, Fe), набор веществ, вопрос «реагирует/не реагирует»',
        answer_rule='ряд напряжений: металл до H вытесняет водород из кислот-неокислителей, более активный металл вытесняет '
                    'менее активный из раствора соли; Al, Zn реагируют со щелочами; с HNO3 реагируют и металлы после H',
        mistakes=['медь «реагирует» с соляной кислотой', 'железо «вытесняет» цинк из соли', 'забывают реакцию Al со щёлочью'],
@@ -1105,12 +1115,12 @@ _F8 = lambda scale, trap: F(MANY2, 'как в демоверсии 2027 №8 и 
        fidelity=_F8('металлы и реагенты банка: литий, магний, железо, алюминий с кислотами, солями, неметаллами',
                     'ряд напряжений, пассивные металлы, амфотерность Al/Zn'))
 def g8_metal(rng):
-    return _gen8(rng, 'ch-oge-08-metal', METALS)
+    return _gen8(rng, 'ch-oge-08-metal', METALS8)
 
 
 @proto('ch-oge-08-nonmetal', 'ОГЭ', 8, 'Химические свойства неметалла: с какими двумя веществами реагирует (не реагирует)',
        invariant='неметалл X и пять веществ; выбрать два, с которыми X реагирует (или не реагирует)',
-       varies='неметалл (H2, O2, Cl2, Br2, S, P, C, N2, Si), набор веществ, вопрос «реагирует/не реагирует»',
+       varies='неметалл из плана №8 (H2, O2, Cl2, S, P, C, N2, Si), набор веществ, вопрос «реагирует/не реагирует»',
        answer_rule='водород и углерод восстанавливают оксиды малоактивных металлов; галогены вытесняют менее активные '
                    'галогены из солей; S, P, C окисляются азотной кислотой; кислород не реагирует с высшими оксидами',
        mistakes=['кислород «реагирует» с CO2 или SO3', 'водород «восстанавливает» MgO', 'хлор «вытесняет» что-то из хлоридов'],
@@ -1118,7 +1128,7 @@ def g8_metal(rng):
        fidelity=_F8('неметаллы банка: хлор, сера, фосфор, азот, водород, кислород, уголь',
                     'высшие оксиды не горят; оксиды активных металлов не восстанавливаются водородом'))
 def g8_nonmetal(rng):
-    return _gen8(rng, 'ch-oge-08-nonmetal', NONMET)
+    return _gen8(rng, 'ch-oge-08-nonmetal', NONMET8)
 
 
 @proto('ch-oge-08-basic-oxide', 'ОГЭ', 8, 'Химические свойства оснóвного оксида',
@@ -1385,8 +1395,8 @@ def prod_text(ps):
     return ts[0] if len(ts) == 1 else ', '.join(ts[:-1]) + ' и ' + ts[-1]
 
 
-SWAP_F = {'H2O': ['H2'], 'H2': ['H2O'], 'NO': ['NO2', 'N2'], 'NO2': ['NO', 'N2'], 'N2': ['NO', 'NH3'], 'SO2': ['SO3', 'H2S'],
-          'SO3': ['SO2'], 'CO': ['CO2'], 'CO2': ['CO'], 'S': ['SO2', 'H2S'], 'H2S': ['SO2', 'S'], 'Cu': ['CuO'],
+SWAP_F = {'H2O': ['H2'], 'H2': ['H2O'], 'NO': ['NO2', 'N2'], 'NO2': ['NO', 'N2'], 'N2': ['NO', 'NH3'], 'SO2': ['SO3'],
+          'SO3': ['SO2'], 'CO': ['CO2'], 'CO2': ['CO'], 'Cu': ['CuO'],
           'O2': ['O3', 'H2'], 'Fe3O4': ['Fe2O3', 'FeO'], 'NH4NO3': ['NH3', 'N2'], 'N2O': ['NO', 'N2'],
           'Na(Al(OH)4)': ['NaAlO2', 'Al(OH)3'], 'NaAlO2': ['Na(Al(OH)4)'], 'K(Al(OH)4)': ['KAlO2', 'Al(OH)3'],
           'KAlO2': ['K(Al(OH)4)'], 'Na2(Zn(OH)4)': ['Na2ZnO2', 'Zn(OH)2'], 'Na2ZnO2': ['Na2(Zn(OH)4)'],
@@ -2057,7 +2067,7 @@ def sign_text(tags, level):
                 return f'растворение твёрдого вещества с образованием {SOLN_GEN[sol[0]]} раствора'
             return 'растворение твёрдого вещества с образованием бесцветного раствора'
         if gas == ['H2'] and not pr:
-            return 'выделение бесцветного газа'
+            return 'растворение твёрдого вещества с выделением газа'
         return None
     return None
 
@@ -2068,12 +2078,11 @@ EXTRA_SIGNS = {
               'выпадение серо-зелёного осадка', 'выпадение жёлтого осадка', 'выпадение чёрного осадка',
               'выделение бесцветного газа'],
     'gas': ['выделение бесцветного газа без запаха', 'выделение бесцветного газа с резким запахом',
-            'выделение газа с запахом тухлых яиц', 'выделение бурого газа', 'выпадение белого осадка',
-            'видимые признаки реакции отсутствуют'],
+            'выделение газа с запахом тухлых яиц', 'выпадение белого осадка', 'видимые признаки реакции отсутствуют'],
     'solid': ['растворение твёрдого вещества с выделением газа', 'растворение твёрдого вещества с образованием '
               'голубого раствора', 'растворение твёрдого вещества с образованием бесцветного раствора',
               'растворение твёрдого вещества с образованием жёлтого раствора', 'выделение красного металла на поверхности',
-              'выделение бесцветного газа', 'видимые признаки реакции отсутствуют'],
+              'появление серого налёта металла'],
 }
 
 
@@ -2107,15 +2116,20 @@ def _gen12(rng, pid, level, filt=None):
     cands = [(a, b, ob, sign_text(ob, level)) for a, b, ob in PAIRS12 if (filt is None or filt(a, b, ob))
              and not ({a, b} & EXOTIC) and not any(t.split(':')[-1] in EXOTIC for t in ob)]
     cands = [c for c in cands if c[3]]
-    none_c = [c for c in cands if c[3] == 'видимые признаки реакции отсутствуют' and c[0] in SOL_EL and c[1] in SOL_EL]
+    # «признаки отсутствуют» — только для реакции, которая идёт без видимых признаков (нейтрализация растворов)
+    none_c = [c for c in cands if c[3] == 'видимые признаки реакции отсутствуют' and
+              ({c[0], c[1]} & set(STRONG)) and ({c[0], c[1]} & set(ALK))]
     some_c = [c for c in cands if c[3] != 'видимые признаки реакции отсутствуют']
     chosen, used = [], set()
     for _ in range(80):
         if len(chosen) == 3:
             break
-        use_none = level in ('general', 'gas', 'solid') and none_c and rng.random() < 0.12 and \
+        use_none = level in ('general', 'gas') and none_c and rng.random() < 0.15 and \
             not any(x[3] == 'видимые признаки реакции отсутствуют' for x in chosen)
-        c = rng.choice(none_c if use_none else some_c)
+        pool = none_c if use_none else some_c
+        if level == 'gas' and not any('запах' in x[3] and 'без' not in x[3] for x in chosen):
+            pool = [c for c in some_c if 'запах' in c[3] and 'без' not in c[3]]   # ловушка: газ с запахом
+        c = rng.choice(pool)
         if {c[0], c[1]} & used or any(x[3] == c[3] for x in chosen) and rng.random() < 0.9:
             continue
         chosen.append(c)
@@ -4014,8 +4028,8 @@ def g23_reag(rng):
     q = stem23(s1, s2, reag) + '\n\nПроверьте себя: выберите два реактива, необходимые для определения веществ.'
     o = opts([name(r) for r in reag])
     ans = ids_of([reag.index(a), reag.index(b)])
-    e = (f'{name(a).capitalize()}: с {ins(s1)} — {sign23(obs23(s1, a))}, с {ins(s2)} — {sign23(obs23(s2, a))}. '
-         f'{name(b).capitalize()}: с {ins(s2)} — {sign23(obs23(s2, b))}, с {ins(s1)} — {sign23(obs23(s1, b))}. '
+    e = (f'{cap(name(a))}: с {ins(s1)} — {sign23(obs23(s1, a))}, с {ins(s2)} — {sign23(obs23(s2, a))}. '
+         f'{cap(name(b))}: с {ins(s2)} — {sign23(obs23(s2, b))}, с {ins(s1)} — {sign23(obs23(s1, b))}. '
          f'Ответ: {"".join(ans)}.')
     eqs = [x for x in (_eq_of(s1, a), _eq_of(s2, b)) if x]
     return pcard('ch-oge-23-choose-reagents', q, ans, e, k='many', o=o, eqs=eqs, p={'s1': s1, 's2': s2, 'reag': reag})
@@ -4053,7 +4067,7 @@ def g23_signs(rng):
     right = shuffled(rng, right)
     q = stem23(s1, s2, reag) + ('\n\nПроверьте себя: установите соответствие между сочетанием «вещество + реактив» '
                                 'и признаком реакции, который будет наблюдаться.')
-    o = match_opts([f'{name(s).capitalize()} + {name(r)}' for s, r in combos], right)
+    o = match_opts([f'{cap(name(s))} + {name(r)}' for s, r in combos], right)
     ans = {LET[i]: str(right.index(sg) + 1) for i, sg in enumerate(signs)}
     eqs = [x for x in (_eq_of(s, r) for s, r in combos) if x]
     e = ' '.join(f'{LET[i]}) {sg}.' for i, sg in enumerate(signs)) + (' Уравнения: ' + '; '.join(eq_text(x) for x in eqs) + '.'
@@ -4092,7 +4106,7 @@ def g23_ionic(rng):
     eqs_t = shuffled(rng, [t1, t2] + rng.sample(others, 2))
     q = stem23(s1, s2, reag) + ('\n\nПроверьте себя: установите соответствие между веществом и сокращённым ионным '
                                 'уравнением реакции, с помощью которой его можно определить выбранным реактивом.')
-    o = match_opts([name(s1).capitalize(), name(s2).capitalize()], [ionic_eq_text(t) for t in eqs_t])
+    o = match_opts([cap(name(s1)), cap(name(s2))], [ionic_eq_text(t) for t in eqs_t])
     ans = {'А': str(eqs_t.index(t1) + 1), 'Б': str(eqs_t.index(t2) + 1)}
     eqs = [x for x in (_eq_of(s1, a), _eq_of(s2, b)) if x]
     e = (f'А) {name(s1)} + {name(a)}: {ionic_eq_text(t1)}. Б) {name(s2)} + {name(b)}: {ionic_eq_text(t2)}. '
