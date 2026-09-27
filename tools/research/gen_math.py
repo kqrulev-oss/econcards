@@ -23,138 +23,12 @@ check — независимая проверка ответа: функция �
 """
 import argparse
 import json
-import math
 import random
 import sys
 from collections import Counter
-from fractions import Fraction as F
 
-import sympy as sp
-
-X = sp.Symbol('x', real=True)
-
-# ---------------------------------------------------------------- форматирование
-
-
-def finite(x):
-    """True, если дробь записывается конечной десятичной."""
-    d = F(x).denominator
-    for p in (2, 5):
-        while d % p == 0:
-            d //= p
-    return d == 1
-
-
-def decimals(x):
-    """Сколько знаков после запятой у конечной десятичной дроби."""
-    x = F(x)
-    n = 0
-    while x.denominator != 1:
-        x *= 10
-        n += 1
-    return n
-
-
-def num(x):
-    """Число для ответа: '12', '-3,5' (минус ASCII — так его разбирает sameNumber в lib.js)."""
-    x = F(x)
-    if x.denominator == 1:
-        return str(x.numerator)
-    assert finite(x), x
-    n = decimals(x)
-    s = f'{abs(x.numerator) * 10**n // x.denominator:0{n + 1}d}'
-    s = s[:-n] + ',' + s[-n:]
-    return ('-' if x < 0 else '') + s
-
-
-def tnum(x):
-    """Число в условии: с типографским минусом."""
-    return num(x).replace('-', '−')
-
-
-def ftxt(x):
-    """Число в условии; бесконечную дробь пишем как (p/q)."""
-    x = F(x)
-    if finite(x):
-        return tnum(x)
-    return f'{"−" if x < 0 else ""}({abs(x.numerator)}/{x.denominator})'
-
-
-def par(x):
-    """Отрицательное число в скобках: для записи произведений в разборе."""
-    return f'({tnum(x)})' if F(x) < 0 else tnum(x)
-
-
-def signed(c, first=False):
-    """Коэффициент со знаком для записи многочлена: ' + 3', ' − 5'."""
-    c = F(c)
-    if first:
-        return ftxt(c)
-    return f' − {ftxt(-c)}' if c < 0 else f' + {ftxt(c)}'
-
-
-def poly(coefs, var='x'):
-    """[a, b, c] → 'ax² + bx + c' без нулевых членов и единиц."""
-    sup = {1: '', 2: '²', 3: '³', 4: '⁴'}
-    deg = len(coefs) - 1
-    out = ''
-    for i, c in enumerate(coefs):
-        p = deg - i
-        if c == 0:
-            continue
-        body = var + sup.get(p, f'^{p}') if p else ''
-        if p and abs(c) == 1:
-            coef = '' if c > 0 else '−'
-            term = coef + body
-            if out:
-                term = (' + ' if c > 0 else ' − ') + body
-        else:
-            term = (ftxt(c) if not out else signed(c)) + body
-        out += term
-    return out or '0'
-
-
-def lin(a, b, var='x'):
-    """a·x + b в виде текста."""
-    return poly([a, b], var)
-
-
-def nice(x, maxdec=2, lim=10000):
-    x = F(x)
-    return finite(x) and decimals(x) <= maxdec and abs(x) <= lim
-
-
-SUB = str.maketrans('0123456789', '₀₁₂₃₄₅₆₇₈₉')
-
-
-def card(gid, q, a, e='', k='num', **kw):
-    c = {'id': '', 't': GEN[gid]['t'], 'p': GEN[gid]['p'], 'k': k, 'q': q, 'a': a}
-    if e:
-        c['e'] = e
-    c.update(kw)
-    return c
-
-
-def same(a, b):
-    """Сравнение как sameNumber в lib.js: запятая и точка равноправны."""
-    try:
-        return abs(float(str(a).replace(',', '.')) - float(sp.N(b))) < 1e-9
-    except (TypeError, ValueError):
-        return False
-
-
-GEN = {}
-
-
-def gen(gid, exam, n, title, t, p=None, gen_type='param', maxdec=2, lim=10000):
-    def deco(fn):
-        GEN[gid] = dict(fn=fn, exam=exam, n=n, title=title, t=t, p=p or f'g-{gid}', gen=gen_type, maxdec=maxdec, lim=lim)
-        return fn
-    return deco
-
-
-TRIPLES = [(3, 4, 5), (5, 12, 13), (8, 15, 17), (7, 24, 25), (20, 21, 29), (9, 40, 41), (12, 35, 37), (11, 60, 61),
-           (28, 45, 53), (33, 56, 65), (16, 63, 65), (48, 55, 73), (13, 84, 85), (36, 77, 85), (39, 80, 89), (65, 72, 97)]
+from mathlib import *  # noqa: F401,F403 — помощники и реестры
+from mathlib import EXAMS, pcard, F, GEN, TRIPLES, X, card, finite, gen, nice, num, par, poly, same, signed, sp, tnum, ftxt, lin, SUB  # noqa: F401
 
 # ================================================================ ЕГЭ профиль
 
@@ -1562,6 +1436,254 @@ def export(path):
     print(f'{path}: {len(data)} разделов, {n_tasks} заданий, {len(data[-1]["topics_5_9"])} тем 5–9')
 
 
+# ================================================================ прототипы: самопроверка и экспорт
+#
+#   python3 tools/research/gen_math.py --protos [--exam oge] [--proto og09-quad] [--fipi DIR]
+#   python3 tools/research/gen_math.py --export-protos data/source/math-prototypes.json --fipi DIR
+#
+# DIR — локальная выгрузка текстов ФИПИ (открытый банк, демоверсии, открытые варианты):
+# файлы *.jsonl с полями {id, text} и *.txt. Она нужна только для сверки сходства
+# и в репозиторий не кладётся (тексты ФИПИ — «© Рособрнадзор»).
+
+import glob
+import importlib
+import os
+import re
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+SIM_LIMIT = 0.30      # предельное сходство с текстом ФИПИ (доля наших 5-словных шинглов)
+CAP_TARGET = 50       # минимум разных аналогов на прототип
+CAP_TRIES = 3000
+
+
+def load_protos():
+    import mathlib
+    for path in sorted(glob.glob(os.path.join(HERE, 'proto_*.py'))):
+        try:
+            importlib.import_module(os.path.basename(path)[:-3])
+        except Exception as ex:  # noqa: BLE001 — сломанный модуль не мешает проверять остальные
+            print(f'  !! модуль {os.path.basename(path)} не загрузился: {type(ex).__name__}: {ex}', file=sys.stderr)
+    return mathlib.PROTO
+
+
+def tokens(text, mask=True):
+    """Слова и числа в нижнем регистре. mask=True: числа заменены на «0» — сходство меряем
+    по словам, а не по числам (так ловится «тот же текст с другими числами»)."""
+    t = text.lower().replace('ё', 'е')
+    t = re.sub(r'<[^>]+>', ' ', t)
+    return ['0' if mask and w[0].isdigit() else w for w in re.findall(r'[а-яa-z]+|\d+(?:[.,]\d+)?', t)]
+
+
+def shingles(text, k=5, mask=True):
+    w = tokens(text, mask)
+    return {' '.join(w[i:i + k]) for i in range(len(w) - k + 1)}
+
+
+def wordy(text):
+    """Сюжетное ли условие: 8 и больше русских слов. В коротких «формульных» условиях
+    («Решите уравнение …») слов почти нет, и совпадение инструкции неизбежно — их сверяем
+    без маскировки чисел, то есть ловим только буквальное совпадение с заданием ФИПИ."""
+    return len(re.findall(r'[а-яё]{3,}', text.lower())) >= 8
+
+
+class Fipi:
+    """Индекс шинглов текстов ФИПИ; bank — тексты открытого банка по экзаменам."""
+
+    def __init__(self, d):
+        self.docs, self.bank = [], {}
+        for path in sorted(glob.glob(os.path.join(d, '**', '*.jsonl'), recursive=True)):
+            key = os.path.basename(path)[:-6]
+            rows = [json.loads(line) for line in open(path, encoding='utf-8')]
+            self.bank[key] = rows
+            self.docs += [r['text'] for r in rows]
+        for path in sorted(glob.glob(os.path.join(d, '**', '*.txt'), recursive=True)):
+            # демоверсии и открытые варианты: режем на куски по «Ответ:», чтобы сравнивать по заданиям
+            parts = re.split(r'Ответ:\s*_+', open(path, encoding='utf-8').read())
+            self.docs += [p for p in parts if len(p) > 40]
+        self.index = {True: {}, False: {}}
+        for i, t in enumerate(self.docs):
+            for mask in (True, False):
+                for s in shingles(t, mask=mask):
+                    self.index[mask].setdefault(s, set()).add(i)
+
+    def sim(self, text):
+        """Наибольшая доля шинглов нашего текста, найденных в одном тексте ФИПИ."""
+        mask = wordy(text)
+        sh = shingles(text, mask=mask)
+        if not sh:
+            return 0.0
+        cnt = Counter()
+        idx = self.index[mask]
+        for s in sh:
+            for i in idx.get(s, ()):
+                cnt[i] += 1
+        return max(cnt.values(), default=0) / len(sh)
+
+
+BANK_OF = {'ege-prof': 'prof', 'ege-base': 'base', 'oge': 'oge'}
+
+
+def card_text(c):
+    return c['q'] + ' ' + ' '.join(str(o.get('text', '')) for o in (c.get('o') or []) if isinstance(o, dict))
+
+
+def run_proto(p, n, fipi=None, seed=1):
+    """Самопроверка одного прототипа → (карточки, сводка)."""
+    info = dict(id=p['id'], kind=p['kind'], fail=0, dup=0, drop=0, bad=0, cards=0, capacity=0, sim_max=None, sim_over=0)
+    if p['kind'] == 'llm':
+        ex = p['example']
+        ok = bool(ex['chk']())
+        info.update(fail=0 if ok else 1, cards=1, capacity=p['capacity'])
+        if fipi:
+            info['sim_max'] = round(fipi.sim(ex['q']), 3)
+            info['sim_over'] = int(info['sim_max'] >= SIM_LIMIT)
+        return [pcard(ex['q'], ex['a'])], info
+    r = random.Random(f'{seed}-{p["id"]}')
+    cards, seen = [], set()
+    tries = 0
+    while len(cards) < n and tries < n * 60:
+        tries += 1
+        res = p['fn'](r)
+        if res is None:
+            info['drop'] += 1
+            continue
+        c, chk = res
+        key = c['q'] + json.dumps(c.get('o'), ensure_ascii=False)
+        if key in seen:
+            info['dup'] += 1
+            continue
+        if not answer_ok(c, p['maxdec'], p['lim']):
+            info['bad'] += 1
+            print('  ?? неприятный ответ', p['id'], c['q'][:90], c['a'], file=sys.stderr)
+            continue
+        try:
+            ok = bool(chk())
+        except Exception as ex:  # noqa: BLE001 — любая ошибка проверки = провал
+            ok = False
+            print('  !! ошибка проверки', p['id'], type(ex).__name__, ex, file=sys.stderr)
+        if not ok:
+            info['fail'] += 1
+            print('  !! ответ не сошёлся', p['id'], c['q'][:120], c['a'], file=sys.stderr)
+            continue
+        if p['svg'] and not c.get('svg', '').startswith('<svg'):
+            info['fail'] += 1
+            print('  !! нет рисунка', p['id'], file=sys.stderr)
+            continue
+        seen.add(key)
+        c['id'] = f'{p["id"]}-{len(cards) + 1}'
+        c['t'] = f'{p["exam"]}-{p["n"]}'
+        c['p'] = p['id']
+        cards.append(c)
+    r2 = random.Random(f'cap-{p["id"]}')
+    uniq = set()
+    for _ in range(CAP_TRIES):
+        res = p['fn'](r2)
+        if res:
+            uniq.add(res[0]['q'] + json.dumps(res[0].get('o'), ensure_ascii=False))
+    info['capacity'] = len(uniq)
+    info['cards'] = len(cards)
+    info['answers'] = len({json.dumps(c['a'], ensure_ascii=False) for c in cards})
+    if fipi and cards:
+        sims = [fipi.sim(card_text(c)) for c in cards]
+        info['sim_max'] = round(max(sims), 3)
+        info['sim_over'] = sum(s >= SIM_LIMIT for s in sims)
+        worst = max(range(len(cards)), key=lambda i: sims[i])
+        if sims[worst] >= SIM_LIMIT:
+            print(f'  ~~ сходство {sims[worst]:.2f}', p['id'], cards[worst]['q'][:120], file=sys.stderr)
+    return cards, info
+
+
+def fipi_coverage(protos, fipi):
+    """Сколько заданий открытого банка узнаёт хотя бы один прототип (по регулярке fipi)."""
+    out = {}
+    for exam, key in BANK_OF.items():
+        rows = fipi.bank.get(key, [])
+        regs = [(p['id'], re.compile(p['fipi'], re.I)) for p in protos.values() if p['exam'] == exam and p.get('fipi')]
+        hit, per = 0, Counter()
+        unmatched = []
+        for row in rows:
+            ids = [pid for pid, rg in regs if rg.search(row['text'])]
+            per.update(ids)
+            if ids:
+                hit += 1
+            else:
+                unmatched.append(row)
+        out[exam] = dict(total=len(rows), matched=hit, per=per, unmatched=unmatched)
+    return out
+
+
+def protos_main(args):
+    protos = load_protos()
+    fipi = Fipi(args.fipi) if args.fipi else None
+    sel = [p for p in protos.values() if (not args.exam or p['exam'] == args.exam) and (not args.proto or p['id'].startswith(args.proto))]
+    sel.sort(key=lambda p: (list(EXAMS).index(p['exam']), p['n'], p['id']))
+    print(f'{"прототип":<24}{"вид":<6}{"готово":>7}{"отсев":>6}{"повт.":>6}{"сбой":>5}{"ёмкость":>8}{"ответов":>8}{"сходство":>9}')
+    allcards, infos = [], []
+    for p in sel:
+        cards, info = run_proto(p, args.n, fipi)
+        infos.append(info)
+        allcards += cards
+        sim = '—' if info['sim_max'] is None else f'{info["sim_max"]:.2f}'
+        print(f'{p["id"]:<24}{p["kind"]:<6}{info["cards"]:>7}{info["drop"]:>6}{info["dup"]:>6}{info["fail"]:>5}'
+              f'{info["capacity"]:>8}{info.get("answers", "—"):>8}{sim:>9}')
+        if args.sample:
+            for c in cards[:2]:
+                print('   ', json.dumps({k: v for k, v in c.items() if k != 'svg'}, ensure_ascii=False))
+    # дубли между прототипами
+    qs = Counter(c['q'] for c in allcards)
+    cross = sum(v - 1 for v in qs.values() if v > 1)
+    fails = sum(i['fail'] for i in infos)
+    low = [i['id'] for i in infos if i['kind'] == 'param' and i['capacity'] < CAP_TARGET]
+    over = [i['id'] for i in infos if i['sim_over']]
+    print(f'\nПрототипов: {len(sel)} (param {sum(i["kind"] == "param" for i in infos)}, llm {sum(i["kind"] == "llm" for i in infos)}); '
+          f'карточек: {len(allcards)}; несошедшихся ответов: {fails}; дублей между прототипами: {cross}')
+    print(f'Ёмкость < {CAP_TARGET}: {len(low)} {low[:20]}')
+    if fipi:
+        sims = [i['sim_max'] for i in infos if i['sim_max'] is not None]
+        print(f'Сходство с ФИПИ ≥ {SIM_LIMIT:.0%}: прототипов {len(over)} {over[:20]}; максимум по всем {max(sims, default=0):.2f}')
+        cov = fipi_coverage({p['id']: p for p in sel}, fipi)
+        for exam, c in cov.items():
+            if c['total'] and (not args.exam or exam == args.exam):
+                print(f'Банк ФИПИ, {EXAMS[exam]}: узнано прототипами {c["matched"]} из {c["total"]}')
+                if args.unmatched:
+                    for row in c['unmatched'][:args.unmatched]:
+                        print('   ·', row['id'], row.get('kes', [''])[:1], row['text'][:160])
+    if args.json:
+        with open(args.json, 'w', encoding='utf-8') as fh:
+            json.dump(allcards, fh, ensure_ascii=False, indent=1)
+    return 1 if fails or cross else 0
+
+
+def export_protos(path, fipi_dir, n=30):
+    protos = load_protos()
+    fipi = Fipi(fipi_dir) if fipi_dir else None
+    cov = fipi_coverage(protos, fipi) if fipi else {}
+    out = []
+    for p in sorted(protos.values(), key=lambda p: (list(EXAMS).index(p['exam']), p['n'], p['id'])):
+        cards, info = run_proto(p, n, fipi)
+        assert not info['fail'], p['id']
+        ex = cards[0]
+        rec = dict(id=p['id'], exam=p['exam'], n=p['n'], title=p['title'], invariant=p['invariant'], varies=p['varies'],
+                   answer_rule=p['answer_rule'],
+                   gen=p['gen'] if p['kind'] == 'param' else {'llm': p['recipe']},
+                   capacity=info['capacity'], example={k: ex[k] for k in ('q', 'a', 'e', 'o', 'svg') if k in ex})
+        if p['mistakes']:
+            rec['mistakes'] = p['mistakes']
+        if p['svg']:
+            rec['figure'] = True
+        if p.get('note'):
+            rec['note'] = p['note']
+        if fipi:
+            rec['fipi_bank_matches'] = cov[p['exam']]['per'].get(p['id'], 0)
+            rec['sim_fipi_max'] = info['sim_max']
+        out.append(rec)
+    os.makedirs(os.path.dirname(path) or '.', exist_ok=True)
+    with open(path, 'w', encoding='utf-8') as fh:
+        json.dump(out, fh, ensure_ascii=False, indent=1)
+        fh.write('\n')
+    print(f'{path}: {len(out)} прототипов')
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--n', type=int, default=200)
@@ -1569,7 +1691,18 @@ def main():
     ap.add_argument('--json')
     ap.add_argument('--only')
     ap.add_argument('--export', help='собрать data/research/math.json')
+    ap.add_argument('--protos', action='store_true', help='самопроверка прототипов (proto_*.py)')
+    ap.add_argument('--exam', help='только этот экзамен: ege-prof, ege-base, oge')
+    ap.add_argument('--proto', help='только прототипы с этим началом id')
+    ap.add_argument('--fipi', help='папка с локальными текстами ФИПИ для сверки сходства')
+    ap.add_argument('--unmatched', type=int, default=0, help='показать столько заданий банка без прототипа')
+    ap.add_argument('--export-protos', help='собрать data/source/math-prototypes.json')
     args = ap.parse_args()
+    if args.export_protos:
+        export_protos(args.export_protos, args.fipi)
+        return 0
+    if args.protos:
+        return protos_main(args)
     if args.export:
         export(args.export)
         return 0
