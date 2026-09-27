@@ -1,0 +1,1399 @@
+{
+ "title": "Ключевые события истории для карточек ЕГЭ/ОГЭ (кодификатор ЕГЭ по истории 2026)",
+ "codifier_source": "https://doc.fipi.ru/ege/demoversii-specifikacii-kodifikatory/2026/is_11_2026.zip (кодификатор ЕГЭ 2026, раздел 2; файл от 2025-11-11)",
+ "fields": {
+  "date": "год, диапазон «1558–1583» или ГГГГ-ММ-ДД (полные даты — только после 1918 г., новый стиль)",
+  "event": "формулировка события",
+  "persons": "участники",
+  "process": "процесс/период для заданий 3 и 20 ЕГЭ",
+  "codifier": "код элемента содержания кодификатора ЕГЭ 2026",
+  "wiki": "статья русской Википедии, по которой шла сверка",
+  "wiki_en": "ручная ссылка на английскую статью (если нет связи в Викиданных)",
+  "sources": "ссылки на источники, подтвердившие дату",
+  "verified_by": "какие источники подтвердили дату",
+  "checked": "true — дату подтвердили минимум два источника"
+ },
+ "method": "tools/check_history_events.py: год (оба года диапазона) ищется в карточке и преамбуле статьи ru- и en-Википедии, плюс даты Викиданных (P585, P580, P582, P571, P577, P576). checked = минимум два совпадения. БРЭ (bigenc.ru → bre.ruwiki.ru) требует авторизации и в автоматическую сверку не вошла.",
+ "calendar": "До 1918 г. даты событий истории России в учебниках — по старому стилю; в базе хранятся только годы, поэтому расхождение стилей на годы не влияет (кроме событий конца декабря — таких в базе нет).",
+ "license": "Факты и даты не охраняются авторским правом; формулировки событий — свои. Ссылки на Википедию/Викиданные — для проверки, тексты оттуда не копируются.",
+ "checked_on": "2026-09-27",
+ "events": [
+  {
+   "date": "862",
+   "event": "Призвание варягов, начало княжения Рюрика в Новгороде",
+   "persons": [
+    "Рюрик"
+   ],
+   "process": "Образование Древнерусского государства",
+   "codifier": "1.3",
+   "wiki": "Призвание варягов",
+   "sources": [
+    "https://ru.wikipedia.org/wiki/%D0%9F%D1%80%D0%B8%D0%B7%D0%B2%D0%B0%D0%BD%D0%B8%D0%B5_%D0%B2%D0%B0%D1%80%D1%8F%D0%B3%D0%BE%D0%B2",
+    "https://en.wikipedia.org/wiki/Rurik"
+   ],
+   "checked": true,
+   "verified_by": [
+    "ruwiki",
+    "enwiki"
+   ],
+   "wiki_en": "Rurik"
+  },
+  {
+   "date": "882",
+   "event": "Объединение Новгорода и Киева под властью Олега",
+   "persons": [
+    "Олег"
+   ],
+   "process": "Образование Древнерусского государства",
+   "codifier": "1.3",
+   "wiki": "Олег Вещий",
+   "sources": [
+    "https://ru.wikipedia.org/wiki/%D0%9E%D0%BB%D0%B5%D0%B3_%D0%92%D0%B5%D1%89%D0%B8%D0%B9",
+    "https://en.wikipedia.org/wiki/Oleg_the_Wise"
+   ],
+   "checked": true,
+   "verified_by": [
+    "ruwiki",
+    "enwiki"
+   ]
+  },
+  {
+   "date": "907",
+   "event": "Поход Олега на Константинополь",
+   "persons": [
+    "Олег"
+   ],
+   "process": "Внешняя политика первых русских князей",
+   "codifier": "1.5",
+   "wiki": "Русско-византийская война (907)",
+   "sources": [
+    "https://ru.wikipedia.org/wiki/%D0%A0%D1%83%D1%81%D1%81%D0%BA%D0%BE-%D0%B2%D0%B8%D0%B7%D0%B0%D0%BD%D1%82%D0%B8%D0%B9%D1%81%D0%BA%D0%B0%D1%8F_%D0%B2%D0%BE%D0%B9%D0%BD%D0%B0_%28907%29",
+    "https://en.wikipedia.org/wiki/Rus%27%E2%80%93Byzantine_War_%28907%29",
+    "https://www.wikidata.org/wiki/Q2707090"
+   ],
+   "checked": true,
+   "verified_by": [
+    "ruwiki",
+    "enwiki",
+    "wikidata"
+   ]
+  },
+  {
+   "date": "911",
+   "event": "Договор Руси с Византией",
+   "persons": [
+    "Олег"
+   ],
+   "process": "Внешняя политика первых русских князей",
+   "codifier": "1.5",
+   "wiki": "Русско-византийский договор (911)",
+   "sources": [
+    "https://ru.wikipedia.org/wiki/%D0%A0%D1%83%D1%81%D1%81%D0%BA%D0%BE-%D0%B2%D0%B8%D0%B7%D0%B0%D0%BD%D1%82%D0%B8%D0%B9%D1%81%D0%BA%D0%B8%D0%B9_%D0%B4%D0%BE%D0%B3%D0%BE%D0%B2%D0%BE%D1%80_%28911%29",
+    "https://en.wikipedia.org/wiki/Rus%27%E2%80%93Byzantine_Treaty_%28911%29",
+    "https://www.wikidata.org/wiki/Q4400909"
+   ],
+   "checked": true,
+   "verified_by": [
+    "ruwiki",
+    "enwiki",
+    "wikidata"
+   ]
+  },
+  {
+   "date": "945",
+   "event": "Восстание древлян, гибель князя Игоря",
+   "persons": [
+    "Игорь",
+    "Ольга"
+   ],
+   "process": "Образование Древнерусского государства",
+   "codifier": "1.3",
+   "wiki": "Восстание древлян",
+   "sources": [
+    "https://ru.wikipedia.org/wiki/%D0%92%D0%BE%D1%81%D1%81%D1%82%D0%B0%D0%BD%D0%B8%D0%B5_%D0%B4%D1%80%D0%B5%D0%B2%D0%BB%D1%8F%D0%BD",
+    "https://www.wikidata.org/wiki/Q12141260"
+   ],
+   "checked": true,
+   "verified_by": [
+    "ruwiki",
+    "wikidata"
+   ]
+  },
+  {
+   "date": "988",
+   "event": "Крещение Руси",
+   "persons": [
+    "Владимир Святославич"
+   ],
+   "process": "Принятие христианства",
+   "codifier": "1.4",
+   "wiki": "Крещение Руси",
+   "sources": [
+    "https://ru.wikipedia.org/wiki/%D0%9A%D1%80%D0%B5%D1%89%D0%B5%D0%BD%D0%B8%D0%B5_%D0%A0%D1%83%D1%81%D0%B8",
+    "https://en.wikipedia.org/wiki/Christianization_of_Kievan_Rus%27",
+    "https://www.wikidata.org/wiki/Q573211"
+   ],
+   "checked": true,
+   "verified_by": [
+    "ruwiki",
+    "enwiki",
+    "wikidata"
+   ]
+  },
+  {
+   "date": "1037",
+   "event": "Начало строительства Софийского собора в Киеве",
+   "persons": [
+    "Ярослав Мудрый"
+   ],
+   "process": "Культура Древней Руси",
+   "codifier": "1.6",
+   "wiki": "Софийский собор (Киев)",
+   "sources": [
+    "https://ru.wikipedia.org/wiki/%D0%A1%D0%BE%D1%84%D0%B8%D0%B9%D1%81%D0%BA%D0%B8%D0%B9_%D1%81%D0%BE%D0%B1%D0%BE%D1%80_%28%D0%9A%D0%B8%D0%B5%D0%B2%29",
+    "https://en.wikipedia.org/wiki/Saint_Sophia_Cathedral%2C_Kyiv"
+   ],
+   "checked": true,
+   "verified_by": [
+    "ruwiki",
+    "enwiki"
+   ]
+  },
+  {
+   "date": "1097",
+   "event": "Любечский съезд князей",
+   "persons": [
+    "Владимир Мономах",
+    "Святополк Изяславич"
+   ],
+   "process": "Русь в конце X – начале XII в.",
+   "codifier": "1.4",
+   "wiki": "Любечский съезд",
+   "sources": [
+    "https://ru.wikipedia.org/wiki/%D0%9B%D1%8E%D0%B1%D0%B5%D1%87%D1%81%D0%BA%D0%B8%D0%B9_%D1%81%D1%8A%D0%B5%D0%B7%D0%B4",
+    "https://en.wikipedia.org/wiki/Council_of_Liubech"
+   ],
+   "checked": true,
+   "verified_by": [
+    "ruwiki",
+    "enwiki"
+   ]
+  },
+  {
+   "date": "1113",
+   "event": "Восстание в Киеве, призвание на княжение Владимира Мономаха",
+   "persons": [
+    "Владимир Мономах"
+   ],
+   "process": "Русь в конце X – начале XII в.",
+   "codifier": "1.4",
+   "wiki": "Киевское восстание (1113)",
+   "sources": [
+    "https://ru.wikipedia.org/wiki/%D0%9A%D0%B8%D0%B5%D0%B2%D1%81%D0%BA%D0%BE%D0%B5_%D0%B2%D0%BE%D1%81%D1%81%D1%82%D0%B0%D0%BD%D0%B8%D0%B5_1113_%D0%B3%D0%BE%D0%B4%D0%B0",
+    "https://www.wikidata.org/wiki/Q4220258"
+   ],
+   "checked": true,
+   "verified_by": [
+    "ruwiki",
+    "wikidata"
+   ]
+  },
+  {
+   "date": "1147",
+   "event": "Первое упоминание Москвы в летописи",
+   "persons": [
+    "Юрий Долгорукий"
+   ],
+   "process": "Политическая раздробленность",
+   "codifier": "1.7",
+   "wiki": "История Москвы",
+   "sources": [
+    "https://ru.wikipedia.org/wiki/%D0%98%D1%81%D1%82%D0%BE%D1%80%D0%B8%D1%8F_%D0%9C%D0%BE%D1%81%D0%BA%D0%B2%D1%8B",
+    "https://en.wikipedia.org/wiki/History_of_Moscow"
+   ],
+   "checked": true,
+   "verified_by": [
+    "ruwiki",
+    "enwiki"
+   ]
+  },
+  {
+   "date": "1165",
+   "event": "Построена церковь Покрова на Нерли",
+   "persons": [
+    "Андрей Боголюбский"
+   ],
+   "process": "Культура Руси XII–XIII вв.",
+   "codifier": "1.6",
+   "wiki": "Церковь Покрова на Нерли",
+   "sources": [
+    "https://ru.wikipedia.org/wiki/%D0%A6%D0%B5%D1%80%D0%BA%D0%BE%D0%B2%D1%8C_%D0%9F%D0%BE%D0%BA%D1%80%D0%BE%D0%B2%D0%B0_%D0%BD%D0%B0_%D0%9D%D0%B5%D1%80%D0%BB%D0%B8",
+    "https://en.wikipedia.org/wiki/Church_of_the_Intercession_on_the_Nerl"
+   ],
+   "checked": true,
+   "verified_by": [
+    "ruwiki",
+    "enwiki"
+   ]
+  },
+  {
+   "date": "1169",
+   "event": "Взятие Киева войсками Андрея Боголюбского",
+   "persons": [
+    "Андрей Боголюбский"
+   ],
+   "process": "Политическая раздробленность",
+   "codifier": "1.7",
+   "wiki": "Взятие Киева (1169)",
+   "sources": [
+    "https://ru.wikipedia.org/wiki/%D0%92%D0%B7%D1%8F%D1%82%D0%B8%D0%B5_%D0%9A%D0%B8%D0%B5%D0%B2%D0%B0_(1169)",
+    "https://en.wikipedia.org/wiki/Sack_of_Kiev_(1169)",
+    "https://www.wikidata.org/wiki/Q4110452"
+   ],
+   "checked": true,
+   "verified_by": [
+    "ruwiki",
+    "enwiki",
+    "wikidata"
+   ]
+  },
+  {
+   "date": "1223",
+   "event": "Битва на реке Калке",
+   "persons": [
+    "Мстислав Удатный",
+    "Мстислав Романович"
+   ],
+   "process": "Борьба Руси против монгольского нашествия",
+   "codifier": "1.8",
+   "wiki": "Битва на реке Калке",
+   "sources": [
+    "https://ru.wikipedia.org/wiki/%D0%91%D0%B8%D1%82%D0%B2%D0%B0_%D0%BD%D0%B0_%D0%9A%D0%B0%D0%BB%D0%BA%D0%B5",
+    "https://en.wikipedia.org/wiki/Battle_of_the_Kalka_River",
+    "https://www.wikidata.org/wiki/Q570204"
+   ],
+   "checked": true,
+   "verified_by": [
+    "ruwiki",
+    "enwiki",
+    "wikidata"
+   ]
+  },
+  {
+   "date": "1237–1240",
+   "event": "Нашествие Батыя на Русь",
+   "persons": [
+    "Батый"
+   ],
+   "process": "Борьба Руси против монгольского нашествия",
+   "codifier": "1.8",
+   "wiki": "Монгольское нашествие на Русь",
+   "sources": [
+    "https://ru.wikipedia.org/wiki/%D0%9C%D0%BE%D0%BD%D0%B3%D0%BE%D0%BB%D1%8C%D1%81%D0%BA%D0%BE%D0%B5_%D0%BD%D0%B0%D1%88%D0%B5%D1%81%D1%82%D0%B2%D0%B8%D0%B5_%D0%BD%D0%B0_%D0%A0%D1%83%D1%81%D1%8C",
+    "https://en.wikipedia.org/wiki/Mongol_invasion_of_Kievan_Rus%27",
+    "https://www.wikidata.org/wiki/Q1134220"
+   ],
+   "checked": true,
+   "verified_by": [
+    "ruwiki",
+    "enwiki",
+    "wikidata"
+   ]
+  },
+  {
+   "date": "1240",
+   "event": "Невская битва",
+   "persons": [
+    "Александр Ярославич (Невский)",
+    "Биргер"
+   ],
+   "process": "Борьба с агрессией с Запада",
+   "codifier": "1.8",
+   "wiki": "Невская битва",
+   "sources": [
+    "https://ru.wikipedia.org/wiki/%D0%9D%D0%B5%D0%B2%D1%81%D0%BA%D0%B0%D1%8F_%D0%B1%D0%B8%D1%82%D0%B2%D0%B0",
+    "https://en.wikipedia.org/wiki/Battle_of_the_Neva",
+    "https://www.wikidata.org/wiki/Q521799"
+   ],
+   "checked": true,
+   "verified_by": [
+    "ruwiki",
+    "enwiki",
+    "wikidata"
+   ]
+  },
+  {
+   "date": "1242",
+   "event": "Ледовое побоище",
+   "persons": [
+    "Александр Невский"
+   ],
+   "process": "Борьба с агрессией с Запада",
+   "codifier": "1.8",
+   "wiki": "Ледовое побоище",
+   "sources": [
+    "https://ru.wikipedia.org/wiki/%D0%9B%D0%B5%D0%B4%D0%BE%D0%B2%D0%BE%D0%B5_%D0%BF%D0%BE%D0%B1%D0%BE%D0%B8%D1%89%D0%B5",
+    "https://en.wikipedia.org/wiki/Battle_on_the_Ice",
+    "https://www.wikidata.org/wiki/Q14689"
+   ],
+   "checked": true,
+   "verified_by": [
+    "ruwiki",
+    "enwiki",
+    "wikidata"
+   ]
+  },
+  {
+   "date": "1327",
+   "event": "Восстание в Твери против ордынцев",
+   "persons": [
+    "Александр Михайлович Тверской",
+    "Иван Калита"
+   ],
+   "process": "Возвышение Москвы",
+   "codifier": "1.8",
+   "wiki": "Тверское восстание (1327)",
+   "sources": [
+    "https://ru.wikipedia.org/wiki/%D0%A2%D0%B2%D0%B5%D1%80%D1%81%D0%BA%D0%BE%D0%B5_%D0%B2%D0%BE%D1%81%D1%81%D1%82%D0%B0%D0%BD%D0%B8%D0%B5",
+    "https://en.wikipedia.org/wiki/Tver_Uprising_of_1327",
+    "https://www.wikidata.org/wiki/Q4453239"
+   ],
+   "checked": true,
+   "verified_by": [
+    "ruwiki",
+    "enwiki",
+    "wikidata"
+   ]
+  },
+  {
+   "date": "1380",
+   "event": "Куликовская битва",
+   "persons": [
+    "Дмитрий Донской",
+    "Мамай",
+    "Сергий Радонежский"
+   ],
+   "process": "Борьба с Ордой, возвышение Москвы",
+   "codifier": "1.8",
+   "wiki": "Куликовская битва",
+   "sources": [
+    "https://ru.wikipedia.org/wiki/%D0%9A%D1%83%D0%BB%D0%B8%D0%BA%D0%BE%D0%B2%D1%81%D0%BA%D0%B0%D1%8F_%D0%B1%D0%B8%D1%82%D0%B2%D0%B0",
+    "https://en.wikipedia.org/wiki/Battle_of_Kulikovo",
+    "https://www.wikidata.org/wiki/Q210354"
+   ],
+   "checked": true,
+   "verified_by": [
+    "ruwiki",
+    "enwiki",
+    "wikidata"
+   ]
+  },
+  {
+   "date": "1382",
+   "event": "Разорение Москвы ханом Тохтамышем",
+   "persons": [
+    "Тохтамыш",
+    "Дмитрий Донской"
+   ],
+   "process": "Борьба с Ордой, возвышение Москвы",
+   "codifier": "1.8",
+   "wiki": "Осада Москвы (1382)",
+   "sources": [
+    "https://ru.wikipedia.org/wiki/%D0%9D%D0%B0%D1%88%D0%B5%D1%81%D1%82%D0%B2%D0%B8%D0%B5_%D0%A2%D0%BE%D1%85%D1%82%D0%B0%D0%BC%D1%8B%D1%88%D0%B0_%D0%BD%D0%B0_%D0%9C%D0%BE%D1%81%D0%BA%D0%B2%D1%83",
+    "https://en.wikipedia.org/wiki/Siege_of_Moscow_%281382%29",
+    "https://www.wikidata.org/wiki/Q2618099"
+   ],
+   "checked": true,
+   "verified_by": [
+    "ruwiki",
+    "enwiki",
+    "wikidata"
+   ]
+  },
+  {
+   "date": "1425–1453",
+   "event": "Феодальная (междоусобная) война в Московском княжестве",
+   "persons": [
+    "Василий II Тёмный",
+    "Юрий Звенигородский",
+    "Дмитрий Шемяка"
+   ],
+   "process": "Формирование единого Русского государства",
+   "codifier": "1.10",
+   "wiki": "Междоусобная война в Московской Руси (1425—1453)",
+   "sources": [
+    "https://ru.wikipedia.org/wiki/%D0%9C%D0%B5%D0%B6%D0%B4%D0%BE%D1%83%D1%81%D0%BE%D0%B1%D0%BD%D0%B0%D1%8F_%D0%B2%D0%BE%D0%B9%D0%BD%D0%B0_%D0%B2_%D0%9C%D0%BE%D1%81%D0%BA%D0%BE%D0%B2%D1%81%D0%BA%D0%BE%D0%B9_%D0%A0%D1%83%D1%81%D0%B8_(1425%E2%80%941453)",
+    "https://en.wikipedia.org/wiki/Muscovite_War_of_Succession",
+    "https://www.wikidata.org/wiki/Q4288097"
+   ],
+   "checked": true,
+   "verified_by": [
+    "ruwiki",
+    "enwiki",
+    "wikidata"
+   ]
+  },
+  {
+   "date": "1439",
+   "event": "Флорентийская уния",
+   "persons": [
+    "Исидор"
+   ],
+   "process": "Формирование единого Русского государства",
+   "codifier": "1.10",
+   "wiki": "Ферраро-Флорентийский собор",
+   "sources": [
+    "https://ru.wikipedia.org/wiki/%D0%A4%D0%B5%D1%80%D1%80%D0%B0%D1%80%D0%BE-%D0%A4%D0%BB%D0%BE%D1%80%D0%B5%D0%BD%D1%82%D0%B8%D0%B9%D1%81%D0%BA%D0%B8%D0%B9_%D1%81%D0%BE%D0%B1%D0%BE%D1%80",
+    "https://en.wikipedia.org/wiki/Council_of_Florence"
+   ],
+   "checked": true,
+   "verified_by": [
+    "ruwiki",
+    "enwiki"
+   ]
+  },
+  {
+   "date": "1471",
+   "event": "Шелонская битва",
+   "persons": [
+    "Иван III"
+   ],
+   "process": "Формирование единого Русского государства",
+   "codifier": "1.10",
+   "wiki": "Шелонская битва",
+   "sources": [
+    "https://ru.wikipedia.org/wiki/%D0%A8%D0%B5%D0%BB%D0%BE%D0%BD%D1%81%D0%BA%D0%B0%D1%8F_%D0%B1%D0%B8%D1%82%D0%B2%D0%B0",
+    "https://en.wikipedia.org/wiki/Battle_of_Shelon",
+    "https://www.wikidata.org/wiki/Q2536997"
+   ],
+   "checked": true,
+   "verified_by": [
+    "ruwiki",
+    "enwiki",
+    "wikidata"
+   ]
+  },
+  {
+   "date": "1475–1479",
+   "event": "Строительство Успенского собора Московского Кремля",
+   "persons": [
+    "Аристотель Фиораванти",
+    "Иван III"
+   ],
+   "process": "Культура Руси XIV–XV вв.",
+   "codifier": "1.11",
+   "wiki": "Успенский собор (Москва)",
+   "sources": [
+    "https://ru.wikipedia.org/wiki/%D0%A3%D1%81%D0%BF%D0%B5%D0%BD%D1%81%D0%BA%D0%B8%D0%B9_%D1%81%D0%BE%D0%B1%D0%BE%D1%80_(%D0%9C%D0%BE%D1%81%D0%BA%D0%BE%D0%B2%D1%81%D0%BA%D0%B8%D0%B9_%D0%9A%D1%80%D0%B5%D0%BC%D0%BB%D1%8C)",
+    "https://en.wikipedia.org/wiki/Dormition_Cathedral,_Moscow"
+   ],
+   "checked": true,
+   "verified_by": [
+    "ruwiki",
+    "enwiki"
+   ]
+  },
+  {
+   "date": "1478",
+   "event": "Присоединение Новгорода к Москве",
+   "persons": [
+    "Иван III",
+    "Марфа Борецкая"
+   ],
+   "process": "Формирование единого Русского государства",
+   "codifier": "1.10",
+   "wiki": "Новгородская республика",
+   "sources": [
+    "https://ru.wikipedia.org/wiki/%D0%9D%D0%BE%D0%B2%D0%B3%D0%BE%D1%80%D0%BE%D0%B4%D1%81%D0%BA%D0%B0%D1%8F_%D1%80%D0%B5%D1%81%D0%BF%D1%83%D0%B1%D0%BB%D0%B8%D0%BA%D0%B0",
+    "https://en.wikipedia.org/wiki/Novgorod_Republic",
+    "https://www.wikidata.org/wiki/Q151536"
+   ],
+   "checked": true,
+   "verified_by": [
+    "ruwiki",
+    "enwiki",
+    "wikidata"
+   ]
+  },
+  {
+   "date": "1480",
+   "event": "Стояние на реке Угре, конец ордынской зависимости",
+   "persons": [
+    "Иван III",
+    "Ахмат"
+   ],
+   "process": "Формирование единого Русского государства",
+   "codifier": "1.10",
+   "wiki": "Стояние на реке Угре",
+   "sources": [
+    "https://ru.wikipedia.org/wiki/%D0%A1%D1%82%D0%BE%D1%8F%D0%BD%D0%B8%D0%B5_%D0%BD%D0%B0_%D0%A3%D0%B3%D1%80%D0%B5",
+    "https://en.wikipedia.org/wiki/Great_Stand_on_the_Ugra_River",
+    "https://www.wikidata.org/wiki/Q25628"
+   ],
+   "checked": true,
+   "verified_by": [
+    "ruwiki",
+    "enwiki",
+    "wikidata"
+   ]
+  },
+  {
+   "date": "1485",
+   "event": "Присоединение Тверского княжества к Москве",
+   "persons": [
+    "Иван III",
+    "Михаил Борисович"
+   ],
+   "process": "Формирование единого Русского государства",
+   "codifier": "1.10",
+   "wiki": "Великое княжество Тверское",
+   "sources": [
+    "https://ru.wikipedia.org/wiki/%D0%92%D0%B5%D0%BB%D0%B8%D0%BA%D0%BE%D0%B5_%D0%BA%D0%BD%D1%8F%D0%B6%D0%B5%D1%81%D1%82%D0%B2%D0%BE_%D0%A2%D0%B2%D0%B5%D1%80%D1%81%D0%BA%D0%BE%D0%B5",
+    "https://en.wikipedia.org/wiki/Principality_of_Tver",
+    "https://www.wikidata.org/wiki/Q163268"
+   ],
+   "checked": true,
+   "verified_by": [
+    "ruwiki",
+    "enwiki",
+    "wikidata"
+   ]
+  },
+  {
+   "date": "1497",
+   "event": "Судебник Ивана III",
+   "persons": [
+    "Иван III"
+   ],
+   "process": "Формирование единого Русского государства",
+   "codifier": "1.10",
+   "wiki": "Судебник 1497 года",
+   "sources": [
+    "https://ru.wikipedia.org/wiki/%D0%A1%D1%83%D0%B4%D0%B5%D0%B1%D0%BD%D0%B8%D0%BA_1497_%D0%B3%D0%BE%D0%B4%D0%B0",
+    "https://en.wikipedia.org/wiki/Sudebnik_of_1497",
+    "https://www.wikidata.org/wiki/Q970743"
+   ],
+   "checked": true,
+   "verified_by": [
+    "ruwiki",
+    "enwiki",
+    "wikidata"
+   ]
+  },
+  {
+   "date": "1510",
+   "event": "Присоединение Пскова к Москве",
+   "persons": [
+    "Василий III"
+   ],
+   "process": "Завершение объединения русских земель",
+   "codifier": "2.1",
+   "wiki": "Псковская республика",
+   "sources": [
+    "https://ru.wikipedia.org/wiki/%D0%9F%D1%81%D0%BA%D0%BE%D0%B2%D1%81%D0%BA%D0%B0%D1%8F_%D1%80%D0%B5%D1%81%D0%BF%D1%83%D0%B1%D0%BB%D0%B8%D0%BA%D0%B0",
+    "https://en.wikipedia.org/wiki/Pskov_Republic",
+    "https://www.wikidata.org/wiki/Q317078"
+   ],
+   "checked": true,
+   "verified_by": [
+    "ruwiki",
+    "enwiki",
+    "wikidata"
+   ]
+  },
+  {
+   "date": "1514",
+   "event": "Взятие Смоленска",
+   "persons": [
+    "Василий III"
+   ],
+   "process": "Внешняя политика России в XVI в.",
+   "codifier": "2.1",
+   "wiki": "Осада Смоленска (1514)",
+   "sources": [
+    "https://ru.wikipedia.org/wiki/%D0%9E%D1%81%D0%B0%D0%B4%D1%8B_%D0%A1%D0%BC%D0%BE%D0%BB%D0%B5%D0%BD%D1%81%D0%BA%D0%B0_(1513%E2%80%941514)",
+    "https://en.wikipedia.org/wiki/Siege_of_Smolensk_(1514)",
+    "https://www.wikidata.org/wiki/Q4337446"
+   ],
+   "checked": true,
+   "verified_by": [
+    "ruwiki",
+    "enwiki",
+    "wikidata"
+   ]
+  },
+  {
+   "date": "1547",
+   "event": "Венчание Ивана IV на царство",
+   "persons": [
+    "Иван IV Грозный",
+    "митрополит Макарий"
+   ],
+   "process": "Россия в XVI в.",
+   "codifier": "2.1",
+   "wiki": "Иван Грозный",
+   "sources": [
+    "https://ru.wikipedia.org/wiki/%D0%98%D0%B2%D0%B0%D0%BD_%D0%93%D1%80%D0%BE%D0%B7%D0%BD%D1%8B%D0%B9",
+    "https://en.wikipedia.org/wiki/Ivan_the_Terrible"
+   ],
+   "checked": true,
+   "verified_by": [
+    "ruwiki",
+    "enwiki"
+   ]
+  },
+  {
+   "date": "1549",
+   "event": "Созыв первого Земского собора",
+   "persons": [
+    "Иван IV Грозный"
+   ],
+   "process": "Реформы Избранной рады",
+   "codifier": "2.1",
+   "wiki": "Собор примирения",
+   "sources": [
+    "https://ru.wikipedia.org/wiki/%D0%97%D0%B5%D0%BC%D1%81%D0%BA%D0%B8%D0%B9_%D0%A1%D0%BE%D0%B1%D0%BE%D1%80_1550_%D0%B3%D0%BE%D0%B4%D0%B0",
+    "https://en.wikipedia.org/wiki/Zemsky_Sobor"
+   ],
+   "checked": true,
+   "verified_by": [
+    "ruwiki",
+    "enwiki"
+   ],
+   "wiki_en": "Zemsky Sobor"
+  },
+  {
+   "date": "1550",
+   "event": "Судебник Ивана IV",
+   "persons": [
+    "Иван IV Грозный"
+   ],
+   "process": "Реформы Избранной рады",
+   "codifier": "2.1",
+   "wiki": "Судебник 1550 года",
+   "sources": [
+    "https://ru.wikipedia.org/wiki/%D0%A1%D1%83%D0%B4%D0%B5%D0%B1%D0%BD%D0%B8%D0%BA_%D0%98%D0%B2%D0%B0%D0%BD%D0%B0_IV",
+    "https://en.wikipedia.org/wiki/Sudebnik_of_1550"
+   ],
+   "checked": true,
+   "verified_by": [
+    "ruwiki",
+    "enwiki"
+   ]
+  },
+  {
+   "date": "1551",
+   "event": "Стоглавый собор",
+   "persons": [
+    "Иван IV Грозный",
+    "митрополит Макарий"
+   ],
+   "process": "Реформы Избранной рады",
+   "codifier": "2.1",
+   "wiki": "Стоглавый собор",
+   "sources": [
+    "https://ru.wikipedia.org/wiki/%D0%A1%D1%82%D0%BE%D0%B3%D0%BB%D0%B0%D0%B2%D1%8B%D0%B9_%D1%81%D0%BE%D0%B1%D0%BE%D1%80",
+    "https://en.wikipedia.org/wiki/Stoglav_Synod",
+    "https://www.wikidata.org/wiki/Q1978484"
+   ],
+   "checked": true,
+   "verified_by": [
+    "ruwiki",
+    "enwiki",
+    "wikidata"
+   ]
+  },
+  {
+   "date": "1552",
+   "event": "Взятие Казани",
+   "persons": [
+    "Иван IV Грозный"
+   ],
+   "process": "Внешняя политика России в XVI в.",
+   "codifier": "2.2",
+   "wiki": "Взятие Казани",
+   "sources": [
+    "https://ru.wikipedia.org/wiki/%D0%92%D0%B7%D1%8F%D1%82%D0%B8%D0%B5_%D0%9A%D0%B0%D0%B7%D0%B0%D0%BD%D0%B8",
+    "https://en.wikipedia.org/wiki/Siege_of_Kazan",
+    "https://www.wikidata.org/wiki/Q2670327"
+   ],
+   "checked": true,
+   "verified_by": [
+    "ruwiki",
+    "enwiki",
+    "wikidata"
+   ]
+  },
+  {
+   "date": "1556",
+   "event": "Присоединение Астраханского ханства",
+   "persons": [
+    "Иван IV Грозный"
+   ],
+   "process": "Внешняя политика России в XVI в.",
+   "codifier": "2.2",
+   "wiki": "Астраханское ханство",
+   "sources": [
+    "https://ru.wikipedia.org/wiki/%D0%90%D1%81%D1%82%D1%80%D0%B0%D1%85%D0%B0%D0%BD%D1%81%D0%BA%D0%BE%D0%B5_%D1%85%D0%B0%D0%BD%D1%81%D1%82%D0%B2%D0%BE",
+    "https://en.wikipedia.org/wiki/Astrakhan_Khanate",
+    "https://www.wikidata.org/wiki/Q210163"
+   ],
+   "checked": true,
+   "verified_by": [
+    "ruwiki",
+    "enwiki",
+    "wikidata"
+   ]
+  },
+  {
+   "date": "1555–1561",
+   "event": "Строительство собора Покрова на Рву (храм Василия Блаженного)",
+   "persons": [
+    "Барма",
+    "Постник"
+   ],
+   "process": "Культура России XVI в.",
+   "codifier": "2.6",
+   "wiki": "Храм Василия Блаженного",
+   "sources": [
+    "https://ru.wikipedia.org/wiki/%D0%A5%D1%80%D0%B0%D0%BC_%D0%92%D0%B0%D1%81%D0%B8%D0%BB%D0%B8%D1%8F_%D0%91%D0%BB%D0%B0%D0%B6%D0%B5%D0%BD%D0%BD%D0%BE%D0%B3%D0%BE",
+    "https://en.wikipedia.org/wiki/Saint_Basil%27s_Cathedral"
+   ],
+   "checked": true,
+   "verified_by": [
+    "ruwiki",
+    "enwiki"
+   ]
+  },
+  {
+   "date": "1558–1583",
+   "event": "Ливонская война",
+   "persons": [
+    "Иван IV Грозный",
+    "Стефан Баторий"
+   ],
+   "process": "Внешняя политика России в XVI в.",
+   "codifier": "2.2",
+   "wiki": "Ливонская война",
+   "sources": [
+    "https://ru.wikipedia.org/wiki/%D0%9B%D0%B8%D0%B2%D0%BE%D0%BD%D1%81%D0%BA%D0%B0%D1%8F_%D0%B2%D0%BE%D0%B9%D0%BD%D0%B0",
+    "https://en.wikipedia.org/wiki/Livonian_War",
+    "https://www.wikidata.org/wiki/Q246863"
+   ],
+   "checked": true,
+   "verified_by": [
+    "ruwiki",
+    "enwiki",
+    "wikidata"
+   ]
+  },
+  {
+   "date": "1564",
+   "event": "Первая датированная печатная книга «Апостол»",
+   "persons": [
+    "Иван Фёдоров",
+    "Пётр Мстиславец"
+   ],
+   "process": "Культура России XVI в.",
+   "codifier": "2.6",
+   "wiki": "Апостол (книга, 1564)",
+   "sources": [
+    "https://ru.wikipedia.org/wiki/%D0%90%D0%BF%D0%BE%D1%81%D1%82%D0%BE%D0%BB_(%D0%BA%D0%BD%D0%B8%D0%B3%D0%B0,_1564)",
+    "https://en.wikipedia.org/wiki/Acts_and_Epistles_of_the_Apostles",
+    "https://www.wikidata.org/wiki/Q4068095"
+   ],
+   "checked": true,
+   "verified_by": [
+    "ruwiki",
+    "enwiki",
+    "wikidata"
+   ]
+  },
+  {
+   "date": "1565–1572",
+   "event": "Опричнина",
+   "persons": [
+    "Иван IV Грозный",
+    "Малюта Скуратов"
+   ],
+   "process": "Россия в XVI в.",
+   "codifier": "2.1",
+   "wiki": "Опричнина",
+   "sources": [
+    "https://ru.wikipedia.org/wiki/%D0%9E%D0%BF%D1%80%D0%B8%D1%87%D0%BD%D0%B8%D0%BD%D0%B0",
+    "https://en.wikipedia.org/wiki/Oprichnina",
+    "https://www.wikidata.org/wiki/Q611162"
+   ],
+   "checked": true,
+   "verified_by": [
+    "ruwiki",
+    "enwiki",
+    "wikidata"
+   ]
+  },
+  {
+   "date": "1572",
+   "event": "Битва при Молодях",
+   "persons": [
+    "Михаил Воротынский",
+    "Девлет-Гирей"
+   ],
+   "process": "Внешняя политика России в XVI в.",
+   "codifier": "2.2",
+   "wiki": "Битва при Молодях",
+   "sources": [
+    "https://ru.wikipedia.org/wiki/%D0%91%D0%B8%D1%82%D0%B2%D0%B0_%D0%BF%D1%80%D0%B8_%D0%9C%D0%BE%D0%BB%D0%BE%D0%B4%D1%8F%D1%85",
+    "https://en.wikipedia.org/wiki/Battle_of_Molodi",
+    "https://www.wikidata.org/wiki/Q1760784"
+   ],
+   "checked": true,
+   "verified_by": [
+    "ruwiki",
+    "enwiki",
+    "wikidata"
+   ]
+  },
+  {
+   "date": "1582",
+   "event": "Ям-Запольское перемирие с Речью Посполитой",
+   "persons": [
+    "Иван IV Грозный",
+    "Стефан Баторий"
+   ],
+   "process": "Внешняя политика России в XVI в.",
+   "codifier": "2.2",
+   "wiki": "Ям-Запольский мир",
+   "sources": [
+    "https://ru.wikipedia.org/wiki/%D0%AF%D0%BC-%D0%97%D0%B0%D0%BF%D0%BE%D0%BB%D1%8C%D1%81%D0%BA%D0%B8%D0%B9_%D0%BC%D0%B8%D1%80",
+    "https://en.wikipedia.org/wiki/Truce_of_Yam-Zapolsky",
+    "https://www.wikidata.org/wiki/Q1478267"
+   ],
+   "checked": true,
+   "verified_by": [
+    "ruwiki",
+    "enwiki",
+    "wikidata"
+   ]
+  },
+  {
+   "date": "1582",
+   "event": "Начало похода Ермака в Сибирь, разгром Кучума",
+   "persons": [
+    "Ермак",
+    "Кучум"
+   ],
+   "process": "Внешняя политика России в XVI в.",
+   "codifier": "2.2",
+   "wiki": "Сибирский поход Ермака",
+   "sources": [
+    "https://ru.wikipedia.org/wiki/%D0%A1%D0%B8%D0%B1%D0%B8%D1%80%D1%81%D0%BA%D0%B8%D0%B9_%D0%BF%D0%BE%D1%85%D0%BE%D0%B4_%D0%95%D1%80%D0%BC%D0%B0%D0%BA%D0%B0",
+    "https://en.wikipedia.org/wiki/Conquest_of_the_Khanate_of_Sibir"
+   ],
+   "checked": true,
+   "verified_by": [
+    "ruwiki",
+    "enwiki"
+   ]
+  },
+  {
+   "date": "1586",
+   "event": "Отлита Царь-пушка",
+   "persons": [
+    "Андрей Чохов"
+   ],
+   "process": "Культура России XVI в.",
+   "codifier": "2.6",
+   "wiki": "Царь-пушка",
+   "sources": [
+    "https://ru.wikipedia.org/wiki/%D0%A6%D0%B0%D1%80%D1%8C-%D0%BF%D1%83%D1%88%D0%BA%D0%B0",
+    "https://en.wikipedia.org/wiki/Tsar_Cannon",
+    "https://www.wikidata.org/wiki/Q147881"
+   ],
+   "checked": true,
+   "verified_by": [
+    "ruwiki",
+    "enwiki",
+    "wikidata"
+   ]
+  },
+  {
+   "date": "1589",
+   "event": "Учреждение патриаршества в России",
+   "persons": [
+    "Иов",
+    "Борис Годунов",
+    "Фёдор Иоаннович"
+   ],
+   "process": "Россия в конце XVI в.",
+   "codifier": "2.1",
+   "wiki": "Иов (патриарх Московский)",
+   "sources": [
+    "https://ru.wikipedia.org/wiki/%D0%98%D0%BE%D0%B2_%28%D0%BF%D0%B0%D1%82%D1%80%D0%B8%D0%B0%D1%80%D1%85_%D0%9C%D0%BE%D1%81%D0%BA%D0%BE%D0%B2%D1%81%D0%BA%D0%B8%D0%B9%29",
+    "https://en.wikipedia.org/wiki/Patriarch_Job_of_Moscow"
+   ],
+   "checked": true,
+   "verified_by": [
+    "ruwiki",
+    "enwiki"
+   ]
+  },
+  {
+   "date": "1597",
+   "event": "Указ об урочных летах (пятилетний сыск беглых крестьян)",
+   "persons": [
+    "Борис Годунов"
+   ],
+   "process": "Закрепощение крестьян",
+   "codifier": "2.1",
+   "wiki": "Урочные лета",
+   "sources": [
+    "https://ru.wikipedia.org/wiki/%D0%A3%D1%80%D0%BE%D1%87%D0%BD%D1%8B%D0%B5_%D0%BB%D0%B5%D1%82%D0%B0",
+    "https://en.wikipedia.org/wiki/Fixed_years"
+   ],
+   "checked": true,
+   "verified_by": [
+    "ruwiki",
+    "enwiki"
+   ]
+  },
+  {
+   "date": "1598",
+   "event": "Пресечение династии Рюриковичей, избрание Бориса Годунова царём",
+   "persons": [
+    "Борис Годунов",
+    "Фёдор Иоаннович"
+   ],
+   "process": "Смутное время",
+   "codifier": "2.3",
+   "wiki": "Борис Годунов",
+   "sources": [
+    "https://ru.wikipedia.org/wiki/%D0%91%D0%BE%D1%80%D0%B8%D1%81_%D0%93%D0%BE%D0%B4%D1%83%D0%BD%D0%BE%D0%B2",
+    "https://en.wikipedia.org/wiki/Boris_Godunov"
+   ],
+   "checked": true,
+   "verified_by": [
+    "ruwiki",
+    "enwiki"
+   ]
+  },
+  {
+   "date": "1606–1607",
+   "event": "Восстание Ивана Болотникова",
+   "persons": [
+    "Иван Болотников",
+    "Василий Шуйский"
+   ],
+   "process": "Смутное время",
+   "codifier": "2.3",
+   "wiki": "Восстание Болотникова",
+   "sources": [
+    "https://ru.wikipedia.org/wiki/%D0%92%D0%BE%D1%81%D1%81%D1%82%D0%B0%D0%BD%D0%B8%D0%B5_%D0%91%D0%BE%D0%BB%D0%BE%D1%82%D0%BD%D0%B8%D0%BA%D0%BE%D0%B2%D0%B0",
+    "https://en.wikipedia.org/wiki/Uprising_of_Bolotnikov",
+    "https://www.wikidata.org/wiki/Q4126353"
+   ],
+   "checked": true,
+   "verified_by": [
+    "ruwiki",
+    "enwiki",
+    "wikidata"
+   ]
+  },
+  {
+   "date": "1610",
+   "event": "Семибоярщина, присяга королевичу Владиславу",
+   "persons": [
+    "Фёдор Мстиславский",
+    "Владислав"
+   ],
+   "process": "Смутное время",
+   "codifier": "2.3",
+   "wiki": "Семибоярщина",
+   "sources": [
+    "https://ru.wikipedia.org/wiki/%D0%A1%D0%B5%D0%BC%D0%B8%D0%B1%D0%BE%D1%8F%D1%80%D1%89%D0%B8%D0%BD%D0%B0",
+    "https://en.wikipedia.org/wiki/Seven_Boyars",
+    "https://www.wikidata.org/wiki/Q4415421"
+   ],
+   "checked": true,
+   "verified_by": [
+    "ruwiki",
+    "enwiki",
+    "wikidata"
+   ]
+  },
+  {
+   "date": "1611",
+   "event": "Первое ополчение",
+   "persons": [
+    "Прокопий Ляпунов",
+    "Дмитрий Трубецкой",
+    "Иван Заруцкий"
+   ],
+   "process": "Смутное время",
+   "codifier": "2.3",
+   "wiki": "Первое ополчение",
+   "sources": [
+    "https://ru.wikipedia.org/wiki/%D0%9F%D0%B5%D1%80%D0%B2%D0%BE%D0%B5_%D0%BD%D0%B0%D1%80%D0%BE%D0%B4%D0%BD%D0%BE%D0%B5_%D0%BE%D0%BF%D0%BE%D0%BB%D1%87%D0%B5%D0%BD%D0%B8%D0%B5",
+    "https://en.wikipedia.org/wiki/Prokopy_Petrovich_Lyapunov"
+   ],
+   "checked": true,
+   "verified_by": [
+    "ruwiki",
+    "enwiki"
+   ],
+   "wiki_en": "Prokopy Lyapunov"
+  },
+  {
+   "date": "1612",
+   "event": "Освобождение Москвы Вторым ополчением",
+   "persons": [
+    "Кузьма Минин",
+    "Дмитрий Пожарский"
+   ],
+   "process": "Смутное время",
+   "codifier": "2.3",
+   "wiki": "Второе ополчение",
+   "sources": [
+    "https://ru.wikipedia.org/wiki/%D0%92%D1%82%D0%BE%D1%80%D0%BE%D0%B5_%D0%BD%D0%B0%D1%80%D0%BE%D0%B4%D0%BD%D0%BE%D0%B5_%D0%BE%D0%BF%D0%BE%D0%BB%D1%87%D0%B5%D0%BD%D0%B8%D0%B5",
+    "https://en.wikipedia.org/wiki/Battle_of_Moscow_(1612)"
+   ],
+   "checked": true,
+   "verified_by": [
+    "ruwiki",
+    "enwiki"
+   ],
+   "wiki_en": "Battle of Moscow (1612)"
+  },
+  {
+   "date": "1613",
+   "event": "Земский собор избрал царём Михаила Романова",
+   "persons": [
+    "Михаил Фёдорович"
+   ],
+   "process": "Россия при первых Романовых",
+   "codifier": "2.4",
+   "wiki": "Земский собор 1613 года",
+   "sources": [
+    "https://ru.wikipedia.org/wiki/%D0%97%D0%B5%D0%BC%D1%81%D0%BA%D0%B8%D0%B9_%D1%81%D0%BE%D0%B1%D0%BE%D1%80_1613_%D0%B3%D0%BE%D0%B4%D0%B0",
+    "https://en.wikipedia.org/wiki/Zemsky_Sobor_of_1613",
+    "https://www.wikidata.org/wiki/Q4191261"
+   ],
+   "checked": true,
+   "verified_by": [
+    "ruwiki",
+    "enwiki",
+    "wikidata"
+   ]
+  },
+  {
+   "date": "1617",
+   "event": "Столбовский мир со Швецией",
+   "persons": [
+    "Михаил Фёдорович"
+   ],
+   "process": "Внешняя политика России в XVII в.",
+   "codifier": "2.5",
+   "wiki": "Столбовский мир",
+   "sources": [
+    "https://ru.wikipedia.org/wiki/%D0%A1%D1%82%D0%BE%D0%BB%D0%B1%D0%BE%D0%B2%D1%81%D0%BA%D0%B8%D0%B9_%D0%BC%D0%B8%D1%80",
+    "https://en.wikipedia.org/wiki/Treaty_of_Stolbovo",
+    "https://www.wikidata.org/wiki/Q928848"
+   ],
+   "checked": true,
+   "verified_by": [
+    "ruwiki",
+    "enwiki",
+    "wikidata"
+   ]
+  },
+  {
+   "date": "1618",
+   "event": "Деулинское перемирие с Речью Посполитой",
+   "persons": [
+    "Михаил Фёдорович",
+    "Филарет"
+   ],
+   "process": "Внешняя политика России в XVII в.",
+   "codifier": "2.5",
+   "wiki": "Деулинское перемирие",
+   "sources": [
+    "https://ru.wikipedia.org/wiki/%D0%94%D0%B5%D1%83%D0%BB%D0%B8%D0%BD%D1%81%D0%BA%D0%BE%D0%B5_%D0%BF%D0%B5%D1%80%D0%B5%D0%BC%D0%B8%D1%80%D0%B8%D0%B5",
+    "https://en.wikipedia.org/wiki/Truce_of_Deulino",
+    "https://www.wikidata.org/wiki/Q542169"
+   ],
+   "checked": true,
+   "verified_by": [
+    "ruwiki",
+    "enwiki",
+    "wikidata"
+   ]
+  },
+  {
+   "date": "1632–1634",
+   "event": "Смоленская война",
+   "persons": [
+    "Михаил Шеин"
+   ],
+   "process": "Внешняя политика России в XVII в.",
+   "codifier": "2.5",
+   "wiki": "Смоленская война",
+   "sources": [
+    "https://ru.wikipedia.org/wiki/%D0%A1%D0%BC%D0%BE%D0%BB%D0%B5%D0%BD%D1%81%D0%BA%D0%B0%D1%8F_%D0%B2%D0%BE%D0%B9%D0%BD%D0%B0",
+    "https://en.wikipedia.org/wiki/Smolensk_War",
+    "https://www.wikidata.org/wiki/Q1140492"
+   ],
+   "checked": true,
+   "verified_by": [
+    "ruwiki",
+    "enwiki",
+    "wikidata"
+   ]
+  },
+  {
+   "date": "1648",
+   "event": "Соляной бунт в Москве",
+   "persons": [
+    "Алексей Михайлович",
+    "Борис Морозов"
+   ],
+   "process": "Бунташный век",
+   "codifier": "2.4",
+   "wiki": "Соляной бунт",
+   "sources": [
+    "https://ru.wikipedia.org/wiki/%D0%A1%D0%BE%D0%BB%D1%8F%D0%BD%D0%BE%D0%B9_%D0%B1%D1%83%D0%BD%D1%82",
+    "https://en.wikipedia.org/wiki/Moscow_uprising_of_1648",
+    "https://www.wikidata.org/wiki/Q600898"
+   ],
+   "checked": true,
+   "verified_by": [
+    "ruwiki",
+    "enwiki",
+    "wikidata"
+   ]
+  },
+  {
+   "date": "1648",
+   "event": "Экспедиция Семёна Дежнёва, пролив между Азией и Америкой",
+   "persons": [
+    "Семён Дежнёв"
+   ],
+   "process": "Освоение Сибири и Дальнего Востока",
+   "codifier": "2.4",
+   "wiki": "Семён Дежнёв",
+   "sources": [
+    "https://ru.wikipedia.org/wiki/%D0%94%D0%B5%D0%B6%D0%BD%D1%91%D0%B2,_%D0%A1%D0%B5%D0%BC%D1%91%D0%BD_%D0%98%D0%B2%D0%B0%D0%BD%D0%BE%D0%B2%D0%B8%D1%87",
+    "https://en.wikipedia.org/wiki/Semyon_Dezhnev"
+   ],
+   "checked": true,
+   "verified_by": [
+    "ruwiki",
+    "enwiki"
+   ]
+  },
+  {
+   "date": "1649",
+   "event": "Соборное уложение",
+   "persons": [
+    "Алексей Михайлович",
+    "Никита Одоевский"
+   ],
+   "process": "Закрепощение крестьян",
+   "codifier": "2.4",
+   "wiki": "Соборное уложение",
+   "sources": [
+    "https://ru.wikipedia.org/wiki/%D0%A1%D0%BE%D0%B1%D0%BE%D1%80%D0%BD%D0%BE%D0%B5_%D1%83%D0%BB%D0%BE%D0%B6%D0%B5%D0%BD%D0%B8%D0%B5",
+    "https://en.wikipedia.org/wiki/Sobornoye_Ulozheniye"
+   ],
+   "checked": true,
+   "verified_by": [
+    "ruwiki",
+    "enwiki"
+   ],
+   "wiki_en": "Sobornoye Ulozheniye"
+  },
+  {
+   "date": "1653",
+   "event": "Начало церковной реформы патриарха Никона",
+   "persons": [
+    "Никон",
+    "Аввакум",
+    "Алексей Михайлович"
+   ],
+   "process": "Церковный раскол",
+   "codifier": "2.4",
+   "wiki": "Старообрядчество",
+   "sources": [
+    "https://ru.wikipedia.org/wiki/%D0%A1%D1%82%D0%B0%D1%80%D0%BE%D0%BE%D0%B1%D1%80%D1%8F%D0%B4%D1%87%D0%B5%D1%81%D1%82%D0%B2%D0%BE",
+    "https://en.wikipedia.org/wiki/Old_Believers"
+   ],
+   "checked": true,
+   "verified_by": [
+    "ruwiki",
+    "enwiki"
+   ],
+   "wiki_en": "Old Believers"
+  },
+  {
+   "date": "1654",
+   "event": "Переяславская рада",
+   "persons": [
+    "Богдан Хмельницкий",
+    "Алексей Михайлович"
+   ],
+   "process": "Внешняя политика России в XVII в.",
+   "codifier": "2.5",
+   "wiki": "Переяславская рада",
+   "sources": [
+    "https://ru.wikipedia.org/wiki/%D0%9F%D0%B5%D1%80%D0%B5%D1%8F%D1%81%D0%BB%D0%B0%D0%B2%D1%81%D0%BA%D0%B0%D1%8F_%D1%80%D0%B0%D0%B4%D0%B0",
+    "https://en.wikipedia.org/wiki/Pereiaslav_Agreement",
+    "https://www.wikidata.org/wiki/Q525758"
+   ],
+   "checked": true,
+   "verified_by": [
+    "ruwiki",
+    "enwiki",
+    "wikidata"
+   ]
+  },
+  {
+   "date": "1662",
+   "event": "Медный бунт",
+   "persons": [
+    "Алексей Михайлович"
+   ],
+   "process": "Бунташный век",
+   "codifier": "2.4",
+   "wiki": "Медный бунт",
+   "sources": [
+    "https://ru.wikipedia.org/wiki/%D0%9C%D0%B5%D0%B4%D0%BD%D1%8B%D0%B9_%D0%B1%D1%83%D0%BD%D1%82",
+    "https://en.wikipedia.org/wiki/Copper_Riot",
+    "https://www.wikidata.org/wiki/Q1968043"
+   ],
+   "checked": true,
+   "verified_by": [
+    "ruwiki",
+    "enwiki",
+    "wikidata"
+   ]
+  },
+  {
+   "date": "1667",
+   "event": "Андрусовское перемирие",
+   "persons": [
+    "Афанасий Ордин-Нащокин"
+   ],
+   "process": "Внешняя политика России в XVII в.",
+   "codifier": "2.5",
+   "wiki": "Андрусовское перемирие",
+   "sources": [
+    "https://ru.wikipedia.org/wiki/%D0%90%D0%BD%D0%B4%D1%80%D1%83%D1%81%D0%BE%D0%B2%D1%81%D0%BA%D0%BE%D0%B5_%D0%BF%D0%B5%D1%80%D0%B5%D0%BC%D0%B8%D1%80%D0%B8%D0%B5",
+    "https://en.wikipedia.org/wiki/Truce_of_Andrusovo",
+    "https://www.wikidata.org/wiki/Q721168"
+   ],
+   "checked": true,
+   "verified_by": [
+    "ruwiki",
+    "enwiki",
+    "wikidata"
+   ]
+  },
+  {
+   "date": "1670–1671",
+   "event": "Восстание Степана Разина",
+   "persons": [
+    "Степан Разин"
+   ],
+   "process": "Бунташный век",
+   "codifier": "2.4",
+   "wiki": "Восстание Степана Разина",
+   "sources": [
+    "https://ru.wikipedia.org/wiki/%D0%92%D0%BE%D1%81%D1%81%D1%82%D0%B0%D0%BD%D0%B8%D0%B5_%D0%A0%D0%B0%D0%B7%D0%B8%D0%BD%D0%B0",
+    "https://en.wikipedia.org/wiki/Stenka_Razin"
+   ],
+   "checked": true,
+   "verified_by": [
+    "ruwiki",
+    "enwiki"
+   ],
+   "wiki_en": "Stenka Razin"
+  },
+  {
+   "date": "1682",
+   "event": "Отмена местничества",
+   "persons": [
+    "Фёдор Алексеевич"
+   ],
+   "process": "Россия при первых Романовых",
+   "codifier": "2.4",
+   "wiki": "Местничество",
+   "sources": [
+    "https://ru.wikipedia.org/wiki/%D0%9C%D0%B5%D1%81%D1%82%D0%BD%D0%B8%D1%87%D0%B5%D1%81%D1%82%D0%B2%D0%BE",
+    "https://en.wikipedia.org/wiki/Mestnichestvo"
+   ],
+   "checked": true,
+   "verified_by": [
+    "ruwiki",
+    "enwiki"
+   ]
+  },
+  {
+   "date": "1686",
+   "event": "«Вечный мир» с Речью Посполитой",
+   "persons": [
+    "Василий Голицын",
+    "Софья Алексеевна"
+   ],
+   "process": "Внешняя политика России в XVII в.",
+   "codifier": "2.5",
+   "wiki": "Вечный мир (1686)",
+   "sources": [
+    "https://ru.wikipedia.org/wiki/%D0%92%D0%B5%D1%87%D0%BD%D1%8B%D0%B9_%D0%BC%D0%B8%D1%80_%281686%29",
+    "https://en.wikipedia.org/wiki/Polish%E2%80%93Russian_Peace_Treaty_%281686%29"
+   ],
+   "checked": true,
+   "verified_by": [
+    "ruwiki",
+    "enwiki"
+   ]
+  },
+  {
+   "date": "1687",
+   "event": "Основание Славяно-греко-латинской академии",
+   "persons": [
+    "Лихуды"
+   ],
+   "process": "Культура России XVII в.",
+   "codifier": "2.6",
+   "wiki": "Славяно-греко-латинская академия",
+   "sources": [
+    "https://ru.wikipedia.org/wiki/%D0%A1%D0%BB%D0%B0%D0%B2%D1%8F%D0%BD%D0%BE-%D0%B3%D1%80%D0%B5%D0%BA%D0%BE-%D0%BB%D0%B0%D1%82%D0%B8%D0%BD%D1%81%D0%BA%D0%B0%D1%8F_%D0%B0%D0%BA%D0%B0%D0%B4%D0%B5%D0%BC%D0%B8%D1%8F",
+    "https://en.wikipedia.org/wiki/Slavic_Greek_Latin_Academy"
+   ],
+   "checked": true,
+   "verified_by": [
+    "ruwiki",
+    "enwiki"
+   ]
+  },
+  {
+   "date": "1689",
+   "event": "Нерчинский договор с Китаем",
+   "persons": [
+    "Фёдор Головин"
+   ],
+   "process": "Внешняя политика России в XVII в.",
+   "codifier": "2.5",
+   "wiki": "Нерчинский договор",
+   "sources": [
+    "https://ru.wikipedia.org/wiki/%D0%9D%D0%B5%D1%80%D1%87%D0%B8%D0%BD%D1%81%D0%BA%D0%B8%D0%B9_%D0%B4%D0%BE%D0%B3%D0%BE%D0%B2%D0%BE%D1%80",
+    "https://en.wikipedia.org/wiki/Treaty_of_Nerchinsk",
+    "https://www.wikidata.org/wiki/Q696094"
+   ],
+   "checked": true,
+   "verified_by": [
+    "ruwiki",
+    "enwiki",
+    "wikidata"
+   ]
+  }
+ ]
+}
