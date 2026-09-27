@@ -260,7 +260,9 @@ def g_rows_cat(cat, title):
 
 # не берём: омографы (начАла — сущ.), вариантное ударение (нАискось/наИскось)
 # и спорные записи в udarenie.json (упрОчение — по орфоэпическому словарю упрочЕние)
-STRESS_SKIP = {'начала', 'наискось', 'упрочение', 'занята', 'заняты', 'сорит', 'кладовая', 'бюрократия'}
+# и электропрОвод (в словаре — электропровОд); Отзыв/отзЫв — омографы
+STRESS_SKIP = {'начала', 'наискось', 'упрочение', 'электропровод', 'отзыв', 'занята', 'заняты', 'сорит',
+               'кладовая', 'бюрократия', 'накренится', 'добытый'}
 
 
 @functools.lru_cache(None)
@@ -659,7 +661,7 @@ def g_o6(rng):
     seen = set()
     for f in rng.sample(facts, len(facts)):
         rule = f[1].split(' (')[0][:40]
-        if f[0] in seen or sum(1 for p in pick if p[1][:40] == rule) >= 2:
+        if f[0] in seen or any(p[1][:40] == rule or p[2][:40] == f[2][:40] for p in pick):
             continue
         seen.add(f[0])
         pick.append(f)
@@ -786,6 +788,19 @@ def check_llm(c):
                 return 'выписываемого слова нет в тексте'
         if pid == 'e6-excess' and sum(yo(t.lower()).count(yo(w.lower())) for w in words[:1]) != 1:
             return 'лишнее слово встречается не один раз'
+    if pid in ('e15-nn', 'e15-n'):
+        got = []
+        for pre, i, post in re.findall(r'([а-яё]+)\((\d)\)([а-яё]+)', t.lower()):
+            one, two = known(pre + 'н' + post), known(pre + 'нн' + post)
+            if one == two:  # раненый/раненный: решает правило (зависимые слова, приставка) — берём разметку
+                tag = (c.get('tags') or {}).get(i)
+                if tag not in ('н', 'нн'):
+                    return f'Н/НН в позиции ({i}) не определяется словарём и нет разметки: {pre}_{post}'
+                one, two = tag == 'н', tag == 'нн'
+            if (two if pid == 'e15-nn' else one):
+                got.append(i)
+        if sorted(got) != sorted(a):
+            return f'по словарю ответ {got}, в карточке {a}'
     if pid == 'o7-letters':
         m = re.search(r'буква ([А-ЯЁ])', c['q'])
         bank = {g.full: g for g in pool('roots') + pool('prefixes') + pool('suffixes')}
