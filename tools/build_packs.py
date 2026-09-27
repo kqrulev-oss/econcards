@@ -1,7 +1,15 @@
 #!/usr/bin/env python3
 """Собирает наборы карточек для приложения из data/source/ в packs/.
 
-Запуск: python3 tools/build_packs.py
+Запуск: python3 tools/build_packs.py            — всё: наборы, index.json и производные
+        python3 tools/build_packs.py --derived  — только производные из готовых packs/<id>.json
+
+Производные файлы (собираются из готовых наборов, без data/source/):
+  packs/<id>.free.json      бесплатная часть библиотеки — сервер отдаёт её вместо полного
+                            набора тем, у кого нет доступа (правила — как trimLibrary
+                            в worker/billing.js)
+  packs/sample-<предмет>.json  маленький «Готовый пример» для студии: 3 темы по 12 карточек
+                            с теорией; поля — как у наборов библиотеки
 
 Формат набора (packs/<id>.json):
   id, title, subject, desc, color
@@ -20,6 +28,7 @@
 import html
 import json
 import re
+import sys
 from collections import Counter
 from pathlib import Path
 
@@ -571,7 +580,104 @@ def math_pack():
     }
 
 
+# ---------- производные: бесплатная часть библиотеки и «Готовый пример» ----------
+
+# Наборы библиотеки с платным доступом — как LIB_PACKS в worker/billing.js
+LIB_PACKS = ['ege-rus', 'ege-math', 'econ-olymp', 'udarenie']
+FREE_PROTOS = 2    # без доступа: по 2 первых прототипа в каждом задании
+FREE_PER_TOPIC = 15  # в наборах без прототипов — первые 15 карточек темы
+
+
+def trim_library(pack):
+    """Бесплатная часть: все правила и теория, а задания — по 2 первых прототипа
+    в каждом задании (карточки без прототипа — первые 15 в теме). Правила и порядок
+    полей — ровно как trimLibrary() в worker/billing.js: результат тот же, что
+    сервер раньше собирал на каждый запрос."""
+    keep = set()
+    for t in pack['topics']:
+        for p in (t.get('protos') or [])[:FREE_PROTOS]:
+            keep.add(p.get('id'))
+    per_topic = Counter()
+    cards = []
+    for c in pack['cards']:
+        if c.get('p'):
+            if c['p'] in keep:
+                cards.append(c)
+            continue
+        per_topic[c['t']] += 1
+        if per_topic[c['t']] <= FREE_PER_TOPIC:
+            cards.append(c)
+    return {**pack, 'cards': cards, 'limited': {'shown': len(cards), 'total': len(pack['cards'])}}
+
+
+# «Готовый пример» в студии: набор-источник, темы, карточек на тему
+SAMPLES = {
+    'rus': ('ege-rus', ['task-4', 'task-13', 'task-15']),
+    'math': ('ege-math', ['m-task-1', 'm-task-5', 'm-task-6']),
+}
+SAMPLE_PER_TOPIC = 12
+
+
+def sample_pack(key, pack, tids, per_topic=SAMPLE_PER_TOPIC):
+    """Маленький пример из библиотеки: выбранные темы, их теория и по per_topic
+    карточек на тему — по очереди из каждого прототипа, чтобы первые карточки были
+    разными (у темы остаются только прототипы, из которых взяты карточки). id тем
+    и карточек — как в библиотеке: потом можно добавить всю тему без повторов."""
+    topics, cards = [], []
+    for tid in tids:
+        t = next(x for x in pack['topics'] if x['id'] == tid)
+        pool = [c for c in pack['cards'] if c['t'] == tid]
+        protos = t.get('protos') or []
+        known = {p['id'] for p in protos}
+        groups = [[c for c in pool if c.get('p') == p['id']] for p in protos]
+        groups.append([c for c in pool if c.get('p') not in known])
+        picked = []
+        while len(picked) < per_topic and any(groups):
+            for g in groups:
+                if g and len(picked) < per_topic:
+                    picked.append(g.pop(0))
+        used = {c.get('p') for c in picked}
+        topic = dict(t)
+        if protos:
+            topic['protos'] = [p for p in protos if p['id'] in used]
+        topics.append(topic)
+        cards += picked
+    theory = [l for l in pack['theory'] if l['topic'] in tids]
+    return {
+        'id': f'sample-{key}', 'title': pack['title'], 'subject': pack['subject'],
+        'desc': f'Пример тренажёра: {len(tids)} темы, {len(cards)} карточек с теорией',
+        'color': pack['color'], 'topics': topics, 'theory': theory, 'cards': cards,
+    }
+
+
+def write_json(name, data):
+    (OUT / name).write_text(json.dumps(data, ensure_ascii=False, separators=(',', ':')), 'utf-8')
+
+
+def derived(packs=None):
+    """packs/<id>.free.json и packs/sample-*.json из собранных наборов
+    (packs — уже собранные в этом запуске, остальные читаются из packs/)."""
+    packs = dict(packs or {})
+    for pid in set(LIB_PACKS) | {src for src, _ in SAMPLES.values()}:
+        if pid not in packs:
+            packs[pid] = json.loads((OUT / f'{pid}.json').read_text('utf-8'))
+    for pid in LIB_PACKS:
+        free = trim_library(packs[pid])
+        write_json(f'{pid}.free.json', free)
+        print(f'packs/{pid}.free.json: {free["limited"]["shown"]} из {free["limited"]["total"]} карточек')
+    for key, (src, tids) in SAMPLES.items():
+        # Пример публичный (его видит любой гость) — только из бесплатной части библиотеки
+        s = sample_pack(key, trim_library(packs[src]), tids)
+        write_json(f'{s["id"]}.json', s)
+        print(f'packs/{s["id"]}.json: {len(s["cards"])} карточек в {len(s["topics"])} темах, теория {len(s["theory"])}')
+
+
 if __name__ == '__main__':
-    index = [write(rus_pack()), write(math_pack()), write(econ_pack()), write(stress_pack())]
+    if '--derived' in sys.argv:
+        derived()
+        sys.exit()
+    built = [rus_pack(), math_pack(), econ_pack(), stress_pack()]
+    index = [write(p) for p in built]
     (OUT / 'index.json').write_text(json.dumps(index, ensure_ascii=False, indent=1) + '\n', 'utf-8')
     print('packs/index.json')
+    derived({p['id']: p for p in built})

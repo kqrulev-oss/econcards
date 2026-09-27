@@ -1,14 +1,20 @@
 // Приложение ученика: ежедневное занятие по интервальному повторению,
 // темы с теорией, работа над ошибками и отправка прогресса репетитору.
 import { store, api, apiBase, loadPack, loadLibrary, renderCard, esc, safeHtml, text, day, dueDay, dueText, whenText, uid, plural, el, toast, modal, videoEmbed, courseStats, mergeLes } from './lib.js';
-import { renderLanding } from './landing.js';
-import { signedIn, account, loginDialog, logout, addRole, finishRedirectLogin, finishPayment, payDialog, planOf, TG_ICON } from './account.js';
+import { renderLanding, openCode } from './landing.js';
+import { signedIn, account, loginDialog, signOut, addRole, finishRedirectLogin, finishPayment, payDialog, planOf, TG_ICON } from './account.js';
 
 const $app = document.getElementById('app');
 const INTERVALS = [0, 1, 3, 7, 14, 30, 60]; // дни до повтора по «коробкам»
 const SESSION = 20;
 const NEW_DEFAULT = 10;
 const DAILY_GOAL = 10; // карточек в день, чтобы день засчитался в цель
+
+const params = new URLSearchParams(location.search);
+// Репетитор смотрит тренажёр глазами ученика (?t=<id>&preview=1 — «Открыть как ученик» в студии):
+// без экрана имени, на сервер не уходит ничего, прогресс — только в этой вкладке
+const preview = !!params.get('t') && params.has('preview');
+const debug = params.has('debug'); // служебные поля (адрес сервера) — только для разработки
 
 let ref = null;   // 'econ-olymp' или 't:<id>' для набора репетитора
 let pack = null;
@@ -18,13 +24,19 @@ let topicsById = {};
 // ---------- прогресс ----------
 
 const progKey = () => 'zd-prog:' + ref;
+// В режиме просмотра прогресс не смешивается с настоящим и живёт до закрытия вкладки
+const tabStore = {
+  get(key, fallback) { try { const v = sessionStorage.getItem(key); return v ? JSON.parse(v) : fallback; } catch { return fallback; } },
+  set(key, value) { try { sessionStorage.setItem(key, JSON.stringify(value)); } catch { /* приватный режим */ } },
+};
+const progStore = preview ? tabStore : store;
 // Прогресс хранится в браузере, а после входа в аккаунт — ещё и на сервере
 // В облако — в конце занятия, при уходе со страницы и не чаще раза в 5 минут между ними:
 // у бесплатного хранилища Cloudflare 1000 записей в сутки на весь сайт
 let progTimer, progDirty = false;
 const save = () => {
-  store.set(progKey(), prog);
-  if (!signedIn()) return;
+  progStore.set(progKey(), prog);
+  if (preview || !signedIn()) return;
   progDirty = true;
   progTimer ||= setTimeout(() => { progTimer = null; pushProg(); }, 300e3);
 };
@@ -33,11 +45,13 @@ addEventListener('pagehide', flushProg);
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') flushProg(); });
 const progUrl = () => `/me/progress/${encodeURIComponent(ref)}`;
 async function pushProg(leaving = false) {
-  if (!ref) return;
+  if (!ref || preview) return;
   progDirty = false;
   clearTimeout(progTimer); progTimer = null;
+  // С прогрессом — сводка для кабинета родителя (parentSum): родителю не нужно качать сам набор
+  const body = { ...prog, sum: parentSum() };
   // keepalive (отправка при закрытии вкладки) ограничен 64 КБ
-  try { await api(progUrl(), { method: 'PUT', body: prog, keepalive: leaving && JSON.stringify(prog).length < 60000 }); } catch { progDirty = true; /* офлайн — отправим позже */ }
+  try { await api(progUrl(), { method: 'PUT', body, keepalive: leaving && JSON.stringify(body).length < 60000 }); } catch { progDirty = true; /* офлайн — отправим позже */ }
 }
 
 // Прогресс с двух устройств → один: по карточке и по дню берём, где сделано больше
@@ -58,23 +72,30 @@ function mergeProg(a, b) {
     synced: moved ? 0 : a.synced, syncedN: moved ? -1 : a.syncedN };
 }
 
+// То, что видно на экранах ученика: по нему решаем, перерисовывать ли экран после облака
+const seen = p => JSON.stringify([p.cards, p.log, p.les, p.hw, p.name, p.sid, p.errs, p.variants?.length]);
+
+// Вернёт true, если из облака пришло новое (занимался на другом устройстве, имя из аккаунта):
+// только тогда экран стоит перерисовать
 async function pullProg() {
-  if (!signedIn() || !prog) return false;
+  if (preview || !signedIn() || !prog) return false;
   try {
     const remote = await api(progUrl());
+    const before = seen(prog);
     if (remote) prog = mergeProg(prog, remote);
     if (!prog.name && account()?.name) prog.name = account().name;
-    store.set(progKey(), prog);
+    progStore.set(progKey(), prog);
     // Обратно в облако — только если здесь есть ответы, которых там нет: иначе каждое
     // открытие тренажёра стоило бы записи
     if (JSON.stringify([prog.cards, prog.log, prog.les]) !== JSON.stringify([remote?.cards || {}, remote?.log || {}, remote?.les])) await pushProg();
     else { progDirty = false; clearTimeout(progTimer); progTimer = null; }
-    return !!remote;
+    return seen(prog) !== before;
   } catch { return false; }
 }
 
 function loadProg() {
-  prog = Object.assign({ cards: {}, log: {}, errs: [], sid: uid(10), name: '', synced: 0 }, store.get(progKey(), {}));
+  prog = Object.assign({ cards: {}, log: {}, errs: [], sid: uid(10), name: '', synced: 0 }, progStore.get(progKey(), {}));
+  if (preview) prog.name ||= 'Ученик (просмотр)'; // просмотр — без экрана имени
   // Новое задание репетитора (приходит внутри набора) — счёт с нуля
   if (pack.hw && prog.hw?.id !== pack.hw.id) prog.hw = { id: pack.hw.id, d: 0 };
   save();
@@ -179,6 +200,29 @@ function buildQueue(mode, tid, pid) {
 
 // ---------- отчёт репетитору ----------
 
+// Темы, которые ученик начал: сколько карточек начато, освоено и точность в процентах
+function topicsDone() {
+  const topics = {};
+  for (const tp of pack.topics) {
+    const s = topicStats(tp.id);
+    if (s.started) topics[tp.id] = { s: s.started, m: s.mastered, acc: s.acc === null ? null : Math.round(s.acc * 100) };
+  }
+  return topics;
+}
+// Слабые темы — как в студии (weakTopics): до трёх с точностью ниже 80%, от худшей
+const weakOf = topics => Object.entries(topics).filter(([, s]) => s.acc !== null && s.s >= 3 && s.acc < 80)
+  .sort((a, b) => a[1].acc - b[1].acc).slice(0, 3)
+  .map(([id, s]) => ({ t: shortTitle(topicsById[id]).slice(0, 60), a: s.acc }));
+
+// Сводка для кабинета родителя — едет в облачной копии прогресса (PUT /me/progress): название,
+// слабые темы (с названиями тем), размер набора и сроки ДЗ курса. Кабинет родителя рисует по ней
+// и не скачивает наборы ребёнка
+const parentSum = () => ({
+  title: (pack.title || '').slice(0, 80), tutor: (pack.tutor || '').slice(0, 80),
+  total: pack.limited?.total || pack.cards.length, weak: weakOf(topicsDone()),
+  course: lessons().filter(l => l.hw?.due).map(l => ({ id: l.id, due: l.hw.due })),
+});
+
 function summary() {
   const t = day();
   const week = { d: 0, ok: 0, days: 0 };
@@ -186,16 +230,9 @@ function summary() {
     const l = prog.log[t - i];
     if (l?.d) { week.d += l.d; week.ok += l.ok; week.days++; }
   }
-  const topics = {};
-  for (const tp of pack.topics) {
-    const s = topicStats(tp.id);
-    if (s.started) topics[tp.id] = { s: s.started, m: s.mastered, acc: s.acc === null ? null : Math.round(s.acc * 100) };
-  }
+  const topics = topicsDone();
   const states = Object.values(prog.cards);
-  // Слабые темы — как в студии (weakTopics): до трёх с точностью ниже 80%, от худшей
-  const weak = Object.entries(topics).filter(([, s]) => s.acc !== null && s.s >= 3 && s.acc < 80)
-    .sort((a, b) => a[1].acc - b[1].acc).slice(0, 3)
-    .map(([id, s]) => ({ t: shortTitle(topicsById[id]).slice(0, 60), a: s.acc }));
+  const weak = weakOf(topics);
   return {
     last: Date.now(), streak: streak(), today: prog.log[t] || { d: 0, ok: 0 }, week,
     // Карточек по дням за 14 дней, от старых к сегодняшнему — для полоски активности у репетитора
@@ -223,31 +260,43 @@ function summary() {
 const answers = () => Object.values(prog.log).reduce((n, l) => n + (l.d || 0), 0);
 
 async function sync(force) {
-  if (!ref.startsWith('t:') || !apiBase() || !prog.name) return;
-  // При открытии сводка уходит, только если с прошлой отправки появились ответы: каждая — запись в KV
+  if (preview || !ref.startsWith('t:') || !apiBase() || !prog.name) return;
   const n = answers();
+  // Без единого ответа сводку не отправляем: иначе в «Учениках» появляется тот, кто ещё не
+  // занимался (и репетитор, открывший свою ссылку, занимает место ученика). И sid из ссылки
+  // бота (adoptSid): у сервера уже есть сводка этого ученика с другого устройства — пустой её не затираем
+  if (!n) return;
+  // При открытии сводка уходит, только если с прошлой отправки появились ответы: каждая — запись в KV
   if (!force && n === prog.syncedN) return;
-  // sid взят из ссылки бота (adoptSid): у сервера уже есть сводка этого ученика с другого устройства —
-  // пустой её не затираем, первая уйдёт после ответов
-  if (!n && prog.syncedN === 0 && !prog.synced) return;
   try {
     await api(`/packs/${encodeURIComponent(ref.slice(2))}/progress`, {
       method: 'POST', body: { sid: prog.sid, name: prog.name, stats: summary() },
     });
     prog.synced = Date.now();
     prog.syncedN = n;
-    store.set(progKey(), prog); // отметки этого устройства: ради них в облако не пишем
+    progStore.set(progKey(), prog); // отметки этого устройства: ради них в облако не пишем
   } catch { /* офлайн — отправим в следующий раз */ }
+}
+
+// Первая сводка уходит с первым ответом (не с именем): репетитор видит ученика, как только тот
+// начал заниматься, а ссылка в бота готова уже к концу первого занятия. По ссылке бота (adoptSid,
+// syncedN 0) ученик уже с ботом — его сводка уйдёт в конце занятия, как обычно
+let firstSent = null; // sid, для которого первая сводка уже ушла (после сброса прогресса sid новый)
+function firstAnswer() {
+  if (firstSent === prog.sid || prog.synced || prog.syncedN === 0) return;
+  firstSent = prog.sid;
+  sync(true).then(() => { if (prog.synced && tgStale()) refreshTg(); });
 }
 
 /* Кнопки бота открывают ?t=<набор>&s=<sid>: ссылка может открыться там, где ученик ещё не
    занимался (приложение на домашнем экране iPhone, браузер Telegram). Пустой прогресс (ни имени,
    ни ответов) берёт sid подписчика — у репетитора один ученик, и бот видит его занятия, а не
-   застывшую запись. Непустой не трогаем. syncedN 0 при synced 0 — знак для sync() выше */
+   застывшую запись. Непустой не трогаем. syncedN 0 при synced 0 — знак для firstAnswer() выше:
+   сводка этого ученика уйдёт в конце занятия, пустой (sync без ответов не отправляет) не затираем */
 function adoptSid(s) {
   if (!/^[a-z0-9]{6,20}$/.test(s || '') || s === prog.sid || prog.name || Object.keys(prog.cards).length) return;
   Object.assign(prog, { sid: s, synced: 0, syncedN: 0, adopted: s });
-  store.set(progKey(), prog);
+  progStore.set(progKey(), prog);
 }
 // Сообщение бота могли переслать однокласснику: sid из кнопки оставляем, только если введённое
 // имя совпадает с тем, под которым этот ученик уже занимается; иначе — новый ученик со своим sid
@@ -269,7 +318,7 @@ async function checkAdopted(name) {
 // По sid: после входа (sid из облака) или сброса прогресса старая ссылка в бота не подходит
 const tgKey = () => 'zd-tg:' + ref + ':' + prog.sid;
 const tgState = () => (tgReady() && store.get(tgKey(), null)) || {};
-const tgReady = () => ref.startsWith('t:') && !!apiBase() && prog.synced > 0;
+const tgReady = () => !preview && ref.startsWith('t:') && !!apiBase() && prog.synced > 0;
 const tgStale = () => Date.now() - (tgState().chk || 0) > 864e5;
 const tgPend = () => store.set(tgKey(), { ...tgState(), pend: Date.now() });
 async function refreshTg() {
@@ -451,7 +500,6 @@ function viewCourse() {
     ${lv.length ? `<section class="topics"><h2>Эфиры</h2>${[...next, ...old].map(liveRow).join('')}</section>` : ''}
     ${ls.length || lv.length ? '' : '<p class="panel empty">Уроков пока нет.</p>'}`;
   $app.querySelectorAll('[data-ics]').forEach(b => b.onclick = () => liveIcs(lv.find(v => v.id === b.dataset.ics)));
-  window.scrollTo(0, 0);
 }
 
 // Урок по шагам: видео → конспект → тренажёр с ДЗ
@@ -478,7 +526,30 @@ function viewCourseLesson(id) {
     ${steps.length ? '' : '<p class="panel empty">В уроке пока ничего нет.</p>'}`;
   $app.querySelector('#train')?.addEventListener('click', () =>
     startSession(lesQueue(l), `Урок ${lesNum(l)}. ${l.title}`, '#/c/' + encodeURIComponent(l.id), { les: l.id }));
-  window.scrollTo(0, 0);
+}
+
+// Список тем по разделам (свои темы репетитора, наборы без номеров заданий). unnamed — заголовок
+// для тем без раздела, когда выше есть сетка заданий
+function topicList(topics, unnamed = '') {
+  const sections = [];
+  for (const tp of topics) {
+    const sec = tp.section || unnamed;
+    if (!sections.length || sections.at(-1).name !== sec) sections.push({ name: sec, items: [] });
+    sections.at(-1).items.push(tp);
+  }
+  return sections.map(s => `
+      <section class="topics">
+        ${s.name ? `<h2>${esc(s.name)}</h2>` : ''}
+        ${s.items.map(tp => {
+          const st = topicStats(tp.id);
+          const pct = st.total ? Math.round(st.mastered / st.total * 100) : 0;
+          return `<a class="topic" href="#/topic/${encodeURIComponent(tp.id)}">
+            <span class="topic-title">${esc(tp.title)}</span>
+            <span class="topic-meta">${st.total ? `${st.mastered}/${st.total}` : 'теория'}</span>
+            <span class="bar"><i style="width:${pct}%"></i></span>
+          </a>`;
+        }).join('')}
+      </section>`).join('');
 }
 
 function viewHome() {
@@ -486,12 +557,6 @@ function viewHome() {
   const queue = buildQueue('daily');
   const today = prog.log[t] || { d: 0, ok: 0 };
   const due = dueCards(pack.cards).length;
-  const sections = [];
-  for (const tp of pack.topics) {
-    const sec = tp.section || '';
-    if (!sections.length || sections.at(-1).name !== sec) sections.push({ name: sec, items: [] });
-    sections.at(-1).items.push(tp);
-  }
   const doneToday = today.d > 0 && !queue.length;
   const s = streak();
   const n = Math.min(today.d, DAILY_GOAL);
@@ -522,19 +587,8 @@ function viewHome() {
       ${isExam() ? `<button class="btn" id="variant">Пробный вариант${lastVariant()}</button>` : ''}
     </div>` : ''}
     ${unlockBlock()}
-    ${isExam() ? examGrid() : sections.map(s => `
-      <section class="topics">
-        ${s.name ? `<h2>${esc(s.name)}</h2>` : ''}
-        ${s.items.map(tp => {
-          const st = topicStats(tp.id);
-          const pct = st.total ? Math.round(st.mastered / st.total * 100) : 0;
-          return `<a class="topic" href="#/topic/${encodeURIComponent(tp.id)}">
-            <span class="topic-title">${esc(tp.title)}</span>
-            <span class="topic-meta">${st.total ? `${st.mastered}/${st.total}` : 'теория'}</span>
-            <span class="bar"><i style="width:${pct}%"></i></span>
-          </a>`;
-        }).join('')}
-      </section>`).join('')}
+    ${examGrid()}
+    ${topicList(pack.topics.filter(tp => !tp.n), pack.topics.some(tp => tp.n) ? 'Темы' : '')}
     <footer class="foot"><a href="#/library">Другие наборы</a> · <a href="./?about">Для репетиторов</a></footer>`;
   bindUnlock();
   $app.querySelector('#go')?.addEventListener('click', () => startSession(queue, 'Занятие'));
@@ -575,18 +629,32 @@ function cardLabel(card, fallback) {
   return pr ? `${t.n ? t.n + '. ' : ''}${pr.title}` : t.title;
 }
 
-// Набор-экзамен: темы пронумерованы как задания (у ЕГЭ по русскому — 1–27)
-const isExam = () => pack.topics.some(t => t.n);
+// Набор-экзамен: темы пронумерованы как задания (у ЕГЭ по русскому — 1–27). Весь набор — задания
+// одного экзамена (библиотека ЕГЭ или тренажёр только из её заданий): тогда «Задания ЕГЭ» и пробный
+// вариант. Репетитор может смешать свои темы (без номера) с заданиями из библиотеки
+const isExam = () => pack.topics.length > 0 && pack.topics.every(t => t.n) && new Set(pack.topics.map(t => t.section || '')).size === 1;
 const shortTitle = t => t.title.replace(/^\d+\.\s*/, '');
 
+// Плитками — только темы с номером задания (свои темы репетитора идут списком ниже, topicList).
+// В смешанном тренажёре у каждой группы заданий свой заголовок — раздел, откуда они взяты
 function examGrid() {
-  return `<section class="topics"><h2>Задания ЕГЭ</h2><div class="task-grid">${pack.topics.map(tp => {
+  const groups = [];
+  for (const tp of pack.topics.filter(t => t.n)) {
+    const name = tp.section || '';
+    let g = groups.find(x => x.name === name);
+    if (!g) groups.push(g = { name, items: [] });
+    g.items.push(tp);
+  }
+  if (!groups.length) return '';
+  const tile = tp => {
     const st = topicStats(tp.id);
     const acc = st.started ? st.acc : null;
     return `<a class="task-tile ${accTone(acc)}" href="#/topic/${encodeURIComponent(tp.id)}" title="${esc(tp.title)}" aria-label="Задание ${tp.n}: ${esc(shortTitle(tp))}">
       <b>${tp.n}</b><span>${acc === null ? 'новое' : Math.round(acc * 100) + '%'}</span></a>`;
-  }).join('')}</div>
-  <p class="muted legend">Точность: <span class="dot ok"></span> 80%+ <span class="dot mid"></span> 60–79% <span class="dot bad"></span> ниже 60%</p></section>`;
+  };
+  return groups.map((g, i) => `<section class="topics"><h2>${isExam() ? 'Задания ЕГЭ' : esc(g.name || 'Задания экзамена')}</h2>
+    <div class="task-grid">${g.items.map(tile).join('')}</div>
+    ${i === groups.length - 1 ? '<p class="muted legend">Точность: <span class="dot ok"></span> 80%+ <span class="dot mid"></span> 60–79% <span class="dot bad"></span> ниже 60%</p>' : ''}</section>`).join('');
 }
 
 // Вариант: по одной карточке на каждое задание с тестовым ответом
@@ -655,10 +723,20 @@ function viewLesson(lid) {
     ${hasCards ? '<div class="panel"><button class="btn primary" id="train">Закрепить карточками</button></div>' : ''}`;
   $app.querySelector('#train')?.addEventListener('click', () =>
     startSession(buildQueue('topic', l.topic), topicsById[l.topic]?.title || l.title, `#/topic/${l.topic}`));
-  window.scrollTo(0, 0);
 }
 
 const PRAISE = ['Верно!', 'Точно!', 'Отлично!', 'Так держать!', 'В точку!'];
+
+/* Занятие живёт на своём адресе #/s (pushState): «Назад» телефона посреди занятия спрашивает
+   «Выйти из занятия?», а не уводит из тренажёра; после итога «Назад» не возвращает в законченное
+   занятие. live — идущее занятие или его итог на экране: { from, fromId, direct, done, nav }.
+   Пока оно есть, route() экран не трогает */
+let live = null;
+const newEntryId = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+const sameHash = (a, b) => {
+  const norm = h => { try { h = decodeURI(h || ''); } catch { /* как есть */ } return h === '' || h === '#' ? '#/' : h; };
+  return norm(a) === norm(b);
+};
 
 function startSession(queue, title, back = '#/', { variant = false, hw = false, les = null } = {}) {
   if (!queue.length) return toast('Здесь пока нечего повторять');
@@ -671,7 +749,57 @@ function startSession(queue, title, back = '#/', { variant = false, hw = false, 
   const lesson = les && lessons().find(l => l.id === les), lesBefore = lesson && lesDone(lesson);
   const missed = new Map();
   const results = [];
-  const leave = () => { location.hash = back; route(); };
+
+  // «Ещё» после итога — тот же адрес #/s; иначе новая запись истории поверх экрана, откуда начали
+  const again = live && location.hash === '#/s';
+  const ses = again ? { from: live.from, fromId: live.fromId, direct: live.direct, done: false }
+    : { from: location.hash, direct: true, done: false };
+  const push = () => {
+    if (!history.state?.i) history.replaceState({ ...history.state, i: newEntryId() }, '');
+    ses.fromId = history.state.i;
+    history.pushState({ i: newEntryId() }, '', '#/s');
+    entry = history.state.i;
+  };
+  // Запись истории, добавленную без нажатия (занятие открылось само — ссылка бота #/go, #/hw),
+  // Chrome пропускает на «Назад». Тогда адрес занятия появляется с первым нажатием в нём
+  if (again) { /* уже на #/s */ } else if (navigator.userActivation && !navigator.userActivation.isActive) {
+    entry = null; // прокрутку занятия не записываем на экран, откуда начали
+    const arm = () => {
+      removeEventListener('click', arm, true);
+      if (live === ses && location.hash !== '#/s') push();
+    };
+    addEventListener('click', arm, true);
+  } else push();
+  live = ses;
+  window.scrollTo(0, 0);
+  // Ответы уже сохранены (grade). Бросил занятие на середине — сводка репетитору уходит сразу,
+  // а не при следующем открытии
+  const quit = () => {
+    if (live === ses) live = null;
+    if (!ses.done && answered) sync(true);
+  };
+  // ✕ и «Готово» — на экран back. Если это предыдущая запись истории — шаг назад по ней (без
+  // лишней записи и без двойной отрисовки), иначе #/s заменяется на back. top — экран сверху
+  const leave = (top = false) => {
+    quit();
+    topNext = top;
+    if (ses.direct && location.hash === '#/s' && sameHash(ses.from, back)) history.back();
+    else { history.replaceState(null, '', back); route(); }
+  };
+  // Адрес сменился посреди занятия. «Назад»/«Вперёд» (у записи истории уже есть номер) —
+  // спросить; новый адрес (ссылка, адресная строка) — выйти без вопроса
+  ses.nav = () => {
+    if (location.hash === '#/s') return; // вернулись на адрес занятия (history.forward ниже)
+    if (!ses.done && history.state?.i && !confirm('Выйти из занятия?')) {
+      // Остаёмся — обратно на #/s без новой записи истории (запись, добавленную без нажатия,
+      // Chrome пропустил бы на следующем «Назад»). «Назад» через несколько записей — новая запись
+      if (ses.fromId && history.state.i === ses.fromId) history.forward();
+      else { ses.direct = false; history.pushState({ i: entry || newEntryId() }, '', '#/s'); }
+      return;
+    }
+    quit();
+    route();
+  };
 
   const next = () => {
     if (i >= q.length) return finishSession();
@@ -688,6 +816,7 @@ function startSession(queue, title, back = '#/', { variant = false, hw = false, 
     const bar = $app.querySelector('.next-bar');
     renderCard(card, $app.querySelector('.card'), score => {
       grade(card, score);
+      firstAnswer();
       answered++;
       ok += score;
       points += score * POINTS;
@@ -705,10 +834,11 @@ function startSession(queue, title, back = '#/', { variant = false, hw = false, 
       bar.querySelector('#next').focus({ preventScroll: true });
     });
     $app.querySelector('#next').onclick = () => { i++; next(); window.scrollTo(0, 0); };
-    $app.querySelector('#leave').onclick = leave;
+    $app.querySelector('#leave').onclick = () => { leave(); };
   };
 
   const finishSession = () => {
+    ses.done = true;
     if (variant) return finishVariant();
     const mins = Math.max(1, Math.round((Date.now() - started) / 60000));
     const pct = answered ? Math.round(ok / answered * 100) : 0;
@@ -735,7 +865,8 @@ function startSession(queue, title, back = '#/', { variant = false, hw = false, 
         <div class="confetti" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></div>
         <div class="finish-icon">${icon}</div>
         <h1 class="finish-title">${head}</h1>
-        ${ref.startsWith('t:') && prog.name ? `<p class="finish-sub">${esc(pack.tutor || 'Репетитор')} увидит результат</p>` : ''}
+        ${preview ? '<p class="finish-sub">Это просмотр: результат никуда не отправляется</p>'
+          : ref.startsWith('t:') && prog.name ? `<p class="finish-sub">${esc(pack.tutor || 'Репетитор')} увидит результат</p>` : ''}
         <div class="finish-stats">
           <div><b>${Math.round(ok)}/${answered}</b><span>верно</span></div>
           <div><b>+${Math.round(points)}</b><span>очков</span></div>
@@ -750,7 +881,7 @@ function startSession(queue, title, back = '#/', { variant = false, hw = false, 
         ${tg.on || store.get('zd-remind:' + ref, '') ? '' : '<button class="btn big" id="remind">Напоминать каждый день в 19:00</button>'}
         <button class="btn primary big" id="done">Готово</button>
       </section>`;
-    $app.querySelector('#done').onclick = leave;
+    $app.querySelector('#done').onclick = () => { leave(true); };
     $app.querySelector('#more')?.addEventListener('click', () => startSession(more, title, back, { hw: hwMore.length > 0, les: lesMore.length ? les : null }));
     $app.querySelector('#remind')?.addEventListener('click', e => { addReminder(store.get('zd-remind-time', '19:00')); e.target.remove(); });
     // Ссылка открывается сама (target=_blank); убираем кнопку уже после перехода
@@ -781,7 +912,14 @@ function startSession(queue, title, back = '#/', { variant = false, hw = false, 
         <p class="finish-sub">Нажми на задание с ошибкой — откроются его прототипы и правила</p>
         <button class="btn primary big" id="done">Готово</button>
       </section>`;
-    $app.querySelector('#done').onclick = leave;
+    $app.querySelector('#done').onclick = () => { leave(true); };
+    // Разбор задания открывается вместо итога варианта: «Назад» из него — туда, откуда начинали
+    $app.querySelectorAll('.variant-row').forEach(a => a.addEventListener('click', e => {
+      e.preventDefault();
+      quit();
+      history.replaceState(null, '', a.getAttribute('href'));
+      route();
+    }));
     sync(true).then(() => { if (progDirty && signedIn()) pushProg(); }); // урок окончен — прогресс в облако сразу
   };
   next();
@@ -849,7 +987,8 @@ function viewMe() {
     <header class="top"><a class="back" href="#/">←</a><div class="brand-title">Профиль</div></header>
     <section class="panel">
       <h2>Аккаунт</h2>
-      ${signedIn()
+      ${preview ? '<p class="muted">Здесь ученик входит в аккаунт, чтобы прогресс был на всех его устройствах. В режиме просмотра вход и отправка на сервер выключены.</p>'
+        : signedIn()
         ? `<p>Вы вошли как <b>${esc(a?.name || a?.email || 'ученик')}</b>. Прогресс сохраняется в аккаунте — можно заниматься с телефона и компьютера.</p>
            <div class="row"><a class="btn primary" href="cabinet/#student">Личный кабинет</a><button class="btn" id="pcode">Код для родителя</button><button class="btn" id="logout">Выйти</button></div>`
         : `<p class="muted">Войдите, чтобы прогресс не потерялся и был доступен на любом устройстве.</p>
@@ -874,16 +1013,22 @@ function viewMe() {
       <p>Начато ${prog && Object.keys(prog.cards).length} из ${pack.cards.length} карточек.</p>
       <button class="btn ghost danger" id="reset">Сбросить прогресс по набору</button>
     </section>
-    <section class="panel">
+    ${debug ? `<section class="panel">
       <h2>Сервер ИИ</h2>
-      <label class="field"><span>Адрес (если дал репетитор)</span><input id="api" placeholder="https://…workers.dev" value="${esc(store.get('zd-api', ''))}"></label>
-    </section>`;
+      <div class="field"><label for="api">Адрес (для разработки)</label><input id="api" placeholder="https://…workers.dev" value="${esc(store.get('zd-api', ''))}"></div>
+    </section>` : ''}`;
   $app.querySelector('#login')?.addEventListener('click', () => loginDialog({
     role: 'student',
     why: 'Прогресс, серия и ошибки сохранятся в аккаунте.',
     onDone: async () => { await addRole('student'); await pullProg(); sync(true); if (pack.limited) location.reload(); else viewMe(); },
   }));
-  $app.querySelector('#logout')?.addEventListener('click', async () => { if (progDirty && prog) await pushProg(); await logout(); viewMe(); });
+  // Выход: если всё уже в облаке, копии на устройстве стираются (signOut) — тогда начинаем с главной;
+  // если что-то не сохранилось, signOut сам спросит: скачать копию, оставить или не выходить
+  $app.querySelector('#logout')?.addEventListener('click', async () => {
+    if (progDirty && prog) await pushProg();
+    const { out, wiped } = await signOut();
+    if (wiped) location.replace('./'); else if (out) viewMe();
+  });
   $app.querySelector('#pcode')?.addEventListener('click', async () => {
     try {
       const { code } = await api('/me/parent-code', { method: 'POST' });
@@ -900,7 +1045,8 @@ function viewMe() {
       pack.daily = Math.max(0, Math.min(50, +$app.querySelector('#daily').value || NEW_DEFAULT));
       store.set('zd-daily:' + ref, pack.daily);
     }
-    store.set('zd-api', $app.querySelector('#api').value.trim());
+    const apiField = $app.querySelector('#api'); // только с ?debug
+    if (apiField) store.set('zd-api', apiField.value.trim());
     save();
     toast('Сохранено');
     sync(true);
@@ -943,7 +1089,7 @@ function viewMe() {
   refreshTg().then(tg => { if (tg) fillTg(tg); });
   $app.querySelector('#reset').onclick = () => {
     if (!confirm('Стереть весь прогресс по этому набору?')) return;
-    store.set(progKey(), null);
+    progStore.set(progKey(), null);
     loadProg();
     toast('Прогресс сброшен');
     go('#/');
@@ -957,9 +1103,9 @@ async function viewLibrary() {
     <header class="top"><a class="back" href="./" aria-label="На главную">←</a><div class="brand-title">Открытые наборы</div></header>
     <section class="panel intro">
       <p>Тренажёр на 10 минут в день: карточки возвращаются, когда начинаешь их забывать, а репетитор видит, где ты ошибаешься.</p>
-      <label class="field"><span>Код от репетитора</span>
-        <span class="row"><input id="code" placeholder="например, k7m2p9xq" autocapitalize="off"><button class="btn primary" id="join">Открыть</button></span>
-      </label>
+      <div class="field"><label for="code">Код от репетитора</label>
+        <div class="row"><input id="code" placeholder="например, k7m2p9xq" autocapitalize="off"><button class="btn primary" id="join">Открыть</button></div>
+      </div>
     </section>
     ${recent.length ? `<section class="topics"><h2>Недавние</h2>${recent.map(r =>
       `<a class="topic" href="?${r.ref.startsWith('t:') ? 't=' + encodeURIComponent(r.ref.slice(2)) : 'p=' + encodeURIComponent(r.ref)}">
@@ -969,10 +1115,7 @@ async function viewLibrary() {
         <span class="topic-title">${esc(p.title)}<small>${esc(p.desc)}</small></span>
         <span class="topic-meta">${p.cards}</span></a>`).join('')}</section>
     <footer class="foot"><a href="studio/">Я репетитор — собрать свой тренажёр</a></footer>`;
-  const join = () => {
-    const c = $app.querySelector('#code').value.trim().replace(/.*[?&]t=/, '');
-    if (c) location.search = '?t=' + encodeURIComponent(c);
-  };
+  const join = () => { openCode($app.querySelector('#code').value); };
   $app.querySelector('#join').onclick = join;
   $app.querySelector('#code').onkeydown = e => { if (e.key === 'Enter') join(); };
 }
@@ -981,9 +1124,9 @@ function viewName() {
   $app.innerHTML = `
     ${brandHeader()}
     <section class="panel intro">
-      <p>${esc(pack.tutor || 'Репетитор')} собрал для тебя тренажёр: ${plural(pack.cards.length, 'карточка', 'карточки', 'карточек')}.
-      Занимайся по 10 минут в день — репетитор будет видеть прогресс и знать, что разобрать на уроке.</p>
-      <label class="field"><span>Как тебя зовут?</span><input id="name" placeholder="Имя и фамилия" autocomplete="name"></label>
+      <p>Тренажёр от репетитора: ${plural(pack.cards.length, 'карточка', 'карточки', 'карточек')}.
+      Занимайся по 10 минут в день — ${pack.tutor ? esc(pack.tutor) : 'репетитор'} увидит прогресс и поймёт, что разобрать на уроке.</p>
+      <div class="field"><label for="name">Как тебя зовут?</label><input id="name" placeholder="Имя и фамилия" autocomplete="name"></div>
       <button class="btn primary big" id="ok">Начать</button>
       ${signedIn() ? '' : '<p class="center small-note"><button class="link-btn" id="login">Уже занимался? Войти в аккаунт</button></p>'}
     </section>`;
@@ -994,11 +1137,11 @@ function viewName() {
   }));
   const ok = () => {
     const name = $app.querySelector('#name').value.trim();
-    if (!name) return toast('Напиши имя, чтобы репетитор тебя узнал');
+    if (!name) { toast('Напиши имя, чтобы репетитор тебя узнал'); return; }
     prog.name = name;
     save();
-    // Сервер узнал ученика — ссылка в бота будет готова уже к концу первого занятия
-    checkAdopted(name).then(() => { save(); return sync(true); }).then(() => { if (tgStale()) refreshTg(); });
+    // Репетитору ученик виден с первым ответом (firstAnswer). Ссылка бота — тот ли это ученик
+    checkAdopted(name).then(save);
     route();
   };
   $app.querySelector('#ok').onclick = ok;
@@ -1014,11 +1157,43 @@ async function viewLanding() {
   renderLanding($app, await loadLibrary());
 }
 
+/* Прокрутка при смене экрана: новый экран — сверху, «Назад»/«Вперёд» — там, где был, перерисовка
+   того же экрана — на месте. Записи истории нумеруем в history.state.i (окна lib.js кладут туда
+   своё — сохраняем), позиции помним в памяти страницы */
+const scrolls = {};
+let entry = null, shown = null, topNext = false;
+addEventListener('scroll', () => { if (entry) scrolls[entry] = scrollY; }, { passive: true });
+
+// Что сейчас на экране — чтобы отличить смену экрана от перерисовки того же
+const screenKey = () => !pack ? (location.hash === '#/library' ? 'library' : ref ? 'pack-error' : 'landing')
+  : ref.startsWith('t:') && !prog.name ? 'name' : location.hash.split('/').slice(1, 3).join('/');
+
 function route() {
+  if (live) return; // идёт занятие или на экране его итог — их рисует startSession
+  const was = entry;
+  if (!history.state?.i) history.replaceState({ ...history.state, i: newEntryId() }, '');
+  entry = history.state.i;
+  const key = screenKey();
+  const y = topNext ? 0 : entry !== was && scrolls[entry] !== undefined ? scrolls[entry] : key === shown ? scrollY : 0;
+  topNext = false;
+  shown = key;
+  const drawn = render();
+  // Асинхронные экраны (главная сайта, библиотека) — после того, как нарисуются
+  Promise.resolve(drawn).then(() => {
+    if (live) return;
+    // Ссылка на раздел главной (/#faq): раздела не было, пока главная не нарисовалась
+    const anchor = !pack && !ref && /^#[a-z]/i.test(location.hash) && document.getElementById(location.hash.slice(1));
+    if (anchor) anchor.scrollIntoView(); else window.scrollTo(0, y);
+  });
+}
+
+function render() {
   $app.className = 'wrap';
-  if (!pack) return location.hash === '#/library' ? viewLibrary() : viewLanding();
+  if (!pack) return location.hash === '#/library' ? viewLibrary() : ref ? packError() : viewLanding();
   const [, view, arg] = decodeURI(location.hash).split('/');
   if (ref.startsWith('t:') && !prog.name) return viewName();
+  // Адрес занятия после перезагрузки: занятие не восстанавливается — главная
+  if (view === 's') { history.replaceState(history.state, '', '#/'); return viewHome(); }
   if (view === 'go' || view === 'hw') return openFromBot(view);
   if (view === 'library') return viewLibrary();
   if (view === 'topic') return viewTopic(arg);
@@ -1029,10 +1204,17 @@ function route() {
   viewHome();
 }
 
+function onHash() {
+  if (live) return live.nav();
+  // Разделы главной (#how, #prices, #faq) — просто прокрутка к ним: без перерисовки и загрузок
+  if (!pack && $app.classList.contains('landing') && !location.hash.startsWith('#/')) return;
+  route();
+}
+
 // Ссылки из бота: #/go — сразу занятие дня, #/hw — задание. Адрес сразу заменяем на главную,
 // чтобы «Назад» и обновление страницы не начинали занятие заново
 function openFromBot(view) {
-  history.replaceState(null, '', location.pathname + location.search + '#/');
+  history.replaceState(history.state, '', location.pathname + location.search + '#/');
   if (view === 'hw') return pack.hw ? startHw() : viewHome();
   const q = buildQueue('daily');
   if (q.length) return startSession(q, 'Занятие');
@@ -1048,47 +1230,109 @@ function applyBrand() {
   }
 }
 
+// Плашка режима просмотра над каждым экраном. Экраны перерисовывают #app целиком — возвращаем её наверх
+function previewBar(id) {
+  const bar = el(`<div class="panel plan trial preview-bar"><span>Режим просмотра — ученики видят то же самое</span>
+    <a class="btn small" href="studio/#/p/${encodeURIComponent(id)}/publish">Вернуться в студию</a></div>`);
+  const keep = () => { if ($app.firstElementChild !== bar) $app.prepend(bar); };
+  new MutationObserver(keep).observe($app, { childList: true });
+  keep();
+}
+
+// «/» открывает последний тренажёр только ученику. Свой тренажёр репетитора (он есть в студии этого
+// браузера: репетитор смотрел, как его видят ученики) не в счёт — репетитору нужна главная
+function lastTrainer(recent) {
+  const own = store.get('zd-studio', null)?.packs || {};
+  return recent.find(r => !(r.ref.startsWith('t:') && own[r.ref.slice(2)]))?.ref || null;
+}
+
+let sidFromBot = null; // sid из кнопки бота (?s=) — для adoptSid после загрузки набора
+let packFail = null;    // набор не открылся и сохранённой копии нет — ошибка загрузки
+
 async function init() {
   const redirected = await finishRedirectLogin(); // вернулись от Яндекса/VK/Google
   if (redirected?.role) await addRole(redirected.role);
   await finishPayment(); // вернулись с оплаты — пакет ниже загрузится уже полным
-  const params = new URLSearchParams(location.search);
-  const recent = store.get('zd-recent', []);
+  const query = new URLSearchParams(location.search);
   // sid из кнопки бота — сразу убираем из адреса: скопированная или пересланная ссылка его не разнесёт
-  const sidFromBot = params.get('s');
+  sidFromBot = query.get('s');
   if (sidFromBot !== null) {
     const u = new URL(location.href);
     u.searchParams.delete('s');
-    history.replaceState(null, '', u);
+    history.replaceState(history.state, '', u);
   }
   // ?about — лендинг для репетиторов даже у тех, кто уже занимается в каком-то наборе
-  ref = params.has('about') ? null : params.get('t') ? 't:' + params.get('t') : params.get('p') || recent[0]?.ref || null;
-  window.addEventListener('hashchange', route);
+  ref = query.has('about') ? null : query.get('t') ? 't:' + query.get('t') : query.get('p') || lastTrainer(store.get('zd-recent', []));
+  window.addEventListener('hashchange', onHash);
   if (!ref) return route();
+  if (preview) previewBar(query.get('t'));
+  // Сеть вернулась, пока на экране «Нет связи», — пробуем открыть набор сами
+  addEventListener('online', () => { if (!pack && packFail) openPack(); });
+  await openPack();
+}
+
+// Числа, которые задаёт репетитор (номер и баллы задания, цель и точность ДЗ), — только числами:
+// шаблоны вставляют их как есть, и строка с разметкой в тренажёре стала бы чужим кодом у ученика
+function numbersOnly(p) {
+  const num = x => (x === undefined || x === null || x === '' || !Number.isFinite(+x) ? undefined : +x);
+  for (const tp of p.topics || []) { if ('n' in tp) tp.n = num(tp.n); if ('pts' in tp) tp.pts = num(tp.pts) ?? 1; }
+  for (const l of p.course?.lessons || []) if (l.hw) { l.hw.goal = num(l.hw.goal) ?? 0; l.hw.acc = num(l.hw.acc) ?? 0; }
+  if (p.hw) p.hw.goal = num(p.hw.goal) ?? 0;
+  if (p.limited) { p.limited.shown = num(p.limited.shown) ?? 0; p.limited.total = num(p.limited.total) ?? 0; }
+  return p;
+}
+
+const packGone = err => err.status === 404 || /не найден/i.test(err.message || '');
+// Нет сети: fetch не дошёл (TypeError — библиотека через service worker), api() без ответа (status 0)
+const packOffline = err => err.status === 0 || err instanceof TypeError || /нет связи/i.test(err.message || '') || navigator.onLine === false;
+
+// Загрузить набор и открыть тренажёр. retry — нажали «Повторить»
+async function openPack(retry = false) {
+  packFail = null;
   $app.innerHTML = '<p class="loading">Загружаю…</p>';
   try {
     pack = await loadPack(ref);
-    store.set('zd-pack:' + ref, pack);
+    if (!preview) store.set('zd-pack:' + ref, pack);
   } catch (err) {
     pack = store.get('zd-pack:' + ref, null); // офлайн — последняя сохранённая версия
     if (!pack) {
-      $app.innerHTML = '';
-      $app.append(el(`<section class="panel"><p>Не получилось открыть набор: ${esc(err.message)}</p><a class="btn primary" href="./">К наборам</a></section>`));
-      return;
+      packFail = err;
+      // Тренажёр удалён или код с ошибкой: больше не открываем его с «/» и не держим в недавних
+      if (packGone(err)) store.set('zd-recent', store.get('zd-recent', []).filter(r => r.ref !== ref));
+      if (retry && packOffline(err)) toast('Связи пока нет');
+      return route(); // экран ошибки (packError), а не главная сайта
     }
   }
+  numbersOnly(pack);
   topicsById = Object.fromEntries(pack.topics.map(t => [t.id, t]));
-  store.set('zd-recent', [{ ref, title: pack.title, tutor: pack.tutor }, ...recent.filter(r => r.ref !== ref)].slice(0, 5));
+  // Недавние (и «/» → последний тренажёр) — только то, что открыл сам ученик, не просмотр репетитора
+  if (!preview) store.set('zd-recent', [{ ref, title: pack.title, tutor: pack.tutor }, ...store.get('zd-recent', []).filter(r => r.ref !== ref)].slice(0, 5));
   loadProg();
-  if (ref.startsWith('t:')) adoptSid(sidFromBot);
+  if (ref.startsWith('t:') && !preview) adoptSid(sidFromBot);
   // «Новых в день» в открытых наборах ученик задаёт сам, в наборе репетитора — репетитор
   if (!ref.startsWith('t:')) pack.daily = store.get('zd-daily:' + ref, pack.daily);
   applyBrand();
   route();
-  if (await pullProg() && !document.querySelector(".card")) route();
+  // Из облака пришло новое (другое устройство) — перерисовать экран; занятие route() не трогает
+  if (await pullProg()) route();
   await sync(false);
   // Включены ли напоминания в Telegram и ссылка в бота — раз в сутки
   if (tgStale()) refreshTg();
+}
+
+// Набор по ссылке (?p=, ?t=) не открылся и копии в браузере нет. Никогда не главная сайта вместо него
+// и не технический текст ошибки: удалён — «Проверьте код», нет сети — «Нет связи» и «Повторить»
+function packError() {
+  if (!packFail) { $app.innerHTML = '<p class="loading">Загружаю…</p>'; return; }
+  const err = packFail, gone = packGone(err), offline = !gone && packOffline(err);
+  $app.innerHTML = `<section class="panel pack-error">
+      <p>${gone ? '<b>Тренажёр не найден.</b> Проверьте код у репетитора.'
+        : offline ? '<b>Нет связи</b> — этот набор ещё не открывали на этом устройстве. Подключитесь к интернету и нажмите «Повторить».'
+        : `Не получилось открыть набор. ${err.status ? esc(err.message) : 'Попробуйте ещё раз.'}`}</p>
+      <div class="row">${gone ? '' : '<button class="btn primary" id="retry">Повторить</button>'}
+        <a class="btn${gone ? ' primary' : ''}" href="./#/library">К наборам</a></div>
+    </section>`;
+  $app.querySelector('#retry')?.addEventListener('click', e => { e.currentTarget.disabled = true; openPack(true); });
 }
 
 init();

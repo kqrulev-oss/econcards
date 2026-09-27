@@ -12,10 +12,11 @@
    POST /auth/logout
    GET  /me                       аккаунт; PATCH /me {name}; POST /me/role {role}
    GET|PUT /me/studio             облачная копия студии репетитора
-   GET|PUT /me/progress/:ref      прогресс ученика по набору
+   GET|PUT /me/progress/:ref      прогресс ученика по набору; приложение кладёт в него sum —
+                                  сводку для родителя (название, слабые темы, сроки ДЗ курса)
    POST /me/parent-code           ученик: код для родителя (24 часа)
-   GET  /me/children              родитель: дети и их прогресс; POST {code} — добавить,
-                                  DELETE /me/children/:id — убрать
+   GET  /me/children              родитель: дети и сводка по их наборам (без самих наборов);
+                                  POST {code} — добавить, DELETE /me/children/:id — убрать
 
    KV: acct:<id>, ident:<provider>:<sub> → id, sess:<token> → id,
        tgauth:<nonce>, mailcode:<email>, studio:<id>, progress:<id>:<ref>
@@ -255,6 +256,36 @@ export async function parentCode(env, childId) {
   return { code, expires: Date.now() + DAY * 1000 };
 }
 
+// Сводка для родителя, которую посчитало приложение ученика (app.js parentSum): пишет её сам
+// ученик, поэтому здесь — только ожидаемые поля и длины
+const str = (x, n) => typeof x === 'string' ? x.slice(0, n) : '';
+function parentSum(s) {
+  const list = x => Array.isArray(x) ? x : [];
+  return {
+    title: str(s.title, 80), tutor: str(s.tutor, 80),
+    total: Math.max(0, Math.floor(Number(s.total) || 0)),
+    weak: list(s.weak).slice(0, 3).map(w => ({ t: str(w?.t, 60), a: Math.max(0, Math.min(100, Math.round(Number(w?.a) || 0))) })),
+    course: list(s.course).slice(0, 200).filter(l => typeof l?.id === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(l.due))
+      .map(l => ({ id: l.id.slice(0, 60), due: l.due })),
+  };
+}
+
+// Журнал по дням и ДЗ уроков пишет сам ученик: родителю отдаём только числа (иначе строка
+// с разметкой вместо числа попала бы в кабинет родителя)
+const num = x => (Number.isFinite(+x) ? +x : 0);
+function cleanDays(o) {
+  const out = {};
+  if (!o || typeof o !== 'object') return out;
+  for (const [k, v] of Object.entries(o).slice(0, 2000)) {
+    if (/^[\w.-]{1,60}$/.test(k) && v && typeof v === 'object') out[k] = { d: num(v.d), ok: num(v.ok), ...(v.n !== undefined && { n: num(v.n) }), ...(v.at !== undefined && { at: num(v.at) }) };
+  }
+  return out;
+}
+
+/* Родителю по каждому набору ребёнка — небольшая сводка: журнал по дням, ДЗ уроков, сколько
+   карточек освоено и sum (название, слабые темы, размер набора, сроки ДЗ курса). Сами наборы
+   кабинету не нужны. Прогресс, сохранённый до sum, отдаём с карточками — слабые темы кабинет
+   посчитает по набору, как раньше */
 async function childrenOf(env, parent) {
   const ids = (await env.DB.get(`parent:${parent.id}`, 'json')) || [];
   return Promise.all(ids.map(async id => {
@@ -263,7 +294,11 @@ async function childrenOf(env, parent) {
     const list = await env.DB.list({ prefix: `progress:${id}:` });
     const packs = await Promise.all(list.keys.map(async k => {
       const p = await env.DB.get(k.name, 'json');
-      return p && { ref: k.name.slice(`progress:${id}:`.length), cards: p.cards, log: p.log, les: p.les, saved: p.saved };
+      if (!p) return null;
+      const cards = p.cards && typeof p.cards === 'object' ? p.cards : {};
+      const out = { ref: k.name.slice(`progress:${id}:`.length), log: cleanDays(p.log), les: cleanDays(p.les), saved: num(p.saved),
+        mastered: Object.values(cards).filter(x => x?.b >= 3).length };
+      return p.sum && typeof p.sum === 'object' ? { ...out, sum: parentSum(p.sum) } : { ...out, cards };
     }));
     return { id, name: child.name || 'Ученик', packs: packs.filter(Boolean), plans: child.plans || {} };
   })).then(r => r.filter(Boolean));
@@ -298,7 +333,9 @@ export async function handleAuth(req, env, parts) {
 
     if (b === 'tg' && c === 'start' && m === 'POST') {
       if (!env.TG_TOKEN) throw new AuthError(503, 'Вход через Telegram не настроен.');
-      await limit(env, 'tgstart', ip(req), 30);
+      // Класс за одним адресом (школа, кружок) входит разом: 30 в час не хватало. Каждая попытка —
+      // две записи в KV (счётчик и tgauth), поэтому порог не безграничный
+      await limit(env, 'tgstart', ip(req), 120);
       const name = await botName(env);
       if (!name) throw new AuthError(502, 'Бот недоступен. Попробуйте позже.');
       const nonce = randomId(24);
@@ -349,7 +386,7 @@ export async function handleAuth(req, env, parts) {
     if (b === 'oauth' && OAUTH[c] && m === 'POST') {
       const prov = OAUTH[c];
       if (!prov.on(env)) throw new AuthError(503, 'Этот способ входа пока не настроен.');
-      await limit(env, 'oauth', ip(req), 30);
+      await limit(env, 'oauth', ip(req), 120); // класс за одним адресом, как у Telegram
       const origin = new URL(req.url).origin;
       const body = await readBody(req);
       const state = randomId(32);
@@ -458,7 +495,8 @@ export async function handleAuth(req, env, parts) {
       const list = await env.DB.list({ prefix: `progress:${acct.id}:` });
       const items = await Promise.all(list.keys.map(async k => {
         const p = await env.DB.get(k.name, 'json');
-        return p && { ref: k.name.slice(`progress:${acct.id}:`.length), log: p.log || {}, started: Object.keys(p.cards || {}).length, saved: p.saved || 0 };
+        return p && { ref: k.name.slice(`progress:${acct.id}:`.length), log: p.log || {}, started: Object.keys(p.cards || {}).length, saved: p.saved || 0,
+          ...(typeof p.sum?.title === 'string' && { title: p.sum.title.slice(0, 80) }) };
       }));
       return { items: items.filter(Boolean).sort((x, y) => y.saved - x.saved) };
     }

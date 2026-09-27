@@ -4,12 +4,16 @@ import { api, loadPack, esc, day, plural, toast, courseStats } from '../lib.js';
 import { payDialog, daysLeft, dateRu } from '../account.js';
 const packs = new Map(); // ref → набор (кэш)
 
+// Набор нужен только для старых записей прогресса — без сводки sum (см. ниже)
 async function getPack(ref) {
   if (!packs.has(ref)) packs.set(ref, loadPack(ref, '../').catch(() => null));
   return packs.get(ref);
 }
 
-// Сводка по одному набору из сырого прогресса ученика
+/* Сводка по одному набору из прогресса ученика. Сервер (GET /me/children) отдаёт журнал по дням,
+   ДЗ уроков, число освоенных карточек и sum — то, что посчитало приложение ученика: название,
+   слабые темы, размер набора, сроки ДЗ курса. С sum набор не нужен (pack = null). Старые записи
+   без sum приходят с карточками — тогда слабые темы считаются по набору */
 export function stats(prog, pack) {
   const t = day();
   const log = prog.log || {};
@@ -23,9 +27,13 @@ export function stats(prog, pack) {
   const weeks = Array.from({ length: 8 }, (_, i) => sum(t - (7 - i) * 7 - 6, t - (7 - i) * 7));
   const active = Object.keys(log).filter(k => log[k].d).map(Number);
   const last = active.length ? Math.max(...active) : null;
-  // Слабые темы: по карточкам набора, где ошибок больше 30% (не меньше 5 ответов)
-  const byTopic = {};
-  if (pack) {
+  const ps = prog.sum;
+  // Слабые темы — как у репетитора в студии (сводка приложения ученика). Без сводки — по карточкам
+  // набора, где ошибок больше 30% (не меньше 5 ответов)
+  let weak = [];
+  if (ps) weak = (ps.weak || []).map(w => ({ title: String(w.t || ''), acc: w.a }));
+  else if (pack) {
+    const byTopic = {};
     const topicOf = Object.fromEntries(pack.cards.map(c => [c.id, c.t]));
     for (const [id, s] of Object.entries(prog.cards || {})) {
       const tid = topicOf[id];
@@ -33,20 +41,22 @@ export function stats(prog, pack) {
       const x = byTopic[tid] ||= { n: 0, w: 0 };
       x.n += s.n; x.w += s.w;
     }
+    weak = Object.entries(byTopic).filter(([, x]) => x.n >= 5 && 1 - x.w / x.n < 0.7)
+      .map(([tid, x]) => ({ title: pack.topics.find(tp => tp.id === tid)?.title || tid, acc: Math.round((1 - x.w / x.n) * 100) }))
+      .sort((a, b) => a.acc - b.acc).slice(0, 3);
   }
-  const weak = Object.entries(byTopic).filter(([, x]) => x.n >= 5 && 1 - x.w / x.n < 0.7)
-    .map(([tid, x]) => ({ title: pack.topics.find(tp => tp.id === tid)?.title || tid, acc: Math.round((1 - x.w / x.n) * 100) }))
-    .sort((a, b) => a.acc - b.acc).slice(0, 3);
-  const mastered = Object.values(prog.cards || {}).filter(s => s.b >= 3).length;
+  const mastered = prog.mastered ?? Object.values(prog.cards || {}).filter(s => s.b >= 3).length;
   const acc = w => w.n ? Math.round(w.ok / w.n * 100) : null;
-  // ДЗ курса — та же функция, что у ученика в сводке и в студии
-  const course = pack?.course ? courseStats(prog.les, pack.course, t) : null;
-  return { streak, days7, strip, weeks, last, weak, mastered, course, total: pack?.limited?.total || pack?.cards.length || 0, week, acc7: acc(week), accPrev: acc(prev), acc };
+  // ДЗ курса — та же функция, что у ученика в сводке и в студии; сроки — из сводки или из набора
+  const lessons = ps ? (ps.course || []).map(l => ({ id: l.id, hw: { due: l.due } })) : pack?.course?.lessons;
+  const course = lessons?.length ? courseStats(prog.les, { lessons }, t) : null;
+  const total = ps?.total || pack?.limited?.total || pack?.cards.length || 0;
+  return { streak, days7, strip, weeks, last, weak, mastered, course, total, title: ps?.title || pack?.title || '', week, acc7: acc(week), accPrev: acc(prev), acc };
 }
 
 const ago = d => d === null ? 'ещё не занимался' : d === day() ? 'занимался сегодня' : d === day() - 1 ? 'занимался вчера' : `занимался ${plural(day() - d, 'день', 'дня', 'дней')} назад`;
 
-function packBlock(s, pack) {
+function packBlock(s) {
   const trend = s.acc7 !== null && s.accPrev !== null ? (s.acc7 >= s.accPrev ? ` <span class="trend up">+${s.acc7 - s.accPrev}</span>` : ` <span class="trend down">${s.acc7 - s.accPrev}</span>`) : '';
   const level = n => n === 0 ? 0 : n < 5 ? 1 : n < 15 ? 2 : 3;
   const weeks = s.weeks.some(w => w.n) ? `<div class="weeks">${s.weeks.map((w, i) => {
@@ -55,7 +65,7 @@ function packBlock(s, pack) {
   }).join('')}</div>` : '';
   return `
     <section class="panel kid-pack">
-      <div class="kid-pack-head"><b>${esc(pack?.title || 'Тренажёр')}</b><span class="muted">${ago(s.last)}</span></div>
+      <div class="kid-pack-head"><b>${esc(s.title || 'Тренажёр')}</b><span class="muted">${ago(s.last)}</span></div>
       <div class="hero-stats">
         <div><b>${s.days7} из 7</b><span>дней на неделе</span></div>
         <div><b>${s.acc7 === null ? '—' : s.acc7 + '%'}${trend}</b><span>точность</span></div>
@@ -90,7 +100,8 @@ export async function renderChildren($app) {
   let children;
   try { ({ children } = await api('/me/children')); } catch (err) { $app.innerHTML = `<section class="panel">${esc(err.message)}</section>`; return; }
   const blocks = await Promise.all(children.map(async ch => {
-    const parts = await Promise.all(ch.packs.map(async pr => { const pack = await getPack(pr.ref); return packBlock(stats(pr, pack), pack); }));
+    // Набор качаем, только если у записи нет сводки (прогресс сохранён старой версией приложения)
+    const parts = await Promise.all(ch.packs.map(async pr => packBlock(stats(pr, pr.sum ? null : await getPack(pr.ref)))));
     return `<section class="kid">
       <div class="kid-head"><span class="avatar">${esc((ch.name || 'У').slice(0, 2).toUpperCase())}</span><h1>${esc(ch.name)}</h1>
         <button class="btn small" data-unlink="${esc(ch.id)}" aria-label="Убрать">Убрать</button></div>

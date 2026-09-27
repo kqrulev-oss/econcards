@@ -10,7 +10,13 @@
   <link rel="icon" href="icons/icon-192.png" sizes="192x192">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   <link rel="stylesheet" href="app.css">
+  <link rel="modulepreload" href="lib.js">
+  <link rel="modulepreload" href="account.js">
   <script src="config.js"></script>
+  <script>
+    // Офлайн и быстрые переходы (sw.js) — и для тех, кто открывает сразу вход, минуя главную
+    if ('serviceWorker' in navigator) addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
+  </script>
 </head>
 <body class="login-body">
   <main id="app" class="login-page"><p class="loading">Загружаю…</p></main>

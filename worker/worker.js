@@ -2,7 +2,8 @@
    Между уроками — сервер на Cloudflare Worker
    ------------------------------------------------------------
    POST /ai                       ИИ: check | hint | explain | similar | generate
-   GET  /packs/:id                набор репетитора (открыт по ссылке)
+   GET  /packs/:id                набор репетитора (открыт по ссылке); ETag — 304, если не менялся
+   GET  /packs/<библиотека>.json  статика; без доступа — бесплатная часть packs/<id>.free.json
    PUT  /packs/:id                сохранить набор (X-Key; первый PUT задаёт ключ)
    POST /packs/:id/progress       ученик присылает сводку прогресса
    GET  /packs/:id/progress       репетитор смотрит учеников (X-Key)
@@ -200,6 +201,75 @@ const readJson = async (req, max) => {
   try { return JSON.parse(t); } catch { throw new HttpError(400, 'Некорректный запрос.'); }
 };
 
+// Сводку ученика присылают без входа — любой, кто знает код тренажёра. Её показывают студия
+// репетитора и бот, поэтому храним и отдаём только ожидаемые поля: числа — числами, строки —
+// обрезанными, id — по шаблону (иначе строка с разметкой вместо числа — чужой код у репетитора)
+const N = x => (Number.isFinite(+x) ? +x : 0);
+const dayOk = o => ({ d: N(o?.d), ok: N(o?.ok) });
+const ID = /^[\w.-]{1,60}$/;
+function cleanStats(s) {
+  if (!s || typeof s !== 'object') return null;
+  const list = x => (Array.isArray(x) ? x : []);
+  const topics = {};
+  for (const [k, v] of Object.entries(s.topics && typeof s.topics === 'object' ? s.topics : {}).slice(0, 500)) {
+    if (ID.test(k) && v && typeof v === 'object') topics[k] = { s: N(v.s), m: N(v.m), acc: v.acc === null ? null : N(v.acc) };
+  }
+  return {
+    last: N(s.last), streak: N(s.streak), today: dayOk(s.today), week: { ...dayOk(s.week), days: N(s.week?.days) },
+    days: list(s.days).slice(0, 14).map(N), day: N(s.day), weeks: list(s.weeks).slice(0, 8).map(dayOk),
+    total: N(s.total), started: N(s.started), mastered: N(s.mastered), topics,
+    errs: list(s.errs).filter(x => typeof x === 'string' && ID.test(x)).slice(0, 15), tz: N(s.tz),
+    ...(s.hw && typeof s.hw === 'object' && typeof s.hw.id === 'string' && ID.test(s.hw.id) && { hw: { id: s.hw.id, d: N(s.hw.d) } }),
+    ...(s.course && typeof s.course === 'object' && { course: { n: N(s.course.n), done: N(s.course.done), onTime: N(s.course.onTime) } }),
+    weak: list(s.weak).slice(0, 3).map(w => ({ t: cut(w?.t, 60), a: N(w?.a) })),
+    title: cut(s.title, 80), tutor: cut(s.tutor, 80),
+  };
+}
+const cleanProg = r => r && typeof r === 'object' && ({ sid: cut(r.sid, 20), name: cut(r.name, 80), stats: cleanStats(r.stats), at: N(r.at), ...(typeof r.acct === 'string' && { acct: r.acct }) });
+
+// If-None-Match: список через запятую; слабый W/"…" тоже подходит (Cloudflare ослабляет ETag при сжатии)
+const etagMatch = (header, etag) => !!header && !!etag && (header.trim() === '*'
+  || header.split(',').some(t => t.trim().replace(/^W\//, '') === etag.replace(/^W\//, '')));
+
+// ETag набора репетитора: версия (updated, её ставит PUT) + задание. Набор не разбираем: версия —
+// из метаданных, у наборов, опубликованных раньше, — из конца строки (PUT дописывает updated последним)
+function packTag(pack, meta, hw) {
+  const v = meta?.v || /"updated":(\d+)\}$/.exec(pack.slice(-40))?.[1];
+  if (!v) return null;
+  let h = '0';
+  if (hw) {
+    try { const x = JSON.parse(hw); h = `${x.id}.${x.set}`; } catch { return null; }
+  }
+  return `"${v}-${h}"`;
+}
+
+// Библиотека ЕГЭ: полная — тем, у кого есть доступ (пробный, оплата, репетитор с тарифом), остальным —
+// бесплатная часть, заранее собранная tools/build_packs.py в packs/<id>.free.json: обычная статика
+// с ETag (повторное открытие — 304), без разбора 1,6 МБ JSON на каждый запрос.
+// Ответ зависит от входа, поэтому Vary и no-cache: кэш браузера не отдаст версию другого человека
+async function libraryPack(req, env, id) {
+  const acct = env.DB && await sessionAccount(env, req).catch(() => null);
+  if (acct && planStatus(acct, 'lib').active) return revalidated(await env.ASSETS.fetch(req), req, 'private, no-cache');
+  const inm = req.headers.get('If-None-Match');
+  const free = await env.ASSETS.fetch(new Request(new URL(`/packs/${id}.free.json`, req.url), inm ? { headers: { 'If-None-Match': inm } } : {}));
+  if (free.ok || free.status === 304) return revalidated(free, req, 'no-cache');
+  // Файла нет (набор добавили, а build_packs.py не запускали) — режем на лету, как раньше
+  const full = await env.ASSETS.fetch(new Request(new URL(`/packs/${id}.json`, req.url)));
+  if (!full.ok) return full;
+  return Response.json(trimLibrary(await full.json()), { headers: { 'Cache-Control': 'no-store' } });
+}
+
+// Ответ статики со своими заголовками кэша; 304, если ETag совпал, а статика сама не ответила 304
+function revalidated(res, req, cacheControl) {
+  const hit = res.ok && etagMatch(req.headers.get('If-None-Match'), res.headers.get('ETag'));
+  if (hit) res.body?.cancel().catch(() => {});
+  const out = new Response(hit ? null : res.body, { status: hit ? 304 : res.status, headers: res.headers });
+  out.headers.set('Cache-Control', cacheControl);
+  out.headers.set('Vary', 'Authorization');
+  if (hit) out.headers.delete('Content-Length');
+  return out;
+}
+
 async function handle(req, env, ctx) {
   const url = new URL(req.url);
   const parts = url.pathname.split('/').filter(Boolean);
@@ -223,10 +293,14 @@ async function handle(req, env, ctx) {
   if (!/^[a-z0-9-]{4,40}$/.test(id)) throw new HttpError(400, 'Некорректный код набора.');
 
   if (parts.length === 2 && req.method === 'GET') {
-    const [pack, hw] = await Promise.all([env.DB.get(`pack:${id}`), env.DB.get(`hw:${id}`)]);
+    const [{ value: pack, metadata }, hw] = await Promise.all([env.DB.getWithMetadata(`pack:${id}`), env.DB.get(`hw:${id}`)]);
     if (!pack) throw new HttpError(404, 'Набор не найден. Проверьте код у репетитора.');
-    // Задание репетитора приходит внутри набора — попадает и в офлайн-копию ученика
-    return new Response(withHw(pack, hw), { headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-cache' } });
+    // Задание репетитора приходит внутри набора — попадает и в офлайн-копию ученика.
+    // Эта версия у ученика уже есть (If-None-Match) — 304 без тела вместо всего набора
+    const etag = packTag(pack, metadata, hw);
+    const headers = { 'Content-Type': 'application/json', 'Cache-Control': 'no-cache', ...(etag && { ETag: etag }) };
+    if (etagMatch(req.headers.get('If-None-Match'), etag)) return new Response(null, { status: 304, headers });
+    return new Response(withHw(pack, hw), { headers });
   }
 
   if (parts.length === 2 && req.method === 'PUT') {
@@ -241,8 +315,9 @@ async function handle(req, env, ctx) {
     pack.updated = Date.now();
     delete pack.hw; // задание хранится отдельно (hw:<id>) и вставляется при чтении
     if (!owner) await env.DB.put(`owner:${id}`, await sha256(key));
-    // Название и репетитор — в метаданных того же ключа: бот читает их, не открывая набор
-    await env.DB.put(`pack:${id}`, JSON.stringify(pack), { metadata: { t: cut(pack.title, 60), u: cut(pack.tutor, 60) } });
+    // Название и репетитор — в метаданных того же ключа: бот читает их, не открывая набор;
+    // версия v — для ETag при чтении (GET /packs/:id)
+    await env.DB.put(`pack:${id}`, JSON.stringify(pack), { metadata: { t: cut(pack.title, 60), u: cut(pack.tutor, 60), v: pack.updated } });
     // Репетитор вошёл в аккаунт — набор привязывается к нему (доступ с любого устройства)
     if (acct && !owner) await env.DB.put(`packacct:${id}`, acct.id);
     return { ok: true, id, updated: pack.updated };
@@ -254,7 +329,8 @@ async function handle(req, env, ctx) {
     const pk = await env.DB.getWithMetadata(`pack:${id}`, { type: 'stream' });
     pk.value?.cancel?.().catch?.(() => {});
     if (!pk.value) throw new HttpError(404, 'Набор не найден.');
-    const { sid, name, stats } = await readJson(req, MAX_STATS);
+    const { sid, name, stats: raw } = await readJson(req, MAX_STATS);
+    const stats = cleanStats(raw);
     if (!/^[a-z0-9]{6,20}$/.test(sid || '') || !name) throw new HttpError(400, 'Нет имени ученика.');
     // Название и репетитора бот пишет родителю от своего имени — только из набора, не от ученика
     // (запрос без входа: иначе любой, кто знает sid, подписал бы отчёт своим текстом)
@@ -266,7 +342,7 @@ async function handle(req, env, ctx) {
       if (raw && raw.length < 1e6) {
         try {
           const pack = JSON.parse(raw);
-          meta = { t: cut(pack.title || '', 60), u: cut(pack.tutor || '', 60) };
+          meta = { t: cut(pack.title || '', 60), u: cut(pack.tutor || '', 60), ...(pack.updated ? { v: pack.updated } : {}) };
           await env.DB.put(`pack:${id}`, raw, { metadata: meta });
         } catch (err) { console.error('pack meta backfill', id, err?.message); }
       }
@@ -314,7 +390,8 @@ async function handle(req, env, ctx) {
     do {
       const list = await env.DB.list({ prefix: `prog:${id}:`, cursor });
       const rows = await Promise.all(list.keys.map(k => env.DB.get(k.name)));
-      rows.forEach(r => r && students.push(JSON.parse(r)));
+      // Записи, сохранённые до проверки полей, — тоже через cleanProg
+      rows.forEach(r => { const x = r && cleanProg(JSON.parse(r)); if (x) students.push(x); });
       cursor = list.list_complete ? null : list.cursor;
     } while (cursor);
     return progressFlags(env, id, students);
@@ -333,14 +410,11 @@ export default {
     }
     // Когда сервер развёрнут вместе с сайтом (wrangler.jsonc в корне), сюда же
     // приходят запросы к библиотеке packs/*.json — это статика, отдаём как есть
+    // (index.json, sample-*.json и заранее собранные <id>.free.json — тоже)
     if (env.ASSETS && path.endsWith('.json')) {
-      const res = await env.ASSETS.fetch(req);
-      // Библиотека ЕГЭ: полная — с доступом (пробный, оплата, репетитор с тарифом), иначе бесплатная часть
       const lib = /^\/packs\/([a-z-]+)\.json$/.exec(path);
-      if (!lib || !LIB_PACKS.includes(lib[1]) || !res.ok) return res;
-      const acct = env.DB && await sessionAccount(env, req).catch(() => null);
-      if (acct && planStatus(acct, 'lib').active) return res;
-      return Response.json(trimLibrary(await res.json()), { headers: { 'Cache-Control': 'no-store' } });
+      if (!lib || !LIB_PACKS.includes(lib[1])) return env.ASSETS.fetch(req);
+      return libraryPack(req, env, lib[1]);
     }
     const origin = req.headers.get('Origin');
     if (req.method === 'OPTIONS') return new Response(null, { headers: cors(origin) });

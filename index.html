@@ -21,6 +21,10 @@
   <link rel="icon" href="icons/icon-192.png" sizes="192x192">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   <link rel="stylesheet" href="app.css">
+  <!-- Модули, которые импортирует app.js: качаем сразу, а не после app.js (−1 круг запросов) -->
+  <link rel="modulepreload" href="lib.js">
+  <link rel="modulepreload" href="account.js">
+  <link rel="modulepreload" href="landing.js">
   <script src="config.js"></script>
 </head>
 <body>

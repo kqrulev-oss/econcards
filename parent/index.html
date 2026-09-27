@@ -2,18 +2,15 @@
 <html lang="ru">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Для родителей · Между уроками</title>
-  <meta name="description" content="Как занимается ваш ребёнок между уроками: дни, точность, слабые темы">
-  <meta name="theme-color" content="#5B3DF5">
-  <link rel="icon" href="../icons/favicon-48.png" sizes="48x48">
-  <link rel="icon" href="../icons/icon-192.png" sizes="192x192">
-  <link rel="apple-touch-icon" href="../icons/apple-touch-icon.png">
-  <link rel="stylesheet" href="../app.css">
-  <script src="../config.js"></script>
+  <meta name="robots" content="noindex">
+  <!-- Кабинет родителя переехал в общий личный кабинет: старые ссылки /parent/ ведём туда сразу,
+       не загружая стили, шрифты и скрипты. Параметры (?…) сохраняются, вкладка — «Родитель» -->
+  <script>location.replace('../cabinet/' + location.search + '#parent');</script>
+  <noscript><meta http-equiv="refresh" content="0; url=../cabinet/#parent"></noscript>
 </head>
 <body>
-  <main id="app" class="wrap"><p class="loading">Загружаю…</p></main>
-  <script type="module" src="parent.js"></script>
+  <p><a href="../cabinet/#parent">Открыть кабинет родителя</a></p>
 </body>
 </html>

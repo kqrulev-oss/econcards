@@ -29,9 +29,12 @@ export async function api(path, { method = 'GET', body, key, keepalive = false }
   try {
     r = await fetch(base + path, { method, headers, keepalive, body: body === undefined ? undefined : JSON.stringify(body) });
   } catch {
-    throw new Error('Нет связи с сервером');
+    throw Object.assign(new Error('Нет связи с сервером'), { status: 0 });
   }
   const data = await r.json().catch(() => ({}));
+  // 401 на запрос с сессией — сессия больше не действует (вышли на другом устройстве, истёк срок).
+  // account.js забывает её и показывает «Сессия закончилась — войдите снова»
+  if (r.status === 401 && token) window.dispatchEvent(new CustomEvent('zd-unauthorized', { detail: { token } }));
   if (!r.ok) throw Object.assign(new Error(data.message || `Ошибка сервера (${r.status})`), { status: r.status });
   return data;
 }
@@ -181,15 +184,91 @@ export function toast(msg) {
   setTimeout(() => { t.classList.remove('on'); setTimeout(() => t.remove(), 300); }, 2600);
 }
 
-// Модальное окно поверх страницы: закрывается крестиком и кликом мимо
-export function modal(html) {
-  const m = el(`<div class="modal"><div class="modal-box"><button class="modal-x" aria-label="Закрыть">✕</button>${html}</div></div>`);
-  const close = () => m.remove();
-  m.querySelector('.modal-x').onclick = close;
+// ---------- модальные окна ----------
+// Открытое окно — своя запись в истории: «Назад» телефона закрывает окно, а не уводит
+// со страницы. Ещё закрывают крестик, клик мимо окна, Esc и смена адреса (окно не висит
+// над другим экраном). Окна могут открываться друг над другом — закрывается верхнее.
+// history.state открытого окна — { zdModal: id }: обработчикам popstate его можно пропускать.
+// Окно, открытое без нажатия (при загрузке страницы), записи не получает: Chrome такие записи
+// на «Назад» пропускает — такое окно закрывают крестик, Esc и смена адреса
+const modals = []; // открытые окна снизу вверх: { id, href, shut }
+let modalSeq = 0;
+let pendingBack = null; // окно закрыто кодом, его запись истории ещё не снята
+let ownBacks = 0; // наши history.back() при закрытии окна: такой popstate — не «Назад» человека
+
+// «Назад» (или вперёд) по истории: закрываем окна, открытые после текущей записи
+window.addEventListener('popstate', () => {
+  if (ownBacks > 0) { ownBacks--; return; }
+  const k = modals.findIndex(x => x.id === history.state?.zdModal);
+  for (const x of modals.slice(k + 1).reverse()) x.shut('history');
+});
+// Переход на другой адрес (#-ссылка, код страницы) — окна прежнего экрана закрываются.
+// Окно, открытое уже на новом адресе, остаётся
+window.addEventListener('hashchange', () => {
+  for (const x of [...modals].reverse()) if (x.href !== location.href) x.shut('history');
+});
+document.addEventListener('keydown', e => {
+  if (e.key !== 'Escape' || e.isComposing || e.defaultPrevented || !modals.length) return;
+  e.preventDefault();
+  modals.at(-1).shut('user');
+});
+
+/* Модальное окно поверх страницы. Возвращает { box, close }; close() возвращает Promise,
+   который выполнится, когда запись окна снята с истории, — после него можно менять адрес.
+   onClose — вызывается при любом закрытии окна. */
+export function modal(html, { onClose } = {}) {
+  const m = el(`<div class="modal" role="dialog" aria-modal="true"><div class="modal-box" tabindex="-1"><button class="modal-x" aria-label="Закрыть">✕</button>${html}</div></div>`);
+  const id = `m${++modalSeq}-${Date.now().toString(36)}`;
+  const from = document.activeElement;
+  let open = true;
+  // how: 'history' — закрыто переходом по истории или адресу (запись уже не текущая);
+  // 'user' — крестик, клик мимо, Esc: запись снимаем сразу; 'code' — close() из кода: чуть позже
+  const shut = (how = 'code') => {
+    if (!open) return Promise.resolve();
+    open = false;
+    m.remove();
+    const i = modals.findIndex(x => x.id === id);
+    if (i >= 0) modals.splice(i, 1);
+    if (from?.isConnected && !document.querySelector('.modal')) from.focus?.({ preventScroll: true });
+    try { onClose?.(); } catch (err) { console.error(err); }
+    if (how === 'history' || history.state?.zdModal !== id) return Promise.resolve();
+    const back = done => {
+      if (history.state?.zdModal !== id) return done();
+      let popped = false;
+      const fin = () => { popped = true; removeEventListener('popstate', fin); clearTimeout(guard); done(); };
+      // popstate так и не пришёл — не считаем следующий «Назад» человека своим
+      const guard = setTimeout(() => { if (!popped) ownBacks = Math.max(0, ownBacks - 1); fin(); }, 600);
+      addEventListener('popstate', fin);
+      ownBacks++;
+      history.back();
+    };
+    if (how === 'user') return new Promise(back);
+    // Из кода — не сразу: если следом меняют адрес (close(); location.hash = …), «назад» отменил бы
+    // этот переход, а новая запись уже не наша — тогда её не трогаем
+    return new Promise(done => {
+      const t = setTimeout(() => { pendingBack = null; back(done); });
+      pendingBack = { id, t, done };
+    });
+  };
+  const close = () => shut();
+  m.querySelector('.modal-x').onclick = () => { shut('user'); };
   // Только клик по фону закрывает окно; return false здесь отменил бы клики по ссылкам внутри
-  m.onclick = e => { if (e.target === m) close(); };
+  m.onclick = e => { if (e.target === m) shut('user'); };
+  // Окно сменяет только что закрытое (вход → оплата): занимаем его запись истории вместо новой.
+  // Новую запись — только после нажатия человека (иначе Chrome пропустит её на «Назад»)
+  if (pendingBack && history.state?.zdModal === pendingBack.id) {
+    clearTimeout(pendingBack.t);
+    pendingBack.done();
+    pendingBack = null;
+    history.replaceState({ zdModal: id }, '');
+  } else if (navigator.userActivation?.isActive ?? true) {
+    history.pushState({ zdModal: id }, '');
+  }
+  modals.push({ id, href: location.href, shut });
   document.body.append(m);
-  return { box: m.querySelector('.modal-box'), close };
+  const box = m.querySelector('.modal-box');
+  box.focus({ preventScroll: true });
+  return { box, close };
 }
 
 // Сравнение числовых ответов: «0,35», «0.35» и «.35» — одно и то же
