@@ -258,15 +258,11 @@ def gen_ep07_log_base(r):
     c = base ** n
     b = r.choice([v for v in range(-15, 16) if v])
     x = base - b
-    f = f'{logb("x" + (" + " if b > 0 else " − ") + str(abs(b))).replace("x + ", "₍ₓ₊").replace("x − ", "₍ₓ₋")}'
-    # основание-выражение пишем как log_{x + b}: подстрочно не набрать — используем скобки
-    f = f'log_(x {"+" if b > 0 else "−"} {abs(b)}) {c} = {n}'
+    sb = ('ₓ₊' if b > 0 else 'ₓ₋') + str(abs(b)).translate(SUB)
+    f = f'log{sb} {c} = {n}'
     q = eq_q(r, f)
-    if n == 2:
-        q = q.rstrip('.?') + ('. Если уравнение имеет более одного корня, в ответе запишите больший из них.' if False else '')
-        q = q + ('.' if not q.endswith(('.', '?')) else '')
-    ex = (f'(x {"+" if b > 0 else "−"} {abs(b)})^{n} = {c}, основание положительно и не равно 1: '
-          f'x {"+" if b > 0 else "−"} {abs(b)} = {base}, x = {tnum(x)}.')
+    xb = f'x {"+" if b > 0 else "−"} {abs(b)}'
+    ex = f'({xb})^{{{n}}} = {c}, основание положительно и не равно 1: {xb} = {base}, x = {tnum(x)}.'
 
     def chk():
         y = sp.Symbol('y', real=True)
@@ -314,7 +310,8 @@ def gen_ep07_cbrt(r):
     f = f'∛({arg}) = {tnum(c)}'
     q = eq_q(r, f)
     ex = f'Возводим в куб: {arg} = {tnum(c ** 3)}, x = {tnum(x)}.'
-    return pcard(q, num(x), ex), one_root(sp.real_root(k * X + b, 3) if False else (k * X + b), sp.Integer(c) ** 3, num(x))
+    # проверка подстановкой: вещественный кубический корень; функция монотонна — корень единственный
+    return pcard(q, num(x), ex), lambda: sp.real_root(k * R(x) + b, 3) == c
 
 
 @proto('ep07-cube', 'ege-prof', 7, 'Уравнение (x + b)³ = c',
@@ -435,11 +432,9 @@ def gen_ep07_trig(r):
     v = {'1/2': sp.Rational(1, 2), '−1/2': sp.Rational(-1, 2), '√2/2': sp.sqrt(2) / 2, '√3/2': sp.sqrt(3) / 2,
          '0': 0, '1': 1, '−1': -1}[val]
     # все корни на [−60; 60]: t = π(x + b)/k; углы t в [0; 2π) с f(t) = v
-    base = []
-    for j in range(24):
-        t = sp.pi * j / 12
-        if sp.simplify((sp.cos(t) if fn == 'cos' else sp.sin(t)) - v) == 0:
-            base.append(F(j, 12))
+    fv = float(v)
+    g = math.cos if fn == 'cos' else math.sin
+    base = [F(j, 12) for j in range(24) if abs(g(math.pi * j / 12) - fv) < 1e-9]
     roots = sorted({F(k) * (t0 + 2 * n) - b for t0 in base for n in range(-40, 41)})
     cand = [x for x in roots if (x < 0 if want == 'neg' else x > 0)]
     ans = max(cand) if want == 'neg' else min(cand)

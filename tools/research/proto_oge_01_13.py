@@ -56,10 +56,11 @@ def parse(txt):
     s = re.sub(r'\^\{([^}]*)\}', r'**(\1)', s)
     s = re.sub(r'\^\(([^)]*)\)', r'**(\1)', s)
     s = re.sub(r'\^(-?\d+)', r'**(\1)', s)
-    s = re.sub(r'√(\d+(?:\.\d+)?)', r'sqrt(\1)', s)
-    s = s.replace('√', 'sqrt')
-    s = re.sub(r'(\d|\))\s*(sqrt|\()', r'\1*\2', s)
-    s = re.sub(r'(\d|\))\s*([a-z])(?!qrt)', r'\1*\2', s)
+    s = re.sub(r'√(\d+(?:\.\d+)?)', r'§(\1)', s)
+    s = s.replace('√', '§')
+    s = re.sub(r'([a-z])\s*(?=[a-z(§])', r'\1*', s)
+    s = re.sub(r'(\d|\))\s*(?=[a-z(§])', r'\1*', s)
+    s = s.replace('§', 'sqrt')
     return sp.sympify(s, rational=True)
 
 
@@ -809,3 +810,618 @@ def gen_og07_point_compare(r):
                 return False
         return True
     return pcard(q, a, e=e, k='one', o=o, svg=svg), chk
+
+
+# ================================================================ №8 — степени, корни, преобразования
+
+K8 = K(minutes=3, kes=['2.2', '2.5', '1.4'], kt=[4], style='«Найдите значение выражения …» с формулой; ответ — число')
+K8a = K(minutes=4, kes=['2.1', '2.3', '2.4'], kt=[4], style='«Найдите значение выражения … при a = …»: сначала упростить, затем подставить')
+
+
+def _pw(b, e):
+    b = f'({tnum(b)})' if F(b) < 0 else (f'({fr(b)})' if F(b).denominator > 1 else tnum(b))
+    return f'{b}^{{{tnum(e)}}}'
+
+
+def _f8(r, ex, val, e):
+    q = f'{pick(r, *ASK)} ⟦{ex}⟧.'
+    return pcard(q, num(val), e=e), lambda: same(num(val), parse(ex))
+
+
+@proto('og08-pow-base', 'oge', 8, 'Степени с одинаковым основанием',
+       invariant='Числовое выражение из степеней одного основания (в т. ч. с отрицательными показателями): умножение, деление, степень степени.',
+       varies='Основание, показатели, расположение (дробь, степень в степени).',
+       answer_rule='Складываем/вычитаем/умножаем показатели, затем вычисляем одну степень.',
+       fipi=r'(\d+)\s*[−-]\s*\d+\s*[·⋅]\s*\1\s*\d+|\(\s*\d+\s*[−-]\s*\d+\s*\)\s*\d+\s*[·⋅]',
+       mistakes=['перемножают показатели вместо сложения', 'ошибка со знаком отрицательного показателя'], maxdec=4, kim=K8)
+def gen_og08_pow_base(r):
+    b = r.choice([2, 2, 3, 3, 5, 7, 10, 4, 6])
+    target = r.choice([-3, -2, -1, 1, 2, 3, 4, 5]) if b <= 3 else r.choice([-2, -1, 1, 2, 3])
+    kind = r.randrange(3)
+    if kind == 0:
+        m = r.choice([x for x in range(-9, 13) if x not in (0, 1)])
+        n = r.choice([x for x in range(-9, 13) if x not in (0, 1)])
+        k = m + n - target
+        if k in (0, 1) or abs(k) > 15:
+            return None
+        ex, e = f'{_pw(b, m)} · {_pw(b, n)} / {_pw(b, k)}', f'Показатель: {tnum(m)} + {tnum(n)} − {par(k)} = {tnum(target)}.'
+    elif kind == 1:
+        m, n = r.choice([-5, -4, -3, -2, 2, 3, 4, 5]), r.choice([-3, -2, 2, 3])
+        k = target - m * n
+        if k in (0, 1) or abs(k) > 16:
+            return None
+        ex, e = f'({_pw(b, m)})^{{{tnum(n)}}} · {_pw(b, k)}', f'Показатель: {tnum(m)}·{par(n)} + {par(k)} = {tnum(target)}.'
+    else:
+        m, n = r.choice([-5, -4, -3, 2, 3, 4, 5]), r.choice([-3, -2, 2, 3])
+        k = m * n - target
+        if k in (0, 1) or abs(k) > 16:
+            return None
+        ex, e = f'({_pw(b, m)})^{{{tnum(n)}}} / {_pw(b, k)}', f'Показатель: {tnum(m)}·{par(n)} − {par(k)} = {tnum(target)}.'
+    val = F(b) ** target
+    if not nice(val, 4):
+        return None
+    return _f8(r, ex, val, e + f' {_pw(b, target)} = {tnum(val)}.')
+
+
+@proto('og08-pow-var', 'oge', 8, 'Степени с переменной: упростить и подставить',
+       invariant='Выражение с буквой из степеней одного основания; упростить по свойствам степени и подставить значение.',
+       varies='Буква, показатели (в т. ч. отрицательные), значение переменной (целое или дробь).',
+       answer_rule='Приводим к виду a^k и подставляем a.',
+       fipi=r'при\s+[a-zх]\s*=.{0,5}[a-zх]\s*\d|[a-zх]\s*\d+\s*[·⋅]\s*[a-zх]\s*[−-]?\s*\d+.{0,40}при',
+       mistakes=['подставляют до упрощения и ошибаются в вычислениях', 'путают степень степени и произведение'], maxdec=4, kim=K8)
+def gen_og08_pow_var(r):
+    v = r.choice(['a', 'b', 'x', 'c', 'y'])
+    target = r.choice([-2, -1, 2, 3, 1])
+    m, n = r.choice([-7, -6, -5, -4, -3, 3, 4, 5, 6, 7, 8]), r.choice([-3, -2, 2, 3, 4])
+    kind = r.randrange(3)
+    if kind == 0:
+        k = m + n - target
+        ex = f'{v}^{{{tnum(m)}}} · {v}^{{{tnum(n)}}} / {v}^{{{tnum(k)}}}'
+        if k in (0, 1):
+            return None
+    elif kind == 1:
+        k = target - m * n
+        if k in (0, 1) or abs(k) > 20:
+            return None
+        ex = f'({v}^{{{tnum(m)}}})^{{{tnum(n)}}} · {v}^{{{tnum(k)}}}'
+    else:
+        k = m * n - target
+        if k in (0, 1) or abs(k) > 20:
+            return None
+        ex = f'({v}^{{{tnum(m)}}})^{{{tnum(n)}}} / {v}^{{{tnum(k)}}}'
+    val_x = r.choice([2, 3, 4, 5, 6, 7, 10, -2, -3, F(1, 2), F(1, 3), F(1, 4), F(1, 5), F(-1, 2)])
+    val = F(val_x) ** target
+    if not nice(val, 3) or abs(val) > 1000:
+        return None
+    q = f'{pick(r, "Найдите значение выражения", "Вычислите значение выражения")} ⟦{ex}⟧ при {v} = {fr(val_x)}.'
+    e = f'Упрощаем: {v if target == 1 else v + "^" + tnum(target)}; при {v} = {fr(val_x)} получаем {tnum(val)}.'
+    sym = sp.Symbol(v)
+    return pcard(q, num(val), e=e), lambda: same(num(val), parse(ex).subs(sym, R(val_x)))
+
+
+@proto('og08-pow-mixed', 'oge', 8, 'Степени с разными основаниями',
+       invariant='Произведение степеней разных оснований делится на степень их произведения (или наоборот): (ab)ⁿ = aⁿbⁿ.',
+       varies='Основания, показатели, место составного основания (в числителе/знаменателе).',
+       answer_rule='Раскладываем составное основание на множители и сокращаем одинаковые степени.',
+       fipi=r'\d+\s*\d+\s*[·⋅]\s*\d+\s*\d+\s+\d+\s*\d+\s*\.?\s*Ответ|\d{2}\s+\d+\s*[·⋅]\s*\d+',
+       mistakes=['перемножают основания и складывают показатели одновременно'], maxdec=4, kim=K8)
+def gen_og08_pow_mixed(r):
+    a, b = r.sample([2, 3, 5, 7, 4, 6, 8, 10], 2)
+    if math.gcd(a, b) != 1 and r.random() < 0.7:
+        return None
+    ab = a * b
+    n = r.randint(3, 12)
+    kind = r.randrange(3)
+    if kind == 0:
+        p, q_ = n + r.choice([0, 1, 2]), n + r.choice([0, 1, 2])
+        if p == q_ == n:
+            return None
+        val = F(a) ** (p - n) * F(b) ** (q_ - n)
+        ex = f'{_pw(a, p)} · {_pw(b, q_)} / {_pw(ab, n)}'
+    elif kind == 1:
+        p = n + r.choice([1, 2, 3])
+        val = F(ab) ** n / (F(a) ** (n - 1) * F(b) ** p) if r.random() < 0.5 else None
+        if val is None:
+            val = F(ab) ** n / (F(a) ** p * F(b) ** (n - 1))
+            ex = f'{_pw(ab, n)} / ({_pw(a, p)} · {_pw(b, n - 1)})'
+        else:
+            ex = f'{_pw(ab, n)} / ({_pw(a, n - 1)} · {_pw(b, p)})'
+    else:
+        c = r.choice([2, 3])
+        val = F(a) ** c
+        ex = f'{_pw(ab, n)} / ({_pw(a, n - c)} · {_pw(b, n)})'
+        if n - c < 2:
+            return None
+    if not nice(val, 4) or abs(val) > 10000:
+        return None
+    return _f8(r, ex, val, f'{ab} = {a}·{b}, поэтому {_pw(ab, n)} = {_pw(a, n)}·{_pw(b, n)}; после сокращения {tnum(val)}.')
+
+
+@proto('og08-std-form', 'oge', 8, 'Числа в стандартном виде',
+       invariant='Произведение или частное чисел вида a·10ⁿ (показатели разных знаков); ответ — обычная десятичная запись.',
+       varies='Мантиссы, показатели, действие.',
+       answer_rule='Перемножаем (делим) мантиссы и отдельно степени десяти.',
+       fipi=r'10\s*[−-]?\s*\d+\s*\)?\s*[·⋅:]\s*\(?\s*\d+(,\d+)?\s*[·⋅]\s*10',
+       mistakes=['ошибка в показателе при делении', 'сдвиг запятой не в ту сторону'], maxdec=4, kim=K8)
+def gen_og08_std_form(r):
+    m1 = F(r.randint(11, 99), 10) if r.random() < 0.7 else F(r.randint(2, 9))
+    m2 = F(r.choice([2, 4, 5, 8])) if r.random() < 0.7 else F(r.randint(11, 99), 10)
+    e1, e2 = r.randint(-5, 5), r.randint(-5, 5)
+    if r.random() < 0.6:
+        val = m1 * m2 * F(10) ** (e1 + e2)
+        ex = f'({tnum(m1)} · {_pw(10, e1)}) · ({tnum(m2)} · {_pw(10, e2)})'
+    else:
+        val = m1 / m2 * F(10) ** (e1 - e2)
+        ex = f'({tnum(m1)} · {_pw(10, e1)}) / ({tnum(m2)} · {_pw(10, e2)})'
+    if e1 == 0 or e2 == 0 or not nice(val, 4) or not F(1, 100) <= abs(val) <= 10000:
+        return None
+    return _f8(r, ex, val, f'Мантиссы: {ftxt(val / F(10) ** (e1 + e2 if "·" in ex.split("/")[0] and "/" not in ex else e1 - e2))}, степени десяти складываем/вычитаем; итого {tnum(val)}.')
+
+
+def _sq_free():
+    return [2, 3, 5, 6, 7, 10, 11, 13, 14, 15, 17, 19]
+
+
+@proto('og08-sqrt-prod', 'oge', 8, 'Произведение и частное корней',
+       invariant='√a·√b или √a/√b, где произведение (частное) — точный квадрат; возможны множители перед корнями.',
+       varies='Подкоренные числа, коэффициенты, операция, запись дробью.',
+       answer_rule='√a·√b = √(ab), √a/√b = √(a/b); извлекаем корень из точного квадрата.',
+       fipi=r'√\s*\(?\s*\d+(,\d+)?\s*\)?\s*[·⋅]\s*√|√\s*\d+\s+√\s*\d+',
+       mistakes=['складывают подкоренные числа', 'забывают коэффициент перед корнем'], kim=K8)
+def gen_og08_sqrt_prod(r):
+    s = r.choice(_sq_free())
+    p, q_ = r.randint(1, 8), r.randint(1, 8)
+    a, b = s * p * p, s * q_ * q_
+    c = r.choice([1, 1, 1, 2, 3, 5])
+    if a == b:
+        return None
+    if r.random() < 0.55:
+        val = c * s * p * q_
+        ex = f'{c if c > 1 else ""}√{a} · √{b}'
+        e = f'√{a}·√{b} = √{a * b} = {s * p * q_}' + (f', ·{c} = {val}' if c > 1 else '') + '.'
+    else:
+        t = r.randint(2, 9)
+        b = s * q_ * q_
+        a = b * t * t
+        val = F(c * t)
+        ex = f'{c if c > 1 else ""}√{a} / √{b}'
+        e = f'√{a}/√{b} = √{a // b} = {t}' + (f', ·{c} = {c * t}' if c > 1 else '') + '.'
+        if a > 2000:
+            return None
+    if a > 2000 or b > 2000:
+        return None
+    return _f8(r, ex, val, e)
+
+
+@proto('og08-sqrt-powers', 'oge', 8, 'Корень из произведения степеней',
+       invariant='√(pᵐ·qⁿ) с чётными показателями или √(a·b) с десятичными множителями-квадратами.',
+       varies='Основания, чётные показатели, десятичные множители.',
+       answer_rule='Корень из произведения = произведение корней; √(p^{2k}) = p^k.',
+       fipi=r'√\s*\(?\s*\d+\s*\d+\s*[·⋅]\s*\d+\s*\d+|√\s*\(?\s*\d+,\d+\s*[·⋅]',
+       mistakes=['извлекают корень только из одного множителя', 'делят показатель на 2 неверно'], kim=K8)
+def gen_og08_sqrt_powers(r):
+    if r.random() < 0.6:
+        p, q_ = r.sample([2, 3, 5, 7, 11], 2)
+        m, n = r.choice([2, 4, 6]), r.choice([2, 4, 6])
+        val = p ** (m // 2) * q_ ** (n // 2)
+        if val > 5000:
+            return None
+        ex = f'√({p}^{{{m}}} · {q_}^{{{n}}})'
+        e = f'√({p}^{m}·{q_}^{n}) = {p}^{m // 2}·{q_}^{n // 2} = {val}.'
+        return _f8(r, ex, val, e)
+    a = F(r.randint(1, 9), 10) ** 2 if r.random() < 0.5 else F(r.randint(11, 30), 10) ** 2
+    b = r.randint(2, 15) ** 2
+    val = F(math.isqrt(b)) * F(int(math.sqrt(float(a)) * 10 + 0.5), 10)
+    if F(int(math.sqrt(float(a)) * 10 + 0.5), 10) ** 2 != a:
+        return None
+    ex = f'√({tnum(a)} · {b})'
+    return _f8(r, ex, val, f'√{tnum(a)} · √{b} = {tnum(val)}.')
+
+
+@proto('og08-sqrt-square', 'oge', 8, 'Квадрат выражения с корнем',
+       invariant='(c√b)² или (c√b)²/k, (√a)² — возведение в квадрат произведения с корнем.',
+       varies='Коэффициент, подкоренное число, делитель.',
+       answer_rule='(c√b)² = c²·b.',
+       fipi=r'\(\s*\d+\s*√\s*\d+\s*\)\s*2',
+       mistakes=['возводят в квадрат только корень', 'пишут (c√b)² = c·b'], kim=K8)
+def gen_og08_sqrt_square(r):
+    c, b = r.randint(2, 9), r.choice(_sq_free())
+    k = r.choice([1, 1, 2, 3, 4, 5, 6, 10, 12, 15, 20])
+    val = F(c * c * b, k)
+    if not nice(val, 2):
+        return None
+    ex = f'({c}√{b})² / {k}' if k > 1 else f'({c}√{b})²'
+    return _f8(r, ex, val, f'({c}√{b})² = {c * c}·{b} = {c * c * b}' + (f'; : {k} = {tnum(val)}' if k > 1 else '') + '.')
+
+
+@proto('og08-sqrt-conj', 'oge', 8, 'Произведение сопряжённых выражений с корнями',
+       invariant='(√a − b)(√a + b) или (√a − √b)(√a + √b): формула разности квадратов.',
+       varies='Числа под корнями, свободный член, порядок множителей.',
+       answer_rule='(x − y)(x + y) = x² − y².',
+       fipi=r'\(\s*√\s*\d+\s*[−-]\s*√?\s*\d+\s*\)\s*\(\s*√\s*\d+\s*\+|\(\s*\d+\s*[−-]\s*√\s*\d+\s*\)\s*\(\s*\d+\s*\+\s*√',
+       mistakes=['забывают возвести в квадрат число без корня', 'пишут a − b вместо a − b²'], kim=K8)
+def gen_og08_sqrt_conj(r):
+    a = r.choice([x for x in range(2, 90) if math.isqrt(x) ** 2 != x])
+    if r.random() < 0.5:
+        b = r.randint(1, 12)
+        val = a - b * b
+        x_, y_ = f'√{a}', f'{b}'
+    else:
+        b = r.choice([x for x in range(2, 90) if math.isqrt(x) ** 2 != x and x != a])
+        val = a - b
+        x_, y_ = f'√{a}', f'√{b}'
+    if r.random() < 0.5:
+        x_, y_, val = y_, x_, -val
+    ex = f'({x_} − {y_})({x_} + {y_})' if r.random() < 0.5 else f'({x_} + {y_})({x_} − {y_})'
+    return _f8(r, ex, val, f'Разность квадратов: ({x_})² − ({y_})² = {tnum(val)}.')
+
+
+@proto('og08-sqrt-binom', 'oge', 8, 'Квадрат суммы (разности) с корнем',
+       invariant='(√a ± b)² ∓ 2b√a или (√a + √b)² − 2√(ab): иррациональность уничтожается.',
+       varies='Числа, знак, форма выражения.',
+       answer_rule='Раскрываем квадрат суммы: a ± 2b√a + b²; удвоенное произведение сокращается.',
+       fipi=r'\(\s*√\s*\d+\s*[+−-]\s*√?\s*\d+\s*\)\s*2\s*[+−-]',
+       mistakes=['забывают удвоенное произведение', '(√a − b)² считают как a − b²'], kim=K8)
+def gen_og08_sqrt_binom(r):
+    a = r.choice([x for x in range(2, 60) if math.isqrt(x) ** 2 != x])
+    if r.random() < 0.6:
+        b = r.randint(1, 9)
+        sgn = r.choice('+−')
+        val = a + b * b
+        ex = f'(√{a} {sgn} {b})² {"−" if sgn == "+" else "+"} {2 * b}√{a}'
+    else:
+        b = r.choice([x for x in range(2, 40) if math.isqrt(x) ** 2 != x and x != a and math.isqrt(a * x) ** 2 != a * x])
+        sgn = r.choice('+−')
+        val = a + b
+        ex = f'(√{a} {sgn} √{b})² {"−" if sgn == "+" else "+"} 2√{a * b}'
+    return _f8(r, ex, val, f'Раскрываем квадрат: удвоенное произведение сокращается, остаётся {tnum(val)}.')
+
+
+@proto('og08-sqrt-recip', 'oge', 8, 'Сумма обратных к сопряжённым',
+       invariant='1/(a + √b) ± 1/(a − √b) (или c/…): общий знаменатель — разность квадратов.',
+       varies='a, b (a² − b делит числитель), числитель, знак между дробями.',
+       answer_rule='Общий знаменатель a² − b; числитель 2a (для суммы) или 2√b (для разности).',
+       fipi=r'1\s+\d+\s*\+\s*√\s*\d+\s*\+\s*1\s+\d+\s*[−-]\s*√|\d+\s*\+\s*√\s*\d+\s*\+\s*1',
+       mistakes=['складывают знаменатели', 'ошибка в знаке a² − b'], kim=K8)
+def gen_og08_sqrt_recip(r):
+    a = r.randint(2, 9)
+    b = r.choice([x for x in range(2, a * a + 30) if math.isqrt(x) ** 2 != x and x != a * a])
+    c = r.choice([1, 1, 2, 3])
+    D = a * a - b
+    val = F(2 * a * c, D)
+    if not nice(val, 2) or abs(D) > 40:
+        return None
+    ex = f'{c}/({a} + √{b}) + {c}/({a} − √{b})'
+    return _f8(r, ex, val, f'Общий знаменатель ({a} + √{b})({a} − √{b}) = {a * a} − {b} = {tnum(D)}; числитель {2 * a * c}; итого {tnum(val)}.')
+
+
+@proto('og08-poly-value', 'oge', 8, 'Упростить многочлен по формулам и найти значение',
+       invariant='Выражение (x + a)² − x(x + b) или (x − a)(x + a) − x(x − b) и т. п.: после раскрытия скобок квадраты сокращаются, остаётся линейное выражение.',
+       varies='Коэффициенты, буква, значение переменной (дробь, десятичная, корень).',
+       answer_rule='Раскрываем по формулам сокращённого умножения, приводим подобные, подставляем значение.',
+       fipi=r'\(\s*[a-zх]\s*[+−-]\s*\d+\s*\)\s*2\s*[−-]\s*\d*\s*[a-zх]\s*\(|при\s+[a-zх]\s*=\s*[−-]?\s*\d+\s+\d+',
+       mistakes=['забывают удвоенное произведение', 'ошибка в знаке при раскрытии скобок с минусом'], kim=K8a)
+def gen_og08_poly_value(r):
+    v = r.choice(['x', 'a', 'b', 'c', 'y', 'p'])
+    kind = r.randrange(3)
+    A, B = r.randint(1, 9), r.randint(1, 12)
+    sA, sB = r.choice([1, -1]), r.choice([1, -1])
+    sym = sp.Symbol(v)
+    if kind == 0:
+        ex = f'({v} {"+" if sA > 0 else "−"} {A})² − {v}({v} {"+" if sB > 0 else "−"} {B})'
+        lin_c, free = 2 * sA * A - sB * B, A * A
+    elif kind == 1:
+        ex = f'({v} − {A})({v} + {A}) − {v}({v} {"+" if sB > 0 else "−"} {B})'
+        lin_c, free = -sB * B, -A * A
+    else:
+        k = r.randint(2, 5)
+        ex = f'({v} {"+" if sA > 0 else "−"} {A})² − {v}({v} {"+" if sB > 0 else "−"} {B}) {"+" if k else ""} {k}{v}'
+        lin_c, free = 2 * sA * A - sB * B + k, A * A
+    if lin_c == 0:
+        return None
+    x0 = r.choice([F(r.randint(1, 9), r.choice([2, 4, 5, 8, 10, 3, 6, 7, 9, 12, 14, 18])) * r.choice([1, -1]), F(r.randint(-19, 19), 10)])
+    val = lin_c * x0 + free
+    if not nice(val, 2) or x0.denominator == 1 or abs(x0) > 20:
+        return None
+    x0t = fr(x0)
+    q = f'{pick(r, "Найдите значение выражения", "Упростите выражение и найдите его значение:")} ⟦{ex}⟧ при {v} = {x0t}.'
+    e = f'После упрощения: {lin(lin_c, free, v)}; при {v} = {x0t} получаем {tnum(val)}.'
+    return pcard(q, num(val), e=e), lambda: same(num(val), sp.expand(parse(ex)).subs(sym, R(x0)))
+
+
+def _rf_templates(v, w):
+    """Шаблоны алгебраических дробей: (текст, упрощённый вид, функция значения)."""
+    return [
+        (f'({v}² − {w}²)/({v}{w}) : (({v} + {w})/{w})', f'({v} − {w})/{v}', lambda a, b: (a - b) / a),
+        (f'({v}² − {w}²)/({v}{w}) : (({v} − {w})/{v})', f'({v} + {w})/{w}', lambda a, b: (a + b) / b),
+        (f'({v}² + 2{v}{w} + {w}²)/({v}² − {w}²) · ({v} − {w})', f'{v} + {w}', lambda a, b: a + b),
+        (f'(1/{v} + 1/{w}) : (({v} + {w})/{w})', f'1/{v}', lambda a, b: 1 / a),
+        (f'({v}{w} + {w}²)/(4{v}) · (8{v}/({v} + {w}))', f'2{w}', lambda a, b: 2 * b),
+        (f'(4{v}² − 9{w}²)/(2{v} + 3{w}) − {v}', f'{v} − 3{w}', lambda a, b: a - 3 * b),
+        (f'({v}² − 4{w}²)/({v} − 2{w}) − 3{w}', f'{v} − {w}', lambda a, b: a - b),
+        (f'(({v} − {w})² + 2{v}{w})/({v}² + {w}²) · {v}', f'{v}', lambda a, b: a),
+        (f'{v}/({v}{w} − {w}²) − {w}/({v}² − {v}{w})', f'({v} + {w})/({v}{w})', lambda a, b: (a + b) / (a * b)),
+        (f'({v}/{w} − {w}/{v}) · {v}{w}/({v} + {w})', f'{v} − {w}', lambda a, b: a - b),
+    ]
+
+
+@proto('og08-rat-value', 'oge', 8, 'Упростить алгебраическую дробь и найти значение',
+       invariant='Выражение с алгебраическими дробями (разность квадратов, общий знаменатель, деление дробей) при заданных значениях букв.',
+       varies='Шаблон выражения, буквы, значения (целые, дроби, корни).',
+       answer_rule='Раскладываем на множители, сокращаем, подставляем значения в упрощённое выражение.',
+       fipi=r'при\s+[a-zх]\s*=.{0,30}[a-zх]\s*=|при\s+[a-zх]\s*=\s*√',
+       mistakes=['сокращают слагаемые, а не множители', 'подставляют в исходное и ошибаются'], kim=K8a)
+def gen_og08_rat_value(r):
+    v, w = r.choice([('a', 'b'), ('x', 'y'), ('m', 'n'), ('p', 'q'), ('a', 'c')])
+    txt, simp, f = r.choice(_rf_templates(v, w))
+    a = F(r.randint(1, 30), r.choice([1, 1, 2, 4, 5, 10])) * r.choice([1, 1, -1])
+    b = F(r.randint(1, 30), r.choice([1, 1, 2, 4, 5, 10])) * r.choice([1, 1, -1])
+    if a == b or a == -b or a == 0 or b == 0:
+        return None
+    try:
+        val = f(a, b)
+    except ZeroDivisionError:
+        return None
+    if not nice(val, 2) or abs(val) > 1000:
+        return None
+    if 2 * a + 3 * b == 0 or a == 2 * b:
+        return None
+    q = f'{pick(r, "Найдите значение выражения", "Упростите выражение и найдите его значение:")} ⟦{txt}⟧ при {v} = {fr(a)}, {w} = {fr(b)}.'
+    e = f'После сокращения остаётся {simp}; подставляем: {tnum(val)}.'
+    S = {sp.Symbol(v): R(a), sp.Symbol(w): R(b)}
+    return pcard(q, num(val), e=e), lambda: same(num(val), parse(txt).subs(S))
+
+
+# ================================================================ №9 — уравнения
+
+K9 = K(minutes=3, kes=['3.1'], kt=[5], style='«Решите уравнение …» / «Найдите корень уравнения …»; при двух корнях — «в ответ запишите больший/меньший из корней»')
+ASK9 = ('Решите уравнение', 'Найдите корень уравнения', 'Решите уравнение')
+TWO = ('Если уравнение имеет более одного корня, в ответ запишите {w} из корней.',
+       'Если корней несколько, запишите в ответ {w} из них.')
+
+
+def _roots_card(r, eq_txt, roots, e, lhs, rhs):
+    roots = sorted(set(roots))
+    if not any(nice(x, 2) for x in roots):
+        return None
+    if len(roots) > 1:
+        which = r.choice([w for w, x in (('min', roots[0]), ('max', roots[-1])) if nice(x, 2)])
+        ans = roots[0] if which == 'min' else roots[-1]
+        q = f'{pick(r, "Решите уравнение", "Найдите корни уравнения")} ⟦{eq_txt}⟧. ' + pick(r, *TWO).format(w='меньший' if which == 'min' else 'больший')
+    else:
+        which, ans = None, roots[0]
+        q = f'{pick(r, *ASK9)} ⟦{eq_txt}⟧.'
+
+    def chk():
+        sol = sorted(s_ for s_ in sp.solve(sp.Eq(parse(lhs), parse(rhs)), sp.Symbol('x')) if s_.is_real)
+        if len(sol) != len(roots):
+            return False
+        want = sol[0] if which != 'max' else sol[-1]
+        return same(num(ans), want)
+    return pcard(q, num(ans), e=e), chk
+
+
+@proto('og09-lin', 'oge', 9, 'Линейное уравнение',
+       invariant='ax + b = cx + d: переносим члены с x в одну сторону, числа — в другую.',
+       varies='Коэффициенты (в т. ч. отрицательные), расположение x, формулировка инструкции.',
+       answer_rule='x = (d − b)/(a − c); ответ — целое или конечная десятичная дробь.',
+       fipi=r'Найдите корень уравнения\s+[−-]?\s*\d*\s*x\s*[+−-]\s*\d+\s*=\s*[−-]?\s*\d*\s*x',
+       mistakes=['не меняют знак при переносе', 'делят не на тот коэффициент'], kim=K9)
+def gen_og09_lin(r):
+    a, c = r.randint(-12, 12), r.randint(-12, 12)
+    b, d = r.randint(-30, 30), r.randint(-30, 30)
+    if a == c or a == 0 or b == 0:
+        return None
+    x0 = F(d - b, a - c)
+    if not nice(x0, 2):
+        return None
+    lhs, rhs = lin(a, b), lin(c, d) if c else tnum(d)
+    return _roots_card(r, f'{lhs} = {rhs}', [x0], (f'{lin(a - c, 0)} = {tnum(d - b)}, ' if a - c != 1 else '') + f'x = {tnum(x0)}.', lhs, rhs)
+
+
+@proto('og09-lin-brackets', 'oge', 9, 'Линейное уравнение со скобками',
+       invariant='a(x − b) − c(x + d) = e или a(x + b) = c(x + d) + e: раскрываем скобки, получаем линейное уравнение.',
+       varies='Коэффициенты перед скобками, числа внутри, знак между скобками.',
+       answer_rule='Раскрываем скобки (с учётом минуса), приводим подобные и решаем.',
+       fipi=r'\d\s*\(\s*x\s*[+−-]\s*\d+\s*\)\s*[+−-=]\s*\d*\s*\(?\s*x?',
+       mistakes=['минус перед скобкой меняет знак только первого слагаемого', 'не умножают второе слагаемое в скобке'], kim=K9)
+def gen_og09_lin_brackets(r):
+    a, c = r.randint(2, 9), r.randint(2, 9)
+    b, d = r.randint(1, 12) * r.choice([1, -1]), r.randint(1, 12) * r.choice([1, -1])
+    sg = r.choice([1, -1])
+    e_ = r.randint(-20, 20)
+    x = sp.Symbol('x')
+    ins = lambda k: f'x {"+" if k > 0 else "−"} {abs(k)}'
+    if r.random() < 0.5:
+        lhs = f'{a}({ins(b)}) {"+" if sg > 0 else "−"} {c}({ins(d)})'
+        rhs = tnum(e_)
+        A, B = a + sg * c, a * b + sg * c * d - e_
+    else:
+        lhs = f'{a}({ins(b)})'
+        rhs = f'{c}({ins(d)})' + (signed(e_) if e_ else '')
+        A, B = a - c, a * b - c * d - e_
+    if A == 0:
+        return None
+    x0 = F(-B, A)
+    if not nice(x0, 2):
+        return None
+    return _roots_card(r, f'{lhs} = {rhs}', [x0], f'Раскрываем скобки: {lin(A, B)} = 0, x = {tnum(x0)}.', lhs, rhs)
+
+
+@proto('og09-lin-frac', 'oge', 9, 'Линейное уравнение с дробями',
+       invariant='Уравнение с числовыми знаменателями: (x + a)/b = (x − c)/d или x/a + x/b = c, (x − a)/b = c.',
+       varies='Знаменатели, числители, вид (пропорция или сумма дробей).',
+       answer_rule='Умножаем на общий знаменатель (или крест-накрест), решаем линейное уравнение.',
+       fipi=r'x\s*[+−-]\s*\d+\s+\d+\s*=\s*x|\d+\s+x\s*[+−-]\s*\d+\s*=|x\s+\d+\s*[+−-]\s*x\s+\d+',
+       mistakes=['умножают на знаменатель только одну часть', 'теряют скобки в числителе'], kim=K9)
+def gen_og09_lin_frac(r):
+    kind = r.randrange(3)
+    if kind == 0:
+        b, d = r.sample([2, 3, 4, 5, 6, 7, 8, 9], 2)
+        a, c = r.randint(-15, 15), r.randint(-15, 15)
+        lhs, rhs = f'(x {signed(a).strip()})/{b}' if a else f'x/{b}', f'(x {signed(c).strip()})/{d}' if c else f'x/{d}'
+        x0 = F(b * c - d * a, d - b)
+        e = f'Крест-накрест: {d}(x {signed(a).strip()}) = {b}(x {signed(c).strip()}), x = {ftxt(x0)}.'
+    elif kind == 1:
+        a, b = r.sample([2, 3, 4, 5, 6, 8, 10, 12], 2)
+        c = r.randint(1, 15) * r.choice([1, -1])
+        op = r.choice('+−')
+        s = F(1, a) + F(1, b) if op == '+' else F(1, a) - F(1, b)
+        if s == 0:
+            return None
+        x0 = c / s
+        lhs, rhs = f'x/{a} {op} x/{b}', tnum(c)
+        e = f'x·({fr(F(1, a))} {op} {fr(F(1, b))}) = {tnum(c)}, x = {ftxt(x0)}.'
+    else:
+        b, k = r.choice([2, 3, 4, 5, 6, 7, 9]), r.choice([2, 3, 5, 7])
+        a, c = r.randint(-12, 12), r.randint(-9, 9)
+        if a == 0:
+            return None
+        lhs, rhs = f'({k}x {signed(a).strip()})/{b}', tnum(c)
+        x0 = F(b * c - a, k)
+        e = f'{k}x {signed(a).strip()} = {tnum(b * c)}, x = {ftxt(x0)}.'
+    if not nice(x0, 2) or abs(x0) > 500:
+        return None
+    return _roots_card(r, f'{lhs} = {rhs}', [x0], e, lhs, rhs)
+
+
+@proto('og09-quad', 'oge', 9, 'Полное квадратное уравнение',
+       invariant='ax² + bx + c = 0 с двумя корнями (рациональными); в ответ — больший или меньший корень.',
+       varies='Корни (целые и дробные), старший коэффициент, «больший/меньший».',
+       answer_rule='Дискриминант или теорема Виета; выбираем нужный корень.',
+       fipi=r'x\s*2\s*[+−-]\s*\d*\s*x\s*[+−-]\s*\d+\s*=\s*0',
+       mistakes=['ошибка в знаке −b', 'делят только на a, а не на 2a', 'записывают не тот корень'], kim=K9)
+def gen_og09_quad(r):
+    a = r.choice([1, 1, 1, 2, 3, 4, 5, 6])
+    p1 = F(r.randint(-12, 12), r.choice([1, 1, a]) if a > 1 else 1)
+    p2 = F(r.randint(-12, 12))
+    if p1 == p2 or p1 == 0 and p2 == 0:
+        return None
+    co = [a, -a * (p1 + p2), a * p1 * p2]
+    if any(F(k).denominator != 1 for k in co) or co[1] == 0 or co[2] == 0:
+        return None
+    if a > 1 and math.gcd(math.gcd(int(co[0]), int(co[1])), int(co[2])) != 1:
+        return None
+    txt = f'{poly(co)} = 0'
+    D = co[1] ** 2 - 4 * co[0] * co[2]
+    return _roots_card(r, txt, [p1, p2], f'D = {tnum(D)}, корни {ftxt(min(p1, p2))} и {ftxt(max(p1, p2))}.', poly(co), '0')
+
+
+@proto('og09-quad-moved', 'oge', 9, 'Квадратное уравнение не в стандартном виде',
+       invariant='x² = bx + c, ax² − c = bx и т. п.: перенести всё в одну часть и решить квадратное уравнение.',
+       varies='Коэффициенты, расположение членов по частям уравнения.',
+       answer_rule='Приводим к виду ax² + bx + c = 0, решаем, выбираем корень.',
+       fipi=r'x\s*2\s*=\s*[−-]?\s*\d*\s*x|x\s*2\s*[+−-]\s*\d+\s*=\s*[−-]?\s*\d*\s*x',
+       mistakes=['переносят член без смены знака'], kim=K9)
+def gen_og09_quad_moved(r):
+    p1, p2 = r.sample(range(-11, 12), 2)
+    b, c = p1 + p2, -p1 * p2
+    if b == 0 or c == 0:
+        return None
+    kind = r.randrange(3)
+    if kind == 0:
+        lhs, rhs = 'x²', lin(b, c)
+    elif kind == 1:
+        lhs, rhs = f'x² {signed(-c).strip()}', lin(b, 0)
+    else:
+        k = r.randint(1, 9)
+        lhs, rhs = f'x² {signed(k).strip()}', lin(b, c + k)
+        if c + k == 0:
+            return None
+    return _roots_card(r, f'{lhs} = {rhs}', [F(p1), F(p2)], f'x² {signed(-b).strip()}x {signed(-c).strip()} = 0; корни {min(p1, p2)} и {max(p1, p2)}.', lhs, rhs)
+
+
+@proto('og09-quad-incomplete', 'oge', 9, 'Неполное квадратное уравнение',
+       invariant='ax² + bx = 0 (вынести x) или ax² − c = 0 (корни ±√(c/a)).',
+       varies='Коэффициенты, вид (без свободного члена / без x), «больший/меньший».',
+       answer_rule='Выносим x за скобку или выражаем x²; второй корень не теряем.',
+       fipi=r'x\s*2\s*[+−-]\s*\d+\s*x\s*=\s*0|\d*\s*x\s*2\s*[+−-]\s*\d+\s*=\s*0|x\s*2\s*=\s*\d*\s*x\s*\.',
+       mistakes=['делят на x и теряют корень 0', 'берут только положительный корень'], kim=K9)
+def gen_og09_quad_incomplete(r):
+    a = r.choice([1, 2, 3, 4, 5, 6, 7, 8, 9])
+    if r.random() < 0.5:
+        root = F(r.randint(1, 30), r.choice([1, 1, 2, 4, 5]) if a > 1 else 1) * r.choice([1, -1])
+        b = -a * root
+        if F(b).denominator != 1:
+            return None
+        if r.random() < 0.5:
+            txt, lhs, rhs = f'{poly([a, b, 0])} = 0', poly([a, b, 0]), '0'
+        else:
+            txt, lhs, rhs = f'{poly([a, 0, 0])} = {lin(-b, 0)}', poly([a, 0, 0]), lin(-b, 0)
+        return _roots_card(r, txt, [F(0), root], f'x({lin(a, b)}) = 0: x = 0 или x = {tnum(root)}.', lhs, rhs)
+    root = F(r.randint(1, 12), r.choice([1, 1, 2, 5, 10]))
+    c = a * root * root
+    if c.denominator != 1:
+        return None
+    txt, lhs, rhs = (f'{poly([a, 0, -c])} = 0', poly([a, 0, -c]), '0') if r.random() < 0.6 else (f'{poly([a, 0, 0])} = {tnum(c)}', poly([a, 0, 0]), tnum(c))
+    return _roots_card(r, txt, [root, -root], f'x² = {tnum(c / a)}, x = ±{tnum(root)}.', lhs, rhs)
+
+
+@proto('og09-squares-eq', 'oge', 9, 'Равенство квадратов двучленов',
+       invariant='(x + a)² = (x + b)² или (x − a)² = (b − x)²: квадраты x² сокращаются, уравнение линейное.',
+       varies='Сдвиги a и b, знаки, порядок членов.',
+       answer_rule='Раскрываем квадраты, x² сокращается; решаем линейное уравнение (или x + a = −(x + b)).',
+       fipi=r'\(\s*x\s*[+−-]\s*\d+\s*\)\s*2\s*=\s*\(\s*[x\d]',
+       mistakes=['извлекают корень и теряют вариант с минусом', 'ошибка в удвоенном произведении'], kim=K9)
+def gen_og09_squares_eq(r):
+    a, b = r.sample(range(-12, 13), 2)
+    if a == -b or a == 0 or b == 0:
+        return None
+    x0 = F(-(a + b), 2)
+    if not nice(x0, 1):
+        return None
+    L = f'(x {signed(a).strip()})²'
+    Rt = f'(x {signed(b).strip()})²' if r.random() < 0.6 else f'({tnum(-b)} − x)²'
+    return _roots_card(r, f'{L} = {Rt}', [x0], f'Раскрываем: {2 * a}x + {a * a} = {2 * b}x + {b * b}, x = {tnum(x0)}.'.replace('+ -', '− '), L, Rt)
+
+
+@proto('og09-product-zero', 'oge', 9, 'Произведение равно нулю',
+       invariant='(ax + b)(cx + d) = 0 или x(x + a)(…) = 0: каждый множитель приравниваем к нулю.',
+       varies='Множители (линейные, с дробным корнем), число множителей, «больший/меньший».',
+       answer_rule='Корни каждого множителя; выбираем нужный.',
+       fipi=r'\(\s*\d*\s*x\s*[+−-]\s*\d+\s*\)\s*\(\s*\d*\s*x\s*[+−-]\s*\d+\s*\)\s*=\s*0',
+       mistakes=['раскрывают скобки и решают через дискриминант с ошибкой', 'знак корня: (x + 3) → x = 3'], kim=K9)
+def gen_og09_product_zero(r):
+    roots, facs = [], []
+    for _ in range(2):
+        a = r.choice([1, 1, 2, 3, 4, 5])
+        b = r.randint(-12, 12)
+        if b == 0:
+            return None
+        root = F(-b, a)
+        if not nice(root, 2) or math.gcd(a, b) != 1:
+            return None
+        roots.append(root)
+        facs.append(f'({lin(a, b)})')
+    if roots[0] == roots[1]:
+        return None
+    txt = f'{facs[0]}{facs[1]} = 0'
+    return _roots_card(r, txt, roots, f'Каждый множитель равен нулю: x = {tnum(roots[0])} или x = {tnum(roots[1])}.', facs[0] + facs[1], '0')
+
+
+@proto('og09-rational', 'oge', 9, 'Дробно-рациональное уравнение (пропорция)',
+       invariant='a/(x + b) = c/(x + d) или a/(x − b) = c: сводится к линейному, проверяем знаменатель.',
+       varies='Числители, сдвиги, вид правой части.',
+       answer_rule='Основное свойство пропорции; корень не должен обращать знаменатель в нуль.',
+       fipi=r'\d+\s+x\s*[+−-]\s*\d+\s*=\s*\d+\s+x\s*[+−-]\s*\d+|\d+\s+x\s*[+−-]\s*\d+\s*=\s*[−-]?\s*\d+\s*\.',
+       mistakes=['не проверяют ОДЗ', 'перемножают не крест-накрест'], kim=K9)
+def gen_og09_rational(r):
+    x0 = F(r.randint(-15, 15), r.choice([1, 1, 2, 4, 5]))
+    b, d = r.sample(range(-9, 10), 2)
+    if x0 + b == 0 or x0 + d == 0 or b == 0 or d == 0:
+        return None
+    if r.random() < 0.6:
+        k = F(r.choice([1, 2, 3, 4, 5, 6, 7, 8, 9]))
+        a, c = k * (x0 + b), k * (x0 + d)
+        mm = r.randint(1, 3)
+        a, c = a * mm, c * mm
+        if a.denominator != 1 or c.denominator != 1 or a == c or abs(a) > 60 or abs(c) > 60:
+            return None
+        lhs, rhs = f'{tnum(a)}/(x {signed(b).strip()})', f'{tnum(c)}/(x {signed(d).strip()})'
+    else:
+        a = r.randint(1, 30) * r.choice([1, -1])
+        c = F(a) / (x0 + b)
+        if not nice(c, 1) or c == 0:
+            return None
+        lhs, rhs = f'{tnum(a)}/(x {signed(b).strip()})', tnum(c)
+    return _roots_card(r, f'{lhs} = {rhs}', [x0], f'По свойству пропорции получаем линейное уравнение; x = {tnum(x0)} (знаменатели не равны нулю).', lhs, rhs)
