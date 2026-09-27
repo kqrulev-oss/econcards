@@ -829,8 +829,8 @@ def gen_b_taxa(rng):
     order = sorted(shown, key=lambda x: x[0], reverse=not top_down)
     ans = ''.join(str(shown.index(x) + 1) for x in order)
     lst = '; '.join(f'{j + 1}) {t}' for j, (_, t) in enumerate(shown))
-    q = (f'Установите последовательность систематических групп, начиная с {"самого крупного" if top_down else "самого мелкого"} '
-         f'таксона: {lst}. Запишите последовательность цифр.')
+    q = (f'Упорядочьте систематические группы — от {"самой крупной к самой мелкой" if top_down else "самой мелкой к самой крупной"}: '
+         f'{lst}. Ответ — цифры подряд.')
     e = 'Порядок рангов: ' + ' → '.join(ranks[i] for i in pick) + '.'
     return card('num', 'bio-ege-12', q, ans, e,
                 {'row': row[-1], 'k': row[0], 'shown': [i for i, _ in shown], 'top_down': top_down})
@@ -901,6 +901,8 @@ def gen_b_foodweb(rng):
         return card('flip', 'bio-oge-20', q, ans, e, {'web': name, 'mode': mode, 'x': x, 'L': L, 'ans': ch})
     if mode == 'level':
         chains = web_chains(web, rng.choice([3, 4]))
+        if not chains:
+            return gen_b_foodweb(rng)
         ch = rng.choice(chains)
         k = rng.randrange(len(ch))
         x = ch[k]
@@ -914,6 +916,8 @@ def gen_b_foodweb(rng):
     # change: если численность X выросла, как изменится численность его пищи и его единственного врага
     eaters = {x: [y for y, food in web.items() if x in food] for x in web}
     cand = [x for x in web if web[x] and eaters[x] and all(len(eaters[f]) >= 1 for f in web[x])]
+    if not cand:
+        return gen_b_foodweb(rng)
     x = rng.choice(cand)
     food = rng.choice(web[x])
     pred = rng.choice(eaters[x])
@@ -1045,8 +1049,8 @@ def gen_g_newyear(rng):
     regs = [CITIES[c][0] for c in cs]
     order = sorted(range(3), key=lambda i: -CITIES[cs[i]][3])
     ans = ''.join(str(i + 1) for i in order)
-    q = ('Расположите регионы России в той последовательности, в которой их жители встречают Новый год: '
-         + '; '.join(f'{i + 1}) {r}' for i, r in enumerate(regs)) + '. Запишите последовательность цифр.')
+    q = ('Где раньше наступит 1 января? Упорядочьте регионы от того, где полночь придёт первой, к тому, где последней: '
+         + '; '.join(f'{i + 1}) {r}' for i, r in enumerate(regs)) + '. Ответ — цифры подряд.')
     e = 'Раньше встречают там, где больше смещение от UTC: ' + ', '.join(f'{r} — МСК{CITIES[c][3] - 3:+d}' for r, c in zip(regs, cs)) + '.'
     return card('num', 'geo-oge-26', q, ans, e, {'cs': cs})
 
@@ -1067,8 +1071,8 @@ def gen_g_sollon(rng):
     t0 = gh * 60 + gm
     tl = (t0 + minutes) % 1440 if east else (t0 - minutes) % 1440
     fh = lambda m: f'{m // 60} ч {m % 60:02d} мин'
-    q = (f'Определите географическую долготу пункта, если в {fh(t0)} по солнечному времени гринвичского меридиана '
-         f'местное солнечное время в нём {fh(tl)}. Пункт находится ближе к гринвичскому меридиану, чем к 180-му.')
+    q = (f'На нулевом меридиане Солнце показывает {fh(t0)}, а в искомом пункте в тот же момент {fh(tl)} '
+         f'(солнечное время). Найдите долготу пункта; он лежит ближе к нулевому меридиану, чем к 180-му.')
     ok = f'{lon}° {"в.д." if east else "з.д."}'
     wrong = [f'{lon}° {"з.д." if east else "в.д."}', f'{(lon + 1) if lon < 179 else lon - 2}° {"в.д." if east else "з.д."}',
              f'{min(179, round(lon * 1.5)) if lon * 1.5 != lon else lon + 3}° {"в.д." if east else "з.д."}',
@@ -1271,7 +1275,7 @@ def gen_g_humidity(rng):
         aa = rng.sample(range(1, SAT[t] + 1), 3)
         q = (f'В пунктах 1, 2 и 3 температура воздуха одинакова ({t:+d} °С), содержание водяного пара: '
              + '; '.join(f'{i + 1}) {x} г/м³' for i, x in enumerate(aa))
-             + '. Расположите пункты в порядке понижения относительной влажности. Запишите последовательность цифр.')
+             + '. Расположите пункты в порядке понижения относительной влажности. Ответ — цифры подряд.')
         ans = ''.join(str(i + 1) for i in sorted(range(3), key=lambda i: -aa[i]))
         return card('num', 'geo-ege-2', q, ans, 'При одной температуре относительная влажность пропорциональна содержанию пара.',
                     {'mode': mode, 't': t, 'aa': aa})
@@ -1280,7 +1284,7 @@ def gen_g_humidity(rng):
         up = rng.random() < 0.5
         q = ('На метеостанциях 1, 2 и 3 на склоне горы одновременно измерили давление: '
              + '; '.join(f'{i + 1}) {p} мм рт. ст.' for i, p in enumerate(ps))
-             + f'. Расположите метеостанции в порядке {"увеличения" if up else "уменьшения"} их высоты. Запишите последовательность цифр.')
+             + f'. Расположите метеостанции в порядке {"увеличения" if up else "уменьшения"} их высоты. Ответ — цифры подряд.')
         ans = ''.join(str(i + 1) for i in sorted(range(3), key=lambda i: -ps[i] if up else ps[i]))
         return card('num', 'geo-ege-2', q, ans, 'С высотой давление понижается: выше станция — ниже давление.',
                     {'mode': mode, 'ps': ps, 'up': up})
@@ -1289,7 +1293,7 @@ def gen_g_humidity(rng):
     ts = rng.sample([t for t in SAT if SAT[t] >= a], 3)
     q = ('В пунктах 1, 2 и 3 одновременно измерили содержание водяного пара и температуру: '
          + '; '.join(f'{i + 1}) {a} г/м³, {t:+d} °С' for i, t in enumerate(ts))
-         + '. Расположите пункты в порядке повышения относительной влажности. Запишите последовательность цифр.')
+         + '. Расположите пункты в порядке повышения относительной влажности. Ответ — цифры подряд.')
     order = sorted(range(3), key=lambda i: -ts[i])
     ans = ''.join(str(i + 1) for i in order)
     e = 'При одинаковом содержании пара относительная влажность выше там, где холоднее (меньше насыщение).'
@@ -1438,8 +1442,9 @@ def gen_g_daylen(rng):
     key = lambda i: sign * CITIES[cs[i]][1]
     order = sorted(range(3), key=key, reverse=not asc)
     ans = ''.join(str(i + 1) for i in order)
-    q = (f'Расположите города в порядке {"увеличения" if asc else "уменьшения"} продолжительности светового дня {day}: '
-         + '; '.join(f'{i + 1}) {c}' for i, c in enumerate(cs)) + '. Запишите последовательность цифр.')
+    q = (f'Дата — {day}. Упорядочьте города от {"самого короткого" if asc else "самого длинного"} светового дня '
+         f'к {"самому длинному" if asc else "самому короткому"}: '
+         + '; '.join(f'{i + 1}) {c}' for i, c in enumerate(cs)) + '. Ответ — цифры подряд.')
     e = ('Между весенним и осенним равноденствием в Северном полушарии день тем длиннее, чем севернее пункт; в остальное время — наоборот. Широты: '
          + ', '.join(f'{c} {fmt(CITIES[c][1])}°' for c in cs) + '.')
     return card('num', 'geo-ege-3', q, ans, e, {'cs': cs, 'day': day, 'doy': doy, 'asc': asc})
@@ -1480,7 +1485,7 @@ def gen_g_lonorder(rng):
     order = sorted(range(3), key=lambda i: m[pick[i]], reverse=not east)
     ans = ''.join(str(i + 1) for i in order)
     q = (f'Расположите горные системы {cont} {"с запада на восток" if east else "с востока на запад"}: '
-         + '; '.join(f'{i + 1}) {x}' for i, x in enumerate(pick)) + '. Запишите последовательность цифр.')
+         + '; '.join(f'{i + 1}) {x}' for i, x in enumerate(pick)) + '. Ответ — цифры подряд.')
     return card('num', 'geo-ege-4', q, ans, 'Долготы центров: ' + ', '.join(f'{x} ≈ {abs(m[x])}° {"в.д." if m[x] >= 0 else "з.д."}' for x in pick) + '.',
                 {'cont': cont, 'pick': pick, 'east': east})
 
@@ -1544,6 +1549,15 @@ def _load(name):
 
 
 FACTS = {'bio': _load('bio-facts.json'), 'geo': _load('geo-facts.json')}
+
+# словари параметрических генераторов пополняются из таблиц фактов: систематика (b_taxa) и пищевые сети (b_foodweb)
+_known = {row[-1] for row in TAXA}
+for _chain in FACTS['bio'].get('taxonomy', {}).values():
+    if len(_chain) == 7 and _chain[-1] not in _known:
+        TAXA.append(_chain)
+        _known.add(_chain[-1])
+for _name, _web in FACTS['bio'].get('webs', {}).items():
+    WEBS.setdefault(_name, _web)
 LET = 'АБВГДЕЖЗИК'
 
 
@@ -1563,7 +1577,7 @@ def parse_args(args):
         if '=' in a:
             k, v = a.split('=', 1)
             kw[k] = v
-        elif a in ('each', 'diff', 'obj', 'prop', 'cls', 'rev', 'max', 'min', 'ru', 'world'):
+        elif a in ('each', 'diff', 'obj', 'prop', 'cls', 'rev', 'max', 'min', 'ru', 'world', 'same'):  # флаги
             kw[a] = True
         else:
             pos.append(a)
@@ -1597,7 +1611,8 @@ def many_card(topic, q, items, good, e, chk):
 def seq_card(topic, q, shown, order, e, chk):
     """shown — перемешанные тексты, order — индексы shown в верном порядке."""
     ans = ''.join(str(i + 1) for i in order)
-    q = q + ': ' + '; '.join(f'{i + 1}) {t}' for i, t in enumerate(shown)) + '. Запишите последовательность цифр.'
+    q = re.sub(r'^Установите (правильную )?последовательность', 'Расставьте по порядку', q)
+    q = q + ': ' + '; '.join(f'{i + 1}) {t}' for i, t in enumerate(shown)) + '. Ответ — цифры подряд.'
     c = card('num', topic, q, ans, e, chk)
     c['x'] = ans
     return c
@@ -1645,8 +1660,8 @@ def gen_d_match(rng, args, topic='dict'):
         ans = [right.index(who[t]) for t in pick]
         if len(set(ans)) < 2:
             continue
-        q = (f'Установите соответствие между характеристиками и {S.get("q_obj", "объектами")}: к каждой позиции, '
-             'данной в первом столбце, подберите соответствующую позицию из второго столбца.')
+        q = (f'Соотнесите характеристики с {S.get("q_obj", "объектами")}: для каждой буквы выберите номер '
+             'подходящего объекта.')
         e = '; '.join(f'{LET[i]} — {right[j]}' for i, j in enumerate(ans)) + '.'
         return match_card(topic, q, pick, right, ans, e, {'eng': 'd_match', 'ref': ref, 'objs': right, 'props': pick})
     raise Skip(ref)
@@ -1680,15 +1695,15 @@ def gen_d_many(rng, args, topic='dict'):
             good = [t for t, s in props if x in s and y not in s]
             bad = [t for t, s in props if y in s and x not in s] + [t for t, s in props if x in s and y in s]
             q = (f'Какие признаки отличают объект «{x}» от объекта «{y}»? Выберите {n_true} верных ответа '
-                 f'из {n_all} и запишите цифры, под которыми они указаны.')
+                 f'из {n_all}. Ответ — номера верных вариантов.')
         else:
             x = rng.choice(pool)
             others = [o for o in pool if o != x]
             good = [t for t, s in props if x in s and not set(pool) <= s]
             bad = [t for t, s in props if x not in s and s & set(others)]
             y = None
-            q = (f'{S["title"]}. Объект: {x}. Выберите {n_true} верные для него характеристики из {n_all} '
-                 'и запишите цифры, под которыми они указаны.')
+            q = (f'{S["title"]}. Объект: {x}. Какие {n_true} характеристики из {n_all} к нему относятся? '
+                 'Ответ — номера верных вариантов.')
         if len(good) < n_true or len(bad) < n_all - n_true:
             continue
         items = rng.sample(good, n_true) + rng.sample(bad, n_all - n_true)
@@ -1747,7 +1762,7 @@ def check_d_one(c):
     return 'абвгде'[ok[0]] if len(ok) == 1 else None
 
 
-JUDGE = ['верно только А', 'верно только Б', 'верны оба суждения', 'оба суждения неверны']
+JUDGE = ['только А', 'только Б', 'и А, и Б', 'ни А, ни Б']
 
 
 def gen_d_judge(rng, args, topic='dict'):
@@ -1770,7 +1785,7 @@ def gen_d_judge(rng, args, topic='dict'):
             raise Skip(ref)
     ans = {(1, 0): 0, (0, 1): 1, (1, 1): 2, (0, 0): 3}[want]
     o = [{'id': 'абвг'[i], 't': t} for i, t in enumerate(JUDGE)]
-    q = (f'{S["title"]}. Верны ли суждения? А. {cap(sts[0][0])}: {sts[0][1]}. Б. {cap(sts[1][0])}: {sts[1][1]}.')
+    q = (f'{S["title"]}. Какие из утверждений правильные? А. {cap(sts[0][0])}: {sts[0][1]}. Б. {cap(sts[1][0])}: {sts[1][1]}.')
     e = f'А — {"верно" if sts[0][2] else "неверно"}, Б — {"верно" if sts[1][2] else "неверно"}.'
     return card('one', topic, q, 'абвг'[ans], e, {'eng': 'd_judge', 'ref': ref, 'st': [[x, t] for x, t, _ in sts]}, o=o)
 
@@ -1933,7 +1948,7 @@ def gen_d_class(rng, args, topic='dict'):
         rng.shuffle(items)
         right = [c for c in C['classes'] if c in cls]
         ans = [right.index(C['items'][it]) for it in items]
-        q = C.get('q', f'Установите соответствие: {C["title"]}') + ': к каждой позиции первого столбца подберите позицию из второго.'
+        q = f'{C["title"]}. Для каждого элемента с буквой выберите номер подходящей категории.'
         e = '; '.join(f'{it} — {C["items"][it]}' for it in items) + '.'
         return match_card(topic, q, items, right, ans, e, {'eng': 'd_class', 'ref': ref, 'items': items, 'right': right})
     raise Skip(ref)
@@ -1973,7 +1988,7 @@ def gen_d_text(rng, args, topic='dict'):
     """Вставить термины в текст (ОГЭ 10, ЕГЭ гео 5): свой текст со слотами, список = ответы + шум."""
     (ref,), kw = parse_args(args)
     ns, key = ref.split('/', 1)
-    T = [t for t in FACTS[ns][key] if not kw.get('topic') or t.get('topic') == kw['topic']]
+    T = [t for t in FACTS[ns][key] if not kw.get('topic') or t.get('topic', '').startswith(kw['topic'])]
     if not T:
         raise Skip(ref)
     t = rng.choice(T)
@@ -1984,7 +1999,7 @@ def gen_d_text(rng, args, topic='dict'):
     text = t['t']
     for s in slots:
         text = text.replace('{' + s + '}', f'({s})')
-    q = (f'Вставьте в текст пропущенные термины из списка: {text} Список: ' +
+    q = (f'Заполните пропуски в тексте словами из списка: {text} Список: ' +
          '; '.join(f'{i + 1}) {x}' for i, x in enumerate(items)) + f'. Запишите цифры в порядке {", ".join(slots)}.')
     c = card('num', topic, q, ans, '; '.join(f'{s} — {t["slots"][s]}' for s in slots) + '.',
              {'eng': 'd_text', 'ref': ref, 'text': t['t'], 'items': items})
@@ -2015,7 +2030,7 @@ def gen_d_cmany(rng, args, topic='dict'):
     items = rng.sample(by[x], t) + rng.sample(others, n - t)
     rng.shuffle(items)
     gi = [i for i, it in enumerate(items) if C['items'][it] == x]
-    q = (f'{C["title"]}. Выберите {t} примера, которые относятся к понятию «{x}», и запишите цифры, под которыми они указаны.')
+    q = (f'{C["title"]}. Выберите {t} примера, которые относятся к понятию «{x}»,. Ответ — номера верных вариантов.')
     e = '; '.join(f'{it} — {C["items"][it]}' for it in items) + '.'
     return many_card(topic, q, items, gi, e, {'eng': 'd_cmany', 'ref': ref, 'x': x, 'items': items})
 
@@ -2128,6 +2143,9 @@ def geo_rows(tab):
         return {r['name']: r for r in G['countries'].values()}
     if tab == 'stations':
         return {r['name']: r for r in G.get('stations', [])}
+    if tab.startswith('obj'):
+        cls = tab.split(':', 1)[1] if ':' in tab else None
+        return {r['name']: r for r in G.get('objects', []) if cls is None or r['class'] == cls}
     if tab == 'capitals':
         return {r['name']: {'lat': v[0], 'lon': v[1]} for r in G['countries'].values()
                 if len(r.get('capital_coords', {})) == 1 for v in r['capital_coords'].values()}
@@ -2187,6 +2205,11 @@ ORDER_Q = {  # (таблица, показатель) → (что упорядо
     ('rivers', 'len_km'): ('реки', 'длины', 'км', 'Wikidata'),
     ('lakes', 'area_km2'): ('озёра', 'площади', 'км²', 'Wikidata'),
     ('peaks', 'elev_m'): ('вершины', 'абсолютной высоты', 'м', 'Wikidata'),
+    ('obj:река', 'length_km'): ('реки', 'длины', 'км', 'Wikidata / ru.wikipedia'),
+    ('obj:вершина', 'elev_m'): ('вершины', 'абсолютной высоты', 'м', 'Wikidata'),
+    ('obj:озеро', 'area_km2'): ('озёра', 'площади', 'км²', 'Wikidata'),
+    ('objects', 'lon'): ('объекты', 'долготы', '°', 'Wikidata'),
+    ('objects', 'lat'): ('объекты', 'широты', '°', 'Wikidata'),
     ('ru_regions', 'soil_rank'): ('субъекты РФ', 'естественного плодородия преобладающих почв', 'балла (шкала 1–5)', 'почвенная карта атласа'),
 }
 
@@ -2222,16 +2245,25 @@ def gen_d_order(rng, args, topic='dict'):
     vals = {k: geo_value(tab, r, field) for k, r in rows.items()}
     vals = {k: v for k, v in vals.items() if v is not None and v[0] is not None}
     k = int(kw.get('k', 3))
+    if len(vals) < k + 2:
+        raise Skip(f'{tab}.{field}: мало данных')
     rel = field not in ('t_jan', 't_jul', 'natinc', 'soil_rank', 'lat', 'lon')
     gap = float(kw.get('gap', 1.3 if rel else 3))
     for _ in range(80):
         pick = rng.sample(list(vals), k)
         if not spaced([vals[p][0] for p in pick], gap, rel):
             continue
+        if kw.get('same') and len({rows[p].get('continent_ocean') for p in pick}) > 1:
+            continue
         asc = rng.random() < 0.5
         order = sorted(range(k), key=lambda i: vals[pick[i]][0], reverse=not asc)
-        q = (f'Расположите {what} в порядке {"возрастания" if asc else "убывания"} {label}, начиная с '
-             f'{"наименьшего" if asc else "наибольшего"} значения')
+        if field in ('lon', 'lat'):
+            way = {('lon', True): 'с запада на восток', ('lon', False): 'с востока на запад',
+                   ('lat', True): 'с юга на север', ('lat', False): 'с севера на юг'}[(field, asc)]
+            q = f'Расположите географические объекты {way}'
+        else:
+            q = (f'Расположите {what} в порядке {"возрастания" if asc else "убывания"} {label}, начиная с '
+                 f'{"наименьшего" if asc else "наибольшего"} значения')
         yr = sorted({str(vals[p][1]) for p in pick if vals[p][1]})
         e = (f'{cap(label)}: ' + '; '.join(f'{p} — {fmt(Fraction(str(vals[p][0])))} {unit}' for p in pick) +
              f' ({srcname}{", " + "/".join(yr) if yr else ""}).')
@@ -2299,13 +2331,15 @@ def gen_d_pick(rng, args, topic='dict'):
         rng.shuffle(items)
         good = [i for i, x in enumerate(items) if x in yes]
         phrase = TAG_Q.get((field, tag_v)) or TAG_FIELD.get(field, 'есть признак «{}»').format(tag)
-        q = f'Выберите {k} {noun} из списка, в которых {phrase}. Запишите цифры, под которыми они указаны'
+        q = f'Выберите {k} {noun} из списка, в которых {phrase}. Ответ — номера верных вариантов'
         e = 'Верно: ' + ', '.join(items[i] for i in good) + '.'
         return many_card(topic, q + '.', items, good, e, {'eng': 'd_pick', 'tab': tab, 'field': field, 'tag': tag_v, 'items': items})
     what, label, unit, srcname = ORDER_Q[(tab, field)]
     rows = geo_filter(tab, geo_rows(tab), kw)
     vals = {x: geo_value(tab, r, field) for x, r in rows.items()}
     vals = {x: v for x, v in vals.items() if v is not None and v[0] is not None}
+    if len(vals) < n + 2:
+        raise Skip(f'{tab}.{field}: мало данных')
     top = kw.get('max') or (not kw.get('min') and rng.random() < 0.5)
     gap = float(kw.get('gap', 1.25))
     for _ in range(80):
@@ -2317,7 +2351,7 @@ def gen_d_pick(rng, args, topic='dict'):
             continue
         good = [i for i, x in enumerate(items) if x in s[:k]]
         q = (f'Выберите {k} {noun} с {"наибольшей" if top else "наименьшей"} величиной показателя: {label}. '
-             'Запишите цифры, под которыми они указаны.')
+             'Ответ — номера верных вариантов.')
         e = '; '.join(f'{x} — {fmt(Fraction(str(vals[x][0])), 1)} {unit}' for x in items) + f' ({srcname}).'
         return many_card(topic, q, items, good, e, {'eng': 'd_pick', 'tab': tab, 'field': field, 'top': top, 'k': k, 'items': items})
     raise Skip(f'{tab}.{field}')
@@ -2482,13 +2516,187 @@ def gen_d_district(rng, args, topic='dict'):
     items = rng.sample(own, k) + rng.sample(other, n - k)
     rng.shuffle(items)
     gi = [i for i, b in enumerate(items) if b in own]
-    q = f'Какие из перечисленных отраслей относятся к отраслям специализации района «{x}»? Запишите цифры, под которыми они указаны.'
+    q = f'Какие из перечисленных отраслей относятся к отраслям специализации района «{x}»? Ответ — номера верных вариантов.'
     return many_card(topic, q, items, gi, f'{x}: ' + ', '.join(own) + '.', {'eng': 'd_district', 'tab': tab, 'x': x, 'items': items})
 
 
 def check_d_district(c):
     own = FACTS['geo'][c['tab']][c['x']]['industries']
     return [str(i + 1) for i, b in enumerate(c['items']) if b in own]
+
+
+CONTINENTS = ['Австралия', 'Антарктида', 'Африка', 'Евразия (Азия)', 'Евразия (Европа)', 'Северная Америка', 'Южная Америка']
+OCEANS = ['Атлантический', 'Индийский', 'Тихий', 'Северный Ледовитый']
+
+
+def obj_place(r):
+    """Материк или океан объекта, если он однозначен (проливы между двумя морями и т. п. не берём)."""
+    v = (r.get('continent_ocean') or '').replace(' океан', '')
+    return v if v in CONTINENTS or v in OCEANS else None
+
+
+def gen_d_objone(rng, args, topic='dict'):
+    """ЕГЭ гео 4, 21; ОГЭ 1, 2: где находится объект номенклатуры — материк/океан (1 из 4)."""
+    (tab,), kw = parse_args(args)
+    rows = geo_rows(tab)
+    x = rng.choice([k for k, r in rows.items() if obj_place(r)])
+    right = obj_place(rows[x])
+    pool = CONTINENTS if right in CONTINENTS else OCEANS
+    o, a = one(rng, right, rng.sample([v for v in pool if v != right], 3))
+    q = f'Где находится объект «{x}» ({rows[x]["class"]})? Выберите материк или океан.'
+    return card('one', topic, q, a, f'{x} — {right}.', {'eng': 'd_objone', 'tab': tab, 'x': x, 'opts': [z['t'] for z in o]}, o=o)
+
+
+def check_d_objone(c):
+    v = obj_place(geo_rows(c['tab'])[c['x']])
+    return 'абвгде'[c['opts'].index(v)]
+
+
+def gen_d_producers(rng, args, topic='dict'):
+    """ЕГЭ гео 9 (мир): три страны из шести, входящие в пятёрку крупнейших производителей/экспортёров продукта."""
+    (group,), kw = parse_args(args)
+    P = FACTS['geo']['producers']
+    keys = [k for k in kw.get('p', '').split('+') if k in P] or list(P)
+    k = rng.choice([x for x in keys if len([t for t in P[x]['top'] if t.get('country')]) >= 5])
+    top = [t['country'] for t in P[k]['top'] if t.get('country')][:5]
+    pool = sorted({r['name'] for r in FACTS['geo']['country_tags'].values()} - set(top))
+    items = rng.sample(top, 3) + rng.sample(pool, 3)
+    rng.shuffle(items)
+    gi = [i for i, x in enumerate(items) if x in top]
+    T = P[k]
+    q = (f'Какие три страны из перечисленных входят в пятёрку мировых лидеров: {T["title"].lower()} — {T["role"]} '
+         f'({T["year"]} г.)? Ответ — номера верных вариантов.')
+    e = 'Пятёрка: ' + ', '.join(top) + f' ({T["src"][0].split(",")[0]}).'
+    return many_card(topic, q, items, gi, e, {'eng': 'd_producers', 'k': k, 'items': items})
+
+
+def check_d_producers(c):
+    top = [t['country'] for t in FACTS['geo']['producers'][c['k']]['top'] if t.get('country')][:5]
+    return [str(i + 1) for i, x in enumerate(c['items']) if x in top]
+
+
+def chron_age(ev):
+    G = FACTS['geo']['geochron']
+    if ev.get('period'):
+        per = {p['name']: p for p in G['periods'] + G.get('precambrian_periods', [])}
+        p = per.get(ev['period'])
+        if p:
+            return p['start_ma'], p['end_ma']
+    era = {e['name']: e for e in G['eras']}[ev['era']]
+    return era['start_ma'], era['end_ma']
+
+
+def gen_d_chron(rng, args, topic='dict'):
+    """ЕГЭ гео 13: события истории Земли от древних к молодым; интервалы событий не перекрываются."""
+    mode = args[0]                                     # mixed | same | pre
+    ev = [e for e in FACTS['geo']['geochron']['events'] if e.get('era')]
+    for _ in range(300):
+        pick = rng.sample(ev, 3)
+        span = [chron_age(e) for e in pick]
+        s = sorted(span, reverse=True)
+        if any(a[1] < b[0] for a, b in zip(s, s[1:])):     # интервалы пересекаются — порядок неоднозначен
+            continue
+        eras = [e['era'] for e in pick]
+        pre = sum(e['era'] in ('архейская', 'протерозойская') for e in pick)
+        if mode == 'mixed' and len(set(eras)) < 3:
+            continue
+        if mode == 'same' and len(set(eras)) > 2:
+            continue
+        if mode == 'pre' and pre != 1:
+            continue
+        old_first = rng.random() < 0.6
+        order = sorted(range(3), key=lambda i: span[i][0], reverse=old_first)
+        q = f'Расположите события в порядке {"от самого древнего к самому молодому" if old_first else "от самого молодого к самому древнему"}'
+        e = '; '.join(f'{x["text"]} — {x.get("period") or x["era"]}' for x in pick) + ' (шкала ICS 2024).'
+        return seq_card(topic, q, [x['text'] for x in pick], order, e, {'eng': 'd_chron', 'texts': [x['text'] for x in pick], 'old': old_first})
+    raise Skip(mode)
+
+
+def check_d_chron(c):
+    ev = {e['text']: e for e in FACTS['geo']['geochron']['events']}
+    start = [chron_age(ev[t])[0] for t in c['texts']]
+    return ''.join(str(i + 1) for i in sorted(range(3), key=lambda i: start[i], reverse=c['old']))
+
+
+COUNTRY_CLUE = {
+    'part': 'расположена в регионе: {}', 'gov': 'форма правления — {}', 'structure': 'форма устройства — {}',
+    'coast': 'по положению относительно моря — {}', 'oceans': 'омывается водами океана: {}', 'groups': 'входит в объединение: {}',
+    'language': 'государственный язык — {}', 'special': '{}',
+}
+
+
+def country_clues(r):
+    out = []
+    for f in ('part', 'gov', 'structure', 'coast'):
+        if r.get(f):
+            out.append((f, r[f]))
+    for f in ('oceans', 'groups', 'language'):
+        out += [(f, v) for v in r.get(f) or []]
+    return out
+
+
+def ct_ok(r, f, v):
+    x = r.get(f)
+    return v in x if isinstance(x, list) else x == v
+
+
+def gen_d_country(rng, args, topic='dict'):
+    """ЕГЭ гео 17, ОГЭ 21: страна по описанию (3–5 признаков + один характерный факт), 1 из 4."""
+    C = FACTS['geo']['country_tags']
+    for _ in range(100):
+        iso = rng.choice(list(C))
+        r = C[iso]
+        cl = country_clues(r)
+        rng.shuffle(cl)
+        chosen = []
+        for c in cl:
+            chosen.append(c)
+            fit = [k for k, x in C.items() if all(ct_ok(x, *cc) for cc in chosen)]
+            if len(fit) <= 3 and len(chosen) >= 3:
+                break
+        if len(chosen) > 4 or not r.get('special'):
+            continue
+        sp_ = rng.choice(r['special'])
+        fit = [k for k, x in C.items() if all(ct_ok(x, *cc) for cc in chosen)]
+        others = [k for k in C if k != iso and C[k].get('part') == r.get('part')] or [k for k in C if k != iso]
+        wrong = [k for k in fit if k != iso] + [k for k in others if k not in fit]
+        if len(wrong) < 3:
+            continue
+        wrong = wrong[:3] if len(fit) > 1 else rng.sample(wrong, 3)
+        # характерный факт не должен подходить к другим вариантам (у соседних стран бывают одинаковые формулировки)
+        if any(all(ct_ok(C[k], *cc) for cc in chosen) and sp_ in (C[k].get('special') or []) for k in wrong):
+            continue
+        o, a = one(rng, r['name'], [C[k]['name'] for k in wrong])
+        desc = '; '.join(COUNTRY_CLUE[f].format(v) for f, v in chosen) + f'; {sp_}'
+        q = f'Определите страну по описанию: {desc}.'
+        return card('one', topic, q, a, f'{r["name"]}.', {'eng': 'd_country', 'clues': chosen, 'special': sp_,
+                    'opts': [z['t'] for z in o]}, o=o)
+    raise Skip('country')
+
+
+def check_d_country(c):
+    C = {x['name']: x for x in FACTS['geo']['country_tags'].values()}
+    ok = [i for i, t in enumerate(c['opts'])
+          if all(ct_ok(C[t], f, v) for f, v in c['clues']) and c['special'] in (C[t].get('special') or [])]
+    return 'абвгде'[ok[0]] if len(ok) == 1 else None
+
+
+def gen_d_city(rng, args, topic='dict'):
+    """ЕГЭ гео 21: в каком субъекте РФ находится город (1 из 4, варианты — соседние субъекты)."""
+    S = FACTS['geo']['ru_subjects']
+    cities = {k: v for k, v in FACTS['geo']['ru_cities'].items() if isinstance(v['subject'], str) and v['subject'] in S
+              and S[v['subject']].get('center') != k and 'center_lat' in S[v['subject']]}
+    x = rng.choice(list(cities))
+    subj = cities[x]['subject']
+    pt = (cities[x]['lat'], cities[x]['lon'])
+    near = sorted((s for s in S if s != subj and 'center_lat' in S[s]), key=lambda s: dist_km(pt, (S[s]['center_lat'], S[s]['center_lon'])))[:3]
+    o, a = one(rng, subj, near)
+    q = f'В каком субъекте Российской Федерации находится город {x}?'
+    return card('one', topic, q, a, f'{x} — {subj}.', {'eng': 'd_city', 'x': x, 'opts': [z['t'] for z in o]}, o=o)
+
+
+def check_d_city(c):
+    return 'абвгде'[c['opts'].index(FACTS['geo']['ru_cities'][c['x']]['subject'])]
 
 
 def gen_d_statements(rng, args, topic='dict'):
@@ -2504,7 +2712,7 @@ def gen_d_statements(rng, args, topic='dict'):
     items = good + bad
     rng.shuffle(items)
     gi = [i for i, s in enumerate(items) if s in good]
-    q = (f'Какие из высказываний относятся к явлению «{B[tag]["title"]}»? Запишите цифры, под которыми они указаны')
+    q = (f'Какие из высказываний относятся к явлению «{B[tag]["title"]}»? Ответ — номера верных вариантов')
     return many_card(topic, q + '.', items, gi, 'Верно: ' + ' '.join(items[i] for i in gi),
                      {'eng': 'd_statements', 'ref': ref, 'tag': tag, 'items': items})
 
@@ -2822,7 +3030,7 @@ def gen_g_index_table(rng):
     tab = '; '.join(f'{i + 1}) {g}: ' + ', '.join(f'{y} — {fmt(Fraction(str(v)))}' for y, v in zip(years, r))
                     for i, (g, r) in enumerate(zip(regs, rows)))
     q = (f'Индексы {branch} (в % к предыдущему году; условные данные): {tab}. В каких регионах {text}? '
-         'Запишите цифры, под которыми они указаны.')
+         'Ответ — номера верных вариантов.')
     c = many_card('geo-ege-10', q, regs, good, 'Индекс больше 100 % — рост, меньше 100 % — сокращение.',
                   {'rows': rows, 'crit': crit})
     return c
@@ -2934,7 +3142,7 @@ def gen_g_sunrise(rng):
     day = rng.choice(['21 марта', '23 сентября'])
     first = max(pick, key=lambda c: CITIES[c][2])
     o, a = one(rng, first, [c for c in pick if c != first], n=3)
-    q = f'{day} в каком из городов Солнце раньше всего по московскому времени поднимется над горизонтом?'
+    q = f'Дата — {day}. Часы во всех городах выставлены по Москве. В каком городе восход наступит раньше?'
     e = f'В дни равноденствия восход раньше там, где восточнее: {first} ({fmt(CITIES[first][2])}° в. д.).'
     return card('one', 'geo-oge-17', q, a, e, {'pick': pick, 'opts': [x['t'] for x in o]}, o=o)
 
@@ -3207,7 +3415,7 @@ def gen_d_struct(rng, args, topic='dict'):
         left = rng.sample(pick, 2)
         ans = [right.index(i) for i in left]
         what = 'ВВП' if kind == 'gdp' else 'занятых'
-        q = f'Установите соответствие между страной и структурой {what} по секторам экономики (World Bank).'
+        q = f'Соотнесите страны со структурой {what} по секторам экономики (данные World Bank): для каждой буквы — номер.'
         e = '; '.join(f'{C[i]["name"]}: {labels[right.index(i)]}' for i in left) + '.'
         return match_card(topic, q, [C[i]['name'] for i in left], labels, ans, e,
                           {'eng': 'd_struct', 'keys': keys, 'left': left, 'right': right})
@@ -3548,6 +3756,9 @@ def run_proto(p, probe, seed=2026, fipi=None):
         except Skip:
             skips += 1
             continue
+        except KeyError as e:                     # нет таблицы/поля — прототип не собирается
+            errors.append(str(e))
+            continue
         key = card_key(c)
         if key in seen:
             continue
@@ -3557,7 +3768,7 @@ def run_proto(p, probe, seed=2026, fipi=None):
     bad = [c for c in cards if not chk(c)]
     inval = [c for c in cards if validate(c)]
     sim = max((similarity(c, fipi) for c in cards), default=0.0) if fipi else None
-    return {'cards': cards, 'bad': bad, 'inval': inval, 'skips': skips, 'sim': sim}
+    return {'cards': cards, 'bad': bad, 'inval': inval, 'skips': skips, 'sim': sim, 'errors': sorted(set(errors))}
 
 
 def example_of(c):
@@ -3587,13 +3798,15 @@ def proto_check(subjects, probe, fipi_dir, write, only=None):
             p['capacity'] = n if n < probe * 0.95 else f'≥{n}'
             if r['cards']:
                 p['example'] = example_of(r['cards'][0])
-            ok = n > 0 and not r['bad'] and not r['inval'] and (r['sim'] is None or r['sim'] < 0.3)
+            ok = n > 0 and not r['bad'] and not r['inval'] and not r['errors'] and (r['sim'] is None or r['sim'] < 0.3)
             fail += not ok
             rows.append((p['id'], 'gen', r))
             for c in r['bad'][:1]:
                 print('  НЕСОВПАДЕНИЕ', p['id'], c['q'][:150], '| a =', c.get('x', c['a']), file=sys.stderr)
             for c in r['inval'][:1]:
                 print('  НЕВАЛИДНО', p['id'], validate(c), file=sys.stderr)
+            if r['errors']:
+                print('  НЕТ ДАННЫХ', p['id'], '; '.join(r['errors'][:3]), file=sys.stderr)
             if n == 0:
                 print('  НЕТ КАРТОЧЕК', p['id'], p['gen'], file=sys.stderr)
         if write:

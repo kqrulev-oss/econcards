@@ -30,6 +30,10 @@ NAME_FIX = {
 # у части городов в Wikidata остались исторические P131 — выбираем действующий субъект
 CITY_SUBJECT = {'Грозный': 'Чечня', 'Каменск-Уральский': 'Свердловская область', 'Кемерово': 'Кемеровская область',
                 'Черкесск': 'Карачаево-Черкесия'}
+# не озёра в школьном смысле: древние (исчезнувшие), подлёдное, солончаки, пересыхающие системы
+NOT_LAKES = {'Агассис', 'Мега-Чад', 'Бонневилл (озеро)', 'Миссула (озеро)', 'Восток', 'Солончак Уюни', 'Цзюйяньхай',
+             'Арнасайская система', 'Сарыкамышское озеро', 'Айдаркуль', 'Мельгир', 'Аггёль', 'Эль-Джерид', 'Эйр', 'Торренс',
+             'Гэрднер', 'Маккай', 'Мар-Чикита'}
 SKIP_ISO = {'PSE', 'XKX', 'TWN', 'VAT'}   # нет полного ряда World Bank или спорный статус — в генерацию не берём
 
 
@@ -192,7 +196,8 @@ def main():
     data['ru_subjects'] = subjects(cache)
     data['ru_cities'] = cities(cache)
     data['rivers'] = objects(cache, 'rivers', 'len_km', 'len', [('mouth', 'mouthRu')], 1000)
-    data['lakes'] = objects(cache, 'lakes', 'area_km2', 'area', [], 1e6)
+    data['lakes'] = {k: v for k, v in objects(cache, 'lakes', 'area_km2', 'area', [], 1e6).items()
+                     if k not in NOT_LAKES and 'водохранилище' not in k and 'Аральское' not in k}
     data['peaks'] = objects(cache, 'peaks', 'elev_m', 'elev', [('country', 'countryRu')])
     OUT.write_text(json.dumps(data, ensure_ascii=False, indent=1) + '\n', encoding='utf-8')
     for k in ('countries', 'ru_subjects', 'ru_cities', 'rivers', 'lakes', 'peaks'):
