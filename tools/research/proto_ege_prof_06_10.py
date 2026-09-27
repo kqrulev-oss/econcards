@@ -988,7 +988,7 @@ def gen_ep08_trig_compl(r):
     a = r.randint(5, 85)
     if a in (30, 45, 60, 90) or 2 * a == 90:
         return None
-    k = r.randint(2, 30)
+    k = r.randint(5, 30)
     ans = 2 * k
     b = 90 - a
     top = r.choice([2 * a, 180 - 2 * a]) if 2 * a < 180 else 2 * a
@@ -1123,7 +1123,7 @@ def gen_ep08_trig_find(r):
         # cos α = p/√N, sin α = q/√N, N = p² + q², tg = q/p
         p_, q_ = r.randint(1, 7), r.randint(1, 7)
         N = p_ * p_ + q_ * q_
-        if int(math.isqrt(N)) ** 2 == N or math.gcd(p_, q_) != 1:
+        if int(math.isqrt(N)) ** 2 == N or math.gcd(p_, q_) != 1 or N == 26:
             return None
         cosv, sinv = sc * sp.Integer(p_) / sp.sqrt(N), ss * sp.Integer(q_) / sp.sqrt(N)
         given = r.choice(['cos', 'sin'])
@@ -2215,9 +2215,9 @@ def gen_ep09_tangent_line(r):
             return None
         if R(x1) ** 3 + p * R(x1) ** 2 + q * R(x1) + s_ == k * R(x1) + m:
             return None
-        ln, fs = f'y = {lin(k, m)}' if k else f'y = {tnum(m)}', f'y = {poly([1, p, q, s_])}'
-        qq = pick(r, f'Прямая {fm(ln)} касается графика функции {fm(fs)} в одной точке. Чему равна абсцисса этой точки?',
-                  f'График функции {fm(fs)} касается прямой {fm(ln)}. Найдите x-координату точки касания.')
+        ln, fs = f'y = {lin(k, m)}' if k else f'y = {tnum(m)}', f'f(x) = {poly([1, p, q, s_])}'
+        qq = pick(r, f'Прямая {fm(ln)} касается графика многочлена {fm(fs)} в одной точке. Чему равна абсцисса этой точки?',
+                  f'График многочлена {fm(fs)} касается прямой {fm(ln)}. Найдите x-координату точки касания.')
         ex = f'y′ = {poly([3, 2 * p, q])} = {tnum(k)} при x = {tnum(x0)} и x = {fr(x1)}; равенство значений выполняется только при x = {tnum(x0)}.'
 
         def chk():

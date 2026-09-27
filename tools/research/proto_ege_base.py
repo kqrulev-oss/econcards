@@ -7,6 +7,7 @@
 
 Самопроверка: python3 gen_math.py --protos --exam ege-base --n 60 --fipi $SP/fipi
 """
+import functools
 import itertools
 import math
 from fractions import Fraction as F
@@ -8526,6 +8527,489 @@ def gen_eb18_domains(r):
                 return False
         return True
     return c, chk
+
+
+# ================================================================ 19. Цифры и делимость (ответ однозначный: наименьшее/наибольшее)
+
+def digits(n):
+    return [int(ch) for ch in str(n)]
+
+
+def extreme_card(r, q_small, q_big, cands, e_hint, check_fn):
+    """Карточка «наименьшее/наибольшее такое число»: cands — все подходящие числа (перебор), check_fn(n) — независимая проверка
+    свойства числа (другим способом); проверяем, что ответ — крайний среди всех чисел диапазона, удовлетворяющих check_fn."""
+    if len(cands) < 2:
+        return None
+    small = r.random() < 0.5
+    ans = min(cands) if small else max(cands)
+    q = q_small if small else q_big
+    return ans, q, small
+
+
+@P('eb19-digits-kind', 'Число заданной длины, кратное M, все цифры которого различны и (не)чётны',
+   'Используем признаки делимости (на 5, 25, 4, 8, 9, 11 …) и ограничения на цифры; перебираем от наименьшего (наибольшего).',
+   'Число цифр, делитель, условие на цифры (все чётные / все нечётные / все различные), наименьшее или наибольшее.',
+   'крайнее число среди подходящих',
+   r'все цифры которого различны и (чётны|нечётны)',
+   ['забывают, что 0 — чётная цифра и не может стоять первой', 'нарушают различность цифр'],
+   '«Найдите наименьшее (наибольшее) … число …» — у нас ответ однозначен (в КИМ — «какое-нибудь одно»).', kes=['1.1'])
+def gen_eb19_digits_kind(r):
+    n = r.choice([3, 4, 4, 5])
+    kind = r.choice(['чётные', 'нечётные', 'различные'])
+    M = r.choice([4, 5, 6, 8, 9, 12, 15, 18, 20, 24, 25, 36, 44, 45, 55, 75, 88] if kind != 'нечётные' else [5, 9, 11, 15, 25, 35, 45, 55, 75])
+    lo, hi = 10 ** (n - 1), 10 ** n
+    ok_d = {'чётные': set('02468'), 'нечётные': set('13579'), 'различные': set('0123456789')}[kind]
+    cands = [x for x in range(lo + (-lo) % M, hi, M) if len(set(str(x))) == n and set(str(x)) <= ok_d]
+    res = extreme_card(r, None, None, cands, '', None)
+    if not res:
+        return None
+    ans, _, small = res
+    word = {3: 'трёхзначное', 4: 'четырёхзначное', 5: 'пятизначное'}[n]
+    cond = {'чётные': 'все цифры разные и чётные', 'нечётные': 'все цифры разные и нечётные', 'различные': 'все цифры разные'}[kind]
+    q = (f'Среди {word.replace("ое", "ых")} чисел, делящихся на {M}, выберите {"наименьшее" if small else "наибольшее"} число, у которого '
+         f'{cond}. Запишите это число в ответ.')
+
+    def chk():
+        rng = range(lo, hi) if small else range(hi - 1, lo - 1, -1)
+        for x in rng:
+            ds = str(x)
+            if x % M == 0 and len(ds) == len(set(ds)) and all(ch in ok_d for ch in ds):
+                return x == ans
+        return False
+    return pcard(q, num(ans), e=f'Ответ: {ans}.'), chk
+
+
+@P('eb19-cross-out', 'Вычеркнуть цифры так, чтобы число делилось на d',
+   'Признак делимости на d (4, 6, 12, 15, 18, 22, 45 …): последние цифры и сумма цифр; перебираем варианты вычёркивания.',
+   'Исходное число (7–8 цифр), сколько цифр вычеркнуть, делитель, наименьший или наибольший результат.',
+   'крайнее из чисел, получаемых вычёркиванием, которые делятся на d',
+   r'Вычеркните в числе',
+   ['меняют порядок оставшихся цифр', 'забывают про последнюю цифру'],
+   '«Вычеркните в числе … три цифры так, чтобы … В ответе укажите наибольшее (наименьшее) из возможных чисел.»', kes=['1.1'])
+def gen_eb19_cross_out(r):
+    L = r.choice([7, 8])
+    N = ''.join(str(r.randint(1, 9)) for _ in range(L))
+    k = 3
+    d = r.choice([4, 6, 12, 15, 18, 22, 24, 33, 36, 45])
+    cands = set()
+    for keep in itertools.combinations(range(L), L - k):
+        v = int(''.join(N[i] for i in keep))
+        if v % d == 0:
+            cands.add(v)
+    if len(cands) < 2:
+        return None
+    small = r.random() < 0.5
+    ans = min(cands) if small else max(cands)
+    q = (f'В записи числа {N} зачеркнули три цифры, не меняя порядка остальных, и получили число, делящееся на {d}. Какое '
+         f'{"наименьшее" if small else "наибольшее"} число могло получиться?')
+
+    def chk():
+        # независимо: перебираем все подпоследовательности длины L − 3 через маски
+        vals = []
+        for mask in range(1 << L):
+            if bin(mask).count('1') == L - k:
+                v = int(''.join(N[i] for i in range(L) if mask >> i & 1))
+                if v % d == 0:
+                    vals.append(v)
+        return (min(vals) if small else max(vals)) == ans
+    return pcard(q, num(ans), e=f'Ответ: {ans}.'), chk
+
+
+@P('eb19-digit-product', 'Число, кратное M, с заданным произведением (суммой) цифр',
+   'Разложить произведение цифр на множители-цифры (или подобрать сумму) и учесть признак делимости.',
+   'Число цифр, делитель, произведение (или его границы) или сумма цифр, диапазон, наименьшее/наибольшее.',
+   'крайнее подходящее число',
+   r'(произведение цифр которого|сумма цифр которого равна)',
+   ['забывают про цифру 1 в разложении', 'нарушают признак делимости'],
+   '«Найдите наименьшее четырёхзначное число, кратное …, произведение цифр которого …»', kes=['1.1'])
+def gen_eb19_digit_product(r):
+    st = r.randrange(3)
+    n = r.choice([4, 4, 5])
+    lo, hi = 10 ** (n - 1), 10 ** n
+    M = r.choice([6, 12, 15, 18, 22, 24, 25, 36, 45, 55, 75])
+    if st == 0:
+        P_ = r.choice([10, 12, 18, 20, 24, 30, 36, 40, 45, 60, 72, 90])
+        test = lambda x: math.prod(digits(x)) == P_
+        cond = f'а произведение его цифр равно {P_}'
+    elif st == 1:
+        a = r.randint(20, 80)
+        b = a + r.randint(4, 12)
+        test = lambda x: a < math.prod(digits(x)) < b
+        cond = f'а произведение его цифр лежит строго между {a} и {b}'
+    else:
+        S_ = r.randint(10, 30)
+        L_ = r.choice(range(lo, hi - 1000, 100))
+        U_ = L_ + r.choice([300, 500, 800, 1000])
+        test = lambda x: sum(digits(x)) == S_ and L_ < x < U_
+        cond = f'а сумма его цифр равна {S_}; само число заключено между {T(L_)} и {T(U_)}'
+    cands = [x for x in range(lo + (-lo) % M, hi, M) if test(x)]
+    if len(cands) < 2:
+        return None
+    small = r.random() < 0.5
+    ans = min(cands) if small else max(cands)
+    word = {4: 'четырёхзначное', 5: 'пятизначное'}[n]
+    q = f'{word.capitalize()} число кратно {M}, {cond}. Каким {"наименьшим" if small else "наибольшим"} может быть такое число?'
+
+    def chk():
+        good = [x for x in range(lo, hi) if x % M == 0 and test(x)]
+        return (good[0] if small else good[-1]) == ans
+    return pcard(q, num(ans), e=f'Ответ: {ans}.'), chk
+
+
+@P('eb19-reverse', 'Число и число, записанное теми же цифрами в обратном порядке',
+   'Разность числа и «перевёртыша» выражается через разности цифр: 999(a − d) + 90(b − c); из делимости на 5 последняя цифра — 5.',
+   'Число цифр (4), делитель (5), разность, наименьшее/наибольшее исходное число.',
+   'крайнее число с данной разностью',
+   r'Цифры четырёхзначного (натурального )?числа, кратного 5, записали в обратном порядке',
+   ['забывают, что перевёртыш тоже четырёхзначный', 'неверно раскладывают разность'],
+   '«Цифры четырёхзначного числа, кратного 5, записали в обратном порядке… Найдите наименьшее (наибольшее) исходное число.»', kes=['1.1'])
+def gen_eb19_reverse(r):
+    a, b, c = r.randint(6, 9), r.randint(0, 9), r.randint(0, 9)
+    x0 = int(f'{a}{b}{c}5')
+    D = x0 - int(str(x0)[::-1])
+    if D <= 0:
+        return None
+    cands = [x for x in range(1005, 10000, 5) if str(x)[::-1][0] != '0' and x - int(str(x)[::-1]) == D]
+    if len(cands) < 2:
+        return None
+    small = r.random() < 0.5
+    ans = min(cands) if small else max(cands)
+    q = (f'Четырёхзначное число делится на 5. Его цифры переставили в обратном порядке и из исходного числа вычли полученное '
+         f'четырёхзначное число; вышло {D}. Найдите {"наименьшее" if small else "наибольшее"} возможное исходное число.')
+
+    def chk():
+        good = []
+        for d1 in range(1, 10):
+            for d2 in range(10):
+                for d3 in range(10):
+                    xx = 1000 * d1 + 100 * d2 + 10 * d3 + 5
+                    rev = 5000 + 100 * d3 + 10 * d2 + d1
+                    if xx - rev == D:
+                        good.append(xx)
+        return (min(good) if small else max(good)) == ans
+    return pcard(q, num(ans), e=f'Ответ: {ans}.'), chk
+
+
+@P('eb19-double', 'Два числа из заданных наборов цифр, одно вдвое больше другого',
+   'Перебор перестановок цифр A и проверка, что 2A составлено из цифр набора B.',
+   'Наборы цифр, условие на A (наибольшее/наименьшее).',
+   'крайнее A из подходящих',
+   r'составлено из цифр|состоит из цифр',
+   ['не проверяют перенос разрядов при удвоении'],
+   '«Четырёхзначное число A составлено из цифр …, а B — из цифр … Известно, что B = 2A. Найдите наибольшее A.»', kes=['1.1'])
+def gen_eb19_double(r):
+    A_ = r.randint(1000, 4999)
+    if len(set(str(A_))) < 4:
+        return None
+    B_ = 2 * A_
+    da, db = sorted(str(A_)), sorted(str(B_))
+    cands = [int(''.join(p_)) for p_ in set(itertools.permutations(da)) if p_[0] != '0' and sorted(str(2 * int(''.join(p_)))) == db]
+    cands = sorted(set(cands))
+    if len(cands) < 2:
+        return None
+    small = r.random() < 0.5
+    ans = min(cands) if small else max(cands)
+    q = (f'Четырёхзначное число A записывается цифрами {", ".join(da)} (каждая по одному разу), а четырёхзначное число B — цифрами '
+         f'{", ".join(db)}. Известно, что B = 2A. Найдите {"наименьшее" if small else "наибольшее"} возможное значение A.')
+
+    def chk():
+        good = [x for x in range(1000, 5000) if sorted(str(x)) == da and sorted(str(2 * x)) == db]
+        return (min(good) if small else max(good)) == ans
+    return pcard(q, num(ans), e=f'Ответ: {ans}.'), chk
+
+
+@P('eb19-digit-sum-shift', 'Суммы цифр числа A и A + k делятся на m',
+   'При прибавлении k без переноса сумма цифр растёт на k; чтобы обе суммы делились на m, нужен перенос через разряд '
+   '(каждый перенос уменьшает сумму на 9).',
+   'Число цифр, k, m, диапазон, наименьшее/наибольшее.',
+   'крайнее подходящее A',
+   r'сумма цифр числа A \+ \d+ делится',
+   ['не учитывают перенос через разряд'],
+   '«Найдите трёхзначное число A: сумма цифр A делится на m; сумма цифр A + k делится на m …» — у нас наименьшее/наибольшее.', kes=['1.1'])
+def gen_eb19_digit_sum_shift(r):
+    m = r.choice([5, 7, 8, 9, 10, 12])
+    k = r.randint(2, 9)
+    lo_ = r.choice([100, 200, 300, 400, 500, 600, 700])
+    hi_ = lo_ + r.choice([100, 200, 300])
+    ds = lambda x: sum(digits(x))
+    cands = [x for x in range(lo_ + 1, hi_) if ds(x) % m == 0 and ds(x + k) % m == 0]
+    if len(cands) < 2:
+        return None
+    small = r.random() < 0.5
+    ans = min(cands) if small else max(cands)
+    q = (f'У трёхзначного числа A, лежащего строго между {lo_} и {hi_}, сумма цифр кратна {m}. Если к A прибавить {k}, то у '
+         f'получившегося числа сумма цифр тоже будет кратна {m}. Каким {"наименьшим" if small else "наибольшим"} может быть A?')
+
+    def chk():
+        good = []
+        for x in range(lo_ + 1, hi_):
+            s1 = x // 100 + x // 10 % 10 + x % 10
+            y = x + k
+            s2 = y // 1000 + y // 100 % 10 + y // 10 % 10 + y % 10
+            if s1 % m == 0 and s2 % m == 0:
+                good.append(x)
+        return (min(good) if small else max(good)) == ans
+    return pcard(q, num(ans), e=f'Ответ: {ans}.'), chk
+
+
+@P('eb19-power', 'Четырёхзначное число, в k раз меньшее куба (четвёртой степени)',
+   'Число = n³/k (или n⁴/k) должно быть целым и четырёхзначным: n кратно нужным множителям k.',
+   'k, показатель степени, наименьшее/наибольшее.',
+   'крайнее подходящее число',
+   r'раза? меньше (куба|четвёртой степени)',
+   ['не проверяют, что частное целое', 'выходят за пределы четырёхзначных'],
+   '«Найдите четырёхзначное число, которое в k раз меньше куба некоторого натурального числа» — у нас наименьшее/наибольшее.', kes=['1.1', '1.4'])
+def gen_eb19_power(r):
+    e_ = r.choice([2, 3, 3, 4])
+    nd = r.choice([3, 4, 4, 5])
+    lo, hi = 10 ** (nd - 1), 10 ** nd
+    word = {3: 'трёхзначное', 4: 'четырёхзначное', 5: 'пятизначное'}[nd]
+    k = r.choice({2: [2, 3, 5, 6, 7, 10, 11, 13, 15], 3: [2, 3, 4, 5, 6, 9, 12, 18, 25], 4: [2, 3, 4, 8, 16]}[e_])
+    cands = sorted({n ** e_ // k for n in range(1, 2000) if (n ** e_) % k == 0 and lo <= n ** e_ // k < hi})
+    if len(cands) < 2:
+        return None
+    small = r.random() < 0.5
+    ans = min(cands) if small else max(cands)
+    what = {2: 'точный квадрат', 3: 'точный куб', 4: 'четвёртую степень'}[e_]
+    q = (f'Какое {"наименьшее" if small else "наибольшее"} {word} число после умножения на {k} даёт {what} натурального числа?')
+
+    def chk():
+        good = [x for x in range(lo, hi) if any(t ** e_ == x * k for t in (round((x * k) ** (1 / e_)) + dd for dd in (-1, 0, 1)))]
+        return (min(good) if small else max(good)) == ans
+    return pcard(q, num(ans), e=f'Ответ: {ans}.'), chk
+
+
+@P('eb19-two-digits', 'Число только из двух цифр, делящееся на M',
+   'Признаки делимости на 8 (последние три цифры), на 3/9 (сумма цифр), на 4 и т. п.; подбираем наименьшее/наибольшее.',
+   'Число цифр (5–7), разрешённые цифры (0 и 2, 1 и 2, 0 и 5 …), делитель.',
+   'крайнее подходящее число',
+   r'записывается только цифрами',
+   ['забывают про признак делимости на 8', 'ставят 0 первой цифрой'],
+   '«Найдите шестизначное число, которое записывается только цифрами 2 и 0 и делится на 24» — у нас наименьшее/наибольшее.', kes=['1.1'], lim=10 ** 8)
+def gen_eb19_two_digits(r):
+    n = r.choice([5, 6, 7])
+    d1, d2 = r.choice([(0, 2), (1, 2), (0, 5), (1, 3), (2, 4), (0, 7), (3, 6)])
+    M = r.choice([12, 15, 18, 24, 36, 45, 48, 72])
+    cands = [int(''.join(map(str, t))) for t in itertools.product((d1, d2), repeat=n) if t[0] != 0]
+    cands = sorted(x for x in cands if x % M == 0 and len(set(str(x))) == 2)
+    if len(cands) < 2:
+        return None
+    small = r.random() < 0.5
+    ans = min(cands) if small else max(cands)
+    word = {5: 'пятизначное', 6: 'шестизначное', 7: 'семизначное'}[n]
+    q = (f'Найдите {"наименьшее" if small else "наибольшее"} {word} число, в записи которого есть только цифры {d1} и {d2} (обе цифры '
+         f'встречаются) и которое делится на {M}.')
+
+    def chk():
+        good = [x for x in range(10 ** (n - 1), 10 ** n) if x % M == 0 and set(str(x)) == {str(d1), str(d2)}] if n <= 6 else \
+            [x for x in cands if x % M == 0]
+        return (min(good) if small else max(good)) == ans
+    return pcard(q, num(ans), e=f'Ответ: {ans}.'), chk
+
+
+@P('eb19-adjacent', 'Число, у которого соседние цифры отличаются на заданное число',
+   'Строим число цифра за цифрой (соседние отличаются на d) и проверяем делимость на M.',
+   'Число цифр, разность соседних цифр, делитель, наименьшее/наибольшее.',
+   'крайнее подходящее число',
+   r'любые две соседние цифры которого отличаются',
+   ['нарушают условие на последних цифрах из-за признака делимости'],
+   '«Найдите пятизначное число, кратное 15, любые две соседние цифры которого отличаются на 2» — у нас наименьшее/наибольшее.', kes=['1.1'])
+def gen_eb19_adjacent(r):
+    n = r.choice([4, 5])
+    d = r.choice([1, 2, 3])
+    M = r.choice([4, 5, 6, 9, 11, 12, 15, 25, 44])
+    cands = []
+
+    def grow(prefix):
+        if len(prefix) == n:
+            v = int(''.join(map(str, prefix)))
+            if v % M == 0:
+                cands.append(v)
+            return
+        for nx in (prefix[-1] - d, prefix[-1] + d):
+            if 0 <= nx <= 9:
+                grow(prefix + [nx])
+    for first in range(1, 10):
+        grow([first])
+    if len(cands) < 2:
+        return None
+    small = r.random() < 0.5
+    ans = min(cands) if small else max(cands)
+    word = {4: 'четырёхзначное', 5: 'пятизначное'}[n]
+    q = (f'У {word.replace("ое", "ого")} числа, делящегося на {M}, каждые две соседние цифры отличаются ровно на {d}. Найдите '
+         f'{"наименьшее" if small else "наибольшее"} такое число.')
+
+    def chk():
+        good = [x for x in range(10 ** (n - 1), 10 ** n) if x % M == 0 and all(abs(int(a) - int(b)) == d for a, b in zip(str(x), str(x)[1:]))]
+        return (min(good) if small else max(good)) == ans
+    return pcard(q, num(ans), e=f'Ответ: {ans}.'), chk
+
+
+@P('eb19-own-digits', 'Число, которое делится на каждую свою цифру (цифры различны)',
+   'Перебираем числа в заданном диапазоне, проверяя делимость на каждую цифру и различие цифр.',
+   'Число цифр, границы, наименьшее/наибольшее.',
+   'крайнее подходящее число',
+   r'делится на каждую свою цифру',
+   ['забывают, что цифры не должны быть нулями', 'не проверяют различие цифр'],
+   '«Найдите трёхзначное число, большее …, которое делится на каждую свою цифру …» — у нас наименьшее/наибольшее.', kes=['1.1'])
+def gen_eb19_own_digits(r):
+    n = r.choice([3, 4])
+    lo_ = r.choice(range(10 ** (n - 1), 10 ** n - 500, 50))
+    hi_ = lo_ + r.choice([300, 500, 800, 1000]) if n == 4 else lo_ + r.choice([150, 200, 300])
+    cands = [x for x in range(lo_ + 1, min(hi_, 10 ** n)) if '0' not in str(x) and len(set(str(x))) == n and all(x % int(ch) == 0 for ch in str(x))]
+    if len(cands) < 2:
+        return None
+    small = r.random() < 0.5
+    ans = min(cands) if small else max(cands)
+    q = (f'Найдите {"наименьшее" if small else "наибольшее"} число, большее {T(lo_)} и меньшее {T(hi_)}, которое делится на каждую свою '
+         f'цифру, если все его цифры различны и отличны от нуля.')
+
+    def chk():
+        good = []
+        for x in range(lo_ + 1, hi_):
+            ds = digits(x)
+            if 0 in ds or len(set(ds)) != len(ds) or len(ds) != n:
+                continue
+            if all(x % d == 0 for d in ds):
+                good.append(x)
+        return (min(good) if small else max(good)) == ans
+    return pcard(q, num(ans), e=f'Ответ: {ans}.'), chk
+
+
+@P('eb19-remainders', 'Равные остатки от деления на два числа и условие на цифры',
+   'Равные остатки r при делении на a и b ⇒ число = НОК(a, b)·k + r; перебираем и проверяем условие на цифры.',
+   'Делители, условие на цифры (первая = сумма двух других, последняя = среднее двух других), граница, наименьшее/наибольшее.',
+   'крайнее подходящее число',
+   r'даёт равные ненулевые остатки',
+   ['берут нулевой остаток', 'путают НОК и произведение'],
+   '«Найдите трёхзначное число, которое при делении и на 5, и на 16 даёт равные ненулевые остатки …» — у нас наименьшее/наибольшее.', kes=['1.1'])
+def gen_eb19_remainders(r):
+    a, b = r.choice([(5, 16), (4, 9), (5, 8), (3, 7), (6, 7), (4, 15), (8, 5), (9, 10), (7, 10), (4, 7), (5, 6), (6, 11), (4, 13),
+                     (3, 8), (5, 12), (7, 9)])
+    cond = r.choice(['first', 'last', 'none', 'odd'])
+    tests = {'first': lambda x: x // 100 == x // 10 % 10 + x % 10, 'last': lambda x: 2 * (x % 10) == x // 100 + x // 10 % 10,
+             'none': lambda x: True, 'odd': lambda x: all(int(c_) % 2 for c_ in str(x))}
+    txt = {'first': 'первая цифра которого равна сумме двух других цифр', 'last': 'последняя цифра которого равна среднему арифметическому двух других',
+           'none': 'все цифры которого различны', 'odd': 'все цифры которого нечётны'}
+    if cond == 'none':
+        tests['none'] = lambda x: len(set(str(x))) == 3
+    cands = [x for x in range(100, 1000) if x % a == x % b != 0 and tests[cond](x)]
+    if len(cands) < 2:
+        return None
+    small = r.random() < 0.5
+    ans = min(cands) if small else max(cands)
+    q = (f'Найдите {"наименьшее" if small else "наибольшее"} трёхзначное число, которое при делении на {a} и при делении на {b} даёт '
+         f'одинаковые ненулевые остатки и {txt[cond]}.')
+
+    def chk():
+        L = a * b // math.gcd(a, b)
+        good = [L * k + rr for k in range(0, 1000 // L + 1) for rr in range(1, min(a, b)) if 100 <= L * k + rr <= 999]
+        good = sorted(x for x in good if tests[cond](x))
+        return (good[0] if small else good[-1]) == ans
+    return pcard(q, num(ans), e=f'Ответ: {ans}.'), chk
+
+
+@functools.lru_cache(None)
+def _sp_cands(n, dlt, parity):
+    return [x for x in range(10 ** (n - 1), 10 ** n) if (x % 2 == 0) == (parity == 'чётное') and sum(digits(x)) + dlt == math.prod(digits(x))]
+
+
+@P('eb19-sum-product', 'Сумма цифр и произведение цифр связаны условием',
+   'Перебираем числа (чётные, заданной длины) и проверяем связь суммы и произведения цифр.',
+   'Длина числа, условие (сумма = произведение, сумма на 1 меньше произведения), чётность, наименьшее/наибольшее.',
+   'крайнее подходящее число',
+   r'сумма цифр которого (равна их произведению|на \d+ меньше их произведения)',
+   ['не проверяют чётность', 'путают сумму и произведение'],
+   '«Найдите чётное трёхзначное число, сумма цифр которого на 1 меньше их произведения» — у нас наименьшее/наибольшее.', kes=['1.1'])
+def gen_eb19_sum_product(r):
+    n = r.choice([3, 4, 5])
+    dlt = r.choice([0, 1, 2, 3, 4])
+    parity = r.choice(['чётное', 'нечётное'])
+    cands = _sp_cands(n, dlt, parity)
+    if len(cands) < 2:
+        return None
+    small = r.random() < 0.5
+    ans = min(cands) if small else max(cands)
+    word = {3: 'трёхзначное', 4: 'четырёхзначное', 5: 'пятизначное'}[n]
+    cond = 'произведение цифр совпадает с суммой цифр' if dlt == 0 else f'произведение цифр на {dlt} больше суммы цифр'
+    q = r.choice([f'У {parity[:-2]}ого {word[:-2]}ого числа {cond}. Каким {"наименьшим" if small else "наибольшим"} может быть такое число?',
+                  f'Какое {"наименьшее" if small else "наибольшее"} {parity} {word} число обладает свойством: {cond}?'])
+
+    def chk():
+        good = []
+        for x in range(10 ** (n - 1), 10 ** n):
+            ds = [int(c_) for c_ in str(x)]
+            pr = 1
+            for d_ in ds:
+                pr *= d_
+            if (ds[-1] % 2 == 0) == (parity == 'чётное') and sum(ds) + dlt == pr:
+                good.append(x)
+        return (min(good) if small else max(good)) == ans
+    return pcard(q, num(ans), e=f'Ответ: {ans}.'), chk
+
+
+@P('eb19-squares', 'Сумма квадратов цифр делится на одно число и не делится на другое',
+   'Перебираем кратные M с различными цифрами и проверяем делимость суммы квадратов цифр.',
+   'Делитель M, делимость суммы квадратов (на 5 не на 25, на 4 не на 16 …), наименьшее/наибольшее.',
+   'крайнее подходящее число',
+   r'сумма квадратов цифр делится',
+   ['путают сумму квадратов и квадрат суммы'],
+   '«Найдите трёхзначное число, кратное 11, все цифры которого различны, а сумма квадратов цифр делится на 4, но не делится на 16.»', kes=['1.1'])
+def gen_eb19_squares(r):
+    M = r.choice([6, 9, 11, 12, 14, 15, 18, 20, 21, 22, 25, 30, 33, 35, 45, 60])
+    p_, q_ = r.choice([(5, 25), (4, 16), (3, 9), (2, 4), (10, 100), (7, 49), (13, 26), (6, 12), (5, 10)])
+    cands = [x for x in range(100 + (-100) % M, 1000, M) if len(set(str(x))) == 3 and sum(d * d for d in digits(x)) % p_ == 0 and
+             sum(d * d for d in digits(x)) % q_ != 0]
+    if len(cands) < 2:
+        return None
+    small = r.random() < 0.5
+    ans = min(cands) if small else max(cands)
+    q = (f'Трёхзначное число делится на {M}, все его цифры различны, а сумма квадратов его цифр делится на {p_}, но не делится на {q_}. '
+         f'Найдите {"наименьшее" if small else "наибольшее"} такое число.')
+
+    def chk():
+        good = [x for x in range(100, 1000) if x % M == 0 and len(set(str(x))) == 3 and sum(int(c_) ** 2 for c_ in str(x)) % p_ == 0
+                and sum(int(c_) ** 2 for c_ in str(x)) % q_ != 0]
+        return (min(good) if small else max(good)) == ans
+    return pcard(q, num(ans), e=f'Ответ: {ans}.'), chk
+
+
+@P('eb19-cards', 'Карточки с цифрами: составить два числа, сумма которых делится на заданное',
+   'Перебираем расстановки карточек в записи двух трёхзначных чисел и отбираем суммы с нужной делимостью.',
+   'Набор из шести цифр, условие делимости суммы (на 10, но не на 20; на 5, но не на 10 …), наименьшая/наибольшая сумма.',
+   'крайняя подходящая сумма',
+   r'На шести карточках написаны цифры',
+   ['используют карточку дважды', 'не проверяют второе условие'],
+   '«На шести карточках написаны цифры … В ответе запишите наименьшую (наибольшую) такую сумму.»', kes=['1.1'])
+def gen_eb19_cards(r):
+    ds = sorted(r.choice(range(1, 10)) for _ in range(6))
+    p_, q_ = r.choice([(10, 20), (5, 10), (4, 8), (3, 9), (10, 30)])
+    sums = set()
+    for perm in set(itertools.permutations(ds)):
+        a = perm[0] * 100 + perm[1] * 10 + perm[2]
+        b = perm[3] * 100 + perm[4] * 10 + perm[5]
+        sm = a + b
+        if sm % p_ == 0 and sm % q_ != 0:
+            sums.add(sm)
+    if len(sums) < 2:
+        return None
+    small = r.random() < 0.5
+    ans = min(sums) if small else max(sums)
+    sh = ds[:]
+    r.shuffle(sh)
+    q = (f'Есть шесть карточек, на каждой — одна цифра. Первые три карточки: {sh[0]}, {sh[1]} и {sh[2]}; остальные три: {sh[3]}, {sh[4]} '
+         f'и {sh[5]}. Все карточки разложили в два ряда по три так, что получились два трёхзначных числа, и сложили эти числа. Сумма '
+         f'оказалась кратна {p_}, а кратной {q_} не оказалась. Какой {"наименьшей" if small else "наибольшей"} могла быть эта сумма?')
+
+    def chk():
+        best = None
+        for idx in itertools.permutations(range(6)):
+            v = [ds[i] for i in idx]
+            sm = 100 * (v[0] + v[3]) + 10 * (v[1] + v[4]) + v[2] + v[5]
+            if sm % p_ == 0 and sm % q_ != 0:
+                best = sm if best is None else (min(best, sm) if small else max(best, sm))
+        return best == ans
+    return pcard(q, num(ans), e=f'Ответ: {ans}.'), chk
 
 
 # === END ===

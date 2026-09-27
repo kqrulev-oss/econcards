@@ -5079,8 +5079,8 @@ def gen_ep18_chords(r):
        svg=True,
        kim=kim(K18, 'Как в КИМ: «а) Докажите, что луч AC — биссектриса угла BAD. б) Найдите CD, если AC = … и BD = …».'))
 def gen_ep18_trap_isosc(r):
-    t = r.choice(TRIPLES_ALL)
-    k = F(r.choice([1, 1, 2, 3])) / r.choice([1, 2])
+    t = r.choice(TRIPLES_ALL + [(11, 60, 61), (28, 45, 53), (33, 56, 65), (16, 63, 65), (48, 55, 73)])
+    k = F(r.choice([1, 1, 2, 3, 4, 5, 6])) / r.choice([1, 2, 5])
     ac, cd, dd = t[1] * k, t[0] * k, t[2] * k        # AC — больший катет (нужно AC > √2·BD)
     bd = dd / 2
     if not (ac * ac > 2 * bd * bd and ac < 2 * bd):
