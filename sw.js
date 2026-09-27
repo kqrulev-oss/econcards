@@ -2,7 +2,7 @@
    Сеть → кэш: при наличии сети всегда свежая версия, без сети — из кэша.
    Наборы и картинки кэшируются по мере открытия. Запросы к серверу ИИ
    (другой домен) не трогаем. При смене состава файлов поднимай версию. */
-const CACHE = 'zadachnik-v18';
+const CACHE = 'zadachnik-v19';
 const ASSETS = [
   './', './index.html', './app.css', './app.js', './lib.js', './landing.js', './account.js', './config.js', './manifest.webmanifest',
   './packs/index.json', './img/hero-student-768.webp',

@@ -723,7 +723,15 @@ function studentCard(p, s) {
         <span class="bar"><i style="width:${t.acc ?? 0}%;background:${(t.acc ?? 100) < 60 ? 'var(--bad)' : (t.acc ?? 0) < 80 ? 'var(--mid)' : 'var(--ok)'}"></i></span>
         <b>${t.acc === null ? '—' : t.acc + '%'}</b><small>${t.m} из ${t.s} освоено</small></div>`).join('')}</div>` : '<p class="muted">Пока нет данных по темам.</p>'}
     ${errs.length ? `<h2>Последние ошибки</h2><ol class="err-list">${errs.map(c => `<li>${esc(c.q.replace(/\s+/g, ' ').slice(0, 200))}</li>`).join('')}</ol>` : ''}
-    <div class="row"><button class="btn primary" id="stu-rep">Отчёт для родителей</button></div>`);
+    <div class="row"><button class="btn primary" id="stu-rep">Отчёт для родителей</button><button class="btn" id="stu-code">Код для родителя</button></div>
+    <div id="stu-code-out"></div>`);
+  box.querySelector('#stu-code').onclick = async () => {
+    const out = box.querySelector('#stu-code-out');
+    try {
+      const { code } = await api(`/packs/${p.id}/parent-code`, { method: 'POST', body: { sid: s.sid }, key: db.keys[p.id] });
+      out.innerHTML = `<div class="code-big">${esc(code)}</div><p class="muted">Родитель открывает ${esc(new URL(ROOT + 'parent/', location.href).href)}, входит и вводит код. Действует сутки.</p>`;
+    } catch (err) { out.innerHTML = `<p class="muted">${esc(err.message)}</p>`; }
+  };
   box.querySelector('#stu-rep').onclick = () => navigator.clipboard.writeText(parentReport(p, s)).then(() => toast('Отчёт скопирован'));
 }
 

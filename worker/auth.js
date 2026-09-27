@@ -13,6 +13,9 @@
    GET  /me                       аккаунт; PATCH /me {name}; POST /me/role {role}
    GET|PUT /me/studio             облачная копия студии репетитора
    GET|PUT /me/progress/:ref      прогресс ученика по набору
+   POST /me/parent-code           ученик: код для родителя (24 часа)
+   GET  /me/children              родитель: дети и их прогресс; POST {code} — добавить,
+                                  DELETE /me/children/:id — убрать
 
    KV: acct:<id>, ident:<provider>:<sub> → id, sess:<token> → id,
        tgauth:<nonce>, mailcode:<email>, studio:<id>, progress:<id>:<ref>
@@ -190,6 +193,30 @@ function safeBack(back, origin) {
   return origin + '/';
 }
 
+// ---------- родители ----------
+
+// Код без похожих символов (0/O, 1/I), чтобы его легко продиктовать
+export async function parentCode(env, childId) {
+  const abc = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  const code = [...crypto.getRandomValues(new Uint8Array(6))].map(b => abc[b % abc.length]).join('');
+  await env.DB.put(`link:${code}`, childId, { expirationTtl: DAY });
+  return { code, expires: Date.now() + DAY * 1000 };
+}
+
+async function childrenOf(env, parent) {
+  const ids = (await env.DB.get(`parent:${parent.id}`, 'json')) || [];
+  return Promise.all(ids.map(async id => {
+    const child = await getAccount(env, id);
+    if (!child) return null;
+    const list = await env.DB.list({ prefix: `progress:${id}:` });
+    const packs = await Promise.all(list.keys.map(async k => {
+      const p = await env.DB.get(k.name, 'json');
+      return p && { ref: k.name.slice(`progress:${id}:`.length), cards: p.cards, log: p.log, saved: p.saved };
+    }));
+    return { id, name: child.name || 'Ученик', packs: packs.filter(Boolean), plans: child.plans || {} };
+  })).then(r => r.filter(Boolean));
+}
+
 // ---------- облачные копии ----------
 
 const refKey = ref => {
@@ -339,6 +366,31 @@ export async function handleAuth(req, env, parts) {
       await env.DB.put(`studio:${acct.id}`, JSON.stringify({ packs: data.packs, keys: data.keys, deleted: data.deleted || {}, saved: Date.now() }));
       if (!acct.roles.tutor) { acct.roles.tutor = Date.now(); await saveAccount(env, acct); }
       return { ok: true, saved: Date.now() };
+    }
+    if (b === 'parent-code' && m === 'POST') {
+      await limit(env, 'pcode', acct.id, 10);
+      return parentCode(env, acct.id);
+    }
+    if (b === 'children') {
+      if (m === 'GET' && !c) return { children: await childrenOf(env, acct) };
+      if (m === 'POST' && !c) {
+        const code = String((await readBody(req)).code || '').trim().toUpperCase();
+        await limit(env, 'plink', acct.id, 20);
+        const childId = /^[A-Z0-9]{6}$/.test(code) && await env.DB.get(`link:${code}`);
+        if (!childId) throw new AuthError(400, 'Код не подошёл: проверьте его или попросите новый (код действует сутки).');
+        if (childId === acct.id) throw new AuthError(400, 'Это ваш собственный код.');
+        const ids = (await env.DB.get(`parent:${acct.id}`, 'json')) || [];
+        if (!ids.includes(childId)) ids.push(childId);
+        await env.DB.put(`parent:${acct.id}`, JSON.stringify(ids.slice(-10)));
+        await env.DB.delete(`link:${code}`);
+        if (!acct.roles.parent) { acct.roles.parent = Date.now(); await saveAccount(env, acct); }
+        return { children: await childrenOf(env, acct) };
+      }
+      if (m === 'DELETE' && c) {
+        const ids = ((await env.DB.get(`parent:${acct.id}`, 'json')) || []).filter(x => x !== c);
+        await env.DB.put(`parent:${acct.id}`, JSON.stringify(ids));
+        return { children: await childrenOf(env, acct) };
+      }
     }
     if (b === 'progress' && c) {
       const k = `progress:${acct.id}:${refKey(decodeURIComponent(c))}`;

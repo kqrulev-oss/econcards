@@ -161,6 +161,7 @@ export function renderLanding(root, library) {
       <b>Вы ученик?</b>
       <span class="row"><input id="code" placeholder="Код от репетитора" autocapitalize="off"><button class="ld-btn primary small" id="join">Открыть</button></span>
       <a href="#/library">Открытые наборы для самостоятельной подготовки</a>
+      <a href="parent/">Я родитель — посмотреть прогресс ребёнка</a>
     </div>
     <p class="ld-copy">Между уроками · тренажёр для учеников репетитора · <a href="${TG}" target="_blank" rel="noopener">Telegram @trwqxp</a></p>
   </footer>`;
