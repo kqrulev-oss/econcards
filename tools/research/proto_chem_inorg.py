@@ -456,11 +456,10 @@ def g_5cells(rng):
     if len(set(texts)) != 9:
         raise Retry
     ans = {LET[i]: str(items.index(chosen[i]) + 1) for i in range(3)}
-    head = rng.choice(['Из веществ, формулы или названия которых записаны в девяти пронумерованных ячейках, выберите:',
-                       'Даны девять веществ (формулы или названия записаны в пронумерованных ячейках). Выберите:',
-                       'Рассмотрите вещества в пронумерованных ячейках и выберите среди них:'])
+    head = ('Среди предложенных формул/названий веществ, расположенных в пронумерованных ячейках, выберите '
+            'формулы/названия:')
     q = head + ' ' + '; '.join(f'{LET[i]}) {c}' for i, c in enumerate(cats)) + '.' + \
-        ' Под каждой буквой запишите номер соответствующей ячейки.'
+        ' Запишите в таблицу номера ячеек, в которых расположены выбранные вещества, под соответствующими буквами.'
     e = '; '.join(f'{LET[i]}) {cats[i]} — ячейка {ans[LET[i]]}: {F(chosen[i])} ({SUBS[chosen[i]]["name"]})'
                   for i in range(3)) + '.'
     return pcard(pid, q, ans, e, k='match', o=match_opts(cats, texts, rids='123456789'), p={'cats': cats, 'cells': items})
@@ -518,8 +517,10 @@ def g_5match(rng):
            for i, f in enumerate(items)}
     by_name = rng.random() < 0.4
     left = [ru(f) if by_name else F(f) for f in items]
-    q = (f'Установите соответствие между {"названием" if by_name else "формулой"} вещества и группой неорганических '
-         f'веществ, к которой оно относится.')
+    q = (f'Установите соответствие между {"названием" if by_name else "формулой"} вещества и классом/группой, '
+         f'к которому(-ой) это вещество принадлежит: к каждой позиции, обозначенной буквой, подберите '
+         f'соответствующую позицию, обозначенную цифрой. Запишите в таблицу выбранные цифры под соответствующими '
+         f'буквами.')
     e = '; '.join(f'{F(f)} ({SUBS[f]["name"]}) — {groups[int(ans[LET[i]]) - 1]}' for i, f in enumerate(items)) + '.'
     return pcard(pid, q, ans, e, k='match', o=match_opts(left, groups), p={'items': items, 'groups': groups})
 
@@ -536,16 +537,31 @@ for _k in list(PAIR) + list(NR):
 _KNOW = {}
 
 
+def csplit(c):
+    f, _, lab = c.partition('|')
+    return f, lab
+
+
+def rc(c, x):
+    f, lab = csplit(c)
+    return reacts(f, lab, x[0], x[1])
+
+
+def CF(c):
+    return FL(*csplit(c))
+
+
 def know(c):
-    """{(partner, label): True/False} — только определённые ответы."""
+    """{(partner, label): True/False} — только определённые ответы. c — 'формула' или 'формула|форма'."""
     if c in _KNOW:
         return _KNOW[c]
     out = {}
-    for p in PARTNERS.get(c, ()):
+    f0, lab0 = csplit(c)
+    for p in PARTNERS.get(f0, ()):
         if p not in SUBS:
             continue
         for lab in ACID_LABELS.get(p, ['']):
-            v = reacts(c, '', p, lab)
+            v = reacts(f0, lab0, p, lab)
             if v is not None:
                 out[(p, lab)] = v
     _KNOW[c] = out
@@ -557,7 +573,9 @@ def _center_ok(c):
     return sum(v for v in k.values()) >= 5 and sum(not v for v in k.values()) >= 5
 
 
-CENTERS7 = [c for c in SUBS if SUBS[c].get('_mod') == 'chemdb_inorg.py' and c not in ('H2O',) and _center_ok(c)]
+CENTERS7 = [c for c in SUBS if SUBS[c].get('_mod') == 'chemdb_inorg.py' and c not in ('H2O', 'HNO3', 'H2SO4')
+            and _center_ok(c)] + [c for c in ('HNO3|конц.', 'HNO3|разб.', 'H2SO4|конц.', 'H2SO4|разб.')
+                                  if _center_ok(c)]
 
 
 def _rlabel(p, lab):
@@ -566,7 +584,7 @@ def _rlabel(p, lab):
 
 def _set_ok(c, S):
     """True — вещество реагирует со всеми реагентами набора, False — хотя бы с одним заведомо нет, None — неясно."""
-    vals = [reacts(c, '', p, lab) for p, lab in S]
+    vals = [rc(c, (p, lab)) for p, lab in S]
     if all(v is True for v in vals):
         return True
     if any(v is False for v in vals):
@@ -576,13 +594,15 @@ def _set_ok(c, S):
 
 def _solve_7(p):
     ans = {}
-    for i, c in enumerate(p['centers']):
+    for i, c0 in enumerate(p['centers']):
+        c, clab = csplit(c0)
         hits = []
         for j, S in enumerate(p['sets']):
             vals = []
             for pf, lab in S:
                 pos = [r for r in RX if c in r['lhs'] and pf in r['lhs'] and set(r['lhs']) - {c, pf} <= {'H2O'}
-                       and _form_ok(lab, FORM_OF(r, pf), r.get('cond', ''))]
+                       and _form_ok(lab, FORM_OF(r, pf), r.get('cond', ''))
+                       and _form_ok(clab, FORM_OF(r, c), r.get('cond', ''))]
                 vals.append(bool(pos))
             if all(vals):
                 hits.append(str(j + 1))
@@ -600,17 +620,18 @@ def _grow_centers(rng, k=4, tries=12):
     while len(centers) < k:
         best, best_n = None, -1
         for c in rng.sample(CENTERS7, min(tries, len(CENTERS7))):
-            if c in centers or any(SUBS[c]['cls'] == SUBS[x]['cls'] for x in centers) and rng.random() < 0.7:
+            if csplit(c)[0] in {csplit(x)[0] for x in centers} or \
+                    any(SUBS[csplit(c)[0]]['cls'] == SUBS[csplit(x)[0]]['cls'] for x in centers) and rng.random() < 0.7:
                 continue
             kc = know(c)
-            n = sum(1 for x in known if x in kc and x[0] != c)
+            n = sum(1 for x in known if x in kc and x[0] != csplit(c)[0])
             n += rng.random()
             if n > best_n:
                 best, best_n = c, n
         if best is None:
             raise Retry
         centers.append(best)
-        known = {x for x in known if x in know(best) and x[0] not in centers}
+        known = {x for x in known if x in know(best) and x[0] not in {csplit(y)[0] for y in centers}}
     return centers
 
 
@@ -634,9 +655,9 @@ def g_7(rng):
     centers = _grow_centers(rng)
     table = {}
     for x in {x for c in centers for x in know(c)}:
-        if x[0] in centers:
+        if x[0] in {csplit(y)[0] for y in centers}:
             continue
-        vals = [reacts(c, '', x[0], x[1]) for c in centers]
+        vals = [rc(c, x) for c in centers]
         if None not in vals:
             table[x] = vals
     R = list(table)
@@ -679,30 +700,29 @@ def g_7(rng):
         if len(hits) != 1:
             raise Retry
         ans[LET[i]] = hits[0]
-    left = [F(c) + (' (р-р)' if SUBS[c].get('sol') == 'р' and SUBS[c]['cls'] in ('соль', 'основание') and
-                    rng.random() < 0.3 else '') for c in centers]
+    left = [CF(c) + (' (р-р)' if '|' not in c and SUBS[c].get('sol') == 'р' and
+                     SUBS[c]['cls'] in ('соль', 'основание') and rng.random() < 0.3 else '') for c in centers]
     right = [', '.join(_rlabel(p, lab) for p, lab in S) for S in sets]
-    q = rng.choice(['Установите соответствие между веществом и реагентами, с каждым из которых это вещество может '
-                    'взаимодействовать.',
-                    'Установите соответствие между формулой вещества и набором реагентов, с каждым из которых это '
-                    'вещество вступает в реакцию.',
-                    'Для каждого вещества из левого столбца подберите набор реагентов, с каждым из которых оно '
-                    'взаимодействует.'])
+    q = (rng.choice(['Установите соответствие между веществом и реагентами, с каждым из которых это вещество может '
+                     'взаимодействовать', 'Установите соответствие между формулой вещества и реагентами, с каждым '
+                     'из которых это вещество может взаимодействовать']) +
+         ': к каждой позиции, обозначенной буквой, подберите соответствующую позицию, обозначенную цифрой. '
+         'Запишите в таблицу выбранные цифры под соответствующими буквами.')
     ex = []
     for i, c in enumerate(centers):
         S = sets[int(ans[LET[i]]) - 1]
-        ex.append(f'{F(c)} реагирует с {", ".join(_rlabel(p, lab) for p, lab in S)}')
+        ex.append(f'{CF(c)} реагирует с {", ".join(_rlabel(p, lab) for p, lab in S)}')
     e = '; '.join(ex) + '. В остальных наборах есть реагент, с которым вещество не взаимодействует.'
     return pcard(pid, q, ans, e, k='match', o=match_opts(left, right),
                  p={'centers': centers, 'sets': [[list(x) for x in S] for S in sets]})
 
 
 def _solve_7two(p):
-    c = p['center']
+    c, clab = csplit(p['center'])
     out = []
     for i, (pf, lab) in enumerate(p['opts']):
         pos = [r for r in RX if c in r['lhs'] and pf in r['lhs'] and set(r['lhs']) - {c, pf} <= {'H2O'}
-               and _form_ok(lab, FORM_OF(r, pf), r.get('cond', ''))]
+               and _form_ok(lab, FORM_OF(r, pf), r.get('cond', '')) and _form_ok(clab, FORM_OF(r, c), r.get('cond', ''))]
         if pos:
             out.append(str(i + 1))
     return out
@@ -740,9 +760,12 @@ def g_7two(rng):
     by_name = rng.random() < 0.5
     txt = lambda x: (ru(x[0]) + (f' ({x[1]})' if x[1] else '')) if by_name else _rlabel(*x)
     ans = [str(i + 1) for i, x in enumerate(items) if x in right]
-    q = rng.choice([f'Из предложенного перечня выберите два вещества, с каждым из которых взаимодействует {ru(c)}.',
-                    f'Выберите из перечня два вещества, которые вступают в реакцию с веществом {F(c)}.'])
-    e = f'{F(c)} реагирует с: ' + ', '.join(txt(x) for x in right) + '; не реагирует с: ' + \
-        ', '.join(txt(x) for x in wrong) + '.'
+    f0, lab0 = csplit(c)
+    cname = ru(f0) + (f' ({lab0})' if lab0 else '')
+    q = rng.choice([f'Из предложенного перечня выберите два вещества, с каждым из которых взаимодействует {cname}.',
+                    f'Из предложенного перечня веществ выберите два вещества, с которыми реагирует {cname}.']) + \
+        ' Запишите номера выбранных ответов.'
+    e = f'{CF(c)} реагирует с ' + ' и '.join(ins(x[0]) + (f' ({x[1]})' if x[1] else '') for x in right) + \
+        '; с остальными веществами перечня реакция не идёт.'
     return pcard(pid, q, ans, e, k='many', o=opts([txt(x) for x in items]),
                  p={'center': c, 'opts': [list(x) for x in items]})

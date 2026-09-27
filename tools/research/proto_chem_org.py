@@ -105,6 +105,9 @@ def scheme_cond(r):
 
 def eqv(f):
     s = SUB.get(f)
+    if s and s.get('org') and s['hom'] in ('моносахариды', 'дисахариды'):
+        return pretty(''.join(x + (str(n) if n > 1 else '') for x, n in sorted(parse_formula(f).items(),
+                                                                                key=lambda t: 'CHON'.find(t[0]))))
     if s and s.get('org'):
         v = s.get('view') or pretty(f)
         if '(цикл)' in v or '(1,' in v or '(орто' in v or '(пара' in v or '(мета' in v:
@@ -2075,3 +2078,541 @@ def g13_stmt(rng):
     q += ' В ответ запишите номера выбранных утверждений.'
     e = f'Верно: {good[0]}; {good[1]}. Остальные утверждения неверны.'
     return many_card('ch-ege-13-statements', q, items, [items.index(g) for g in good], e, {'subj': subj, 'items': items})
+
+
+# ================================================================= задания 14, 15: соответствие «схема — продукт/реагент»
+
+KES14 = ['3.4', '3.5', '3.6', '3.7', '3.8', '3.9']
+KES15 = ['3.10', '3.11', '3.12', '3.13', '3.14', '3.15']
+HC_CLS = {'углеводород', 'галогенпроизводное'}
+O_CLS = {'спирт', 'фенол', 'альдегид', 'кетон', 'карбоновая кислота', 'сложный эфир', 'простой эфир',
+         'соль карбоновой кислоты', 'алкоголят', 'фенолят'}
+
+
+def _ok_rx(r):
+    return (r['rhs'][0] in SUB and SUB[r['rhs'][0]].get('org') and 'горения' not in r['type']
+            and len(SCHEME[rkey(r)]) == 1 and r['lhs'][0] in SUB and SUB[r['lhs'][0]].get('org')
+            and parse_formula(r['rhs'][0]).get('C', 0) <= 10 and r['rhs'][0] not in _POOL10_SKIP
+            and SUB[r['rhs'][0]]['hom'] not in ('жиры',) and SUB[r['lhs'][0]]['hom'] not in ('жиры',))
+
+
+POOL14 = [r for r in RX if _ok_rx(r) and SUB[r['lhs'][0]]['cls'] in HC_CLS]
+POOL15 = [r for r in RX if _ok_rx(r) and SUB[r['lhs'][0]]['cls'] in O_CLS]
+AREN14 = [r for r in POOL14 if 'C6H' in r['lhs'][0] or r['lhs'][0] in ('C6H6', 'C10H8')]
+
+
+def _prod_disp(f, how):
+    return vw(f) if how == 'view' else nm(f)
+
+
+def _solve_scheme_prod(p):
+    out = {}
+    for i, (lhs, cond, med) in enumerate(p['keys']):
+        prods = {r['rhs'][0] for r in D.REACTIONS if r['lhs'] == list(lhs) and r.get('cond', '') == cond
+                 and r.get('medium', '') == med}
+        j = [n for n, f in enumerate(p['right']) if f in prods]
+        out[LET[i]] = str(j[0] + 1)
+    return out
+
+
+def _gen_scheme_prod(pid, rng, pool):
+    rs = pick_distinct(rng, pool, 4, key=rkey)
+    subs = {r['lhs'][0] for r in rs}
+    prods = [r['rhs'][0] for r in rs]
+    uniq = list(dict.fromkeys(prods))
+    # отвлекающие продукты: изомеры правильных, продукты тех же субстратов с другими реагентами
+    conf = set()
+    for f in uniq:
+        conf.update(g for g in ORG if brutto(g) == brutto(f) and g != f and g not in _POOL10_SKIP)
+    conf.update(r['rhs'][0] for r in pool if r['lhs'][0] in subs)
+    conf -= set(uniq)
+    conf = [c for c in conf if SUB[c].get('org') and SUB[c]['cls'] not in ('соль амина',)]
+    need = 6 - len(uniq)
+    if len(conf) < need:
+        conf += [r['rhs'][0] for r in rng.sample(pool, 12) if r['rhs'][0] not in uniq]
+        conf = list(dict.fromkeys(conf))
+    if len(conf) < need:
+        raise Retry
+    right = uniq + rng.sample(sorted(conf), need)
+    rng.shuffle(right)
+    how = rng.choice(['name', 'name', 'view'])
+    rt = [_prod_disp(f, how) for f in right]
+    lt = [rx_scheme(r, names=(how == 'view' and rng.random() < 0.5) is False and rng.random() < 0.3, rng=rng)
+          for r in rs]
+    if len(set(rt)) < 6 or len(set(lt)) < 4:
+        raise Retry
+    q = rng.choice(['Установите соответствие между схемой реакции и органическим веществом, которое преимущественно '
+                    'получается в этой реакции.',
+                    'Для каждой схемы реакции из первого столбца подберите основной органический продукт из второго '
+                    'столбца.'])
+    q += ' Позиции первого столбца обозначены буквами, второго — цифрами; цифры могут повторяться.' \
+         '\nСХЕМА РЕАКЦИИ → ПРОДУКТ'
+    ans = [right.index(r['rhs'][0]) for r in rs]
+    e = '; '.join(rx_eq(r) for r in rs) + '.'
+    return match_card(pid, rng, q, lt, rt, ans, e, {'keys': [list(rkey(r)) for r in rs], 'right': right},
+                      eqs=[eqt(r) for r in rs])
+
+
+@proto('ch-ege-14-scheme-product', 'ЕГЭ', 14, 'Схема реакции углеводорода (галогенпроизводного) → главный продукт',
+       invariant='по реагентам и условиям определить главный органический продукт (Марковников, Зайцев, Кучеров, '
+                 'Вюрц, водный/спиртовой раствор щёлочи, окисление KMnO₄)',
+       varies='четыре схемы из ≈ 300 реакций алканов, циклоалканов, алкенов, диенов, алкинов, аренов, галогенпроизводных; '
+              'продукты — названиями или формулами; в вариантах изомеры правильных продуктов',
+       answer_rule='для каждой схемы записать продукт и найти его среди шести вариантов',
+       mistakes=['водный раствор щёлочи — спирт, спиртовой — алкен', 'HBr присоединяется по Марковникову',
+                 'малые циклы раскрываются при гидрировании'],
+       solve=_solve_scheme_prod, kind='dict', kes=KES14,
+       fidelity=fid(MATCH4, 'П', 6, 'схемы из банка №14: CH₂=CH₂ + H₂O (H₃PO₄), HC≡CH + H₂O (Hg²⁺), дигалогеналканы + Zn/KOH',
+                    'изомерные продукты (1-/2-бромпропан, пропаналь/ацетон)', KES14, SC2))
+def g14_scheme(rng):
+    return _gen_scheme_prod('ch-ege-14-scheme-product', rng, POOL14)
+
+
+@proto('ch-ege-14-arenes', 'ЕГЭ', 14, 'Реакции аренов и их производных → продукт',
+       invariant='замещение в кольце (катализатор) и в боковой цепи (свет), окисление гомологов бензола KMnO₄ '
+                 'в разных средах, алкилирование, гидрирование',
+       varies='арен (бензол, толуол, этилбензол, ксилолы, стирол, кумол, хлорбензол, нитробензол, бензойная кислота), '
+              'реагент и условия',
+       answer_rule='определить место атаки (кольцо / боковая цепь) и среду окисления',
+       mistakes=['на свету хлорируется боковая цепь, с FeCl₃ — кольцо', 'в нейтральной/щелочной среде KMnO₄ даёт соль '
+                                                                         '(бензоат калия)',
+                 'нитрогруппа и карбоксил — мета-ориентанты'],
+       solve=_solve_scheme_prod, kind='dict', kes=KES14,
+       fidelity=fid(MATCH4, 'П', 6, 'демо 2027 №14: C₆H₅Cl + KOH, стирол / кумол / толуол + KMnO₄ в разных средах',
+                    'кислота/соль в зависимости от среды, кольцо/боковая цепь', KES14, SC2))
+def g14_arenes(rng):
+    return _gen_scheme_prod('ch-ege-14-arenes', rng, AREN14)
+
+
+FIXED14 = [  # (описание процесса, ключ реагента, фильтр)
+    ('продуктом, преимущественно образующимся при его гидратации', 'H2O', lambda r: 'гидратации' in r['type']),
+    ('продуктом его полного гидрирования', 'H2', lambda r: 'гидрирования' in r['type'] and
+     ('избыток' in r['cond'] or 'Pd' not in r['cond'])),
+    ('продуктом его взаимодействия с избытком бромоводорода', 'HBr',
+     lambda r: 'пероксиды' not in r['cond'] and '1 моль' not in r['cond']),
+    ('продуктом его взаимодействия с избытком бромной воды', 'Br2aq', lambda r: '1 моль' not in r['cond']),
+    ('органическим продуктом его окисления подкисленным раствором перманганата калия', 'KMnO4',
+     lambda r: r.get('medium') == 'кисл.'),
+]
+
+
+def _fixed_prod(f, fi):
+    rk, flt = FIXED14[fi][1], FIXED14[fi][2]
+    ps = {r['rhs'][0] for r in RX if r['lhs'][0] == f and r.get('rk') == rk and flt(r)}
+    fa = [x for x in FACTS if x['lhs'][0] == f and x.get('rk') == rk and flt(x) and x['prod'][0] in SUB]
+    for x in fa:
+        ps.add(x['prod'][0])
+    return ps
+
+
+def _solve_fixed(p):
+    fi = p['fi']
+    rk, flt = FIXED14[fi][1], FIXED14[fi][2]
+    out = {}
+    for i, f in enumerate(p['left']):
+        ps = {r['rhs'][0] for r in D.REACTIONS if r['lhs'][0] == f and r.get('rk') == rk and flt(r)}
+        ps |= {x['prod'][0] for x in D.FACTS if x['lhs'][0] == f and x.get('rk') == rk and flt(x)}
+        j = [n for n, g in enumerate(p['right']) if g in ps]
+        out[LET[i]] = str(j[0] + 1)
+    return out
+
+
+@proto('ch-ege-14-fixed-process', 'ЕГЭ', 14, 'Вещество → продукт одного и того же процесса (гидратация, гидрирование, '
+                                             '+HBr, +Br₂, KMnO₄/H⁺)',
+       invariant='один тип превращения для четырёх разных углеводородов; продукт зависит от строения',
+       varies='процесс, четыре углеводорода (алкены, алкины, диены, циклоалканы, арены)',
+       answer_rule='для каждого вещества провести процесс (правило Марковникова, реакция Кучерова, разрыв C=C при '
+                   'окислении) и найти продукт',
+       mistakes=['гидратация пропина даёт ацетон', 'при окислении бутена-1 получается пропановая кислота (и CO₂)',
+                 'циклопропан при гидрировании даёт пропан'],
+       solve=_solve_fixed, kind='dict', kes=KES14,
+       fidelity=fid(MATCH4, 'П', 6, '«исходный углеводород — продукт гидратации / полного гидрирования / окисления '
+                                   'KMnO₄ в кислой среде» (банк №14)', 'изомерные углеводороды с разными продуктами',
+                    KES14, SC2))
+def g14_fixed(rng):
+    fi = rng.randrange(len(FIXED14))
+    cand = [f for f in ORG if SUB[f]['cls'] == 'углеводород' and len(_fixed_prod(f, fi)) == 1]
+    left = rng.sample(cand, 4)
+    prods = [next(iter(_fixed_prod(f, fi))) for f in left]
+    uniq = list(dict.fromkeys(prods))
+    conf = set()
+    for f in uniq:
+        conf.update(g for g in ORG if (brutto(g) == brutto(f) or SUB[g]['hom'] == SUB[f]['hom']) and g != f
+                    and g not in _POOL10_SKIP and parse_formula(g).get('C', 0) <= 8)
+    conf -= set(uniq)
+    if len(conf) < 6 - len(uniq):
+        raise Retry
+    right = uniq + rng.sample(sorted(conf), 6 - len(uniq))
+    rng.shuffle(right)
+    rt = [nm(f) if f != 'CO2' else 'углекислый газ' for f in right]
+    lt = [nm(f, rng) for f in left]
+    if len(set(rt)) < 6 or len(set(lt)) < 4:
+        raise Retry
+    q = rng.choice([f'Установите соответствие между исходным веществом и {FIXED14[fi][0]}.',
+                    f'Для каждого вещества из первого столбца подберите вещество из второго столбца, являющееся '
+                    f'{FIXED14[fi][0]}.'])
+    q += ' Позиции первого столбца обозначены буквами, второго — цифрами; цифры могут повторяться.' \
+         '\nИСХОДНОЕ ВЕЩЕСТВО → ПРОДУКТ'
+    ans = [right.index(p) for p in prods]
+    ex = []
+    for f, pr in zip(left, prods):
+        r = next((r for r in RX if r['lhs'][0] == f and r['rhs'][0] == pr and r.get('rk') == FIXED14[fi][1]), None)
+        ex.append(rx_eq(r) if r else f'{nm(f)} → {nm(pr)} (+ другие продукты окисления)')
+    eqs = [eqt(r) for r in RX for f, pr in zip(left, prods)
+           if r['lhs'][0] == f and r['rhs'][0] == pr and r.get('rk') == FIXED14[fi][1]]
+    return match_card('ch-ege-14-fixed-process', rng, q, lt, rt, ans, '; '.join(ex) + '.',
+                      {'fi': fi, 'left': left, 'right': right}, eqs=eqs or None)
+
+
+def sig(r):
+    """Сигнатура реагента: всё, кроме субстрата, + условия + среда."""
+    return (tuple(r['lhs'][1:]), r.get('cond', ''), r.get('medium', ''))
+
+
+def sig_label(r):
+    rg = reagent_label(r)
+    c = scheme_cond(r)
+    if not rg:
+        return c
+    return rg + (f' ({c})' if c else '')
+
+
+def _solve_reagent(p):
+    out = {}
+    for i, (sub, prod) in enumerate(p['left']):
+        good = []
+        for n, sg in enumerate(p['right']):
+            lhs = [sub] + list(sg[0])
+            if any(r['lhs'] == lhs and r.get('cond', '') == sg[1] and r.get('medium', '') == sg[2]
+                   and r['rhs'][0] == prod for r in D.REACTIONS):
+                good.append(n)
+        out[LET[i]] = str(good[0] + 1)
+    return out
+
+
+def _gen_reagent(pid, rng, pool):
+    rs = pick_distinct(rng, pool, 4, key=lambda r: (r['lhs'][0], r['rhs'][0]))
+    sigs = list(dict.fromkeys(sig(r) for r in rs))
+    others = list({sig(r): r for r in pool if sig(r) not in sigs}.values())
+    rng.shuffle(others)
+    right_r = [next(r for r in rs if sig(r) == s_) for s_ in sigs]
+    for r in others:
+        if len(right_r) == 6:
+            break
+        right_r.append(r)
+    if len(right_r) < 6:
+        raise Retry
+    rng.shuffle(right_r)
+    right = [sig(r) for r in right_r]
+    rt = [sig_label(r) for r in right_r]
+    if len(set(rt)) < 6:
+        raise Retry
+    # однозначность: для каждой строки подходит ровно один реагент из шести (по базе)
+    for r in rs:
+        n = sum(any(x['lhs'] == [r['lhs'][0]] + list(sg[0]) and x.get('cond', '') == sg[1] and
+                    x.get('medium', '') == sg[2] and x['rhs'][0] == r['rhs'][0] for x in RX) for sg in right)
+        if n != 1:
+            raise Retry
+    lt = [f'{vw(r["lhs"][0])} —X→ {vw(r["rhs"][0])}' for r in rs]
+    q = rng.choice(['Установите соответствие между схемой превращения и реагентом (с условиями) X, который нужен для '
+                    'его осуществления.',
+                    'Для каждого превращения из первого столбца подберите реагент X из второго столбца.'])
+    q += ' Позиции первого столбца обозначены буквами, второго — цифрами; цифры могут повторяться.' \
+         '\nСХЕМА ПРЕВРАЩЕНИЯ → РЕАГЕНТ X'
+    ans = [right.index(sig(r)) for r in rs]
+    return match_card(pid, rng, q, lt, rt, ans, '; '.join(rx_eq(r) for r in rs) + '.',
+                      {'left': [[r['lhs'][0], r['rhs'][0]] for r in rs], 'right': [list(x) for x in right]},
+                      eqs=[eqt(r) for r in rs])
+
+
+R14 = [r for r in POOL14 if len(r['lhs']) >= 2 and r['lhs'][1] in SUB and not SUB[r['lhs'][1]].get('org')]
+R15 = [r for r in POOL15 if len(r['lhs']) >= 2 and r['lhs'][1] in SUB and not SUB[r['lhs'][1]].get('org')]
+
+
+@proto('ch-ege-14-reagent-x', 'ЕГЭ', 14, 'Превращение углеводорода (галогенпроизводного) → реагент X',
+       invariant='по исходному веществу и продукту подобрать реагент и условия',
+       varies='четыре превращения, шесть реагентов с условиями (H₂/Ni, HBr, Br₂, H₂O/Hg²⁺, KOH спирт./водн., Zn, Na …)',
+       answer_rule='сравнить состав исходного вещества и продукта: что присоединилось / отщепилось / заместилось',
+       mistakes=['спиртовой и водный растворы щёлочи перепутаны', 'для 1,2-дибромида Zn даёт алкен, KOH (спирт.) — алкин'],
+       solve=_solve_reagent, kind='dict', kes=KES14,
+       fidelity=fid(MATCH4, 'П', 6, '«схема реакции — реагент X» для пропина/бутина-2 (банк №14)',
+                    'реагенты, дающие соседние продукты (HBr ↔ Br₂, H₂ ↔ H₂O)', KES14, SC2))
+def g14_reagent(rng):
+    return _gen_reagent('ch-ege-14-reagent-x', rng, R14)
+
+
+def _solve_synth(p):
+    out = {}
+    for i, f in enumerate(p['left']):
+        good = []
+        for n, (lhs, cond, med) in enumerate(p['right']):
+            if any(r['lhs'] == list(lhs) and r.get('cond', '') == cond and r.get('medium', '') == med
+                   and r['rhs'][0] == f for r in D.REACTIONS):
+                good.append(n)
+        out[LET[i]] = str(good[0] + 1)
+    return out
+
+
+def _gen_synth(pid, rng, pool):
+    by = defaultdict(list)
+    for r in pool:
+        by[r['rhs'][0]].append(r)
+    targets = rng.sample(sorted(by), 4)
+    right_r = []
+    for t in targets:
+        right_r.append(rng.choice(by[t]))
+    rest = [r for r in pool if r['rhs'][0] not in targets]
+    right_r += rng.sample(rest, 2)
+    keys = [rkey(r) for r in right_r]
+    if len(set(keys)) < 6:
+        raise Retry
+    rng.shuffle(right_r)
+    rt = [rx_scheme(r) for r in right_r]
+    if len(set(rt)) < 6:
+        raise Retry
+    for t in targets:
+        if sum(r['rhs'][0] == t for r in right_r) != 1:
+            raise Retry
+    lt = [nm(f, rng) for f in targets]
+    q = rng.choice(['Установите соответствие между названием вещества и схемой реакции, с помощью которой его можно '
+                    'получить.',
+                    'Для каждого вещества из первого столбца подберите схему реакции из второго столбца, в результате '
+                    'которой оно образуется как основной продукт.'])
+    q += ' Позиции первого столбца обозначены буквами, второго — цифрами.\nВЕЩЕСТВО → СХЕМА ПОЛУЧЕНИЯ'
+    ans = [next(i for i, r in enumerate(right_r) if r['rhs'][0] == t) for t in targets]
+    e = '; '.join(rx_eq(right_r[i]) for i in ans) + '.'
+    return match_card(pid, rng, q, lt, rt, ans, e, {'left': targets, 'right': [list(rkey(r)) for r in right_r]},
+                      eqs=[eqt(right_r[i]) for i in ans])
+
+
+SYN14 = [r for r in RX if _ok_rx(r) and SUB[r['rhs'][0]]['cls'] == 'углеводород'] + \
+        [r for r in RX if r['lhs'][0] in ('Al4C3', 'CaC2') and r['rhs'][0] in SUB and SUB[r['rhs'][0]].get('org')]
+SYN15 = [r for r in RX if _ok_rx(r) and SUB[r['rhs'][0]]['cls'] in O_CLS - {'алкоголят', 'фенолят'}]
+
+
+@proto('ch-ege-14-synthesis', 'ЕГЭ', 14, 'Углеводород → схема реакции, которой его можно получить',
+       invariant='способы получения углеводородов: Вюрц, Дюма, дегидрирование, дегидрогалогенирование, '
+                 'дегалогенирование, гидрирование, карбиды, крекинг',
+       varies='четыре углеводорода, шесть схем (две — лишние)',
+       answer_rule='для каждой схемы записать продукт и сопоставить с веществами',
+       mistakes=['CH₃COONa + NaOH (сплавление) даёт метан, а не этан', 'гидролиз карбида кальция — ацетилен, '
+                                                                     'карбида алюминия — метан'],
+       solve=_solve_synth, kind='dict', kes=KES14,
+       fidelity=fid(MATCH4, 'П', 6, '«углеводород — возможный способ получения» (метан, этан, этин, этилен; банк №14)',
+                    'схемы, дающие гомолог или изомер', KES14, SC2))
+def g14_synth(rng):
+    return _gen_synth('ch-ege-14-synthesis', rng, SYN14)
+
+
+@proto('ch-ege-15-scheme-product', 'ЕГЭ', 15, 'Схема реакции кислородсодержащего вещества → главный продукт',
+       invariant='свойства спиртов, фенола, альдегидов, кетонов, кислот, эфиров, солей: окисление, восстановление, '
+                 'дегидратация, этерификация, гидролиз, декарбоксилирование',
+       varies='четыре схемы из ≈ 300 реакций O-содержащих веществ; продукты — названиями или формулами',
+       answer_rule='определить тип реакции по реагенту и условиям и записать продукт',
+       mistakes=['вторичный спирт окисляется до кетона', 'при t < 140 °C спирт даёт простой эфир, при t > 140 °C — алкен',
+                 'щелочной гидролиз эфира даёт соль, а не кислоту'],
+       solve=_solve_scheme_prod, kind='dict', kes=KES15,
+       fidelity=fid(MATCH4, 'П', 6, 'схемы из банка №15: CH₃COOH + NaHCO₃, C₆H₅COONa + NaOH (t), HOCH₂CH₂OH + Cu(OH)₂',
+                    'соль/кислота, альдегид/кетон, эфир/алкен в зависимости от условий', KES15, SC2))
+def g15_scheme(rng):
+    return _gen_scheme_prod('ch-ege-15-scheme-product', rng, POOL15)
+
+
+def _solve_subst_x(p):
+    out = {}
+    for i, (sg, prod) in enumerate(p['left']):
+        good = []
+        for n, f in enumerate(p['right']):
+            lhs = [f] + list(sg[0])
+            if any(r['lhs'] == lhs and r.get('cond', '') == sg[1] and r.get('medium', '') == sg[2]
+                   and r['rhs'][0] == prod for r in D.REACTIONS):
+                good.append(n)
+        out[LET[i]] = str(good[0] + 1)
+    return out
+
+
+def _gen_subst_x(pid, rng, pool):
+    rs = pick_distinct(rng, pool, 4, key=lambda r: (sig(r), r['rhs'][0]))
+    subs = list(dict.fromkeys(r['lhs'][0] for r in rs))
+    conf = set()
+    for f in subs:
+        conf.update(g for g in ORG if (brutto(g) == brutto(f) or SUB[g]['hom'] == SUB[f]['hom']
+                                       or parse_formula(g).get('C') == parse_formula(f).get('C'))
+                    and g != f and SUB[g]['cls'] in O_CLS | {'углеводород'} and g not in _POOL10_SKIP)
+    conf -= set(subs)
+    need = 6 - len(subs)
+    if need < 0 or len(conf) < need:
+        raise Retry
+    right = subs + rng.sample(sorted(conf), need)
+    rng.shuffle(right)
+    for r in rs:  # ровно один подходящий субстрат (по базе) и ни один отвлекающий не даёт тот же продукт
+        n = sum(any(x['lhs'] == [f] + r['lhs'][1:] and x.get('cond', '') == r.get('cond', '') and
+                    x.get('medium', '') == r.get('medium', '') and x['rhs'][0] == r['rhs'][0] for x in RX)
+                for f in right)
+        if n != 1:
+            raise Retry
+    rt = [nm(f, rng) for f in right]
+    if len(set(rt)) < 6:
+        raise Retry
+    lt = [f'X + {sig_label(r)} → {nm(r["rhs"][0])}' if sig_label(r) and reagent_label(r) else
+          f'X —({scheme_cond(r)})→ {nm(r["rhs"][0])}' for r in rs]
+    q = rng.choice(['Установите соответствие между схемой реакции и исходным веществом X, которое в ней участвует.',
+                    'Для каждой схемы реакции из первого столбца подберите исходное вещество X из второго столбца.'])
+    q += ' Позиции первого столбца обозначены буквами, второго — цифрами; цифры могут повторяться.' \
+         '\nСХЕМА РЕАКЦИИ → ВЕЩЕСТВО X'
+    ans = [right.index(r['lhs'][0]) for r in rs]
+    return match_card(pid, rng, q, lt, rt, ans, '; '.join(rx_eq(r) for r in rs) + '.',
+                      {'left': [[list(sig(r)), r['rhs'][0]] for r in rs], 'right': right}, eqs=[eqt(r) for r in rs])
+
+
+@proto('ch-ege-15-substance-x', 'ЕГЭ', 15, 'Схема «X + реагент → продукт»: найти исходное вещество X',
+       invariant='восстановить исходное вещество по реагенту, условиям и продукту (обратный ход рассуждения)',
+       varies='четыре схемы, шесть кандидатов X (изомеры и гомологи правильных)',
+       answer_rule='понять тип реакции и «отмотать» её назад',
+       mistakes=['ацетон получают окислением пропанола-2, а не пропанола-1', 'гидратация пропина, а не пропаналя, '
+                                                                             'даёт ацетон'],
+       solve=_solve_subst_x, kind='dict', kes=KES15,
+       fidelity=fid(MATCH4, 'П', 6, 'демо 2027 №15: X + Cu(OH)₂ → уксусная кислота, X + H₂SO₄ → диэтиловый эфир, '
+                                   'X + KMnO₄/H⁺ → ацетон', 'изомеры-кандидаты (пропанол-1/-2, пропаналь/пропин)',
+                    KES15, SC2))
+def g15_subst(rng):
+    return _gen_subst_x('ch-ege-15-substance-x', rng, [r for r in POOL15 + [x for x in RX if _ok_rx(x) and
+                                                                           SUB[x['rhs'][0]]['cls'] in O_CLS]
+                                                       if len(SCHEME[rkey(r)]) == 1])
+
+
+@proto('ch-ege-15-reagent-x', 'ЕГЭ', 15, 'Превращение O-содержащего вещества → реагент X',
+       invariant='по исходному веществу и продукту подобрать реагент/условия (CuO, KMnO₄, H₂SO₄ конц., HBr, NaOH, Na, '
+                 'H₂ …)',
+       varies='четыре превращения спиртов, альдегидов, кислот, эфиров, солей; шесть реагентов',
+       answer_rule='сравнить исходное вещество и продукт: окисление, восстановление, замещение, гидролиз',
+       mistakes=['CuO окисляет первичный спирт до альдегида, KMnO₄ (H⁺) — до кислоты', 'натрий и NaOH дают разные '
+                                                                                        'продукты со спиртом'],
+       solve=_solve_reagent, kind='dict', kes=KES15,
+       fidelity=fid(MATCH4, 'П', 6, '«схема — вещество X (реагент)»: CH₃CHO → CH₃CH₂OH, CH₃OH → HCHO (банк №15)',
+                    'реагенты с похожим действием', KES15, SC2))
+def g15_reagent(rng):
+    return _gen_reagent('ch-ege-15-reagent-x', rng, R15)
+
+
+@proto('ch-ege-15-synthesis', 'ЕГЭ', 15, 'Кислородсодержащее вещество → схема его получения',
+       invariant='важнейшие способы получения спиртов, альдегидов, кетонов, кислот, эфиров',
+       varies='четыре вещества, шесть схем',
+       answer_rule='для каждой схемы записать продукт и сопоставить',
+       mistakes=['гидратация алкена даёт спирт, алкина — альдегид/кетон', 'окисление вторичного спирта — кетон'],
+       solve=_solve_synth, kind='dict', kes=KES15,
+       fidelity=fid(MATCH4, 'П', 6, '«вещество — способ получения» (этанол, этаналь, уксусная кислота, этиленгликоль; '
+                                   'банк №15)', 'схемы, дающие изомер или гомолог', KES15, SC2))
+def g15_synth(rng):
+    return _gen_synth('ch-ege-15-synthesis', rng, SYN15)
+
+
+EST_H = [r for r in RX if r['lhs'][0] in SUB and SUB[r['lhs'][0]]['cls'] == 'сложный эфир'
+         and 'гидролиза' in r['type'] and 'N' not in parse_formula(r['lhs'][0])
+         and SUB[r['lhs'][0]]['hom'] == 'сложные эфиры']
+
+
+def _pair_txt(fs):
+    return ' и '.join(nm(f) for f in fs)
+
+
+def _solve_ester(p):
+    out = {}
+    for i, (lhs, cond) in enumerate(p['left']):
+        prods = None
+        for r in D.REACTIONS:
+            if r['lhs'] == list(lhs) and r.get('cond', '') == cond:
+                prods = sorted(x for x in r['rhs'] if x in SUB and SUB[x].get('org'))
+        out[LET[i]] = str(p['right'].index(prods) + 1)
+    return out
+
+
+@proto('ch-ege-15-ester-hydrolysis', 'ЕГЭ', 15, 'Гидролиз сложного эфира в кислой и щелочной среде → продукты',
+       invariant='кислотный гидролиз: кислота + спирт; щелочной: соль + спирт (фенол → фенолят, виниловый спирт → '
+                 'альдегид)',
+       varies='эфир (формиаты, ацетаты, пропионаты, бензоаты, фенилацетат, винилацетат), среда',
+       answer_rule='разорвать связь C(O)–O, в щёлочи записать соль кислоты',
+       mistakes=['в щелочной среде записана кислота', 'гидролиз винилацетата даёт ацетальдегид, а не виниловый спирт',
+                 'кислотная и спиртовая части эфира перепутаны'],
+       solve=_solve_ester, kind='dict', kes=KES15,
+       fidelity=fid(MATCH4, 'П', 6, '«схема гидролиза сложного эфира — продукты» (HCOOC₂H₅, C₃H₆O₂ + H₂O/NaOH; банк №15)',
+                    'пары продуктов со «зеркальными» частями (метилацетат/этилформиат)', KES15, SC2))
+def g15_ester(rng):
+    rs = pick_distinct(rng, EST_H, 4, key=lambda r: tuple(sorted(r['rhs'])))
+    pairs = [sorted(x for x in r['rhs'] if x in SUB and SUB[x].get('org')) for r in rs]
+    uniq = [list(x) for x in dict.fromkeys(tuple(x) for x in pairs)]
+    conf = []
+    for r in EST_H:
+        pr = sorted(x for x in r['rhs'] if x in SUB and SUB[x].get('org'))
+        if pr not in uniq and pr not in conf:
+            conf.append(pr)
+    # ловушка: «зеркальная» пара — кислота вместо соли
+    need = 6 - len(uniq)
+    if len(conf) < need:
+        raise Retry
+    right = uniq + rng.sample(conf, need)
+    rng.shuffle(right)
+    rt = [_pair_txt(x) for x in right]
+    lt = [rx_scheme(r) for r in rs]
+    if len(set(rt)) < 6 or len(set(lt)) < 4:
+        raise Retry
+    q = rng.choice(['Установите соответствие между схемой гидролиза сложного эфира и органическими продуктами, которые '
+                    'при этом образуются.',
+                    'Для каждой схемы гидролиза из первого столбца подберите пару органических продуктов из второго '
+                    'столбца.'])
+    q += ' Позиции первого столбца обозначены буквами, второго — цифрами.\nСХЕМА РЕАКЦИИ → ПРОДУКТЫ'
+    ans = [right.index(x) for x in pairs]
+    return match_card('ch-ege-15-ester-hydrolysis', rng, q, lt, rt, ans, '; '.join(rx_eq(r) for r in rs) + '.',
+                      {'left': [[r['lhs'], r.get('cond', '')] for r in rs], 'right': right}, eqs=[eqt(r) for r in rs])
+
+
+FIX15 = ['CH3CH(OH)CH3', 'C2H5OH', 'CH3OH', 'CH3CH2CH2OH', 'CH3COOH', 'HCOOH', 'C6H5OH', 'CH3CHO', 'CH3COCH3',
+         'CH3CH2COOH', 'C2H4(OH)2', 'C3H5(OH)3', 'HCHO']
+
+
+def _solve_fix15(p):
+    out = {}
+    for i, sg in enumerate(p['left']):
+        lhs = [p['f']] + list(sg[0])
+        prods = {r['rhs'][0] for r in D.REACTIONS if r['lhs'] == lhs and r.get('cond', '') == sg[1]
+                 and r.get('medium', '') == sg[2]}
+        out[LET[i]] = str([n for n, g in enumerate(p['right']) if g in prods][0] + 1)
+    return out
+
+
+@proto('ch-ege-15-one-substance', 'ЕГЭ', 15, 'Одно вещество с разными реагентами → продукты',
+       invariant='одно кислородсодержащее вещество реагирует с четырьмя разными реагентами — продукты различаются',
+       varies='вещество (пропанол-2, этанол, уксусная кислота, фенол, ацетальдегид …), четыре реагента с условиями',
+       answer_rule='для каждого реагента определить тип реакции и продукт',
+       mistakes=['с HCl спирт даёт хлоралкан, с Na — алкоголят', 'с Cu(OH)₂ при нагревании альдегид окисляется до '
+                                                                 'кислоты'],
+       solve=_solve_fix15, kind='dict', kes=KES15,
+       fidelity=fid(MATCH4, 'П', 6, '«вещество — продукт реакции данного вещества с пропанолом-2» (банк №15)',
+                    'продукты одного субстрата в разных условиях', KES15, SC2))
+def g15_one(rng):
+    f = rng.choice(FIX15)
+    rs = [r for r in RX if r['lhs'][0] == f and _ok_rx(r)]
+    if len({sig(r) for r in rs}) < 4:
+        raise Retry
+    rs = pick_distinct(rng, rs, 4, key=sig)
+    prods = list(dict.fromkeys(r['rhs'][0] for r in rs))
+    conf = [g for g in ORG if g not in prods and (SUB[g]['hom'] in {SUB[x]['hom'] for x in prods} or
+                                                  brutto(g) in {brutto(x) for x in prods}) and g not in _POOL10_SKIP
+            and parse_formula(g).get('C', 0) <= 8]
+    if len(conf) < 6 - len(prods):
+        raise Retry
+    right = prods + rng.sample(conf, 6 - len(prods))
+    rng.shuffle(right)
+    rt = [nm(g) for g in right]
+    if len(set(rt)) < 6:
+        raise Retry
+    lt = [sig_label(r) for r in rs]
+    n = nm(f, rng)
+    q = rng.choice([f'Установите соответствие между реагентом и органическим продуктом, который преимущественно '
+                    f'образуется при взаимодействии этого реагента с веществом «{n}».',
+                    f'Для каждого реагента из первого столбца подберите основной органический продукт его реакции с '
+                    f'веществом «{n}».'])
+    q += ' Позиции первого столбца обозначены буквами, второго — цифрами.\nРЕАГЕНТ (УСЛОВИЯ) → ПРОДУКТ'
+    ans = [right.index(r['rhs'][0]) for r in rs]
+    return match_card('ch-ege-15-one-substance', rng, q, lt, rt, ans, '; '.join(rx_eq(r) for r in rs) + '.',
+                      {'f': f, 'left': [list(sig(r)) for r in rs], 'right': right}, eqs=[eqt(r) for r in rs])

@@ -3202,6 +3202,10 @@ def _solve_21cur(p):
     return [k for k, v in p['opts'].items() if v == CUR_OPTS[res]][0]
 
 
+def kx(n, sym):
+    return sym if n == 1 else f'{n}{sym}'
+
+
 CUR_OPTS = {'к 1': 'к проводнику 1', 'к 3': 'к проводнику 3', 'нуль': 'равнодействующая сил равна нулю'}
 
 
@@ -3214,10 +3218,6 @@ CUR_OPTS = {'к 1': 'к проводнику 1', 'к 3': 'к проводник�
        fidelity=dict(answer_format=AF21, style='КИМ №21: «Три параллельных длинных прямых проводника… Куда направлена сила…? Ответ поясните»',
                      level='П', time_min=8, scale='токи 1–4 А, расстояния одинаковые или кратные', trap='притяжение одинаково направленных токов',
                      kes=['3.3.2', '3.3.3'], score=SC21))
-def kx(n, sym):
-    return sym if n == 1 else f'{n}{sym}'
-
-
 def g21_cur(rng):
     I1, I2, I3 = [rng.choice([1, 2, 3, 4]) * rng.choice([1, -1]) for _ in range(3)]
     d12, d23 = rng.choice([(1, 1), (1, 2), (2, 1), (1, 1)])
