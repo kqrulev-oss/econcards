@@ -776,7 +776,7 @@ input:focus, select:focus, textarea:focus { outline: 3px solid var(--accent); ou
 
 /* ---------- вход в аккаунт ---------- */
 .login-ways { display: grid; gap: 12px; margin: 16px 0; }
-.login-ways .btn svg { font-size: 22px; }
+.login-ways .btn svg { font-size: 22px; fill: none; stroke: currentColor; stroke-width: 2.4; }
 .login-tg { background: #2AABEE; color: #fff; }
 .login-step:not(:empty) { display: grid; gap: 10px; margin-bottom: 8px; }
 .login-step .row > .btn { flex: none; }
@@ -791,3 +791,6 @@ input:focus, select:focus, textarea:focus { outline: 3px solid var(--accent); ou
 .login-hint .link-btn { margin-left: 4px; }
 @media (max-width: 480px) { .acct-name { display: none; } }
 @media (prefers-color-scheme: dark) { p a:not(.btn), .small-note a, .foot a { color: #B7AEFF; } }
+.login-yandex { background: #FC3F1D; color: #fff; }
+.login-vk { background: #0077FF; color: #fff; }
+.login-google { background: var(--surface); }

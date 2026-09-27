@@ -2,7 +2,7 @@
 // темы с теорией, работа над ошибками и отправка прогресса репетитору.
 import { store, api, apiBase, loadPack, loadLibrary, renderCard, esc, text, day, uid, plural, el, toast } from './lib.js';
 import { renderLanding } from './landing.js';
-import { signedIn, account, loginDialog, logout, addRole } from './account.js';
+import { signedIn, account, loginDialog, logout, addRole, finishRedirectLogin } from './account.js';
 
 const $app = document.getElementById('app');
 const INTERVALS = [0, 1, 3, 7, 14, 30, 60]; // дни до повтора по «коробкам»
@@ -558,6 +558,7 @@ function viewMe() {
       <label class="field"><span>Адрес (если дал репетитор)</span><input id="api" placeholder="https://…workers.dev" value="${esc(store.get('zd-api', ''))}"></label>
     </section>`;
   $app.querySelector('#login')?.addEventListener('click', () => loginDialog({
+    role: 'student',
     why: 'Прогресс, серия и ошибки сохранятся в аккаунте.',
     onDone: async () => { await addRole('student'); await pullProg(); sync(true); viewMe(); },
   }));
@@ -626,6 +627,7 @@ function viewName() {
       ${signedIn() ? '' : '<p class="center small-note"><button class="link-btn" id="login">Уже занимался? Войти в аккаунт</button></p>'}
     </section>`;
   $app.querySelector('#login')?.addEventListener('click', () => loginDialog({
+    role: 'student',
     why: 'Прогресс подтянется с другого устройства.',
     onDone: async () => { await addRole('student'); await pullProg(); if (prog.name) { save(); sync(true); } route(); },
   }));
@@ -671,6 +673,8 @@ function applyBrand() {
 }
 
 async function init() {
+  const redirected = await finishRedirectLogin(); // вернулись от Яндекса/VK/Google
+  if (redirected?.role) await addRole(redirected.role);
   const params = new URLSearchParams(location.search);
   const recent = store.get('zd-recent', []);
   // ?about — лендинг для репетиторов даже у тех, кто уже занимается в каком-то наборе

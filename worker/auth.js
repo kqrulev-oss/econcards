@@ -6,6 +6,9 @@
    POST /auth/email/start         код на почту (Resend: RESEND_KEY, EMAIL_FROM)
    POST /auth/email/verify        проверка кода
    GET  /auth/providers           какие способы входа включены
+   POST /auth/oauth/:p            ссылка на вход через Яндекс ID, VK ID или Google
+   GET  /auth/:p/callback         возврат от провайдера → сайт с #login=<ticket>
+   POST /auth/ticket              одноразовый ticket → сессия
    POST /auth/logout
    GET  /me                       аккаунт; PATCH /me {name}; POST /me/role {role}
    GET|PUT /me/studio             облачная копия студии репетитора
@@ -131,6 +134,62 @@ async function sendMail(env, to, code) {
 const normEmail = e => String(e || '').trim().toLowerCase();
 const validEmail = e => /^[^\s@]{1,64}@[^\s@]{1,190}\.[^\s@]{2,}$/.test(e);
 
+// ---------- Яндекс ID, VK ID, Google (OAuth 2.0 / 2.1 с PKCE) ----------
+
+const b64url = buf => btoa(String.fromCharCode(...new Uint8Array(buf))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+const form = o => new URLSearchParams(Object.entries(o).filter(([, v]) => v != null)).toString();
+
+async function postForm(url, body, headers = {}) {
+  const r = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded', ...headers }, body: form(body) });
+  const data = await r.json().catch(() => ({}));
+  if (!r.ok || data.error) throw new AuthError(502, 'Провайдер не подтвердил вход. Попробуйте ещё раз.');
+  return data;
+}
+
+const OAUTH = {
+  yandex: {
+    on: env => env.YANDEX_ID && env.YANDEX_SECRET,
+    authorize: (env, q) => `https://oauth.yandex.ru/authorize?${form({ response_type: 'code', client_id: env.YANDEX_ID, redirect_uri: q.redirect, state: q.state, force_confirm: 'no' })}`,
+    async profile(env, q) {
+      const t = await postForm('https://oauth.yandex.ru/token', { grant_type: 'authorization_code', code: q.code, client_id: env.YANDEX_ID, client_secret: env.YANDEX_SECRET });
+      const u = await fetch('https://login.yandex.ru/info?format=json', { headers: { Authorization: `OAuth ${t.access_token}` } }).then(r => r.json());
+      if (!u.id) throw new AuthError(502, 'Яндекс не вернул профиль.');
+      return { sub: String(u.id), name: u.real_name || u.display_name || u.login, email: u.default_email };
+    },
+  },
+  google: {
+    on: env => env.GOOGLE_ID && env.GOOGLE_SECRET,
+    authorize: (env, q) => `https://accounts.google.com/o/oauth2/v2/auth?${form({ response_type: 'code', client_id: env.GOOGLE_ID, redirect_uri: q.redirect, state: q.state, scope: 'openid email profile', prompt: 'select_account' })}`,
+    async profile(env, q) {
+      const t = await postForm('https://oauth2.googleapis.com/token', { grant_type: 'authorization_code', code: q.code, client_id: env.GOOGLE_ID, client_secret: env.GOOGLE_SECRET, redirect_uri: q.redirect });
+      const u = await fetch('https://openidconnect.googleapis.com/v1/userinfo', { headers: { Authorization: `Bearer ${t.access_token}` } }).then(r => r.json());
+      if (!u.sub) throw new AuthError(502, 'Google не вернул профиль.');
+      return { sub: u.sub, name: u.name, email: u.email_verified ? u.email : undefined };
+    },
+  },
+  // VK ID — OAuth 2.1: без секрета, но с PKCE и device_id из ответа
+  vk: {
+    on: env => env.VK_ID,
+    pkce: true,
+    authorize: (env, q) => `https://id.vk.com/authorize?${form({ response_type: 'code', client_id: env.VK_ID, redirect_uri: q.redirect, state: q.state, code_challenge: q.challenge, code_challenge_method: 'S256', scope: 'email' })}`,
+    async profile(env, q) {
+      const t = await postForm('https://id.vk.com/oauth2/auth', { grant_type: 'authorization_code', code: q.code, code_verifier: q.verifier, client_id: env.VK_ID, device_id: q.device_id, redirect_uri: q.redirect, state: q.state });
+      const u = (await postForm('https://id.vk.com/oauth2/user_info', { client_id: env.VK_ID, access_token: t.access_token })).user || {};
+      if (!u.user_id) throw new AuthError(502, 'VK не вернул профиль.');
+      return { sub: String(u.user_id), name: [u.first_name, u.last_name].filter(Boolean).join(' '), email: u.email };
+    },
+  },
+};
+
+// Вернуться можно только на свой сайт (и localhost для разработки)
+function safeBack(back, origin) {
+  try {
+    const u = new URL(back);
+    if (u.origin === origin || /^http:\/\/localhost(:\d+)?$/.test(u.origin)) return u.origin + u.pathname + u.search;
+  } catch { /* не адрес */ }
+  return origin + '/';
+}
+
 // ---------- облачные копии ----------
 
 const refKey = ref => {
@@ -145,9 +204,9 @@ export function providers(env) {
   return {
     tg: !!env.TG_TOKEN,
     email: !!(env.RESEND_KEY && env.EMAIL_FROM),
-    yandex: !!(env.YANDEX_ID && env.YANDEX_SECRET),
-    vk: !!env.VK_ID,
-    google: !!(env.GOOGLE_ID && env.GOOGLE_SECRET),
+    yandex: !!OAUTH.yandex.on(env),
+    vk: !!OAUTH.vk.on(env),
+    google: !!OAUTH.google.on(env),
   };
 }
 
@@ -204,6 +263,49 @@ export async function handleAuth(req, env, parts) {
       }
       await env.DB.delete(k);
       return login(env, 'email', email, { email }, await sessionAccount(env, req));
+    }
+
+    // Начало входа через провайдера: сайт получает адрес и сам переходит по нему
+    if (b === 'oauth' && OAUTH[c] && m === 'POST') {
+      const prov = OAUTH[c];
+      if (!prov.on(env)) throw new AuthError(503, 'Этот способ входа пока не настроен.');
+      await limit(env, 'oauth', ip(req), 30);
+      const origin = new URL(req.url).origin;
+      const body = await readBody(req);
+      const state = randomId(32);
+      const verifier = prov.pkce ? randomId(64) : undefined;
+      const challenge = verifier ? b64url(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(verifier))) : undefined;
+      const current = await sessionAccount(env, req); // уже вошёл — привязываем новый способ к этому аккаунту
+      await env.DB.put(`oauth:${state}`, JSON.stringify({ p: c, back: safeBack(body.back, origin), verifier, link: current?.id }), { expirationTtl: 600 });
+      return { url: prov.authorize(env, { redirect: `${origin}/auth/${c}/callback`, state, challenge }) };
+    }
+
+    // Провайдер вернул человека: код → профиль → вход → назад на сайт с одноразовым ticket
+    if (OAUTH[b] && c === 'callback' && m === 'GET') {
+      const url = new URL(req.url);
+      const q = Object.fromEntries(url.searchParams);
+      const saved = /^[a-z0-9]{32}$/.test(q.state || '') && await env.DB.get(`oauth:${q.state}`, 'json');
+      if (!saved || saved.p !== b) return Response.redirect(`${url.origin}/?login_error=expired`, 302);
+      await env.DB.delete(`oauth:${q.state}`);
+      if (!q.code) return Response.redirect(`${saved.back}#login_error=cancelled`, 302);
+      try {
+        const prof = await OAUTH[b].profile(env, { ...q, verifier: saved.verifier, redirect: `${url.origin}/auth/${b}/callback` });
+        const res = await login(env, b, prof.sub, prof, saved.link ? await getAccount(env, saved.link) : null);
+        const ticket = randomId(32);
+        await env.DB.put(`ticket:${ticket}`, JSON.stringify(res), { expirationTtl: 120 });
+        return Response.redirect(`${saved.back}#login=${ticket}`, 302);
+      } catch {
+        return Response.redirect(`${saved.back}#login_error=failed`, 302);
+      }
+    }
+
+    if (b === 'ticket' && m === 'POST') {
+      const { ticket } = await readBody(req);
+      if (!/^[a-z0-9]{32}$/.test(ticket || '')) throw new AuthError(400, 'Некорректный вход.');
+      const res = await env.DB.get(`ticket:${ticket}`, 'json');
+      if (!res) throw new AuthError(410, 'Вход устарел. Попробуйте ещё раз.');
+      await env.DB.delete(`ticket:${ticket}`);
+      return res;
     }
 
     if (b === 'logout' && m === 'POST') {
