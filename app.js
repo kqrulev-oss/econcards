@@ -1,8 +1,8 @@
 // Приложение ученика: ежедневное занятие по интервальному повторению,
 // темы с теорией, работа над ошибками и отправка прогресса репетитору.
-import { store, api, apiBase, loadPack, loadLibrary, renderCard, esc, text, day, uid, plural, el, toast, modal } from './lib.js';
+import { store, api, apiBase, loadPack, loadLibrary, renderCard, esc, safeHtml, text, day, dueDay, dueText, uid, plural, el, toast, modal } from './lib.js';
 import { renderLanding } from './landing.js';
-import { signedIn, account, loginDialog, logout, addRole, finishRedirectLogin, finishPayment, payDialog, planOf } from './account.js';
+import { signedIn, account, loginDialog, logout, addRole, finishRedirectLogin, finishPayment, payDialog, planOf, TG_ICON } from './account.js';
 
 const $app = document.getElementById('app');
 const INTERVALS = [0, 1, 3, 7, 14, 30, 60]; // дни до повтора по «коробкам»
@@ -19,14 +19,14 @@ let topicsById = {};
 
 const progKey = () => 'zd-prog:' + ref;
 // Прогресс хранится в браузере, а после входа в аккаунт — ещё и на сервере
-// В облако — не чаще раза в 30 секунд и при уходе со страницы: у бесплатного
-// хранилища Cloudflare 1000 записей в сутки на весь сайт
+// В облако — в конце занятия, при уходе со страницы и не чаще раза в 5 минут между ними:
+// у бесплатного хранилища Cloudflare 1000 записей в сутки на весь сайт
 let progTimer, progDirty = false;
 const save = () => {
   store.set(progKey(), prog);
   if (!signedIn()) return;
   progDirty = true;
-  progTimer ||= setTimeout(() => { progTimer = null; pushProg(); }, 30000);
+  progTimer ||= setTimeout(() => { progTimer = null; pushProg(); }, 300e3);
 };
 const flushProg = () => { if (progDirty && prog && signedIn()) pushProg(true); };
 addEventListener('pagehide', flushProg);
@@ -47,8 +47,14 @@ function mergeProg(a, b) {
   const log = { ...b.log };
   for (const [d, l] of Object.entries(a.log || {})) if (!log[d] || l.d >= log[d].d) log[d] = l;
   const errs = [...new Set([...(a.errs || []), ...(b.errs || [])])].slice(0, 30);
-  // sid из облака — репетитор видит одного ученика, с какого бы устройства тот ни занимался
-  return { ...a, cards, log, errs, sid: b.sid || a.sid, name: a.name || b.name, variants: a.variants || b.variants, synced: 0 };
+  // Задание: одно и то же — где засчитано больше; разные — то, что сейчас задано в наборе
+  const hw = a.hw?.id === b.hw?.id ? a.hw && { id: a.hw.id, d: Math.max(a.hw.d || 0, b.hw.d || 0) }
+    : b.hw?.id && b.hw.id === pack?.hw?.id ? b.hw : a.hw;
+  // sid из облака — репетитор видит одного ученика, с какого бы устройства тот ни занимался.
+  // Сменился sid — сервер этого ученика ещё не видел с этого устройства: сводку отправить заново
+  const sid = b.sid || a.sid, moved = sid !== a.sid;
+  return { ...a, cards, log, errs, hw, sid, name: a.name || b.name, variants: a.variants || b.variants,
+    synced: moved ? 0 : a.synced, syncedN: moved ? -1 : a.syncedN };
 }
 
 async function pullProg() {
@@ -58,15 +64,23 @@ async function pullProg() {
     if (remote) prog = mergeProg(prog, remote);
     if (!prog.name && account()?.name) prog.name = account().name;
     store.set(progKey(), prog);
-    await pushProg();
+    // Обратно в облако — только если здесь есть ответы, которых там нет: иначе каждое
+    // открытие тренажёра стоило бы записи
+    if (JSON.stringify([prog.cards, prog.log]) !== JSON.stringify([remote?.cards || {}, remote?.log || {}])) await pushProg();
+    else { progDirty = false; clearTimeout(progTimer); progTimer = null; }
     return !!remote;
   } catch { return false; }
 }
 
 function loadProg() {
   prog = Object.assign({ cards: {}, log: {}, errs: [], sid: uid(10), name: '', synced: 0 }, store.get(progKey(), {}));
+  // Новое задание репетитора (приходит внутри набора) — счёт с нуля
+  if (pack.hw && prog.hw?.id !== pack.hw.id) prog.hw = { id: pack.hw.id, d: 0 };
   save();
 }
+
+// Сколько карточек задания засчитано на этом устройстве
+const hwD = () => pack.hw && prog.hw?.id === pack.hw.id ? prog.hw.d : 0;
 
 function grade(card, score) {
   const t = day();
@@ -87,6 +101,9 @@ function grade(card, score) {
   l.ok += score;
   if (isNew) l.n++;
   prog.log[t] = l;
+  // Задание: каждый ответ по его теме (и повтор ошибки тоже), в том числе после срока
+  const hw = pack.hw;
+  if (hw && prog.hw?.id === hw.id && (!hw.topic || card.t === hw.topic) && prog.hw.d < hw.goal) prog.hw.d++;
   save();
 }
 
@@ -131,6 +148,16 @@ function buildQueue(mode, tid, pid) {
     const byId = Object.fromEntries(pack.cards.map(c => [c.id, c]));
     return prog.errs.map(id => byId[id]).filter(c => c && (!tid || c.t === tid) && (!pid || c.p === pid)).slice(0, SESSION);
   }
+  if (mode === 'hw') {
+    // Задание: сначала пора повторить, потом новые без дневной нормы, потом начатые — давно не виденные первыми
+    const hw = pack.hw;
+    if (!hw) return [];
+    const hp = pack.cards.filter(c => !hw.topic || c.t === hw.topic);
+    const due = dueCards(hp), seen = new Set(due);
+    const fresh = hp.filter(c => !prog.cards[c.id]);
+    const rest = hp.filter(c => prog.cards[c.id] && !seen.has(c)).sort((a, b) => (prog.cards[a.id].last || 0) - (prog.cards[b.id].last || 0));
+    return [...due, ...(hw.topic ? fresh : shuffle(fresh)), ...rest].slice(0, Math.max(0, Math.min(SESSION, hw.goal - hwD())));
+  }
   const due = dueCards(pool).slice(0, SESSION);
   const newToday = prog.log[day()]?.n || 0;
   const newLimit = tid ? 10 : Math.max(0, (pack.daily || NEW_DEFAULT) - newToday);
@@ -155,6 +182,10 @@ function summary() {
     if (s.started) topics[tp.id] = { s: s.started, m: s.mastered, acc: s.acc === null ? null : Math.round(s.acc * 100) };
   }
   const states = Object.values(prog.cards);
+  // Слабые темы — как в студии (weakTopics): до трёх с точностью ниже 80%, от худшей
+  const weak = Object.entries(topics).filter(([, s]) => s.acc !== null && s.s >= 3 && s.acc < 80)
+    .sort((a, b) => a[1].acc - b[1].acc).slice(0, 3)
+    .map(([id, s]) => ({ t: shortTitle(topicsById[id]).slice(0, 60), a: s.acc }));
   return {
     last: Date.now(), streak: streak(), today: prog.log[t] || { d: 0, ok: 0 }, week,
     // Карточек по дням за 14 дней, от старых к сегодняшнему — для полоски активности у репетитора
@@ -171,19 +202,73 @@ function summary() {
     }),
     total: pack.cards.length, started: states.length, mastered: states.filter(s => s.b >= 3).length,
     topics, errs: prog.errs.slice(0, 15),
+    // Для бота: он не читает сам набор, а напоминания считает по местному времени ученика
+    tz: -new Date().getTimezoneOffset(), ...(prog.hw && { hw: prog.hw }),
+    title: (pack.title || '').slice(0, 80), tutor: (pack.tutor || '').slice(0, 80), weak,
   };
 }
 
+// Сколько всего ответов в журнале — по нему видно, есть ли что-то новое для репетитора
+const answers = () => Object.values(prog.log).reduce((n, l) => n + (l.d || 0), 0);
+
 async function sync(force) {
   if (!ref.startsWith('t:') || !apiBase() || !prog.name) return;
-  if (!force && Date.now() - prog.synced < 3600e3) return;
+  // При открытии сводка уходит, только если с прошлой отправки появились ответы: каждая — запись в KV
+  const n = answers();
+  if (!force && n === prog.syncedN) return;
+  // sid взят из ссылки бота (adoptSid): у сервера уже есть сводка этого ученика с другого устройства —
+  // пустой её не затираем, первая уйдёт после ответов
+  if (!n && prog.syncedN === 0 && !prog.synced) return;
   try {
     await api(`/packs/${encodeURIComponent(ref.slice(2))}/progress`, {
       method: 'POST', body: { sid: prog.sid, name: prog.name, stats: summary() },
     });
     prog.synced = Date.now();
-    save();
+    prog.syncedN = n;
+    store.set(progKey(), prog); // отметки этого устройства: ради них в облако не пишем
   } catch { /* офлайн — отправим в следующий раз */ }
+}
+
+/* Кнопки бота открывают ?t=<набор>&s=<sid>: ссылка может открыться там, где ученик ещё не
+   занимался (приложение на домашнем экране iPhone, браузер Telegram). Пустой прогресс (ни имени,
+   ни ответов) берёт sid подписчика — у репетитора один ученик, и бот видит его занятия, а не
+   застывшую запись. Непустой не трогаем. syncedN 0 при synced 0 — знак для sync() выше */
+function adoptSid(s) {
+  if (!/^[a-z0-9]{6,20}$/.test(s || '') || s === prog.sid || prog.name || Object.keys(prog.cards).length) return;
+  Object.assign(prog, { sid: s, synced: 0, syncedN: 0, adopted: s });
+  store.set(progKey(), prog);
+}
+// Сообщение бота могли переслать однокласснику: sid из кнопки оставляем, только если введённое
+// имя совпадает с тем, под которым этот ученик уже занимается; иначе — новый ученик со своим sid
+async function checkAdopted(name) {
+  const s = prog.adopted;
+  if (!s) return;
+  delete prog.adopted;
+  let known = null;
+  try { known = (await api(`/packs/${encodeURIComponent(ref.slice(2))}/notify?sid=${s}&who=1`)).name; } catch { /* офлайн — оставляем */ }
+  const w = x => String(x || '').trim().split(/\s+/)[0].toLowerCase().replace(/ё/g, 'е');
+  if (known && w(known) !== w(name)) Object.assign(prog, { sid: uid(10), synced: 0, syncedN: -1 });
+}
+
+// ---------- напоминания в Telegram ----------
+
+// Только в тренажёрах репетитора и когда сервер уже знает ученика (сводка уходила): иначе бот
+// ответит «сначала реши несколько карточек». Ссылку в бота получаем заранее и храним, чтобы
+// кнопка была обычной ссылкой — такую новую вкладку браузер не заблокирует.
+// По sid: после входа (sid из облака) или сброса прогресса старая ссылка в бота не подходит
+const tgKey = () => 'zd-tg:' + ref + ':' + prog.sid;
+const tgState = () => (tgReady() && store.get(tgKey(), null)) || {};
+const tgReady = () => ref.startsWith('t:') && !!apiBase() && prog.synced > 0;
+const tgStale = () => Date.now() - (tgState().chk || 0) > 864e5;
+const tgPend = () => store.set(tgKey(), { ...tgState(), pend: Date.now() });
+async function refreshTg() {
+  if (!tgReady()) return null;
+  try {
+    const r = await api(`/packs/${encodeURIComponent(ref.slice(2))}/notify?sid=${encodeURIComponent(prog.sid)}`);
+    const tg = { ...tgState(), on: !!r.on, at: r.at || null, link: r.link || null, chk: Date.now() };
+    store.set(tgKey(), tg);
+    return tg;
+  } catch { return null; }
 }
 
 // ---------- экраны ----------
@@ -239,6 +324,30 @@ function goalBar(done) {
     : `<div class="goal"><span>Цель дня</span><span class="bar"><i style="width:${n / DAILY_GOAL * 100}%"></i></span><b>${n}/${DAILY_GOAL}</b></div>`;
 }
 
+// Задание репетитора на главной: видно до срока (невыполненное — ещё 3 дня после него)
+function hwCard() {
+  const hw = pack.hw;
+  if (!hw) return '';
+  const d = Math.min(hwD(), hw.goal), done = d >= hw.goal, L = day(), end = dueDay(hw.due);
+  if (L > end + (done ? 0 : 3)) return '';
+  const [tone, when] = done ? ['ok', 'Выполнено'] : L > end ? ['bad', 'Срок прошёл — доделать ещё можно']
+    : L === end ? ['mid', 'Сегодня последний день'] : ['', 'до ' + dueText(hw.due)];
+  return `<section class="panel hw-card${tone ? ' ' + tone : ''}">
+      <div class="row"><b>Задание репетитора</b><span class="pill${tone ? ' ' + tone : ''}">${when}</span></div>
+      <p>${esc(hw.text)}</p>
+      <div class="goal"><span>Сделано</span><span class="bar"><i style="width:${Math.round(d / hw.goal * 100)}%"></i></span><b>${d}/${hw.goal}</b></div>
+      ${done ? '' : '<button class="btn primary" id="hw-go">Делать задание</button>'}
+    </section>`;
+}
+
+// Сессия задания: с главной, по ссылке #/hw из бота и кнопкой «Ещё» после неё
+function startHw() {
+  const q = buildQueue('hw');
+  if (q.length) return startSession(q, 'Домашнее задание', '#/', { hw: true });
+  viewHome();
+  toast(hwD() < pack.hw.goal ? 'Здесь пока нечего повторять' : 'Задание уже выполнено');
+}
+
 function viewHome() {
   const t = day();
   const queue = buildQueue('daily');
@@ -269,6 +378,7 @@ function viewHome() {
       ${goalRing(today.d, DAILY_GOAL)}
       <div><b>Цель дня</b><span>${goalText}</span></div>
     </section>
+    ${hwCard()}
     ${doneToday
       ? '<p class="hero-done">На сегодня всё. Возвращайся завтра — карточки придут, когда начнёшь их забывать.</p>'
       : `<button class="btn cta big" id="go">${ICON.play}${today.d ? 'Продолжить' : 'Заниматься'} · ${Math.max(3, Math.round(queue.length * 0.6))} мин</button>
@@ -294,6 +404,7 @@ function viewHome() {
     <footer class="foot"><a href="#/library">Другие наборы</a> · <a href="./?about">Для репетиторов</a></footer>`;
   bindUnlock();
   $app.querySelector('#go')?.addEventListener('click', () => startSession(queue, 'Занятие'));
+  $app.querySelector('#hw-go')?.addEventListener('click', startHw);
   $app.querySelector('#errs')?.addEventListener('click', () => startSession(buildQueue('errors'), 'Работа над ошибками'));
   $app.querySelector('#variant')?.addEventListener('click', () => startSession(buildVariant(), 'Пробный вариант', '#/', { variant: true }));
 }
@@ -406,7 +517,7 @@ function viewLesson(lid) {
   const hasCards = pack.cards.some(c => c.t === l.topic);
   $app.innerHTML = `
     <header class="top"><a class="back" href="#/topic/${encodeURIComponent(l.topic)}">←</a><div class="brand-title">${esc(l.title)}</div></header>
-    <article class="lesson">${l.html}</article>
+    <article class="lesson">${safeHtml(l.html)}</article>
     ${hasCards ? '<div class="panel"><button class="btn primary" id="train">Закрепить карточками</button></div>' : ''}`;
   $app.querySelector('#train')?.addEventListener('click', () =>
     startSession(buildQueue('topic', l.topic), topicsById[l.topic]?.title || l.title, `#/topic/${l.topic}`));
@@ -415,13 +526,14 @@ function viewLesson(lid) {
 
 const PRAISE = ['Верно!', 'Точно!', 'Отлично!', 'Так держать!', 'В точку!'];
 
-function startSession(queue, title, back = '#/', { variant = false } = {}) {
+function startSession(queue, title, back = '#/', { variant = false, hw = false } = {}) {
   if (!queue.length) return toast('Здесь пока нечего повторять');
   const q = queue.slice();
   const requeued = new Set();
   let i = 0, ok = 0, answered = 0, points = 0;
   const started = Date.now();
   const streakBefore = streak();
+  const hwBefore = hwD();
   const missed = new Map();
   const results = [];
   const leave = () => { location.hash = back; route(); };
@@ -466,15 +578,24 @@ function startSession(queue, title, back = '#/', { variant = false } = {}) {
     const mins = Math.max(1, Math.round((Date.now() - started) / 60000));
     const pct = answered ? Math.round(ok / answered * 100) : 0;
     const st = streak();
-    const [icon, title] = st > streakBefore ? [ICON.flame, `Серия ${plural(st, 'день', 'дня', 'дней')}!`]
+    let [icon, head] = st > streakBefore ? [ICON.flame, `Серия ${plural(st, 'день', 'дня', 'дней')}!`]
       : pct >= 90 ? [ICON.star, 'Отлично!'] : pct >= 70 ? [ICON.star, 'Хорошая работа'] : [ICON.flame, 'Начало положено'];
-    const more = back === '#/' ? buildQueue('daily') : [];
+    // Задание: итог сессии задания, а в обычном занятии — если оно выполнилось только что
+    const goal = pack.hw?.goal, d = Math.min(hwD(), goal);
+    if (goal && d >= goal && (hw || hwBefore < goal)) [icon, head] = [ICON.star, 'Задание выполнено!'];
+    else if (goal && hw) head = `Задание: ${d} из ${goal}`;
+    // После задания «Ещё» продолжает задание, пока оно не сделано
+    const hwMore = hw ? buildQueue('hw') : [];
+    const more = hwMore.length ? hwMore : back === '#/' ? buildQueue('daily') : [];
     const wrong = [...missed.values()];
+    // Telegram: предлагаем, пока не включён, и не чаще раза в сутки после нажатия
+    const tg = tgState();
+    const tgOffer = tg.link && !tg.on && Date.now() - (tg.pend || 0) > 864e5;
     $app.innerHTML = `
       <section class="finish">
         <div class="confetti" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></div>
         <div class="finish-icon">${icon}</div>
-        <h1 class="finish-title">${title}</h1>
+        <h1 class="finish-title">${head}</h1>
         ${ref.startsWith('t:') && prog.name ? `<p class="finish-sub">${esc(pack.tutor || 'Репетитор')} увидит результат</p>` : ''}
         <div class="finish-stats">
           <div><b>${Math.round(ok)}/${answered}</b><span>верно</span></div>
@@ -485,12 +606,19 @@ function startSession(queue, title, back = '#/', { variant = false } = {}) {
         ${wrong.length ? `<div class="finish-wrong"><b>Вернутся завтра</b><ul>${wrong.slice(0, 5).map(c =>
           `<li>${esc(c.q.replace(/\s+/g, ' ').slice(0, 90))}${c.q.length > 90 ? '…' : ''}</li>`).join('')}</ul></div>` : ''}
         ${more.length ? `<button class="btn big" id="more">Ещё ${plural(more.length, 'карточка', 'карточки', 'карточек')}</button>` : ''}
-        ${store.get('zd-remind:' + ref, '') ? '' : '<button class="btn big" id="remind">Напоминать каждый день в 19:00</button>'}
+        ${tgOffer ? `<a class="btn big tg" id="tg" href="${esc(tg.link)}" target="_blank" rel="noopener">${TG_ICON}Напоминать в Telegram</a>
+          <p class="muted small-note tg-note">Бот напишет вечером, только если ты забудешь позаниматься, и пришлёт задание репетитора.</p>` : ''}
+        ${tg.on || store.get('zd-remind:' + ref, '') ? '' : '<button class="btn big" id="remind">Напоминать каждый день в 19:00</button>'}
         <button class="btn primary big" id="done">Готово</button>
       </section>`;
     $app.querySelector('#done').onclick = leave;
-    $app.querySelector('#more')?.addEventListener('click', () => startSession(more, title, back));
+    $app.querySelector('#more')?.addEventListener('click', () => startSession(more, title, back, { hw: hwMore.length > 0 }));
     $app.querySelector('#remind')?.addEventListener('click', e => { addReminder(store.get('zd-remind-time', '19:00')); e.target.remove(); });
+    // Ссылка открывается сама (target=_blank); убираем кнопку уже после перехода
+    $app.querySelector('#tg')?.addEventListener('click', () => {
+      tgPend();
+      setTimeout(() => $app.querySelectorAll('#tg, .tg-note').forEach(x => x.remove()));
+    });
     sync(true).then(() => { if (progDirty && signedIn()) pushProg(); }); // урок окончен — прогресс в облако сразу
   };
   const finishVariant = () => {
@@ -556,6 +684,19 @@ function addReminder(time) {
   toast(`Откроется календарь — подтвердите событие на ${time}`);
 }
 
+// Панель «Напоминания в Telegram» в профиле: пусто, если бот не настроен и ничего не включено
+function tgPanel(tg) {
+  if (tg.on) return `<h2>Напоминания в Telegram</h2>
+    <p><span class="pill ok">Включены</span> Бот напишет около ${esc(tg.at || '19:00')}, если в этот день ещё не было занятия, и пришлёт задания репетитора.</p>
+    <button class="btn" id="tg-off">Выключить</button>
+    <p class="muted small-note">Время — в боте: /settings.</p>`;
+  if (!tg.link) return '';
+  return `<h2>Напоминания в Telegram</h2>
+    <p class="muted">Бот напишет вечером, только если ты забудешь позаниматься, и пришлёт задание от репетитора. Не чаще раза в день и не ночью.</p>
+    <a class="btn primary tg" id="tg-on" href="${esc(tg.link)}" target="_blank" rel="noopener">${TG_ICON}Напоминать в Telegram</a>
+    <p class="muted small-note">Откроется Telegram — нажми там «Запустить».</p>`;
+}
+
 function viewMe() {
   const tutorPack = ref.startsWith('t:');
   const a = account();
@@ -576,8 +717,9 @@ function viewMe() {
       ${tutorPack ? '<p class="muted">Норму задаёт репетитор</p>' : ''}
       <button class="btn primary" id="save">Сохранить</button>
     </section>
+    <section class="panel tg-panel" id="tg-box" hidden></section>
     <section class="panel">
-      <h2>Напоминание</h2>
+      <h2 id="cal-h">Напоминание</h2>
       <p class="muted">Добавит в календарь телефона ежедневное событие со звуком и ссылкой на тренажёр.</p>
       <div class="row"><input id="remind-time" type="time" value="${esc(store.get('zd-remind-time', '19:00'))}" class="time-input">
         <button class="btn" id="remind">Добавить в календарь</button></div>
@@ -623,6 +765,37 @@ function viewMe() {
     store.set('zd-remind-time', time);
     addReminder(time);
   };
+  // Telegram: сразу из сохранённого, потом — свежий ответ сервера
+  const fillTg = tg => {
+    const box = $app.querySelector('#tg-box');
+    if (!box) return; // ученик уже ушёл с профиля
+    const html = tgPanel(tg);
+    box.innerHTML = html;
+    box.hidden = !html;
+    $app.querySelector('#cal-h').textContent = html ? 'Или напоминание в календаре' : 'Напоминание';
+    box.querySelector('#tg-off')?.addEventListener('click', async e => {
+      e.target.disabled = true;
+      try {
+        await api(`/packs/${encodeURIComponent(ref.slice(2))}/notify/off`, { method: 'POST', body: { sid: prog.sid } });
+        // Не перечитываем: копия KV в этом регионе может отставать до минуты и показать «Включены»
+        store.set(tgKey(), { ...tgState(), on: false, at: null, chk: Date.now() });
+        toast('Напоминания выключены');
+      } catch (err) { toast(err.message); }
+      fillTg(tgState());
+    });
+    box.querySelector('#tg-on')?.addEventListener('click', () => {
+      tgPend();
+      // Вернулся из Telegram — показываем, включилось ли
+      const back = () => {
+        if (document.visibilityState !== 'visible') return;
+        document.removeEventListener('visibilitychange', back);
+        refreshTg().then(t => { if (t) fillTg(t); });
+      };
+      document.addEventListener('visibilitychange', back);
+    });
+  };
+  fillTg(tgState());
+  refreshTg().then(tg => { if (tg) fillTg(tg); });
   $app.querySelector('#reset').onclick = () => {
     if (!confirm('Стереть весь прогресс по этому набору?')) return;
     store.set(progKey(), null);
@@ -679,7 +852,8 @@ function viewName() {
     if (!name) return toast('Напиши имя, чтобы репетитор тебя узнал');
     prog.name = name;
     save();
-    sync(true);
+    // Сервер узнал ученика — ссылка в бота будет готова уже к концу первого занятия
+    checkAdopted(name).then(() => { save(); return sync(true); }).then(() => { if (tgStale()) refreshTg(); });
     route();
   };
   $app.querySelector('#ok').onclick = ok;
@@ -700,11 +874,23 @@ function route() {
   if (!pack) return location.hash === '#/library' ? viewLibrary() : viewLanding();
   const [, view, arg] = decodeURI(location.hash).split('/');
   if (ref.startsWith('t:') && !prog.name) return viewName();
+  if (view === 'go' || view === 'hw') return openFromBot(view);
   if (view === 'library') return viewLibrary();
   if (view === 'topic') return viewTopic(arg);
   if (view === 'lesson') return viewLesson(arg);
   if (view === 'me') return viewMe();
   viewHome();
+}
+
+// Ссылки из бота: #/go — сразу занятие дня, #/hw — задание. Адрес сразу заменяем на главную,
+// чтобы «Назад» и обновление страницы не начинали занятие заново
+function openFromBot(view) {
+  history.replaceState(null, '', location.pathname + location.search + '#/');
+  if (view === 'hw') return pack.hw ? startHw() : viewHome();
+  const q = buildQueue('daily');
+  if (q.length) return startSession(q, 'Занятие');
+  viewHome();
+  toast('На сегодня всё — возвращайся завтра');
 }
 
 function applyBrand() {
@@ -721,6 +907,13 @@ async function init() {
   await finishPayment(); // вернулись с оплаты — пакет ниже загрузится уже полным
   const params = new URLSearchParams(location.search);
   const recent = store.get('zd-recent', []);
+  // sid из кнопки бота — сразу убираем из адреса: скопированная или пересланная ссылка его не разнесёт
+  const sidFromBot = params.get('s');
+  if (sidFromBot !== null) {
+    const u = new URL(location.href);
+    u.searchParams.delete('s');
+    history.replaceState(null, '', u);
+  }
   // ?about — лендинг для репетиторов даже у тех, кто уже занимается в каком-то наборе
   ref = params.has('about') ? null : params.get('t') ? 't:' + params.get('t') : params.get('p') || recent[0]?.ref || null;
   window.addEventListener('hashchange', route);
@@ -740,12 +933,15 @@ async function init() {
   topicsById = Object.fromEntries(pack.topics.map(t => [t.id, t]));
   store.set('zd-recent', [{ ref, title: pack.title, tutor: pack.tutor }, ...recent.filter(r => r.ref !== ref)].slice(0, 5));
   loadProg();
+  if (ref.startsWith('t:')) adoptSid(sidFromBot);
   // «Новых в день» в открытых наборах ученик задаёт сам, в наборе репетитора — репетитор
   if (!ref.startsWith('t:')) pack.daily = store.get('zd-daily:' + ref, pack.daily);
   applyBrand();
   route();
   if (await pullProg() && !document.querySelector(".card")) route();
-  sync(false);
+  await sync(false);
+  // Включены ли напоминания в Telegram и ссылка в бота — раз в сутки
+  if (tgStale()) refreshTg();
 }
 
 init();

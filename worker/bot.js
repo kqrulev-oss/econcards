@@ -11,6 +11,10 @@
    GET  /tg/setup     один раз: регистрирует вебхук и команды (?key=TG_SECRET)
    POST /gh           вебхук GitHub (подпись X-Hub-Signature-256)
 
+   Тот же бот — для учеников, родителей и репетиторов: уведомления (worker/notify.js).
+   Их обновления разбираются раньше проверки TG_OWNER, поэтому чужой текст никогда
+   не попадает в задачи владельца; остальным личным чатам — короткая справка.
+
    Секреты (Cloudflare → Worker → Settings → Variables and Secrets):
      TG_TOKEN   токен бота от @BotFather
      TG_SECRET  любая длинная случайная строка (защищает вебхук)
@@ -24,6 +28,7 @@
 
 import { confirmTelegram, telegramPending, getAccount, planStatus } from './auth.js';
 import { extend, savePromo, normCode } from './billing.js';
+import { handleNotifyUpdate, isNotifyUpdate, notifyStats, HELLO, DESCRIPTION, SHORT_DESCRIPTION } from './notify.js';
 
 const MARK = '<!-- via-telegram -->'; // наши issue и комментарии — не пересылаем их обратно
 const AGENTS = { claude: 'Claude', codex: 'Codex', gemini: 'Gemini' };
@@ -66,7 +71,8 @@ const HELP = `Пишите задачу обычным текстом — Gemini
 /grant кто tutor|lib дней — выдать доступ вручную (кто: id аккаунта, почта или id в Telegram)
 /stats — аккаунты, пробные периоды, оплаты
 /promo — промокоды: /promo add КОД скидка 20 [tutor|lib|any] [лимит] [дней]; /promo add КОД дни 14 [tutor|lib] …; /promo off КОД
-Ответ реплаем на сообщение агента уходит ему же в задачу.`;
+Ответ реплаем на сообщение агента уходит ему же в задачу.
+Уведомления: /settings, /notify — статистика.`;
 
 // ---------- GitHub ----------
 
@@ -200,6 +206,8 @@ async function onMessage(env, msg) {
     return say(env, await list());
   }
 
+  if (cmd === '/notify') return say(env, await notifyStats(env));
+
   if (cmd === '/stats') {
     const all = async prefix => { const keys = []; let cursor; do { const l = await env.DB.list({ prefix, cursor }); keys.push(...l.keys); cursor = l.list_complete ? null : l.cursor; } while (cursor); return keys; };
     const accts = (await Promise.all((await all('acct:')).map(k => getAccount(env, k.name.slice(5))))).filter(Boolean);
@@ -326,14 +334,32 @@ export async function handleBot(req, env, ctx) {
   if (url.pathname === '/tg/setup') {
     if (!env.TG_TOKEN || !env.TG_SECRET) return text('Задайте секреты TG_TOKEN и TG_SECRET.', 500);
     if (url.searchParams.get('key') !== env.TG_SECRET) return text('Неверный key.', 403);
-    const hook = await tg(env, 'setWebhook', { url: `${url.origin}/tg`, secret_token: env.TG_SECRET, allowed_updates: ['message', 'callback_query'] });
-    await tg(env, 'setMyCommands', { commands: [
-      { command: 'claude', description: 'Задача Claude: логика, данные, сервер' },
-      { command: 'codex', description: 'Задача Codex: дизайн и вёрстка' },
-      { command: 'ask', description: 'Просто спросить Gemini' },
-      { command: 'status', description: 'Открытые задачи' },
-      { command: 'help', description: 'Как пользоваться' },
-    ] });
+    // max_connections 1: обновления идут по одному — у индекса подписок nt:list один писатель
+    const hook = await tg(env, 'setWebhook', { url: `${url.origin}/tg`, secret_token: env.TG_SECRET,
+      allowed_updates: ['message', 'callback_query', 'my_chat_member'], max_connections: 1 });
+    const common = [
+      { command: 'settings', description: 'Что включено' },
+      { command: 'stop', description: 'Отключить всё' },
+      { command: 'dz', description: 'Задание ученикам (для репетитора)' },
+    ];
+    await tg(env, 'setMyCommands', { commands: [...common, { command: 'help', description: 'Помощь' }] });
+    // Команды владельца видны только в его чате
+    if (env.TG_OWNER) {
+      await tg(env, 'setMyCommands', { scope: { type: 'chat', chat_id: Number(env.TG_OWNER) }, commands: [
+        { command: 'claude', description: 'Задача Claude: логика, данные, сервер' },
+        { command: 'codex', description: 'Задача Codex: дизайн и вёрстка' },
+        { command: 'ask', description: 'Просто спросить Gemini' },
+        { command: 'status', description: 'Открытые задачи' },
+        { command: 'help', description: 'Как пользоваться' },
+        { command: 'stats', description: 'Аккаунты, пробные периоды, оплаты' },
+        { command: 'grant', description: 'Выдать доступ вручную' },
+        { command: 'promo', description: 'Промокоды' },
+        { command: 'notify', description: 'Уведомления: статистика' },
+        ...common,
+      ] });
+    }
+    await tg(env, 'setMyDescription', { description: DESCRIPTION });
+    await tg(env, 'setMyShortDescription', { short_description: SHORT_DESCRIPTION });
     return text(hook.ok ? 'Готово: вебхук Telegram подключён. Напишите боту /start.' : `Telegram ответил: ${hook.description}`);
   }
 
@@ -341,12 +367,20 @@ export async function handleBot(req, env, ctx) {
     if (!env.TG_SECRET || req.headers.get('X-Telegram-Bot-Api-Secret-Token') !== env.TG_SECRET) return text('forbidden', 403);
     const upd = await req.json().catch(() => ({}));
     const chat = upd.message?.chat?.id ?? upd.callback_query?.message?.chat?.id;
+    // Вход на сайт: «/start login_<код>» принимаем от любого человека, но входим
+    // только по кнопке — иначе присланная кем-то ссылка отдала бы ему ваш аккаунт
+    const login = /^\/start login_([a-z0-9]{24})$/.exec(upd.message?.text || '');
+    const okBtn = /^login_ok:([a-z0-9]{24})$/.exec(upd.callback_query?.data || '');
+    // Уведомления (блокировка бота, /start s_|r_|t_, /stop, /settings, /dz, кнопки n:* и dz:*):
+    // подписки меняем до ответа — в nt:list пишет только вебхук, по одному обновлению за раз.
+    // Ошибки — только в лог, владельцу не пересылаем
+    if (!login && !okBtn && isNotifyUpdate(upd)) {
+      await handleNotifyUpdate(env, upd, ctx).catch(err => console.error('notify', err?.message));
+      return text('ok');
+    }
     // Отвечаем Telegram сразу, работаем в фоне — иначе он повторит запрос
     ctx.waitUntil((async () => {
       try {
-        // Вход на сайт: «/start login_<код>» принимаем от любого человека, но входим
-        // только по кнопке — иначе присланная кем-то ссылка отдала бы ему ваш аккаунт
-        const login = /^\/start login_([a-z0-9]{24})$/.exec(upd.message?.text || '');
         if (login && upd.message.chat.type === 'private') {
           const ok = await telegramPending(env, login[1]);
           await tg(env, 'sendMessage', ok ? {
@@ -358,7 +392,6 @@ export async function handleBot(req, env, ctx) {
           } : { chat_id: chat, text: 'Ссылка для входа устарела. Нажмите «Войти через Telegram» на сайте ещё раз.' });
           return;
         }
-        const okBtn = /^login_ok:([a-z0-9]{24})$/.exec(upd.callback_query?.data || '');
         if (okBtn && upd.callback_query.message?.chat?.type === 'private') {
           const q = upd.callback_query;
           const ok = await confirmTelegram(env, okBtn[1], q.from);
@@ -374,7 +407,13 @@ export async function handleBot(req, env, ctx) {
           if (chat) await tg(env, 'sendMessage', { chat_id: chat, text: `Ваш chat id: ${chat}\nДобавьте его в секрет TG_OWNER в Cloudflare — после этого бот начнёт принимать задачи только от вас.` });
           return;
         }
-        if (String(chat) !== String(env.TG_OWNER)) return; // чужие чаты молча игнорируем
+        if (String(chat) !== String(env.TG_OWNER)) {
+          // Чужой личный чат — короткая справка о боте; группы и чужие кнопки игнорируем
+          if (upd.message?.chat?.type === 'private') {
+            await tg(env, 'sendMessage', { chat_id: chat, text: HELLO, disable_web_page_preview: true }).catch(err => console.error('hello', err?.message));
+          }
+          return;
+        }
         if (upd.callback_query) await onCallback(env, upd.callback_query);
         else if (upd.message) await onMessage(env, upd.message);
       } catch (err) {

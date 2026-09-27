@@ -55,6 +55,32 @@ export async function loadLibrary(root = './') {
 
 // ---------- мелочи ----------
 
+// Конспект урока из набора: набор репетитора приходит с сервера как есть, поэтому
+// оставляем только простую разметку (белый список тегов, из атрибутов — class).
+// Скрипты, обработчики событий, ссылки и картинки вырезаются — иначе чужой набор
+// мог бы украсть вход у ученика.
+const SAFE_TAGS = new Set(['P', 'B', 'I', 'U', 'EM', 'STRONG', 'BR', 'DIV', 'SPAN', 'H3', 'H4', 'UL', 'OL', 'LI',
+  'TABLE', 'THEAD', 'TBODY', 'TR', 'TD', 'TH', 'SUP', 'SUB', 'SMALL', 'BLOCKQUOTE', 'CODE', 'PRE', 'HR']);
+export function safeHtml(html) {
+  const doc = new DOMParser().parseFromString(`<body>${String(html ?? '')}</body>`, 'text/html');
+  const clean = node => {
+    for (const ch of [...node.childNodes]) {
+      if (ch.nodeType === 3) continue;
+      if (ch.nodeType !== 1 || !SAFE_TAGS.has(ch.tagName)) {
+        // Незнакомый тег: текст внутри оставляем (кроме script/style и т. п.), сам тег — нет
+        if (ch.nodeType === 1 && !/^(SCRIPT|STYLE|IFRAME|OBJECT|EMBED|TEMPLATE|NOSCRIPT|SVG|MATH|TEXTAREA|SELECT)$/.test(ch.tagName)) {
+          clean(ch); ch.replaceWith(...ch.childNodes);
+        } else ch.remove();
+        continue;
+      }
+      for (const a of [...ch.attributes]) if (a.name !== 'class') ch.removeAttribute(a.name);
+      clean(ch);
+    }
+  };
+  clean(doc.body);
+  return doc.body.innerHTML;
+}
+
 export const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 // Формулы в данных помечены ⟦ ⟧: формула на всю строку — отдельным блоком,
 // внутри текста — выделенным фрагментом; ^2, ^{n}, ^(−1) — степени
