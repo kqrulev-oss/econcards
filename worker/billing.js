@@ -19,7 +19,7 @@
 import { AuthError, sessionAccount, getAccount, saveAccount, planStatus, TRIAL_DAYS, randomId } from './auth.js';
 
 const DAY_MS = 86400e3;
-export const LIB_PACKS = ['ege-rus', 'ege-math', 'econ-olymp', 'udarenie'];
+export const LIB_PACKS = ['ege-rus', 'ege-math', 'econ-olymp', 'udarenie']; // и LIB_PACKS в tools/build_packs.py
 export const FREE_TUTOR = { packs: 1, students: 3 }; // после пробного периода без оплаты
 
 export function prices(env) {
@@ -262,7 +262,10 @@ export async function checkNewStudent(env, packId) {
 }
 
 // Библиотека без доступа: все правила и теория, а задания — по 2 первых прототипа
-// в каждом задании (в наборах без прототипов — первые 15 карточек темы)
+// в каждом задании (в наборах без прототипов — первые 15 карточек темы).
+// Обычно эта часть уже собрана заранее в packs/<id>.free.json (trim_library в
+// tools/build_packs.py — те же правила, меняйте вместе); здесь — запасной путь,
+// если файла нет
 export function trimLibrary(pack) {
   const keep = new Set();
   const perTopic = {};

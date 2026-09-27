@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Страница не найдена · Между уроками</title>
+  <meta name="robots" content="noindex">
+  <meta name="theme-color" content="#5B3DF5">
+  <!-- Cloudflare показывает эту страницу по любому несуществующему адресу (assets.not_found_handling:
+       "404-page" в wrangler.jsonc — включает владелец), поэтому все пути — от корня сайта -->
+  <link rel="icon" href="/icons/favicon-48.png" sizes="48x48">
+  <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+  <link rel="stylesheet" href="/app.css">
+  <style>
+    .nf { padding-top: 18px; }
+    .nf-card { text-align: center; display: grid; gap: 14px; justify-items: center; padding: 30px 18px 22px; }
+    .nf-code { display: grid; place-items: center; width: 112px; height: 96px; border-radius: 30px; transform: rotate(-6deg);
+      background: var(--sun); color: #1B1440; border: 3px solid var(--ink); box-shadow: 0 6px 0 var(--ink); font: 800 34px var(--display); }
+    .nf-card h1 { font: 800 26px/1.15 var(--display); letter-spacing: -.02em; margin: 6px 0 0; }
+    .nf-card p { margin: 0; max-width: 30em; font-weight: 700; }
+    .nf-go { display: grid; gap: 12px; width: 100%; max-width: 360px; }
+  </style>
+</head>
+<body>
+  <main class="wrap nf">
+    <a class="ld-logo" href="/"><img class="ld-mark" src="/icons/icon-192.png" alt="" width="40" height="40">Между уроками</a>
+    <section class="panel nf-card">
+      <div class="nf-code" aria-hidden="true">404</div>
+      <h1>Такой страницы нет</h1>
+      <p class="muted">Возможно, в ссылке опечатка или страница переехала. Если ссылку прислал репетитор — попросите отправить её ещё раз или введите код тренажёра на главной.</p>
+      <div class="nf-go">
+        <a class="btn big primary" href="/">На главную</a>
+        <a class="btn" href="/login.html">Войти в кабинет</a>
+      </div>
+    </section>
+  </main>
+</body>
+</html>
