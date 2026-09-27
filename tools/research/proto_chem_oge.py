@@ -3383,12 +3383,20 @@ for _s in _parse20(_S20):
     S20.append(_s)
 
 
-def half_text(el, a, b, simple_from, simple_to):
-    """Уравнение процесса: «Cu⁰ − 2ē → Cu⁺²», «N⁺⁵ + 1ē → N⁺⁴», «Cl₂⁰ + 2ē → 2Cl⁻¹», «2N⁻³ − 6ē → N₂⁰»."""
-    n = 2 if (simple_from and el in DIATOMIC) or (simple_to and el in DIATOMIC) else 1
+def pick_target(el, b, rhs):
+    """Продукт, в котором элемент имеет степень окисления b (простое вещество и больший индекс — в приоритете)."""
+    c = [f for f in rhs if el in parse_formula(f) and b in ox_states(f).get(el, [])]
+    return max(c, key=lambda f: (_is_simple(f), parse_formula(f)[el])) if c else None
+
+
+def half_text(el, a, b, src, tgt):
+    """Уравнение процесса по школьной записи: «Cu⁰ − 2ē → Cu⁺²», «Cl₂⁰ + 2ē → 2Cl⁻¹», «2N⁺⁵ + 8ē → 2N⁺¹»
+    (для N2O), «2Cr⁺⁶ + 6ē → 2Cr⁺³» (для K2Cr2O7): число атомов — по индексу элемента в исходном веществе или продукте."""
+    nf, nt = min(parse_formula(src)[el], 2), min(parse_formula(tgt)[el], 2)
+    n = max(nf, nt)
     e = n * abs(b - a)
-    left = f'{el}₂{ox_sup(a)}' if simple_from and el in DIATOMIC else (f'{n}{el}{ox_sup(a)}' if n > 1 else f'{el}{ox_sup(a)}')
-    right = f'{el}₂{ox_sup(b)}' if simple_to and el in DIATOMIC else (f'{n}{el}{ox_sup(b)}' if n > 1 else f'{el}{ox_sup(b)}')
+    left = f'{el}₂{ox_sup(a)}' if _is_simple(src) and nf == 2 else (f'{n}{el}{ox_sup(a)}' if n > 1 else f'{el}{ox_sup(a)}')
+    right = f'{el}₂{ox_sup(b)}' if _is_simple(tgt) and nt == 2 else (f'{n}{el}{ox_sup(b)}' if n > 1 else f'{el}{ox_sup(b)}')
     return f'{left} {"−" if b > a else "+"} {e}ē → {right}'
 
 
@@ -3398,18 +3406,27 @@ def _is_simple(f):
 
 def _half_from(sch, which):
     sp, el, a, b = sch[which]
-    tgt = [f for f in sch['rhs'] if el in parse_formula(f) and b in ox_states(f).get(el, [])]
-    simple_to = any(_is_simple(f) for f in tgt)
-    return half_text(el, a, b, _is_simple(sp), simple_to)
+    return half_text(el, a, b, sp, pick_target(el, b, sch['rhs']))
+
+
+def e_of(half):
+    return int(re.search(r'(\d+)ē', half).group(1))
+
+
+def multipliers(e_red, e_ox):
+    from math import gcd
+    L = e_red * e_ox // gcd(e_red, e_ox)
+    return L // e_red, L // e_ox
 
 
 def scheme_str(sch):
     return ' + '.join(disp(x) for x in sch['lhs']) + ' → ' + ' + '.join(disp(x) for x in sch['rhs'])
 
 
-INTRO20 = 'Используя метод электронного баланса, расставьте коэффициенты в схеме реакции\n{s}\n'
-TASK20 = ('Запишите в отдельной(-ых) строчке(-ах) формулы вещества/частицы окислителя и восстановителя. Укажите, какое(-ая) '
-          'из этих веществ/частиц является окислителем, а какое(-ая) – восстановителем.')
+INTRO20 = 'Дана схема окислительно-восстановительной реакции\n{s}\n'
+TASK20 = ('1) Составьте электронный баланс, записав уравнения процессов окисления и восстановления.\n'
+          '2) По электронному балансу расставьте коэффициенты и запишите молекулярное уравнение реакции.\n'
+          '3) Укажите вещество (частицу) — окислитель и вещество (частицу) — восстановитель.')
 
 
 def _solution20(sch):
@@ -3456,11 +3473,12 @@ def _solve20_roles(p):
     return {'А': str(p['items'].index(oxs[0]) + 1), 'Б': str(p['items'].index(reds[0]) + 1)}
 
 
-_F20 = lambda step: F('развёрнутый ответ (3 балла: баланс, уравнение, окислитель/восстановитель); в тренажёре — шаг: ' + step,
-                     'условие — как в демоверсии 2027 №20 («Для предложенной схемы реакции … 1) … 2) … 3) …»)', 'В', 20,
+_F20 = lambda step, cov='': F('развёрнутый ответ (3 балла: баланс, уравнение, окислитель/восстановитель); в тренажёре — шаг: ' + step,
+                     'условие — по структуре демоверсии 2027 №20 (три пункта: баланс, уравнение, окислитель и '
+                     'восстановитель), своими словами', 'В', 20,
                      'схемы школьного уровня как в банке: металлы и неметаллы с HNO3 и H2SO4(конц.), H2S, NH3, HCl + '
                      'MnO2/KMnO4/KClO3, FeCl3 + KI, KClO3 + P/S', 'кислота как окислитель и как среда; «лишняя» H2O',
-                     ['5.3'], '3 балла по критериям; шаг проверяется автоматически')
+                     ['5.3'], '3 балла по критериям (баланс, уравнение, окислитель/восстановитель); покрыто: ' + cov)
 
 
 @proto('ch-oge-20-roles', 'ОГЭ', 20, 'ОВР (электронный баланс): окислитель и восстановитель в схеме реакции',
@@ -3469,7 +3487,9 @@ _F20 = lambda step: F('развёрнутый ответ (3 балла: бала
        answer_rule='восстановитель содержит элемент, повышающий степень окисления; окислитель — понижающий',
        mistakes=['азотную кислоту в роли среды не считают окислителем', 'путают окислитель с продуктом восстановления',
                  'воду считают окислителем'],
-       solve=_solve20_roles, kind='param', kes=['5.3'], fidelity=_F20('окислитель и восстановитель (соответствие)'))
+       solve=_solve20_roles, kind='param', kes=['5.3'], solve_steps=_steps20_e,
+       fidelity=_F20('окислитель и восстановитель (соответствие) + числа электронов в процессах',
+                     'элемент 3 критериев (окислитель/восстановитель) полностью; элемент 1 (баланс) — числа электронов'))
 def g20_roles(rng):
     sch = rng.choice(S20_ROLES)
     items = shuffled(rng, list(dict.fromkeys(sch['lhs'] + sch['rhs'])))
@@ -3478,8 +3498,11 @@ def g20_roles(rng):
     q = (INTRO20.format(s=scheme_str(sch)) + TASK20 + '\n\nПроверьте себя: установите соответствие между ролью вещества '
          'в этой реакции и его формулой.')
     kl, kr = sch['k']
+    er, eo = e_of(_half_from(sch, 'red')), e_of(_half_from(sch, 'ox'))
     return pcard('ch-oge-20-roles', q, a, _solution20(sch), k='match', o=o, eq=(sch['lhs'], sch['rhs'], kl, kr),
-                 p={'lhs': sch['lhs'], 'rhs': sch['rhs'], 'items': items})
+                 p={'lhs': sch['lhs'], 'rhs': sch['rhs'], 'items': items},
+                 steps=[('число электронов в уравнении процесса окисления', er),
+                        ('число электронов в уравнении процесса восстановления', eo)])
 
 
 def _halves_calc(lhs, rhs):
@@ -3496,9 +3519,19 @@ def _halves_calc(lhs, rhs):
                         if (key == 'red' and b > a) or (key == 'ox' and b < a):
                             if e in ('H', 'O') and not _is_simple(f) and not _is_simple(sp) and sp != 'H2O2':
                                 continue
-                            best = half_text(e, a, b, _is_simple(sp), _is_simple(f))
-        res[key] = best
+                            best = (e, a, b)
+        res[key] = half_text(best[0], best[1], best[2], sp, pick_target(best[0], best[2], rhs)) if best else None
     return res
+
+
+def _steps20_e(p):
+    h = _halves_calc(p['lhs'], p['rhs'])
+    return [e_of(h['red']), e_of(h['ox'])]
+
+
+def _steps20_mult(p):
+    h = _halves_calc(p['lhs'], p['rhs'])
+    return list(multipliers(e_of(h['red']), e_of(h['ox'])))
 
 
 def _solve20_halves(p):
@@ -3519,29 +3552,42 @@ S20_HALF = [s for s in S20_ROLES if s['red'][1] != s['ox'][1] or s['red'][2] != 
        answer_rule='окисление: атом отдаёт электроны, степень окисления растёт; число электронов = изменение степени '
                    'окисления × число атомов',
        mistakes=['для Cl2 пишут 1ē вместо 2ē', 'окисление записывают с «+ē»', 'путают конечную степень окисления'],
-       solve=_solve20_halves, kind='param', kes=['5.3'], fidelity=_F20('процессы окисления и восстановления (соответствие)'))
+       solve=_solve20_halves, kind='param', kes=['5.3'], solve_steps=_steps20_mult,
+       fidelity=_F20('уравнения процессов (соответствие) + множители баланса',
+                     'элемент 1 критериев (электронный баланс: процессы и множители) полностью'))
+def _wrong_halves(h, n_atoms):
+    """Отвлекающие записи процесса: неверное число электронов (в т. ч. без учёта индекса) и неверный знак."""
+    m = re.match(r'^(.*) ([+−]) (\d+)ē → (.*)$', h)
+    e = int(m.group(3))
+    counts = {e // 2} if n_atoms == 2 and e % 2 == 0 else {e * 2}
+    counts |= {e + 1, e - 1}
+    out = [f'{m.group(1)} {m.group(2)} {k}ē → {m.group(4)}' for k in sorted(counts) if k > 0 and k != e]
+    out.append(f'{m.group(1)} {"+" if m.group(2) == "−" else "−"} {e}ē → {m.group(4)}')
+    return out
+
+
 def g20_halves(rng):
     sch = rng.choice(S20_HALF)
     hr, ho = _half_from(sch, 'red'), _half_from(sch, 'ox')
-    wrong = set()
-    for (sp, el, a, b) in (sch['red'], sch['ox']):
-        tsimple = any(_is_simple(f) for f in sch['rhs'] if el in parse_formula(f) and b in ox_states(f)[el])
-        right = half_text(el, a, b, _is_simple(sp), tsimple)
-        m = re.match(r'^(.*) ([+−]) (\d+)ē → (.*)$', right)
-        n = int(m.group(3))
-        for n2 in (n + 1, n - 1, n * 2):
-            if n2 > 0 and n2 != n:
-                wrong.add(f'{m.group(1)} {m.group(2)} {n2}ē → {m.group(4)}')
-        wrong.add(f'{m.group(1)} {"+" if m.group(2) == "−" else "−"} {n}ē → {m.group(4)}')
-    wrong -= {hr, ho}
-    items = shuffled(rng, [hr, ho] + rng.sample(sorted(wrong), 2))
+    items = [hr, ho]
+    for which, h in (('red', hr), ('ox', ho)):
+        sp, el, a, b = sch[which]
+        n = max(min(parse_formula(sp)[el], 2), min(parse_formula(pick_target(el, b, sch['rhs']))[el], 2))
+        ws = [w for w in _wrong_halves(h, n) if w not in items]
+        idx = [0] + ([len(ws) - 1] if len(ws) > 1 else [])      # число ē и знак — по одному варианту на процесс
+        items += [ws[i] for i in idx]
+    if len(set(items)) != len(items):
+        raise Retry
+    items = shuffled(rng, items)
     o = match_opts(['процесс окисления', 'процесс восстановления'], items)
     a = {'А': str(items.index(hr) + 1), 'Б': str(items.index(ho) + 1)}
-    q = (INTRO20.format(s=scheme_str(sch)) + TASK20 + '\n\nПроверьте себя: установите соответствие между процессом '
-         'и его электронным уравнением (первый шаг электронного баланса).')
+    q = (INTRO20.format(s=scheme_str(sch)) + TASK20 + '\n\nПроверьте себя (пункт 1): установите соответствие между '
+         'процессом и его уравнением, затем найдите множители электронного баланса.')
     kl, kr = sch['k']
+    m1, m2 = multipliers(e_of(hr), e_of(ho))
     return pcard('ch-oge-20-electron-balance', q, a, _solution20(sch), k='match', o=o, eq=(sch['lhs'], sch['rhs'], kl, kr),
-                 p={'lhs': sch['lhs'], 'rhs': sch['rhs'], 'items': items})
+                 p={'lhs': sch['lhs'], 'rhs': sch['rhs'], 'items': items},
+                 steps=[('множитель для процесса окисления', m1), ('множитель для процесса восстановления', m2)])
 
 
 def coef_by_electrons(lhs, rhs):
@@ -3615,6 +3661,8 @@ def _coef_ok(s):
     kl, kr = s['k']
     if max(kl + kr) > 9 or s['ox'][0] == s['red'][0]:
         return False
+    if len(s['lhs']) + len(s['rhs']) < 5:        # как в банке: со средой (кислота, щёлочь, вода), не «X + Y = Z + W»
+        return False
     try:
         return coef_by_electrons(s['lhs'], s['rhs']) == list(kl) + list(kr)
     except (ValueError, KeyError, ZeroDivisionError, TypeError):
@@ -3635,8 +3683,9 @@ def _solve20_coef(p):
                    'остальные — по сохранению атомов (последними — водород и кислород)',
        mistakes=['кислоту-среду учитывают только в окислителе', 'забывают коэффициент перед водой',
                  'не удваивают электроны для двухатомных молекул'],
-       solve=_solve20_coef, kind='param', kes=['5.3'],
-       fidelity=_F20('коэффициенты — цифры подряд в порядке записи веществ в схеме'))
+       solve=_solve20_coef, kind='param', kes=['5.3'], solve_steps=_steps20_mult,
+       fidelity=_F20('коэффициенты — цифры подряд в порядке записи веществ в схеме; множители баланса',
+                     'элемент 2 критериев (уравнение реакции) полностью; элемент 1 — множители баланса'))
 def g20_coef(rng):
     sch = rng.choice(S20_COEF)
     kl, kr = sch['k']
@@ -3649,8 +3698,10 @@ def g20_coef(rng):
         w = ks[:]
         w[i] = w[i] + 1 if w[i] < 9 else w[i] - 1
         wrong.append(''.join(map(str, w)))
+    m1, m2 = multipliers(e_of(_half_from(sch, 'red')), e_of(_half_from(sch, 'ox')))
     return pcard('ch-oge-20-coefficients', q, ans, _solution20(sch), k='num', eq=(sch['lhs'], sch['rhs'], kl, kr),
-                 p={'lhs': sch['lhs'], 'rhs': sch['rhs']}, wrong=wrong[:3])
+                 p={'lhs': sch['lhs'], 'rhs': sch['rhs']}, wrong=wrong[:3],
+                 steps=[('множитель для процесса окисления', m1), ('множитель для процесса восстановления', m2)])
 
 
 # ================================================================= 21. Цепочка превращений (шаги развёрнутого ответа)
