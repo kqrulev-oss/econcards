@@ -2848,31 +2848,39 @@ SOLUB34 = {  # соль: (растворимости, г на 100 г воды, �
 }
 
 
+def _solub_rx(p):
+    lhs = [p['salt'], p['reag']]
+    rhs = [p['prod'], p['out']] + (['H2O'] if p['out'] == 'CO2' else [])
+    return coef(lhs, rhs)
+
+
 def _solub_calc(p):
-    S, W = Fr(p['S']), Fr(p['W'])
-    sat = W * (100 + S) / 100
-    ns = Fr(p['mp']) * S / (100 + S) / Mi(p['salt'])
-    lhs, rhs = [p['salt'], p['reag']], [p['prod'], p['out']] + (['H2O'] if p['out'] == 'CO2' else [])
-    if p['salt'] in ('Na2CO3', 'BaCl2', 'CuSO4', 'MgSO4', 'AgNO3') and p['out'] != 'CO2':
-        rhs = [p['out'], p['prod']]
-    k = coef(lhs, rhs)
-    out_m = ns * Fr(k[p['out']], k[p['salt']]) * Mi(p['out'])
-    total = Fr(p['mp']) + Fr(p['mr']) - out_m
+    """По первой порции: осадок/газ → n соли → ω(насыщ.); масса всего раствора = W/(1 − ω); вторая порция → реакция."""
+    k = _solub_rx(p)
+    salt, out = p['salt'], p['out']
+    n1 = Fr(p['pv1']) / (VM if out == 'CO2' else Mi(out)) * Fr(k[salt], k[out])
+    wsat = n1 * Mi(salt) / Fr(p['m1'])
+    sat = Fr(p['W']) / (1 - wsat)
+    mp = sat - Fr(p['m1'])
+    ns = mp * wsat / Mi(salt)
+    out_m = ns * Fr(k[out], k[salt]) * Mi(out)
+    total = mp + Fr(p['mr']) - out_m
     nr = Fr(p['mr']) * Fr(p['wr']) / 100 / Mi(p['reag'])
     if p['target'] == 'prod':
-        w = ns * Fr(k[p['prod']], k[p['salt']]) * Mi(p['prod']) / total * 100
+        w = ns * Fr(k[p['prod']], k[salt]) * Mi(p['prod']) / total * 100
     else:
-        w = (nr - ns * Fr(k[p['reag']], k[p['salt']])) * Mi(p['reag']) / total * 100
-    return [(ns * Mi(p['salt']), 2), (ns, 3), (out_m, 2), (total, 2), (w, 1)]
+        w = (nr - ns * Fr(k[p['reag']], k[salt])) * Mi(p['reag']) / total * 100
+    return [(wsat * 100, 2), (mp, 2), (ns, 3), (total, 2), (w, 1)]
 
 
 _solve_34_solub = _last(_solub_calc)
 
 
 @proto('ch-ege-34-solub', 'ЕГЭ', 34, 'Насыщенный раствор (растворимость), порция раствора и реакция',
-       invariant='в насыщенном растворе m(соли) : m(воды) = S : 100; масса соли в порции = m(порции)·S/(100 + S); далее '
-                 'реакция с раствором реагента, масса раствора без осадка/газа',
-       varies='соль и её растворимость, масса воды для приготовления, доля отобранной порции, реагент, что найти',
+       invariant='по первой порции насыщенного раствора (осадок/газ) находят массовую долю соли в насыщенном растворе; '
+                 'масса всего раствора = m(воды)/(1 − ω); вторая порция реагирует с раствором реагента, масса раствора '
+                 'без осадка/газа',
+       varies='соль (растворимость при разных температурах), масса воды, масса первой порции и её продукт, реагент, что найти',
        answer_rule='массовая доля, %, до десятых',
        mistakes=['приняли растворимость за массовую долю', 'не вычли осадок или газ', 'посчитали всю соль, а не порцию'],
        solve=_solve_34_solub, kes=['1.11', '5.6', '5.7'],
@@ -2887,38 +2895,42 @@ def g34_solub(rng):
     reag, prod, out = pick(rng, rx)
     Wt = Fr(rng.choice(range(100, 401, 50)))
     sat = Wt * (100 + S) / 100
-    frac = Fr(1, rng.choice([2, 3, 4, 5]))
-    mp = sat * frac
-    if not nice(mp, 2):
-        raise Retry
-    ns = mp * S / (100 + S) / M(salt)
-    lhs = [salt, reag]
-    rhs = [prod, out] + (['H2O'] if out == 'CO2' else [])
-    k = coef(lhs, rhs)
+    wsat = S / (100 + S)
+    k = coef([salt, reag], [prod, out] + (['H2O'] if out == 'CO2' else []))
+    m1 = Fr(rng.choice(range(20, int(sat * Fr(2, 3)), 5)))
+    n1 = m1 * wsat / M(salt)
+    pv1 = n1 * Fr(k[out], k[salt]) * (VM if out == 'CO2' else M(out))
+    pv1 = Fr(round(pv1 * (1000 if out == 'CO2' else 100)), 1000 if out == 'CO2' else 100)
+    mp = sat - m1
+    ns = mp * wsat / M(salt)
     need = ns * Fr(k[reag], k[salt])
-    nr = need * Fr(rng.choice([11, 12, 13, 15, 16, 18, 20]), 10)
     wr = pick(rng, [w for w in (5, 8, 10, 12, 15, 20, 25) if w_ok(reag, w)])
-    mr = nr * M(reag) * 100 / wr
-    mr = Fr(math.ceil(mr))
+    mr = Fr(math.ceil(need * Fr(rng.choice([11, 12, 13, 15, 16, 18, 20]), 10) * M(reag) * 100 / wr))
     nr = mr * wr / 100 / M(reag)
     target = rng.choice(['prod', 'prod', 'reag'])
     out_m = ns * Fr(k[out], k[salt]) * M(out)
     total = mp + mr - out_m
     exact = (ns * Fr(k[prod], k[salt]) * M(prod) if target == 'prod' else (nr - need) * M(reag)) / total * 100
     ans = rnd(exact, 1)
-    part = {Fr(1, 2): 'половину', Fr(1, 3): 'третью часть', Fr(1, 4): 'четверть', Fr(1, 5): 'пятую часть'}[frac]
-    q = (f'Растворимость {_gw(salt)} при некоторой температуре равна {ru(S)} г на 100 г воды. При этой температуре '
-         f'приготовили насыщенный раствор, использовав {ru(Wt)} г воды. {cap(part)} полученного раствора ({ru(mp)} г) '
-         f'смешали с {ru(mr)} г {wr} %-ного раствора {_gw(reag)}. Рассчитайте массовую долю '
-         f'{_gw(prod) if target == "prod" else _gw(reag)} в образовавшемся растворе. ' + KIM34 + '(Запишите число с точностью до десятых.)')
-    e = f'm({pretty(salt)}) в порции = {ru(mp)}·{ru(S)}/(100 + {ru(S)}) ⇒ n = {fmt(ns, 4)} моль; реакция с {pretty(reag)}, ' \
-        f'из раствора уходит {pretty(out)} ({fmt(out_m, 2)} г) ⇒ ω ≈ {ans} %.'
-    wrong = W([exact * total / (mp + mr), exact * (100 + S) / 100, exact * 2], 1)
-    p = dict(salt=salt, reag=reag, prod=prod, out=out, S=str(S), W=str(Wt), mp=str(mp), mr=str(mr), wr=wr, target=target)
-    steps = [(f'm({pretty(salt)}) в порции, г', sfmt(ns * M(salt), 2)), (f'n({pretty(salt)}), моль', sfmt(ns, 3)),
-             (f'm({pretty(out)}), удалившегося из раствора, г', sfmt(out_m, 2)), ('m(конечного раствора), г', sfmt(total, 2)),
+    p = dict(salt=salt, reag=reag, prod=prod, out=out, W=str(Wt), m1=str(m1), pv1=str(pv1), mr=str(mr), wr=wr,
+             target=target)
+    steps = [('ω(соли) в насыщенном растворе, %', sfmt(wsat * 100, 2)), ('m(второй части раствора), г', sfmt(mp, 2)),
+             (f'n({pretty(salt)}) во второй части, моль', sfmt(ns, 3)), ('m(конечного раствора), г', sfmt(total, 2)),
              (f'ω({pretty(prod) if target == "prod" else pretty(reag)}), %', ans)]
-    return pcard_s('ch-ege-34-solub', q, ans, e, p=p, wrong=wrong, eq=eqp(lhs, rhs)[1], steps=steps)
+    if [v for _, v in steps] != [rs(v, d) for v, d in _solub_calc(p)]:
+        raise Retry                 # данные первой порции округлены — шаги должны сходиться с пересчётом по условию
+    got = f'выделилось {ru(pv1)} л (н.у.) газа' if out == 'CO2' else f'выпало {ru(pv1)} г осадка'
+    q = (f'При некоторой температуре приготовили насыщенный раствор {_gw(salt)}, растворив соль в {ru(Wt)} г воды. '
+         f'Раствор разделили на две части. К первой части массой {ru(m1)} г прилили избыток раствора {_gw(reag)}; при этом '
+         f'{got}. Вторую часть смешали с {ru(mr)} г {wr} %-ного раствора {_gw(reag)}. Рассчитайте массовую долю '
+         f'{_gw(prod) if target == "prod" else _gw(reag)} в образовавшемся растворе. ' + KIM34 +
+         '(Запишите число с точностью до десятых.)')
+    e = f'По первой части: n({pretty(salt)}) = {fmt(n1, 4)} моль, ω(насыщ.) = {fmt(wsat * 100, 2)} %; масса всего раствора ' \
+        f'= {ru(Wt)}/(1 − ω) = {fmt(sat, 2)} г, вторая часть {fmt(mp, 2)} г; реакция с {pretty(reag)}, из раствора уходит ' \
+        f'{pretty(out)} ({fmt(out_m, 2)} г) ⇒ ω ≈ {ans} %.'
+    wrong = W([exact * total / (mp + mr), exact * (sat / mp), exact * 2], 1)
+    return pcard_s('ch-ege-34-solub', q, ans, e, p=p, wrong=wrong, eq=eqp([salt, reag], [prod, out] + (['H2O'] if out == 'CO2' else []))[1],
+                   steps=steps)
 
 
 def _oleum_inv(p):
@@ -2978,7 +2990,7 @@ def g34_oleum(rng):
     m = Fr(rng.choice(range(5, 61)))
     n = m * (100 - pr) / 100 / M('H2SO4') + m * pr / 100 / M('SO3')
     Wt = Fr(rng.choice(range(50, 401, 10)))
-    mode = rng.choice(['acid', 'KOH', 'BaCl2', 'BaCl2', 'inverse', 'inverse'])
+    mode = rng.choice(['KOH', 'BaCl2', 'BaCl2', 'inverse', 'inverse'])
     if mode == 'inverse':      # как демоверсия 2027: по составу олеума и конечной доле соли найти объём воды
         a_, b_ = Fr(rng.randint(1, 10), 100), Fr(rng.randint(2, 20), 100)
         m = 98 * a_ + 80 * b_
