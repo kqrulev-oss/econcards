@@ -3757,6 +3757,14 @@ def make_gen(spec):
             c['_sub'] = i
             return c
         return g, lambda c: subs[c['_sub']][1](c)
+    if '#' in spec:                                   # модификатор формата ответа как в КИМ
+        base, _, mod = spec.partition('#')
+        g0, c0 = make_gen(base)
+        if mod == 'word':
+            def g(rng):
+                return to_word(g0(rng))
+            return g, lambda c: agree_word(c, c0)
+        raise ValueError(mod)
     if spec.startswith('d_'):
         name, _, a = spec.partition(':')
         gen, chk = ENGINES[name]
@@ -3772,6 +3780,25 @@ def make_gen(spec):
                 return c
         raise Skip(spec)
     return g, lambda c: agree(CHECKS[name](c['chk']), c)
+
+
+def to_word(c):
+    """Карточка 1 из 4 → ввод слова (ответ-слово, как в бланке КИМ); варианты остаются в chk для проверки."""
+    if c['k'] != 'one':
+        return c
+    right = next(x['t'] for x in c['o'] if x['id'] == c['a'])
+    w = dict(c, k='word', a=right)
+    w['_one'] = {'o': c['o'], 'a': c['a']}
+    w.pop('o')
+    w['q'] = re.sub(r'\s*Выберите[^.?]*[.?]?$', '', w['q']).rstrip() + ' Ответ запишите словом (словосочетанием).'
+    return w
+
+
+def agree_word(c, check_one):
+    if c['k'] != 'word':
+        return check_one(c)
+    one_card = dict(c, k='one', o=c['_one']['o'], a=c['_one']['a'])
+    return check_one(one_card)
 
 
 def agree(res, c):
@@ -3822,6 +3849,9 @@ def validate(c):
             errs.append('повторяются позиции')
         if set(c['a']) != {x['id'] for x in L} or not set(c['a'].values()) <= {x['id'] for x in R}:
             errs.append('ответ не по позициям')
+    elif k == 'word':
+        if not c['a'] or len(c['a']) > 80:
+            errs.append('ответ-слово пустой или слишком длинный')
     elif k == 'flip':
         if not c['a']:
             errs.append('пустой ответ')
