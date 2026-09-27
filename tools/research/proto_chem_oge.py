@@ -1330,6 +1330,8 @@ def _cond_ok9(r):
     """Если продукты зависят от условий, условие обязано быть в тексте карточки (конц./разб., t°, на холоду, сплавление)."""
     if not cond_dependent(r['lhs']):
         return True
+    if frozenset(r['lhs']) in (frozenset({'Ba', 'O2'}), frozenset({'Mg', 'SiO2'}), frozenset({'C', 'CuO'})):
+        return False          # продукты зависят от соотношения/условий, которые школьная запись не задаёт
     return bool(cond_tag(r.get('cond')) in ('конц.', 'разб.', 'сплавление') or cond_words(r.get('cond'))
                 or set(r['lhs']) & AMPH9 or 'пар' in (r.get('cond') or ''))
 
@@ -1437,7 +1439,7 @@ def lhs_text(r):
     if cond_dependent(r['lhs']) and tag not in ('сплавление',) and not set(L) & AMPH9:
         w = cond_words(r.get('cond'))
         if w and 'пар' not in (r.get('cond') or '') and 'горяч' not in (r.get('cond') or ''):
-            s += f' ({w})'
+            s = s.replace(f' ({tag})', f' ({tag}, {w})') if tag in ('конц.', 'разб.') and f' ({tag})' in s else s + f' ({w})'
     return s
 
 

@@ -10,10 +10,21 @@
 пересчитывает ответ другим кодом (для «выберите верные» — по спецификациям утверждений, записанным в p).
 """
 import math
+import re
 from fractions import Fraction as Fr
 
-from pc_core import proto, recipe, pcard, opts, match_opts, exact, fmt, Retry
+from pc_core import proto, recipe, opts, match_opts, exact, fmt, Retry
 from pc_core import ru as _ru
+from pc_core import pcard as _pcard
+
+
+def _clean(t):
+    t = t.replace('рт. ст..', 'рт. ст.')
+    return re.sub(r'(?<!\.)\.\.(?!\.)', '.', t)
+
+
+def pcard(pid, q, a, e, **kw):
+    return _pcard(pid, _clean(q), a, _clean(e), **kw)
 
 
 def ru(x):
@@ -2422,13 +2433,8 @@ def _phen_item(x):
 def g18_laws(rng):
     secs = [1, 2, 3, 4, rng.choice([1, 2, 3])]
     rng.shuffle(secs)
-    keys, items = [], []
-    for s_ in secs:
-        key = rng.choice([k for k, v in LAWS.items() if v[0] == s_ and k not in keys])
-        keys.append(key)
-        items.append(_law_item(rng, key))
-    if not 2 <= sum(x[2] for x in items) <= 3:
-        raise Retry
+    used = set()
+    items = [_slot(rng, s_, used, 'law', tv) for s_, tv in zip(secs, _truths(rng))]
     q = rng.choice(Q18)
     return many_card('ph-ege-18-laws', rng, q, items, {}, fixed=True)
 
@@ -3099,9 +3105,13 @@ def _dirw(up, g='m'):
     return 'увеличивается' if up else 'уменьшается'
 
 
+NO_ORDER = {'ph-ege-21-currents', 'ph-ege-21-lens'}   # звенья этих цепочек не образуют строгой последовательности
+
+
 def chain_card(pid, rng, q, chain, p, e_concl):
     tl, fl = chain
-    step = rng.choice(['links', 'order']) if len(tl) >= 3 else 'links'
+    e_concl = re.sub(r'\s*Ответ:.*$', '', e_concl).rstrip('.') + '.'
+    step = rng.choice(['links', 'order']) if len(tl) >= 3 and pid not in NO_ORDER else 'links'
     if step == 'links':
         k = min(rng.choice([2, 3]), len(tl))
         if len(fl) < 5 - k:
@@ -3226,6 +3236,11 @@ def _ch21ind(p):
     return tl, fl
 
 
+def ratio_txt(a, b):
+    r = Fr(a) / Fr(b)
+    return f'{r.numerator} : {r.denominator}'
+
+
 def _ch21cur(p):
     I1, I2, I3, d12, d23 = p['I1'], p['I2'], p['I3'], p['d12'], p['d23']
     s1, s3 = (I1 > 0) == (I2 > 0), (I3 > 0) == (I2 > 0)
@@ -3234,7 +3249,7 @@ def _ch21cur(p):
     res = 'равна нулю' if v == 0 else ('направлена к проводнику 3' if v > 0 else 'направлена к проводнику 1')
     tl = [f'Токи в проводниках 1 и 2 {"сонаправлены" if s1 else "противоположны"}, поэтому проводник 2 {"притягивается к проводнику 1" if s1 else "отталкивается от проводника 1"}.',
           f'Токи в проводниках 3 и 2 {"сонаправлены" if s3 else "противоположны"}, поэтому проводник 2 {"притягивается к проводнику 3" if s3 else "отталкивается от проводника 3"}.',
-          f'Модуль силы взаимодействия пропорционален произведению сил токов и обратно пропорционален расстоянию: F₁₂ : F₃₂ = {ru(f1)} : {ru(f3)}.',
+          f'Модуль силы взаимодействия пропорционален произведению сил токов и обратно пропорционален расстоянию: F₁₂ : F₃₂ = {ratio_txt(f1, f3)}.',
           f'Равнодействующая сил Ампера, действующих на проводник 2, {res}.']
     fl = ['Проводники с одинаково направленными токами отталкиваются.', 'Сила взаимодействия проводников не зависит от расстояния между ними.',
           'Сила взаимодействия двух проводников пропорциональна квадрату расстояния между ними.',
@@ -3256,6 +3271,8 @@ def _ch21lens(p):
           'farther': ['По формуле тонкой линзы 1/F = 1/d + 1/f при увеличении d расстояние f до изображения уменьшается, приближаясь к F.',
                       'Увеличение Γ = f/d уменьшается, изображение становится меньше.',
                       'Освещённость изображения обратно пропорциональна f², поэтому при уменьшении f она увеличивается.']}[sit]
+    if 'br' not in (p.get('A'), p.get('B')):
+        tl = [t for t in tl if 'яркост' not in t and 'освещённост' not in t]
     fl = ['Если закрыть половину линзы, на экране останется только половина изображения.', 'Светофильтр смещает изображение ближе к линзе.',
           'При приближении предмета к фокусу собирающей линзы изображение уменьшается.', 'Оптическая сила линзы зависит от расстояния до предмета.']
     return tl, fl
@@ -3628,7 +3645,7 @@ def g21_tir(rng):
     plot = rng.choice(['На дне широкого бака, заполненного {l}, находится маленькая лампочка.', 'На дне аквариума с {l} лежит точечный светодиод.',
                        'На дне широкого сосуда с {l} расположен точечный источник света.']).format(l=l1[2])
     how = {'h+': 'В сосуд доливают ту же жидкость, уровень поднимается.', 'h-': 'Часть жидкости сливают, уровень понижается.',
-           'n': f'Жидкость заменяют: вместо неё наливают {l2[0]} до того же уровня (n = {ru(n2)}, у исходной жидкости n = {ru(n1)}).'}[ch]
+           'n': f'Жидкость заменяют: вместо неё наливают {({"вода": "воду"}).get(l2[0], l2[0])} до того же уровня (n = {ru(n2)}, у исходной жидкости n = {ru(n1)}).'}[ch]
     up = n2 > n1
     rule = {'h+': {'R': '1', 'a': '3'}, 'h-': {'R': '2', 'a': '3'}, 'n': {'R': '2' if up else '1', 'a': '2' if up else '1'}}[ch]
     ans = {'А': rule[A], 'Б': rule[B]}
@@ -5385,7 +5402,7 @@ def g21_es(rng):
     steps, rel = ES_SEQ[seq]
     s = rng.choice([1, -1])
     sign, Sign = ('положительно', 'Положительно') if s > 0 else ('отрицательно', 'Отрицательно')
-    stick = rng.choice(['стеклянную палочку', 'эбонитовую палочку', 'палочку из оргстекла'])
+    stick = 'стеклянную палочку, потёртую о шёлк' if s > 0 else 'эбонитовую палочку, потёртую о шерсть'
     txt = ' '.join(steps).format(s=sign, S=Sign).replace('заряженную палочку', f'заряженную {stick}')
     items = list(ES_OPTS.values())
     rng.shuffle(items)

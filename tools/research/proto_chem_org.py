@@ -118,7 +118,7 @@ _KEEP = ('конц.', 'разб.', 'р-р', 'ж.', 'акт.', 'газ', 'кра�
 def clean_cond(c):
     """Условия реакции без вложенных пояснений в скобках: 'Ni (Pt), t, p' → 'Ni, t, p'."""
     c = c.replace('Pd (Pb2+)', 'Pd/Pb2+').replace('P (красный)', 'Pкр.')
-    c = re.sub(r'\s*\(([^()]*)\)', lambda m: f' ({m.group(1)})' if m.group(1) in _KEEP else '', c)
+    c = re.sub(r'\s+\(([^()]*)\)', lambda m: f' ({m.group(1)})' if m.group(1) in _KEEP else '', c)
     c = re.sub(r'избыток [A-Za-zА-Яа-я0-9]+', 'изб.', c)
     c = re.sub(r'1 моль [A-Za-z0-9]+', '1 моль', c)
     c = re.sub(r'^t \(([^)]*)\)$', r'\1, t', c)
@@ -134,8 +134,6 @@ def eqv(f):
         v = s.get('view') or pretty(f)
         if '(цикл)' in v:
             return pretty(hill(parse_formula(f))) + f' ({s["name"]})'
-        if '(1,' in v or '(орто' in v or '(пара' in v or '(мета' in v:
-            return pretty(f)
         return v
     if f == 'Ag(NH3)2OH':
         return '[Ag(NH₃)₂]OH'
@@ -193,7 +191,7 @@ def canon(r):
     if 'KMnO4' in r['lhs'] and ('0' in c and '°C' in c):
         flags.append('cold')
     rk = r.get('rk', '') or ('therm:' + clean_cond(c))
-    return (rk, r.get('medium', ''), tuple(flags))
+    return (rk, r.get('medium', ''), ','.join(flags))
 
 
 def canon_prods(sub, key):
