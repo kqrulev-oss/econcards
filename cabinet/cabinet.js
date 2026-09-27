@@ -272,6 +272,10 @@ function viewSettings() {
       <button class="btn" id="link">Привязать ещё способ</button>
       <div id="link-box"></div>
     </section>
+    <section class="panel">
+      <h2>Помощь</h2>
+      <p class="muted">Если что-то не работает с оплатой или доступом, напишите в Telegram <a href="https://t.me/trwqxp" target="_blank" rel="noopener">@trwqxp</a> и приложите номер аккаунта: <code class="acct-id">${esc(a?.id || '')}</code></p>
+    </section>
     <button class="btn big cab-out" id="out">Выйти из аккаунта</button>`);
   box.querySelector('#save').onclick = async () => {
     try { await api('/me', { method: 'PATCH', body: { name: box.querySelector('#name').value.trim() } }); await refreshAccount(); toast('Сохранено'); viewSettings(); }
@@ -306,13 +310,14 @@ function route() {
 
 async function main() {
   await finishRedirectLogin();
+  // Вернулись после оплаты — платёж применяем даже без входа (например, банк открыл другой браузер)
+  await finishPayment();
   if (!signedIn()) {
     // Ссылка вида cabinet/#parent — на странице входа сразу открыта нужная вкладка
     const want = location.hash.slice(1);
     location.replace(`../login.html?${ROLES[want] ? `role=${want}&` : ''}next=${encodeURIComponent('cabinet/' + location.hash)}`);
     return;
   }
-  await finishPayment();
   if (!await refreshAccount() && !signedIn()) { location.replace('../login.html?next=cabinet/'); return; }
   window.addEventListener('hashchange', route);
   route();

@@ -22,7 +22,7 @@
    Переменная GH_REPO (по умолч. kqrulev-oss/econcards).
    ============================================================ */
 
-import { confirmTelegram, getAccount, planStatus } from './auth.js';
+import { confirmTelegram, telegramPending, getAccount, planStatus } from './auth.js';
 import { extend, savePromo, normCode } from './billing.js';
 
 const MARK = '<!-- via-telegram -->'; // наши issue и комментарии — не пересылаем их обратно
@@ -153,13 +153,19 @@ async function onMessage(env, msg) {
   if (cmd === '/grant') {
     const [whoArg, product, daysArg] = rest;
     const days = Number(daysArg);
-    if (!whoArg || !['tutor', 'lib'].includes(product) || !(days > 0 && days <= 400)) return say(env, 'Формат: /grant <id|почта|telegram id> tutor|lib <дней>');
+    if (!whoArg || !['tutor', 'lib'].includes(product) || !(days && Math.abs(days) <= 400 && Number.isInteger(days))) {
+      return say(env, 'Формат: /grant <id|почта|telegram id> tutor|lib <дней>\nОтрицательные дни снимают доступ (после возврата денег): /grant a1b2… lib -30');
+    }
+    const mail = whoArg.toLowerCase();
+    // Почта: из входа по коду или из профиля Яндекса/VK/Google
     const id = /^a[a-z0-9]{12}$/.test(whoArg) ? whoArg
-      : await env.DB.get(whoArg.includes('@') ? `ident:email:${whoArg.toLowerCase()}` : `ident:tg:${whoArg}`);
+      : whoArg.includes('@') ? (await env.DB.get(`ident:email:${mail}`)) || (await env.DB.get(`mail:${mail}`))
+        : await env.DB.get(`ident:tg:${whoArg}`);
     const acct = id && await extend(env, id, product, days, 'вручную');
     if (!acct) return say(env, 'Аккаунт не найден.');
     const until = new Date(planStatus(acct, product).until).toLocaleDateString('ru-RU');
-    return say(env, `Готово: ${acct.name || acct.email || acct.id} — ${product === 'tutor' ? 'студия' : 'библиотека'} до ${until}.`);
+    const left = planStatus(acct, product).active ? `до ${until}` : 'доступа сейчас нет';
+    return say(env, `Готово: ${acct.name || acct.email || acct.id} — ${product === 'tutor' ? 'студия' : 'библиотека'} ${left}.`);
   }
 
   if (cmd === '/promo') {
@@ -338,13 +344,30 @@ export async function handleBot(req, env, ctx) {
     // Отвечаем Telegram сразу, работаем в фоне — иначе он повторит запрос
     ctx.waitUntil((async () => {
       try {
-        // Вход на сайт: «/start login_<код>» принимаем от любого человека
+        // Вход на сайт: «/start login_<код>» принимаем от любого человека, но входим
+        // только по кнопке — иначе присланная кем-то ссылка отдала бы ему ваш аккаунт
         const login = /^\/start login_([a-z0-9]{24})$/.exec(upd.message?.text || '');
         if (login && upd.message.chat.type === 'private') {
-          const ok = await confirmTelegram(env, login[1], upd.message.from);
-          await tg(env, 'sendMessage', { chat_id: chat, text: ok
-            ? '✅ Вход выполнен. Вернитесь на сайт «Между уроками» — страница откроется сама.'
-            : 'Ссылка для входа устарела. Нажмите «Войти через Telegram» на сайте ещё раз.' });
+          const ok = await telegramPending(env, login[1]);
+          await tg(env, 'sendMessage', ok ? {
+            chat_id: chat,
+            text: 'Вход на сайт «Между уроками» (econcards.kqrulev.workers.dev).\n\n'
+              + 'Нажмите кнопку, только если вы сами сейчас нажали «Войти через Telegram» на сайте. '
+              + 'Если ссылку вам кто-то прислал — не нажимайте: так он получит доступ к вашему аккаунту.',
+            reply_markup: { inline_keyboard: [[{ text: '✅ Да, это я — войти', callback_data: `login_ok:${login[1]}` }]] },
+          } : { chat_id: chat, text: 'Ссылка для входа устарела. Нажмите «Войти через Telegram» на сайте ещё раз.' });
+          return;
+        }
+        const okBtn = /^login_ok:([a-z0-9]{24})$/.exec(upd.callback_query?.data || '');
+        if (okBtn && upd.callback_query.message?.chat?.type === 'private') {
+          const q = upd.callback_query;
+          const ok = await confirmTelegram(env, okBtn[1], q.from);
+          await Promise.all([
+            tg(env, 'answerCallbackQuery', { callback_query_id: q.id }),
+            tg(env, 'editMessageText', { chat_id: chat, message_id: q.message.message_id, text: ok
+              ? '✅ Вход выполнен. Вернитесь на сайт «Между уроками» — страница откроется сама.'
+              : 'Ссылка для входа устарела или уже использована. Нажмите «Войти через Telegram» на сайте ещё раз.' }),
+          ]);
           return;
         }
         if (!env.TG_OWNER) {

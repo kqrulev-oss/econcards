@@ -73,48 +73,73 @@ async function yk(env, path, body, idem) {
   const r = await fetch(`https://api.yookassa.ru/v3${path}`, {
     method: body ? 'POST' : 'GET',
     headers: {
-      Authorization: 'Basic ' + btoa(`${env.YK_SHOP_ID}:${env.YK_SECRET}`),
+      Authorization: 'Basic ' + btoa(`${String(env.YK_SHOP_ID).trim()}:${String(env.YK_SECRET).trim()}`),
       'Content-Type': 'application/json',
       ...(idem ? { 'Idempotence-Key': idem } : {}),
     },
     body: body ? JSON.stringify(body) : undefined,
   });
   const data = await r.json().catch(() => ({}));
-  if (!r.ok) throw new AuthError(502, 'Платёжный сервис недоступен. Попробуйте позже.');
+  if (!r.ok) {
+    // Причина — в логах Cloudflare (неверный shopId/ключ, тестовый ключ у боевого магазина…)
+    console.error('yookassa', path, r.status, data.code, data.description, data.parameter);
+    throw new AuthError(502, 'Платёжный сервис недоступен. Попробуйте позже.');
+  }
   return data;
 }
 
-// Продлеваем доступ после успешной оплаты — идемпотентно
-export async function extend(env, acctId, product, days, note) {
+// Продлеваем доступ. С id платежа — идемпотентно: один платёж продлевает один раз,
+// даже если уведомление ЮKassa и возврат человека на сайт пришли одновременно
+export async function extend(env, acctId, product, days, note, pay = null) {
   const acct = await getAccount(env, acctId);
   if (!acct) return null;
   acct.plans ||= {};
   const p = acct.plans[product] ||= {};
-  p.paidUntil = Math.max(Date.now(), p.paidUntil || 0) + days * DAY_MS;
-  (p.history ||= []).push({ at: Date.now(), days, note });
+  if (pay && (p.history || []).some(h => h.pay === pay)) return { acct, already: true };
+  // Отрицательные дни (владелец снимает доступ после возврата) — от конца оплаченного срока
+  p.paidUntil = days > 0 ? Math.max(Date.now(), p.paidUntil || 0) + days * DAY_MS : Math.max(0, (p.paidUntil || 0) + days * DAY_MS);
+  (p.history ||= []).push({ at: Date.now(), days, note, ...(pay ? { pay } : {}) });
   p.history = p.history.slice(-20);
   await saveAccount(env, acct);
-  return acct;
+  return pay ? { acct } : acct;
+}
+
+async function tellOwner(env, text) {
+  if (!env.TG_TOKEN || !env.TG_OWNER) return;
+  await fetch(`https://api.telegram.org/bot${env.TG_TOKEN}/sendMessage`, {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ chat_id: env.TG_OWNER, text }),
+  }).catch(err => console.error('tg owner', err?.message));
 }
 
 async function applyPayment(env, id) {
   const pay = await yk(env, `/payments/${encodeURIComponent(id)}`);
   const meta = pay.metadata || {};
   if (pay.status !== 'succeeded' || !meta.acct || !NAMES[meta.product]) return { status: pay.status };
+  // Сумму сверяем с той, что была при создании платежа (цены могли поменяться с тех пор)
   const base = prices(env)[meta.product][meta.months];
-  const want = base && (meta.promo ? discounted(base, Number(meta.pct)) : base);
-  if (!want || Number(pay.amount?.value) < want) return { status: 'amount_mismatch' };
-  if (await env.DB.get(`paid:${id}`)) return { status: 'succeeded', already: true };
-  await env.DB.put(`paid:${id}`, JSON.stringify({ at: Date.now(), ...meta, amount: pay.amount.value }));
-  const acct = await extend(env, meta.acct, meta.product, 30 * Number(meta.months), `ЮKassa ${id}${meta.promo ? ' · ' + meta.promo : ''}`);
-  if (meta.promo) await markUsed(env, meta.promo, meta.payer || meta.acct);
-  // Владельцу — уведомление в Telegram
-  if (env.TG_TOKEN && env.TG_OWNER) {
-    await fetch(`https://api.telegram.org/bot${env.TG_TOKEN}/sendMessage`, {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ chat_id: env.TG_OWNER, text: `💰 Оплата ${pay.amount.value} ₽ · ${NAMES[meta.product]} на ${meta.months} мес.\n${acct?.name || acct?.email || meta.acct}` }),
-    }).catch(() => {});
+  const want = meta.value ? Number(meta.value) : base && (meta.promo ? discounted(base, Number(meta.pct)) : base);
+  if (!want || pay.amount?.currency !== 'RUB' || Number(pay.amount?.value) < want) {
+    console.error('yookassa amount mismatch', id, pay.amount, want);
+    await tellOwner(env, `⚠️ Платёж ${id}: сумма ${pay.amount?.value} ${pay.amount?.currency}, ожидалось ${want} ₽. Доступ не выдан — проверьте в кабинете ЮKassa.`);
+    return { status: 'amount_mismatch' };
   }
+  const res = await extend(env, meta.acct, meta.product, 30 * Number(meta.months), `ЮKassa ${id}${meta.promo ? ' · ' + meta.promo : ''}`, id);
+  // Не продлилось (аккаунт не найден, KV недоступен) — ошибка: ЮKassa повторит уведомление
+  if (!res) throw new AuthError(500, 'Не удалось продлить доступ.');
+  if (res.already) return { status: 'succeeded', already: true };
+  await env.DB.put(`paid:${id}`, JSON.stringify({ at: Date.now(), ...meta, amount: pay.amount.value, test: !!pay.test }));
+  if (meta.promo) await markUsed(env, meta.promo, meta.payer || meta.acct);
+  // Владельцу — уведомление в Telegram: с 29.12.2025 чек самозанятого оформляется
+  // вручную в «Мой налог», поэтому здесь всё, что нужно для чека и чтобы его отправить
+  const payer = meta.payer && meta.payer !== meta.acct ? await getAccount(env, meta.payer) : res.acct;
+  const tg = (payer?.idents || []).find(i => i.startsWith('tg:'))?.slice(3);
+  await tellOwner(env, [
+    `💰 Оплата ${pay.amount.value} ₽${pay.test ? ' (тестовая)' : ''} · ${NAMES[meta.product]} на ${meta.months} мес.`,
+    `Кто: ${res.acct.name || res.acct.id}${payer !== res.acct ? ` (платил ${payer?.name || meta.payer})` : ''}`,
+    `Чек: ${meta.email || payer?.email || (tg ? `Telegram tg://user?id=${tg}` : 'контакта нет — спросите в поддержке')}`,
+    'Оформите чек в «Мой налог» → «Новая продажа» и отправьте покупателю.',
+  ].join('\n'));
   return { status: 'succeeded' };
 }
 
@@ -151,6 +176,8 @@ export async function handleBilling(req, env, parts) {
     const promo = body.promo ? await findPromo(env, payer, body.promo, product) : null;
     if (promo && promo.kind !== 'discount') throw new AuthError(400, 'Этот промокод даёт бесплатные дни — активируйте его отдельно.');
     const value = (promo ? discounted(prices(env)[product][months], promo.value) : prices(env)[product][months]).toFixed(2);
+    // Почта для чека «Мой налог» (у вошедших через Telegram её нет — спрашиваем в окне оплаты)
+    const email = /^[^\s@]{1,64}@[^\s@]{1,190}\.[^\s@]{2,20}$/.test(String(body.email || '').trim()) ? String(body.email).trim().toLowerCase() : '';
     const back = safeBack(body.back, url.origin);
     const idem = randomId(32);
     const pay = await yk(env, '/payments', {
@@ -158,7 +185,8 @@ export async function handleBilling(req, env, parts) {
       capture: true,
       confirmation: { type: 'redirect', return_url: `${back}${back.includes('?') ? '&' : '?'}paid=${idem}` },
       description: `${NAMES[product]}, ${months} мес. — ${target.name || 'аккаунт'}`.slice(0, 128),
-      metadata: { acct: target.id, payer: payer.id, product, months: String(months), ref: idem, ...(promo ? { promo: promo.code, pct: String(promo.value) } : {}) },
+      metadata: { acct: target.id, payer: payer.id, product, months: String(months), ref: idem, value,
+        ...(email ? { email } : {}), ...(promo ? { promo: promo.code, pct: String(promo.value) } : {}) },
     }, idem);
     // На возврате у нас есть только наш ref — запоминаем, какому платежу он соответствует
     await env.DB.put(`payref:${idem}`, pay.id, { expirationTtl: 7 * 86400 });
@@ -192,8 +220,10 @@ export async function handleBilling(req, env, parts) {
   if (b === 'webhook' && req.method === 'POST') {
     const note = await req.json().catch(() => ({}));
     const id = note?.object?.id;
-    if (typeof id === 'string' && /^[\w-]{10,64}$/.test(id) && prices(env).enabled) {
-      try { await applyPayment(env, id); } catch { /* ЮKassa повторит уведомление */ }
+    // Сам платёж перезапрашиваем у ЮKassa по id — поддельное уведомление ничего не выдаст.
+    // Ошибка → ответ не 200, и ЮKassa повторит уведомление (до суток)
+    if (/^payment\./.test(note?.event || '') && typeof id === 'string' && /^[\w-]{10,64}$/.test(id) && prices(env).enabled) {
+      await applyPayment(env, id);
     }
     return { ok: true };
   }

@@ -19,16 +19,25 @@ let topicsById = {};
 
 const progKey = () => 'zd-prog:' + ref;
 // Прогресс хранится в браузере, а после входа в аккаунт — ещё и на сервере
-let progTimer;
+// В облако — не чаще раза в 30 секунд и при уходе со страницы: у бесплатного
+// хранилища Cloudflare 1000 записей в сутки на весь сайт
+let progTimer, progDirty = false;
 const save = () => {
   store.set(progKey(), prog);
   if (!signedIn()) return;
-  clearTimeout(progTimer);
-  progTimer = setTimeout(pushProg, 3000);
+  progDirty = true;
+  progTimer ||= setTimeout(() => { progTimer = null; pushProg(); }, 30000);
 };
+const flushProg = () => { if (progDirty && prog && signedIn()) pushProg(true); };
+addEventListener('pagehide', flushProg);
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') flushProg(); });
 const progUrl = () => `/me/progress/${encodeURIComponent(ref)}`;
-async function pushProg() {
-  try { await api(progUrl(), { method: 'PUT', body: prog }); } catch { /* офлайн — отправим со следующим ответом */ }
+async function pushProg(leaving = false) {
+  if (!ref) return;
+  progDirty = false;
+  clearTimeout(progTimer); progTimer = null;
+  // keepalive (отправка при закрытии вкладки) ограничен 64 КБ
+  try { await api(progUrl(), { method: 'PUT', body: prog, keepalive: leaving && JSON.stringify(prog).length < 60000 }); } catch { progDirty = true; /* офлайн — отправим позже */ }
 }
 
 // Прогресс с двух устройств → один: по карточке и по дню берём, где сделано больше
