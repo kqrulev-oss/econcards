@@ -32,8 +32,11 @@ export async function addRole(role) {
 // Возврат от Яндекса/VK/Google: адрес вида …#login=<ticket>. Вызывается при старте
 // страницы; вернёт аккаунт, если вход только что завершился, и роль, ради которой входили.
 export async function finishRedirectLogin() {
+  const m = /^#login(_error)?=([a-z0-9]+)$/.exec(location.hash);
+  // Вернулись от Яндекса/VK/Google — брошенная попытка через Telegram больше не нужна
+  if (m) store.set(PENDING, null);
   // Вернулись из Telegram, а страница перезагрузилась — продолжаем ждать подтверждения
-  const pend = store.get(PENDING, null);
+  const pend = !m && store.get(PENDING, null);
   if (pend && !signedIn() && Date.now() - pend.at < 600e3) {
     loginDialog({ role: pend.role, resume: pend, onDone: async () => {
       if (pend.role) await addRole(pend.role);
@@ -42,14 +45,16 @@ export async function finishRedirectLogin() {
     } });
     return null;
   }
-  const m = /^#login(_error)?=([a-z0-9]+)$/.exec(location.hash);
   if (!m) return null;
   const after = sessionStorage.getItem('zd-login-after') || '';
   const role = sessionStorage.getItem('zd-login-role') || '';
   sessionStorage.removeItem('zd-login-after');
   sessionStorage.removeItem('zd-login-role');
   history.replaceState(null, '', location.pathname + location.search + after);
-  if (m[1]) { toast(m[2] === 'cancelled' ? 'Вход отменён' : 'Не получилось войти. Попробуйте ещё раз.'); return null; }
+  if (m[1]) {
+    toast({ cancelled: 'Вход отменён', expired: 'Время на вход истекло — попробуйте ещё раз.' }[m[2]] || 'Не получилось войти. Попробуйте ещё раз.');
+    return null;
+  }
   try {
     const res = await api('/auth/ticket', { method: 'POST', body: { ticket: m[2] } });
     setSession({ token: res.token, account: res.account });
@@ -154,6 +159,7 @@ export async function loginDialog({ why = '', onDone, role = '', resume = null, 
       const { url } = await api(`/auth/oauth/${btn.dataset.oauth}`, { method: 'POST', body: { back: location.href.split('#')[0] } });
       sessionStorage.setItem('zd-login-after', location.hash);
       sessionStorage.setItem('zd-login-role', roleOf());
+      store.set(PENDING, null); // выбран другой способ — не возвращаться к ожиданию Telegram
       location.href = url;
     } catch (err) { toast(err.message); btn.disabled = false; }
   }));
