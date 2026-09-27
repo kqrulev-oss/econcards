@@ -37,7 +37,7 @@ def check(data):
             extra = set(p['yes']) - set(objs)
             if extra:
                 errs.append(f'sets.{k}: «{p["t"]}» — объекты не из набора {sorted(extra)}')
-        for o in objs:
+        for o in objs if S['props'] else []:              # наборы-отношения (только attrs) свойств не имеют
             own = [p for p in S['props'] if o in p['yes'] and len(p['yes']) < len(objs)]
             if len(own) < 2:
                 errs.append(f'sets.{k}: у «{o}» меньше 2 своих свойств')
@@ -72,7 +72,7 @@ def merge(subject, frags):
         frag = json.loads(Path(f).read_text('utf-8'))
         name = Path(f).stem
         for sec, val in frag.items():
-            if sec in ('src', 'checked') or sec.endswith('_src') or sec.endswith('_checked') or sec == 'meta':
+            if sec in ('src', 'checked', 'meta') or sec.endswith(('_src', '_checked', '_meta')):
                 meta['manual'].setdefault(name, {})[sec] = val
                 continue
             if isinstance(val, dict):

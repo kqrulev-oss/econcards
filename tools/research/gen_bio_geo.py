@@ -1611,7 +1611,7 @@ def many_card(topic, q, items, good, e, chk):
 def seq_card(topic, q, shown, order, e, chk):
     """shown — перемешанные тексты, order — индексы shown в верном порядке."""
     ans = ''.join(str(i + 1) for i in order)
-    q = re.sub(r'^Установите (правильную )?последовательность', 'Расставьте по порядку', q)
+    q = re.sub(r'^Установите (правильную )?последовательность', 'Установите порядок', q)
     q = q + ': ' + '; '.join(f'{i + 1}) {t}' for i, t in enumerate(shown)) + '. Ответ — цифры подряд.'
     c = card('num', topic, q, ans, e, chk)
     c['x'] = ans
@@ -2030,7 +2030,7 @@ def gen_d_cmany(rng, args, topic='dict'):
     items = rng.sample(by[x], t) + rng.sample(others, n - t)
     rng.shuffle(items)
     gi = [i for i, it in enumerate(items) if C['items'][it] == x]
-    q = (f'{C["title"]}. Выберите {t} примера, которые относятся к понятию «{x}»,. Ответ — номера верных вариантов.')
+    q = f'{C["title"]}. Выберите {t} примера, которые относятся к понятию «{x}». Ответ — номера верных вариантов.'
     e = '; '.join(f'{it} — {C["items"][it]}' for it in items) + '.'
     return many_card(topic, q, items, gi, e, {'eng': 'd_cmany', 'ref': ref, 'x': x, 'items': items})
 
@@ -2164,15 +2164,21 @@ def geo_value(tab, row, field):
             return wb[field][0], wb[field][1]
         return None
     if tab == 'stations':
-        t, p = row.get('t'), row.get('p')
-        if field == 't_jan' and t:
+        if row.get('check'):                          # у пункта расхождение источников — в задания не берём
+            return None
+        t, p = row.get('t') or [], row.get('p') or []
+        full_t = len(t) == 12 and None not in t
+        full_p = len(p) == 12 and None not in p
+        if field == 't_jan' and full_t:
             return t[0], row.get('period')
-        if field == 't_jul' and t:
+        if field == 't_jul' and full_t:
             return t[6], row.get('period')
-        if field == 'amp' and t:
+        if field == 'amp' and full_t:
             return round(max(t) - min(t), 1), row.get('period')
-        if field == 'p_year' and p:
+        if field == 'p_year' and full_p:
             return round(sum(p)), row.get('period')
+        if field in ('t_jan', 't_jul', 'amp', 'p_year'):
+            return None
         v = row.get(field)
         return (v, row.get('period')) if v is not None else None
     v = row.get(field)
@@ -2293,6 +2299,13 @@ TAG_Q = {  # (поле, тег) → окончание вопроса «Выбе
 }
 
 
+PICK_NOM = {  # показатель → (именительный падеж, «наибольший», «наименьший») для вопроса «в которых … наибольшая»
+    'density': ('средняя плотность населения', 'наибольшая', 'наименьшая'),
+    'pop': ('численность населения', 'наибольшая', 'наименьшая'),
+    'area': ('площадь территории', 'наибольшая', 'наименьшая'),
+    'urban': ('доля городского населения', 'наибольшая', 'наименьшая'),
+}
+
 TAG_FIELD = {  # поле со списком тегов → окончание вопроса «…, в которых …»
     'industries': 'одна из отраслей специализации — {}',
     'tags': 'развита отрасль «{}»',
@@ -2350,8 +2363,11 @@ def gen_d_pick(rng, args, topic='dict'):
         if not (lo > 0 and hi >= lo * gap):
             continue
         good = [i for i, x in enumerate(items) if x in s[:k]]
-        q = (f'Выберите {k} {noun} с {"наибольшей" if top else "наименьшей"} величиной показателя: {label}. '
-             'Ответ — номера верных вариантов.')
+        nom = PICK_NOM.get(field)
+        if nom:
+            q = f'Выберите {k} {noun}, в которых {nom[0]} {nom[1] if top else nom[2]}. Ответ — номера верных вариантов.'
+        else:
+            q = f'Выберите {k} {noun} с {"наибольшим" if top else "наименьшим"} значением показателя «{label}». Ответ — номера верных вариантов.'
         e = '; '.join(f'{x} — {fmt(Fraction(str(vals[x][0])), 1)} {unit}' for x in items) + f' ({srcname}).'
         return many_card(topic, q, items, good, e, {'eng': 'd_pick', 'tab': tab, 'field': field, 'top': top, 'k': k, 'items': items})
     raise Skip(f'{tab}.{field}')
@@ -2751,8 +2767,8 @@ def graph_series(rng, shape, n):
     if shape == 'bell':
         peak = rng.randrange(2, n - 1)
         up = sorted(rng.sample(range(5, 90), peak))
-        down = sorted(rng.sample(range(5, up[-1]), n - peak - 1), reverse=True)
         top = up[-1] + rng.randint(4, 15)
+        down = sorted(rng.sample(range(3, top), n - peak - 1), reverse=True)
         return up + [top] + down
     if shape == 'sat':
         k = rng.randrange(3, n - 1)
@@ -3238,27 +3254,30 @@ def check_g_chart(c):
 
 
 def stations_full():
-    return [s for s in FACTS['geo'].get('stations', []) if s.get('t') and s.get('p') and len(s['t']) == 12 and len(s['p']) == 12]
+    """Станции с полными помесячными нормами; пограничные по поясу/типу (note с «или») и с расхождениями (check) не берём."""
+    return [s for s in FACTS['geo'].get('stations', []) if s.get('t') and s.get('p') and len(s['t']) == 12
+            and len(s['p']) == 12 and None not in s['t'] + s['p'] and not s.get('check') and 'или' not in s.get('note', '')]
 
 
 def gen_g_climtype(rng):
-    """ЕГЭ гео 27 / ОГЭ 18: по помесячным t и осадкам определить тип климата (1 из 4)."""
+    """ЕГЭ гео 27 / ОГЭ 18: по помесячным t и осадкам определить климатический пояс (по Алисову), 1 из 4."""
     S = stations_full()
-    types = sorted({s['type'] for s in S if s.get('type')})
-    if len(types) < 4:
+    belts = sorted({s['belt'] for s in S if s.get('belt')})
+    if len(belts) < 4:
         raise Skip('stations')
-    s = rng.choice([x for x in S if x.get('type')])
-    wrong = rng.sample([t for t in types if t != s['type']], 3)
-    o, a = one(rng, s['type'], wrong)
+    s = rng.choice([x for x in S if x.get('belt')])
+    wrong = rng.sample([t for t in belts if t != s['belt']], 3)
+    o, a = one(rng, s['belt'], wrong)
     q = ('Климатические данные пункта (без названия). Средняя температура по месяцам (°C, янв.–дек.): '
          + ', '.join(fmt(Fraction(str(x))) for x in s['t']) + '. Осадки (мм): ' + ', '.join(str(round(x)) for x in s['p']) +
-         f'. Широта пункта {abs(round(s["lat"]))}° {"с. ш." if s["lat"] >= 0 else "ю. ш."}. Определите тип климата.')
-    return card('one', 'geo-ege-27', q, a, f'Это {s["name"]} ({s["country"]}): {s["type"]}.', {'name': s['name'], 'opts': [x['t'] for x in o]}, o=o)
+         f'. Широта пункта {abs(round(s["lat"]))}° {"с. ш." if s["lat"] >= 0 else "ю. ш."}. В каком климатическом поясе он находится?')
+    return card('one', 'geo-ege-27', q, a, f'Это {s["name"]} ({s["country"]}): {s["belt"]} пояс, {s.get("type", "")} климат.',
+                {'name': s['name'], 'opts': [x['t'] for x in o]}, o=o)
 
 
 def check_g_climtype(c):
     s = next(x for x in stations_full() if x['name'] == c['name'])
-    return 'абвгде'[c['opts'].index(s['type'])]
+    return 'абвгде'[c['opts'].index(s['belt'])]
 
 
 def gen_g_climtable(rng):
@@ -3514,6 +3533,96 @@ def check_b_phylo(c):
     return fmt(Fraction(c['D']) / (2 * Fraction(c['r'])))
 
 
+
+
+def gen_b_foodweb2(rng):
+    """ОГЭ 21: рост численности X → как изменятся конкурент X (общий корм) и организм, не связанный с X напрямую."""
+    name = rng.choice(list(WEBS))
+    web = WEBS[name]
+    eaters = {x: [y for y, food in web.items() if x in food] for x in web}
+    mode = rng.choice(['competitor', 'unrelated'])
+    links = '; '.join(f'{x} питается: {", ".join(f)}' for x, f in web.items() if f)
+    cons = [x for x in web if web[x]]
+    rng.shuffle(cons)
+    for x in cons:
+        food = web[x]
+        if mode == 'competitor':
+            # конкурент: ест тот же корм, сам не является ни пищей, ни врагом X
+            comp = [y for y in web if y != x and set(web[y]) & set(food) and y not in food and x not in web[y]]
+            if not comp:
+                continue
+            B = rng.choice(comp)
+            A = rng.choice(food)
+            ans = '22'
+            why = f'{x} сильнее выедает {A} (уменьшится); у {B} меньше общего корма (уменьшится).'
+        else:
+            near = set(food) | set(eaters[x]) | {x}
+            far = [y for y in web if y not in near and not (set(web[y]) & set(food)) and not (set(eaters[y]) & set(eaters[x]))]
+            if not far:
+                continue
+            B = rng.choice(far)
+            A = rng.choice(food)
+            ans = '23'
+            why = f'{A} — пища {x} (уменьшится); {B} с {x} напрямую не связан (не изменится).'
+        swap = rng.random() < 0.5
+        P, Q = (B, A) if swap else (A, B)
+        if swap:
+            ans = ans[::-1]
+        q = (f'Экосистема «{name}». Связи: {links}. Несколько лет росла численность организма «{x}». Как изменится '
+             f'численность: А) {P}; Б) {Q}? 1 — увеличится, 2 — уменьшится, 3 — не изменится (учитывайте только прямые связи). '
+             'Ответ — две цифры.')
+        return card('num', 'bio-oge-21', q, ans, why, {'web': name, 'mode': mode, 'x': x, 'A': P, 'B': Q})
+    return gen_b_foodweb2(rng)
+
+
+def check_b_foodweb2(c):
+    web = WEBS[c['web']]
+    x = c['x']
+
+    def code(y):
+        if y in web[x]:
+            return '2'                                    # пищу выедают
+        if x in web[y]:
+            return '1'                                    # у хищника больше корма
+        if set(web[y]) & set(web[x]):
+            return '2'                                    # конкурент за общий корм
+        return '3'
+    return code(c['A']) + code(c['B'])
+
+
+def gen_g_strata2(rng):
+    """ОГЭ гео 8 (нарушенное залегание): магматическое тело прорывает слои — оно моложе прорванных слоёв."""
+    k = rng.choice([3, 4])
+    layers = rng.sample(ROCKS_SED, k)                    # сверху вниз
+    cut = rng.randint(1, k)                               # сколько нижних слоёв прорвала интрузия
+    intr = rng.choice(['гранит', 'диорит', 'габбро'])
+    cut_layers = layers[-cut:]
+    # интрузия моложе прорванных слоёв и древнее не прорванных (лежащих выше)
+    ages = {x: i for i, x in enumerate(layers)}           # больше индекс — древнее
+    ages[intr] = k - cut - 0.5
+    items = layers + [intr]
+    shown = items[:]
+    rng.shuffle(shown)
+    old_first = rng.random() < 0.5
+    order = sorted(range(len(shown)), key=lambda j: ages[shown[j]], reverse=old_first)
+    top_uncut = layers[:k - cut]
+    gen_ = {'гранит': 'гранита', 'диорит': 'диорита', 'габбро': 'габбро'}[intr]
+    q = (f'Разрез: сверху вниз залегают {", ".join(layers)}. Тело {gen_} прорывает '
+         f'{"все слои" if cut == k else "слои: " + ", ".join(cut_layers)}'
+         f'{"" if cut == k else "; выше лежащие слои (" + ", ".join(top_uncut) + ") не нарушены"}. '
+         f'Расположите породы {"от самой древней к самой молодой" if old_first else "от самой молодой к самой древней"}')
+    return seq_card('geo-oge-8', q, shown, order, 'Прорывающее тело моложе слоёв, которые оно прорывает.',
+                    {'layers': layers, 'intr': intr, 'cut': cut, 'shown': shown, 'old': old_first})
+
+
+def check_g_strata2(c):
+    k = len(c['layers'])
+    age = {x: i for i, x in enumerate(c['layers'])}
+    age[c['intr']] = (k - c['cut'] - 1 + k - c['cut']) / 2     # между последним непрорванным и первым прорванным
+    idx = sorted(range(len(c['shown'])), key=lambda j: age[c['shown'][j]], reverse=c['old'])
+    return ''.join(str(j + 1) for j in idx)
+
+
 # ================================================================ реестр и самопроверка
 
 GENS = {k[4:]: v for k, v in globals().items() if k.startswith('gen_') and not k.startswith('gen_d_')}
@@ -3562,11 +3671,13 @@ INFO = {  # тип → (экзамен/задание, что проверяет
     'g_strata': 'ОГЭ гео 8 · возраст слоёв осадочных пород',
     'g_share': 'ОГЭ гео 13 · доля части в целом, %',
     'g_chart': 'ОГЭ гео 23 · ряд по годам: год максимума/минимума, изменение',
-    'g_climtype': 'ЕГЭ гео 27, ОГЭ 18 · тип климата по помесячным данным',
+    'g_climtype': 'ЕГЭ гео 27, ОГЭ 18 · климатический пояс по помесячным данным',
     'g_climtable': 'ОГЭ гео 16 · таблица метеостанций: верный вывод',
     'b_orf': 'ЕГЭ био 27 · рамка считывания: белок с первого АУГ',
     'b_nondisj': 'ЕГЭ био 28, 3 · нерасхождение хромосом: число хромосом в гамете/зиготе',
     'b_phylo': 'ЕГЭ био 27 · молекулярные часы: время расхождения видов',
+    'b_foodweb2': 'ОГЭ био 21 · пищевая сеть: конкурент и несвязанный организм',
+    'g_strata2': 'ОГЭ гео 8 · разрез с магматическим телом (нарушенное залегание)',
     'g_demo2': 'ЕГЭ гео 15–16 · добыча по запасам, обеспеченность на душу, общий прирост, миграционные потоки',
 }
 
