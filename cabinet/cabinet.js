@@ -35,7 +35,7 @@ function shell(tab, body) {
   const tabs = [...rolesOf(a).map(r => [r, ROLES[r].tab]), ['settings', 'Настройки']];
   $app.innerHTML = `
     <header class="cab-top">
-      <a class="ld-logo" href="../?about"><span class="ld-mark">М</span><span class="cab-logo-text">Между уроками</span></a>
+      <a class="ld-logo" href="../?about"><img class="ld-mark" src="../icons/icon-192.png" alt="" width="40" height="40"><span class="cab-logo-text">Между уроками</span></a>
       <a class="cab-me" href="#settings" aria-label="Настройки аккаунта"><span class="avatar">${initials(a)}</span><span class="cab-me-name">${esc(a?.name || a?.email || 'Аккаунт')}</span></a>
     </header>
     <nav class="cab-tabs" aria-label="Разделы кабинета">${tabs.map(([id, t]) =>
@@ -74,7 +74,7 @@ function viewRole(first) {
     </div>
     ${first ? `<label class="field cab-name"><span>Как вас зовут</span><input id="name" maxlength="80" autocomplete="name" value="${esc(a?.name || '')}" placeholder="Имя и фамилия"></label>` : ''}
     <button class="btn primary big cab-go" id="go">Продолжить</button>`;
-  const box = first ? ($app.innerHTML = `<header class="cab-top"><a class="ld-logo" href="../?about"><span class="ld-mark">М</span><span class="cab-logo-text">Между уроками</span></a>
+  const box = first ? ($app.innerHTML = `<header class="cab-top"><a class="ld-logo" href="../?about"><img class="ld-mark" src="../icons/icon-192.png" alt="" width="40" height="40"><span class="cab-logo-text">Между уроками</span></a>
     <button class="btn small" id="out">Выйти</button></header><div id="cab-body">${body}</div>`, $app) : shell('role', body);
   box.querySelector('#out')?.addEventListener('click', async () => { await logout(); location.href = '../login.html'; });
   box.querySelectorAll('[data-role]').forEach(b => {

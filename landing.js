@@ -56,7 +56,7 @@ export function renderLanding(root, library) {
   const rounded = Math.floor(total / 500) * 500;
   root.innerHTML = `
   <header class="ld-nav">
-    <a class="ld-logo" href="./"><span class="ld-mark">М</span>Между уроками</a>
+    <a class="ld-logo" href="./"><img class="ld-mark" src="icons/icon-192.png" alt="" width="40" height="40">Между уроками</a>
     <nav><a href="#how">Как это работает</a><a href="#prices">Тарифы</a><a href="#faq">Вопросы</a></nav>
     <a class="ld-nav-tg" href="${TG}" target="_blank" rel="noopener" aria-label="Написать в Telegram"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 4L3 11l6 2 2 6 3-4 5 4z"/><path d="M9 13l8-6"/></svg></a>
     <a class="ld-nav-cta" href="login.html">Войти</a>

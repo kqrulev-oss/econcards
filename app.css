@@ -491,7 +491,7 @@ input:focus, select:focus, textarea:focus { outline: 3px solid var(--accent); ou
 
 .ld-nav { display: flex; align-items: center; gap: 22px; padding-top: 20px; padding-bottom: 20px; }
 .ld-logo { display: flex; align-items: center; gap: 10px; font: 800 18px var(--display); color: var(--text); white-space: nowrap; }
-.ld-mark { display: grid; place-items: center; width: 40px; height: 40px; border-radius: 12px; background: #5B3DF5; color: #fff; border: var(--bw) solid var(--ink); }
+.ld-mark { display: block; flex: none; width: 40px; height: 40px; }
 .ld-nav nav { display: flex; gap: 22px; margin-left: auto; }
 .ld-nav nav a { color: var(--text); font-weight: 800; }
 .ld-nav-tg { display: grid; place-items: center; flex: none; width: 46px; height: 46px; border-radius: 14px; background: var(--surface); color: var(--text); border: var(--bw) solid var(--ink); box-shadow: 0 4px 0 var(--ink); }
@@ -852,7 +852,7 @@ input:focus, select:focus, textarea:focus { outline: 3px solid var(--accent); ou
 .kid-pack .hero-stats b { font-size: 18px; white-space: nowrap; }
 
 /* ---------- полировка ---------- */
-.studio-mark { flex: none; font: 800 18px var(--display); }
+.studio-mark { flex: none; display: block; }
 @media (max-width: 600px) {
   .tabs { width: 100%; flex-wrap: wrap; }
   .tabs a { flex: 1 1 auto; text-align: center; padding: 8px 10px; }

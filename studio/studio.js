@@ -151,7 +151,7 @@ function preview(p, start = 0) {
 function viewList() {
   const packs = Object.values(db.packs).sort((a, b) => b.edited - a.edited);
   $app.innerHTML = `
-    <header class="top"><a class="ld-mark studio-mark" href="${ROOT}?about" aria-label="Между уроками — о сервисе">М</a>
+    <header class="top"><a class="studio-mark" href="${ROOT}?about" aria-label="Между уроками — о сервисе"><img class="ld-mark" src="${ROOT}icons/icon-192.png" alt="" width="40" height="40"></a>
       <div><div class="brand-title">Студия</div>
       <div class="brand-by">Между уроками · тренажёр для учеников</div></div>
       <div class="acct-bar">${accountBar()}</div></header>
