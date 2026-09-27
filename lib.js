@@ -22,6 +22,9 @@ export async function api(path, { method = 'GET', body, key } = {}) {
   const headers = {};
   if (body !== undefined) headers['Content-Type'] = 'application/json';
   if (key) headers['X-Key'] = key;
+  // Вход в аккаунт (account.js): сессия едет с каждым запросом к своему серверу
+  const token = store.get('zd-session', null)?.token;
+  if (token) headers.Authorization = `Bearer ${token}`;
   let r;
   try {
     r = await fetch(base + path, { method, headers, body: body === undefined ? undefined : JSON.stringify(body) });
@@ -86,6 +89,16 @@ export function toast(msg) {
   document.body.append(t);
   setTimeout(() => t.classList.add('on'));
   setTimeout(() => { t.classList.remove('on'); setTimeout(() => t.remove(), 300); }, 2600);
+}
+
+// Модальное окно поверх страницы: закрывается крестиком и кликом мимо
+export function modal(html) {
+  const m = el(`<div class="modal"><div class="modal-box"><button class="modal-x" aria-label="Закрыть">✕</button>${html}</div></div>`);
+  const close = () => m.remove();
+  m.querySelector('.modal-x').onclick = close;
+  m.onclick = e => e.target === m && close();
+  document.body.append(m);
+  return { box: m.querySelector('.modal-box'), close };
 }
 
 // Сравнение числовых ответов: «0,35», «0.35» и «.35» — одно и то же

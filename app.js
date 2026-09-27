@@ -2,6 +2,7 @@
 // темы с теорией, работа над ошибками и отправка прогресса репетитору.
 import { store, api, apiBase, loadPack, loadLibrary, renderCard, esc, text, day, uid, plural, el, toast } from './lib.js';
 import { renderLanding } from './landing.js';
+import { signedIn, account, loginDialog, logout, addRole } from './account.js';
 
 const $app = document.getElementById('app');
 const INTERVALS = [0, 1, 3, 7, 14, 30, 60]; // дни до повтора по «коробкам»
@@ -17,7 +18,41 @@ let topicsById = {};
 // ---------- прогресс ----------
 
 const progKey = () => 'zd-prog:' + ref;
-const save = () => store.set(progKey(), prog);
+// Прогресс хранится в браузере, а после входа в аккаунт — ещё и на сервере
+let progTimer;
+const save = () => {
+  store.set(progKey(), prog);
+  if (!signedIn()) return;
+  clearTimeout(progTimer);
+  progTimer = setTimeout(pushProg, 3000);
+};
+const progUrl = () => `/me/progress/${encodeURIComponent(ref)}`;
+async function pushProg() {
+  try { await api(progUrl(), { method: 'PUT', body: prog }); } catch { /* офлайн — отправим со следующим ответом */ }
+}
+
+// Прогресс с двух устройств → один: по карточке и по дню берём, где сделано больше
+function mergeProg(a, b) {
+  const cards = { ...b.cards };
+  for (const [id, st] of Object.entries(a.cards || {})) if (!cards[id] || st.n >= cards[id].n) cards[id] = st;
+  const log = { ...b.log };
+  for (const [d, l] of Object.entries(a.log || {})) if (!log[d] || l.d >= log[d].d) log[d] = l;
+  const errs = [...new Set([...(a.errs || []), ...(b.errs || [])])].slice(0, 30);
+  // sid из облака — репетитор видит одного ученика, с какого бы устройства тот ни занимался
+  return { ...a, cards, log, errs, sid: b.sid || a.sid, name: a.name || b.name, variants: a.variants || b.variants, synced: 0 };
+}
+
+async function pullProg() {
+  if (!signedIn() || !prog) return false;
+  try {
+    const remote = await api(progUrl());
+    if (remote) prog = mergeProg(prog, remote);
+    if (!prog.name && account()?.name) prog.name = account().name;
+    store.set(progKey(), prog);
+    await pushProg();
+    return !!remote;
+  } catch { return false; }
+}
 
 function loadProg() {
   prog = Object.assign({ cards: {}, log: {}, errs: [], sid: uid(10), name: '', synced: 0 }, store.get(progKey(), {}));
@@ -489,8 +524,17 @@ function addReminder(time) {
 
 function viewMe() {
   const tutorPack = ref.startsWith('t:');
+  const a = account();
   $app.innerHTML = `
     <header class="top"><a class="back" href="#/">←</a><div class="brand-title">Профиль</div></header>
+    <section class="panel">
+      <h2>Аккаунт</h2>
+      ${signedIn()
+        ? `<p>Вы вошли как <b>${esc(a?.name || a?.email || 'ученик')}</b>. Прогресс сохраняется в аккаунте — можно заниматься с телефона и компьютера.</p>
+           <button class="btn" id="logout">Выйти</button>`
+        : `<p class="muted">Войдите, чтобы прогресс не потерялся и был доступен на любом устройстве.</p>
+           <button class="btn primary" id="login">Войти</button>`}
+    </section>
     <section class="panel">
       ${tutorPack ? `<label class="field"><span>Имя (его видит репетитор)</span><input id="name" value="${esc(prog.name)}"></label>` : ''}
       <label class="field"><span>Новых карточек в день</span>
@@ -513,6 +557,11 @@ function viewMe() {
       <h2>Сервер ИИ</h2>
       <label class="field"><span>Адрес (если дал репетитор)</span><input id="api" placeholder="https://…workers.dev" value="${esc(store.get('zd-api', ''))}"></label>
     </section>`;
+  $app.querySelector('#login')?.addEventListener('click', () => loginDialog({
+    why: 'Прогресс, серия и ошибки сохранятся в аккаунте.',
+    onDone: async () => { await addRole('student'); await pullProg(); sync(true); viewMe(); },
+  }));
+  $app.querySelector('#logout')?.addEventListener('click', async () => { await logout(); viewMe(); });
   $app.querySelector('#save').onclick = () => {
     const name = $app.querySelector('#name')?.value.trim();
     if (name !== undefined) prog.name = name;
@@ -574,7 +623,12 @@ function viewName() {
       Занимайся по 10 минут в день — репетитор будет видеть прогресс и знать, что разобрать на уроке.</p>
       <label class="field"><span>Как тебя зовут?</span><input id="name" placeholder="Имя и фамилия" autocomplete="name"></label>
       <button class="btn primary big" id="ok">Начать</button>
+      ${signedIn() ? '' : '<p class="center small-note"><button class="link-btn" id="login">Уже занимался? Войти в аккаунт</button></p>'}
     </section>`;
+  $app.querySelector('#login')?.addEventListener('click', () => loginDialog({
+    why: 'Прогресс подтянется с другого устройства.',
+    onDone: async () => { await addRole('student'); await pullProg(); if (prog.name) { save(); sync(true); } route(); },
+  }));
   const ok = () => {
     const name = $app.querySelector('#name').value.trim();
     if (!name) return toast('Напиши имя, чтобы репетитор тебя узнал');
@@ -642,6 +696,7 @@ async function init() {
   if (!ref.startsWith('t:')) pack.daily = store.get('zd-daily:' + ref, pack.daily);
   applyBrand();
   route();
+  if (await pullProg() && !document.querySelector(".card")) route();
   sync(false);
 }
 

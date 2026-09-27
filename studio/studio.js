@@ -1,14 +1,85 @@
 // Студия репетитора: собрать набор из своих материалов (через ИИ) или из
 // библиотеки, опубликовать ссылку для учеников и смотреть их прогресс.
-import { store, api, apiBase, ai, loadPack, loadLibrary, renderCard, esc, text, day, uid, plural, el, toast, KIND_NAMES } from '../lib.js';
+import { signedIn, account, loginDialog, logout, refreshAccount, addRole } from '../account.js';
+import { store, api, apiBase, ai, loadPack, loadLibrary, renderCard, esc, text, day, uid, plural, el, toast, modal, KIND_NAMES } from '../lib.js';
 
 const $app = document.getElementById('app');
 const ROOT = '../';
 const COLORS = ['#2F6BFF', '#E4572E', '#1E9E5A', '#8A4FFF', '#D6336C', '#0A9396', '#F08C00', '#343A40'];
 
-// Черновики наборов и ключи публикации живут в браузере репетитора
-let db = store.get('zd-studio', { packs: {}, keys: {} });
-const persist = () => store.set('zd-studio', db);
+// Черновики наборов и ключи публикации живут в браузере репетитора, а после
+// входа в аккаунт — ещё и на сервере (не теряются при очистке браузера)
+let db = { packs: {}, keys: {}, deleted: {}, ...store.get('zd-studio', {}) };
+let cloud = signedIn() ? 'saved' : 'off'; // off | saving | saved | error
+let cloudTimer;
+const persist = () => {
+  store.set('zd-studio', db);
+  if (!signedIn()) return;
+  setCloud('saving');
+  clearTimeout(cloudTimer);
+  cloudTimer = setTimeout(pushCloud, 2000);
+};
+
+async function pushCloud() {
+  try {
+    await api('/me/studio', { method: 'PUT', body: { packs: db.packs, keys: db.keys, deleted: db.deleted } });
+    setCloud('saved');
+  } catch { setCloud('error'); }
+}
+
+function setCloud(state) {
+  cloud = state;
+  const b = document.querySelector('.cloud');
+  if (b) b.outerHTML = cloudBadge();
+}
+const cloudBadge = () => signedIn()
+  ? `<span class="badge cloud ${cloud}">${{ saving: 'сохраняю…', saved: 'в облаке', error: 'не сохранено', off: '' }[cloud]}</span>` : '';
+
+// Две копии студии (эта и облачная) → одна: у набора побеждает свежая правка,
+// удалённый набор не возвращается, ключи объединяются
+function mergeStudio(a, b) {
+  const deleted = { ...b.deleted };
+  for (const [id, t] of Object.entries(a.deleted || {})) deleted[id] = Math.max(t, deleted[id] || 0);
+  const packs = {};
+  for (const id of new Set([...Object.keys(a.packs || {}), ...Object.keys(b.packs || {})])) {
+    const x = a.packs?.[id], y = b.packs?.[id];
+    const best = !x ? y : !y ? x : (y.edited > x.edited ? y : x);
+    if (!(deleted[id] >= best.edited)) packs[id] = best;
+  }
+  return { packs, keys: { ...b.keys, ...a.keys }, deleted };
+}
+
+async function syncCloud() {
+  if (!signedIn()) return;
+  try {
+    const remote = await api('/me/studio');
+    db = mergeStudio(db, remote);
+    store.set('zd-studio', db);
+    await pushCloud();
+    route();
+  } catch (err) {
+    if (/войти/i.test(err.message)) { await refreshAccount(); route(); } else setCloud('error');
+  }
+}
+
+function accountBar() {
+  if (!signedIn()) return '<button class="btn small primary" id="login">Войти</button>';
+  const a = account();
+  return `<span class="acct-name">${esc(a?.name || a?.email || 'Аккаунт')}</span>${cloudBadge()}<button class="btn small" id="logout">Выйти</button>`;
+}
+
+function bindAccount(root) {
+  root.querySelector('#login')?.addEventListener('click', () => loginDialog({
+    why: 'Тренажёры, ключи и ученики сохранятся в аккаунте — не пропадут при очистке браузера и откроются с любого устройства.',
+    onDone: async () => { await addRole('tutor'); setCloud('saving'); await syncCloud(); },
+  }));
+  root.querySelector('#logout')?.addEventListener('click', async () => {
+    if (!confirm('Выйти из аккаунта? Тренажёры останутся в этом браузере и в облаке.')) return;
+    await logout();
+    cloud = 'off';
+    route();
+  });
+}
 const touch = p => { p.edited = Date.now(); persist(); };
 
 const studentLink = id => new URL(`${ROOT}?t=${id}`, location.href).href;
@@ -43,15 +114,6 @@ function shell(p, tab, body) {
   return box;
 }
 
-function modal(html) {
-  const m = el(`<div class="modal"><div class="modal-box"><button class="modal-x" aria-label="Закрыть">✕</button>${html}</div></div>`);
-  const close = () => m.remove();
-  m.querySelector('.modal-x').onclick = close;
-  m.onclick = e => e.target === m && close();
-  document.body.append(m);
-  return { box: m.querySelector('.modal-box'), close };
-}
-
 // Просмотр набора глазами ученика: карточки по очереди без записи прогресса
 function preview(p, start = 0) {
   if (!p.cards.length) return toast('Сначала добавьте карточки');
@@ -79,7 +141,8 @@ function viewList() {
   $app.innerHTML = `
     <header class="top"><div><div class="brand-title">Студия · Между уроками</div>
       <div class="brand-by">Тренажёр для ваших учеников за 15 минут</div></div>
-      <a class="btn small" href="${ROOT}">О сервисе</a></header>
+      <div class="acct-bar">${accountBar()}</div></header>
+    ${signedIn() ? '' : `<section class="panel login-hint"><b>Войдите, чтобы ничего не потерять.</b> Сейчас тренажёры и доступ к ученикам хранятся только в этом браузере. С аккаунтом они сохраняются в облаке и открываются с телефона и компьютера. <button class="link-btn" id="login2">Войти через Telegram</button></section>`}
     <section class="panel steps-intro">
       <ol>
         <li><b>Добавьте материалы</b> — вставьте конспект, правила или задачи с решениями, ИИ сделает из них карточки. Или возьмите готовые из библиотеки: больше 3000 заданий ЕГЭ и олимпиад с разборами.</li>
@@ -96,6 +159,8 @@ function viewList() {
         <span class="topic-title">${esc(p.title)}<small>${esc(p.tutor || '')} · ${plural(p.cards.length, 'карточка', 'карточки', 'карточек')}</small></span>
         <span class="topic-meta">${isPublished(p) ? 'опубликован' : p.published ? 'есть правки' : 'черновик'}</span></a>`).join('')}` : ''}
     ${apiBase() ? '' : `<section class="panel warn-box"><b>Сервер не подключён.</b> Можно собирать наборы и смотреть их, но для ИИ, ссылок ученикам и отчётов нужен адрес сервера — укажите его в настройках тренажёра (инструкция в worker/README.md).</section>`}`;
+  bindAccount($app);
+  $app.querySelector('#login2')?.addEventListener('click', () => $app.querySelector('#login').click());
   $app.querySelector('#new').onclick = () => { location.hash = `#/p/${newPack()}/add`; };
   $app.querySelector('#sample').onclick = async e => {
     e.target.disabled = true;
@@ -727,6 +792,7 @@ function viewSettings(p) {
   box.querySelector('#drop').onclick = () => {
     if (!confirm('Удалить тренажёр из студии? Ученики с опубликованной ссылкой продолжат заниматься.')) return;
     delete db.packs[p.id];
+    db.deleted[p.id] = Date.now();
     persist();
     location.hash = '#/';
   };
@@ -795,12 +861,13 @@ function viewPublish(p) {
 function route() {
   const [, kind, id, tab] = location.hash.split('/');
   const p = kind === 'p' && db.packs[id];
-  if (!p) return viewList();
+  if (!p) { document.documentElement.style.removeProperty('--accent'); return viewList(); }
   ({ cards: viewCards, add: viewAdd, students: viewStudents, settings: viewSettings, publish: viewPublish }[tab] || viewCards)(p);
   document.documentElement.style.setProperty('--accent', p.color);
 }
 
 window.addEventListener('hashchange', route);
 // Правки из соседней вкладки студии
-window.addEventListener('storage', e => { if (e.key === 'zd-studio') { db = store.get('zd-studio', db); route(); } });
+window.addEventListener('storage', e => { if (e.key === 'zd-studio') { db = { deleted: {}, ...store.get('zd-studio', db) }; route(); } });
 route();
+syncCloud();
