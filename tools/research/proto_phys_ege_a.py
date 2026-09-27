@@ -5277,6 +5277,8 @@ def g_current(rng):
              + table([('t, с', ts), ('I, А', Is)]) + f'\nКакой заряд прошёл через поперечное сечение проводника за время от 0 до {ts[-1]} с?' + ans_line('Кл'))
         e = f'Заряд — площадь под графиком I(t): сумма трапеций = {ans} Кл.'
         wrong = [W(Is[-1] * ts[-1]), W(max(Is) * ts[-1]), W(sum(Is) * dt)]
+    if kind != 'table' and not (Imin <= I <= Imax):
+        raise Retry
     return num_card('ph-ege-11-current', q, ans, e, p, wrong)
 
 
