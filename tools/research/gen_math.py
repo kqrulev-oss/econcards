@@ -6,6 +6,7 @@
   python3 tools/research/gen_math.py --n 50     # другое число вариантов
   python3 tools/research/gen_math.py --sample   # по 2 примера карточек на генератор (JSON)
   python3 tools/research/gen_math.py --json out.json  # все карточки в файл
+  python3 tools/research/gen_math.py --export data/research/math.json  # отчёт в машинном виде
 
 Каждый генератор — функция gen_*(rng) → (card, check) или None (вариант отсеян).
 card — карточка в формате packs/ege-math.json: {id, t, p, k, q, a, e, o?}.
@@ -313,7 +314,7 @@ def gen_p3_volume(r):
         h2 = r.randint(1, 12)
         h1 = h2 * k * k
         q = (f'В цилиндрическом сосуде уровень жидкости достигает {h1} см. На какой высоте будет уровень жидкости, '
-             f'если её перелить во второй цилиндрический сосуд, диаметр которого в {k} раза больше диаметра первого? '
+             f'если её перелить во второй цилиндрический сосуд, диаметр которого в {k} {"раз" if k >= 5 else "раза"} больше диаметра первого? '
              'Ответ дайте в сантиметрах.')
         e = f'Объём тот же, площадь дна больше в {k}² = {k * k} раз, значит высота меньше в {k * k} раз: {h1} : {k * k} = {h2}.'
         return card('p3_volume', q, num(h2), e), lambda: sp.pi * 1**2 * h1 == sp.pi * k**2 * h2
@@ -523,7 +524,6 @@ def gen_p7_expr(r):
         e = f'{a}^({m} + {n} − {k}) = {a}^{m + n - k} = {tnum(val)}.'.replace('+ -', '− ').replace('− -', '+ ')
         return card('p7_expr', q, num(val), e), lambda: sp.Integer(a)**m * sp.Integer(a)**n / sp.Integer(a)**k == val
     if kind == 'root':
-        s = r.randint(2, 15)
         a = r.choice([2, 3, 5, 6, 7, 10, 11])
         # √(a·t²) · √(a·u²) / c
         t, u = r.randint(1, 5), r.randint(1, 5)
@@ -533,7 +533,6 @@ def gen_p7_expr(r):
             return None
         q = f'Найдите значение выражения √{a * t * t} · √{a * u * u} / {c}.' if c > 1 else f'Найдите значение выражения √{a * t * t} · √{a * u * u}.'
         e = f'√({a * t * t}·{a * u * u}) = √{a * a * t * t * u * u} = {a * t * u}' + (f'; {a * t * u} / {c} = {tnum(val)}.' if c > 1 else '.')
-        del s
         return card('p7_expr', q, num(val), e), lambda: sp.sqrt(a * t * t) * sp.sqrt(a * u * u) / c == sp.Rational(val.numerator, val.denominator)
     if kind == 'log':
         base = r.choice([2, 3, 5, 6])
@@ -580,7 +579,6 @@ def gen_p8_deriv(r):
         a, b, c, d = r.choice([F(1, 2), F(1, 3), 1, 2]), r.randint(-6, 6), r.randint(-9, 9), r.randint(-20, 20)
         # x(t) = a t³ + b t² + c t + d, найти скорость в момент t0
         t0 = r.randint(1, 8)
-        expr = a * t**3 + b * t**2 + c * t + d
         a_ = sp.Rational(a.numerator, a.denominator)
         v = 3 * a * t0**2 + 2 * b * t0 + c
         if not nice(v) or abs(v) > 500:
@@ -1014,6 +1012,52 @@ def gen_p6_2027_rv(r):
     return card('p6_2027_rv', q, num(ans), e), chk
 
 
+# ---------- ЕГЭ-2027, новое задание 17: моделирование и оптимизация (здесь — числовой итог)
+
+
+@gen('p17_2027_opt', 'ege-prof-2027', 17, 'Прикладная задача на наибольшее значение (итог задания 17)', 'm27-task-17', lim=10**6)
+def gen_p17_2027_opt(r):
+    kind = r.choice(['power', 'fence', 'price'])
+    if kind == 'power':
+        eps, rr = r.randrange(10, 241, 10), r.choice([F(1, 2), 1, 2, 4, 5, 8, 10])
+        pmax = F(eps * eps) / (4 * rr)
+        ask = r.choice(['P', 'R'])
+        if not nice(pmax, 1):
+            return None
+        q = (f'Мощность, выделяемая на внешнем сопротивлении R, равна P = ε²R/(R + r)², где ε = {eps} В — ЭДС источника, '
+             f'r = {tnum(rr)} Ом — его внутреннее сопротивление. ' + ('Найдите наибольшую мощность (в ваттах).' if ask == 'P' else 'При каком R (в омах) мощность наибольшая?'))
+        ans = pmax if ask == 'P' else F(rr)
+        e = f'P′(R) = ε²(r − R)/(R + r)³ = 0 при R = r = {tnum(rr)}; P(r) = ε²/(4r) = {tnum(pmax)}.'
+        Rv = sp.Symbol('R', positive=True)
+        rv = sp.Rational(F(rr).numerator, F(rr).denominator)
+
+        def chk():
+            Pexpr = eps**2 * Rv / (Rv + rv) ** 2
+            crit = sp.solve(sp.diff(Pexpr, Rv), Rv)
+            val = crit[0] if ask == 'R' else Pexpr.subs(Rv, crit[0])
+            return len(crit) == 1 and same(num(ans), val)
+        return card('p17_2027_opt', q, num(ans), e), chk
+    if kind == 'fence':
+        L = r.randrange(20, 401, 4)
+        area = F(L * L, 8)
+        q = (f'Прямоугольный участок одной стороной примыкает к стене дома, а три другие стороны огораживают забором длиной {L} м. '
+             'Какую наибольшую площадь (в м²) можно огородить?')
+        e = f'S(x) = x({L} − 2x), S′ = {L} − 4x = 0 при x = {tnum(F(L, 4))}; S = {tnum(area)}.'
+        xv = sp.Symbol('x', positive=True)
+        return card('p17_2027_opt', q, num(area), e), lambda: same(num(area), sp.maximum(xv * (L - 2 * xv), xv, sp.Interval(0, sp.Rational(L, 2))))
+    a, b = r.randrange(100, 2001, 20), r.choice([1, 2, 4, 5, 10])
+    cost = r.randrange(0, a // (2 * b), 5)
+    # спрос q = a − b·p штук, себестоимость cost за штуку; прибыль (p − cost)(a − b p) → max при p = (a/b + cost)/2
+    p_opt = (F(a, b) + cost) / 2
+    if not nice(p_opt, 1) or p_opt <= cost:
+        return None
+    q = (f'Спрос на товар при цене p рублей составляет q = {a} − {b if b > 1 else ""}p штук в день, себестоимость одной штуки '
+         f'{cost} рублей. При какой цене p (в рублях) дневная прибыль наибольшая?')
+    e = f'П(p) = (p − {cost})({a} − {b}p), П′ = {a} − {2 * b}p + {b * cost} = 0 ⇒ p = {tnum(p_opt)}.'
+    pv = sp.Symbol('p', positive=True)
+    return card('p17_2027_opt', q, num(p_opt), e), lambda: same(num(p_opt), sp.solve(sp.diff((pv - cost) * (a - b * pv), pv), pv)[0])
+
+
 # ================================================================ ОГЭ
 
 
@@ -1390,7 +1434,7 @@ def answer_ok(c, maxdec, lim=10000):
     return True
 
 
-def run(gid, n, seed=1, capacity_tries=4000):
+def run(gid, n, seed=1, capacity_tries=4000):  # noqa: C901
     g = GEN[gid]
     r = random.Random(f'{seed}-{gid}')
     cards, seen, stats = [], set(), Counter()
@@ -1433,13 +1477,102 @@ def run(gid, n, seed=1, capacity_tries=4000):
                        top_answer_share=round(answers.most_common(1)[0][1] / max(1, len(cards)), 3) if cards else 0)
 
 
+# ================================================================ экспорт data/research/math.json
+
+MAP_2027 = {1: 1, 2: 2, 3: 3, 4: 4, 5: 5, 7: 6, 8: 7, 9: 8, 10: 9, 11: 10, 12: 11, 14: 13, 15: 14, 16: 15, 18: 17, 19: 18, 20: 19}
+
+
+def export(path):
+    import copy
+    import os
+    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+    import math_meta as M
+
+    cache = {}
+
+    def examples(gids, k=2):
+        out = []
+        for gid in gids:
+            if gid not in cache:
+                cache[gid] = run(gid, 6, capacity_tries=0)[0]  # тот же отбор и проверка, что в самопроверке
+            for c in cache[gid][:max(1, k // len(gids))]:
+                ex = {'q': c['q'], 'a': c['a']}
+                if 'o' in c:
+                    ex['o'] = c['o']
+                out.append(ex)
+        return out[:k]
+
+    def task(d, exam_id):
+        d = copy.deepcopy(d)
+        gids = d.pop('gen_ids', [])
+        t = {
+            'n': d['n'], 'title': d['title'], 'checks': d.get('checks', d['title']), 'codifier': d.get('codifier', []),
+            'answer': d.get('answer', 'number'), 'points': d.get('points', 1), 'part': d.get('part', 1),
+            'cards': d.get('cards', ['num']), 'gen': d['gen'],
+            'recipe': d.get('recipe') or (f'Генераторы {", ".join(gids)} в tools/research/gen_math.py' if gids else ''),
+            'mistakes': d.get('mistakes', []), 'theory': d.get('theory', []), 'estimate': d['estimate'], 'priority': d['priority'],
+            'examples': examples(gids) if gids else [],
+        }
+        if gids:
+            t['gen_ids'] = gids
+        for extra in ('n_2026', 'note'):
+            if extra in d:
+                t[extra] = d[extra]
+        for h in M.HAND_EXAMPLES.get((exam_id, d.get('n_2026', d['n'])), []):
+            assert eval(h['chk']), (exam_id, d['n'], h)  # noqa: S307 — выражения наши, из math_meta.py
+            t['examples'].append({'q': h['q'], 'a': h['a']})
+        assert t['examples'], f'нет примеров: {exam_id} №{d["n"]}'
+        return t
+
+    prof26 = [task(d, 'ege-prof-2026') for d in M.EGE_PROF]
+    by_n = {d['n']: d for d in M.EGE_PROF}
+    new27 = {d['n']: d for d in M.EGE_PROF_2027_NEW}
+    points27 = {14: 2, 15: 3, 16: 2, 18: 3, 19: 4, 20: 4}
+    prof27 = []
+    for n in range(1, 21):
+        if n in new27:
+            d = dict(new27[n], note='новое задание 2027')
+        else:
+            d = dict(by_n[MAP_2027[n]], n=n, n_2026=MAP_2027[n])
+            d['points'] = points27.get(n, 1)
+        prof27.append(task(d, 'ege-prof-2026' if n not in new27 else 'ege-prof-2027'))
+    data = [
+        {'subject': 'Математика', 'exam': 'ЕГЭ профильный уровень 2026', 'id': 'ege-prof-2026', 'sources': M.SRC_EGE26,
+         'summary': '19 заданий: часть 1 — 12 с кратким ответом (12 баллов), часть 2 — 7 с развёрнутым (20 баллов); максимум 32; 235 минут. '
+                    'Изменений структуры против 2025 нет.', 'tasks': prof26, 'topics_5_9': []},
+        {'subject': 'Математика', 'exam': 'ЕГЭ профильный уровень 2027 (проект ФИПИ)', 'id': 'ege-prof-2027', 'sources': M.SRC_EGE27,
+         'summary': '20 заданий: часть 1 — 13 (13 баллов), часть 2 — 7 (20 баллов); максимум 33. Новые №6 (случайная величина), №13 (текстовая/финансовая, краткий ответ), '
+                    '№17 (моделирование, 2 балла). Позиции «наибольшее/наименьшее значение» (№12 2026) и экономической задачи с развёрнутым ответом (№16 2026) в плане нет.',
+         'tasks': prof27, 'topics_5_9': []},
+        {'subject': 'Математика', 'exam': 'ЕГЭ базовый уровень 2026', 'id': 'ege-base-2026', 'sources': M.SRC_EGE26[:3],
+         'summary': '21 задание с кратким ответом, по 1 баллу, максимум 21; 180 минут; только базовый уровень. Изменений против 2025 нет; проект 2027 — без изменений.',
+         'tasks': [task(d, 'ege-base-2026') for d in M.EGE_BASE], 'topics_5_9': []},
+        {'subject': 'Математика', 'exam': 'ОГЭ 2026', 'id': 'oge-2026', 'sources': M.SRC_OGE,
+         'summary': '25 заданий: часть 1 — 19 с кратким ответом (по 1 баллу), часть 2 — 6 с развёрнутым (по 2 балла); максимум 31; 235 минут. '
+                    'Изменений против 2025 нет; проект 2027 — без изменений структуры.', 'tasks': [task(d, 'oge-2026') for d in M.OGE], 'topics_5_9': []},
+        {'subject': 'Математика', 'exam': '5–9 класс (ФРП «Математика», п. 146 ФОП ООО)', 'id': 'school-5-9', 'sources': M.SRC_SCHOOL, 'tasks': [],
+         'topics_5_9': [{**{k: v for k, v in t.items() if k != 'gen_ids'}, **({'gen_ids': t['gen_ids'], 'examples': examples(t['gen_ids'], 1)} if t.get('gen_ids') else {})}
+                        for t in M.TOPICS_5_9]},
+    ]
+    os.makedirs(os.path.dirname(path) or '.', exist_ok=True)
+    with open(path, 'w', encoding='utf-8') as fh:
+        json.dump(data, fh, ensure_ascii=False, indent=1)
+        fh.write('\n')
+    n_tasks = sum(len(e['tasks']) for e in data)
+    print(f'{path}: {len(data)} разделов, {n_tasks} заданий, {len(data[-1]["topics_5_9"])} тем 5–9')
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--n', type=int, default=200)
     ap.add_argument('--sample', action='store_true')
     ap.add_argument('--json')
     ap.add_argument('--only')
+    ap.add_argument('--export', help='собрать data/research/math.json')
     args = ap.parse_args()
+    if args.export:
+        export(args.export)
+        return 0
     allc = []
     print(f'{"генератор":<18}{"экз.":<14}{"№":>3} {"готово":>7} {"попыток":>8} {"отсев":>6} {"повт.":>6} {"сбой":>5} {"ёмкость":>8} {"ответов":>8}')
     total_fail = 0
