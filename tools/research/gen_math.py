@@ -1303,6 +1303,8 @@ def answer_ok(c, maxdec, lim=10000):
         return nice(v, maxdec, lim)
     if c['k'] == 'one':
         return c['a'] in [o['id'] for o in c['o']]
+    if c['k'] == 'many':
+        return bool(c['a']) and set(c['a']) <= {o['id'] for o in c['o']}
     if c['k'] == 'match':
         return set(c['a']) == {x['id'] for x in c['o']['left']}
     return True
@@ -1524,7 +1526,11 @@ BANK_OF = {'ege-prof': 'prof', 'ege-base': 'base', 'oge': 'oge'}
 
 
 def card_text(c):
-    return c['q'] + ' ' + ' '.join(str(o.get('text', '')) for o in (c.get('o') or []) if isinstance(o, dict))
+    """Условие вместе с вариантами ответа (one/many: o = [{id, t}], match: o = {left, right})."""
+    o = c.get('o') or []
+    if isinstance(o, dict):
+        o = o.get('left', []) + o.get('right', [])
+    return c['q'] + ' ' + ' '.join(str(x.get('t', '')) for x in o if isinstance(x, dict))
 
 
 def run_proto(p, n, fipi=None, seed=1):
