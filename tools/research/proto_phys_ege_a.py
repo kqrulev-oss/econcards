@@ -131,6 +131,7 @@ def W(x, dec=3):
 def many_card(pid, rng, q, pool, p, lo=2, hi=3, tail='Выберите все верные утверждения на основании анализа представленных данных.'):
     """pool: [(текст, истина, спец для solve, пояснение)] — выбирает 5 утверждений, из них верных от lo до hi.
     В p['st'] кладутся спецификации выбранных утверждений: solve() сам решает, какие из них верны."""
+    pool = [x for x in pool if x is not None]
     tr = [x for x in pool if x[1]]
     fl = [x for x in pool if not x[1]]
     k = rng.randint(lo, hi)
@@ -1358,7 +1359,7 @@ def g_momentum(rng):
         pair = pick(rng, [('грузовика', 'легкового автомобиля'), ('автобуса', 'мотоцикла'), ('автокрана', 'легкового автомобиля'), ('грузовика', 'мотоцикла')])
         ask = pick(rng, ['m', 'p'])
         rm = pick(rng, [2, 3, 4, 5, 6, 8, 10])
-        rv = pick(rng, [Fr(1, 2), Fr(1, 3), Fr(2, 3), Fr(3, 4), Fr(1, 4), 2])
+        rv = pick(rng, [Fr(1, 2), Fr(3, 4), Fr(1, 4), 2, Fr(3, 2), Fr(2, 5)])
         rp = rm * rv
         if not ok_dec(rp) or rp == 1:
             raise Retry
@@ -2283,7 +2284,7 @@ def g_oscillation(rng):
         e = f'Координата проходит все значения от {Amp} до −{Amp} и обратно за {Q(T)} с: A = {Amp} {unit}, T = {Q(T)} с, ν = {Q(1 / T)} Гц. Ответ: {ans}.'
         wrong = [W(2 * Amp) if ask == 'A' else W(2 * dt), W(T / 2) if ask != 'nu' else W(T), W(1 / T if ask == 'T' else 2 * T)]
     elif kind == 'eq':
-        T = pick(rng, [Fr(1, 5), Fr(1, 2), 1, Fr(3, 2), 2, 4])
+        T = pick(rng, [Fr(1, 5), Fr(1, 2), 1, 2, 4, Fr(2, 5), Fr(4, 5)])
         Amp = pick(rng, [Fr(1, 100), Fr(2, 100), Fr(5, 100), Fr(1, 10), Fr(3, 100)])
         ask = pick(rng, ['T', 'nu', 'A'])
         p = {'kind': kind, 'T': str(T), 'A': str(Amp), 'ask': ask}
@@ -2479,6 +2480,8 @@ def fake(rng, x, dec=2, pos=True):
 
 def _st_num(rng, true_val, fmt_text, spec, why, dec=2, truth=None):
     """Утверждение с числом: верное (точное значение) или неверное (искажённое)."""
+    if not ok_dec(true_val, dec):
+        return None                       # «некрасивое» значение — утверждение не используем
     t = rng.random() < 0.5 if truth is None else truth
     v = Fr(true_val) if t else fake(rng, true_val, dec)
     return (fmt_text.format(v=Q(v)), t, dict(spec, v=str(v)), why)
@@ -2559,9 +2562,9 @@ def g_block(rng):
         _st_num(rng, m * a, 'Модуль равнодействующей сил, приложенных к {d}, равен {{v}} Н.'.format(d=dat), {'k': 'Fnet'}, f'ma = {Q(m * a)} Н'),
         _st_num(rng, F - m * a, 'Сила трения скольжения, действующая на {n}, по модулю равна {{v}} Н.'.format(n=nom.replace(' с заторможенными колёсами', '')), {'k': 'Ftr'}, f'Fтр = F − ma = {Q(F - m * a)} Н'),
         _st_num(rng, mu, 'Коэффициент трения скольжения μ = {v}.', {'k': 'mu'}, f'μ = Fтр/(mg) = {Q(mu)}'),
-        _st_num(rng, Ek * mul, f'Кинетическая энергия {gen} в момент времени {Q(tk)} с равна {{v}} {unitE}.', {'k': 'Ek', 't': str(tk), 'mul': mul}, f'Eк = {Q(Ek * mul)} {unitE}', dec=3),
-        _st_num(rng, a * tk * tk / 2, f'За первые {Q(tk)} с {BLOCK_NOM.get(nom, nom)} проходит путь {{v}} м.'.replace('санки проходит', 'санки проходят'), {'k': 's', 't': str(tk)}, f's = at²/2 = {Q(a * tk * tk / 2)} м', dec=3),
-        _st_num(rng, m * vt, f'Модуль импульса {gen} в момент времени {Q(tk)} с равен {{v}} кг·м/с.', {'k': 'p', 't': str(tk)}, f'p = mυ = {Q(m * vt)} кг·м/с', dec=3),
+        _st_num(rng, Ek * mul, f'Кинетическая энергия {gen} в момент времени {Q(tk)} с равна {{v}} {unitE}.', {'k': 'Ek', 't': str(tk), 'mul': mul}, f'Eк = {Q(Ek * mul)} {unitE}', dec=2),
+        _st_num(rng, a * tk * tk / 2, f'За первые {Q(tk)} с {BLOCK_NOM.get(nom, nom)} проходит путь {{v}} м.'.replace('санки проходит', 'санки проходят'), {'k': 's', 't': str(tk)}, f's = at²/2 = {Q(a * tk * tk / 2)} м', dec=2),
+        _st_num(rng, m * vt, f'Модуль импульса {gen} в момент времени {Q(tk)} с равен {{v}} кг·м/с.', {'k': 'p', 't': str(tk)}, f'p = mυ = {Q(m * vt)} кг·м/с', dec=2),
     ]
     mm = f'{Q(m * 1000)} г' if m < 1 else f'{Q(m)} кг'
     q = (f'На уроке исследовали движение: {nom} массой {mm} тянули {where} с помощью горизонтальной нити, сила натяжения которой постоянна и равна {Q(F)} Н. '
@@ -2813,8 +2816,8 @@ def g_throw_many(rng):
                  (f'В верхней точке траектории кинетическая энергия {gen} равна нулю.', True, {'k': 'Ektop', 'claim': 0}, 'скорость равна нулю'),
                  (f'В верхней точке траектории ускорение {gen} равно нулю.', False, {'k': 'atop', 'claim': 0}, 'ускорение всё время равно g'),
                  (f'В верхней точке траектории ускорение {gen} по модулю равно 10 м/с².', True, {'k': 'atop', 'claim': 10}, 'a = g'),
-                 _st_num(rng, m * v0 * v0 / 2, f'Потенциальная энергия {gen} в верхней точке относительно точки броска равна {{v}} Дж.', {'k': 'Eptop'}, f'Eп = Eк0 = {Q(m * v0 * v0 / 2)} Дж', dec=3),
-                 _st_num(rng, m * abs(v0 - G * t), f'Модуль импульса {gen} через {Q(t)} с после броска равен {{v}} кг·м/с.', {'k': 'pt', 't': str(t)}, f'p = {Q(m * abs(v0 - G * t))} кг·м/с', dec=3)]
+                 _st_num(rng, m * v0 * v0 / 2, f'Потенциальная энергия {gen} в верхней точке относительно точки броска равна {{v}} Дж.', {'k': 'Eptop'}, f'Eп = Eк0 = {Q(m * v0 * v0 / 2)} Дж', dec=2),
+                 _st_num(rng, m * abs(v0 - G * t), f'Модуль импульса {gen} через {Q(t)} с после броска равен {{v}} кг·м/с.', {'k': 'pt', 't': str(t)}, f'p = {Q(m * abs(v0 - G * t))} кг·м/с', dec=2)]
         q = f'{obj.capitalize()} массой {Q(m)} кг бросили с поверхности земли вертикально вверх с начальной скоростью {v0} м/с. Сопротивлением воздуха пренебречь.'
         p = {'kind': kind, 'v0': v0, 'm': str(m), 'h0': 0}
     else:
@@ -2827,7 +2830,7 @@ def g_throw_many(rng):
                  (f'Горизонтальная составляющая скорости {gen} во время полёта не изменяется.', True, {'k': 'vxconst', 'claim': True}, 'по горизонтали сил нет'),
                  (f'Горизонтальная составляющая скорости {gen} во время полёта уменьшается.', False, {'k': 'vxconst', 'claim': False}, 'по горизонтали сил нет'),
                  (f'Ускорение {gen} во время полёта по модулю равно 10 м/с².', True, {'k': 'a', 'claim': 10}, 'a = g'),
-                 _st_num(rng, m * vend2 / 2, f'Кинетическая энергия {gen} непосредственно перед падением на землю равна {{v}} Дж.', {'k': 'Ekend'}, f'Eк = m(υ0² + 2gh)/2 = {Q(m * vend2 / 2)} Дж', dec=3)]
+                 _st_num(rng, m * vend2 / 2, f'Кинетическая энергия {gen} непосредственно перед падением на землю равна {{v}} Дж.', {'k': 'Ekend'}, f'Eк = m(υ0² + 2gh)/2 = {Q(m * vend2 / 2)} Дж', dec=2)]
         if vend is not None:
             pool.append(_st_num(rng, vend, f'Модуль скорости {gen} непосредственно перед падением на землю равен {{v}} м/с.', {'k': 'vend'}, f'υ = √(υ0² + 2gh) = {Q(vend)} м/с'))
         where = pick(rng, ['с балкона', 'с крыши сарая', 'с края обрыва', 'с башни'])
@@ -3553,8 +3556,8 @@ def _coef(k, s):
     k = Fr(k)
     if k == 1:
         return s
-    if k.denominator != 1 and k.numerator == 1:
-        return f'{s}/{k.denominator}'
+    if k.denominator != 1:
+        return f'{s}/{k.denominator}' if k.numerator == 1 else f'{k.numerator}{s}/{k.denominator}'
     return f'{Q(k)}{s}'
 
 
@@ -4252,7 +4255,7 @@ def g_U(rng):
         down = rng.random() < 0.4
         p = {'kind': kind, 'nu': nu, 'dT': dT}
         ans = _solve_U(p)
-        q = f'Разреженный {gas} в количестве {nu} моль {"охлаждают" if down else "нагревают"} от {t1} °С до {t1 - dT if down else t1 + dT} °С. На сколько {"уменьшилась" if down else "увеличилась"} внутренняя энергия газа?' + ans_line('Дж')
+        q = f'Разреженный {gas} в количестве {nu} моль {"охлаждают" if down else "нагревают"} от {Q(t1)} °С до {Q(t1 - dT if down else t1 + dT)} °С. На сколько {"уменьшилась" if down else "увеличилась"} внутренняя энергия газа?' + ans_line('Дж')
         e = f'ΔU = (3/2)νRΔT = 1,5·{nu}·8,31·{dT} = {ans} Дж.'
         wrong = [W(nu * R_GAS * dT), W(Fr(5, 2) * nu * R_GAS * dT), W(Fr(3, 2) * nu * R_GAS * (t1 + dT + 273))]
     elif kind == 'pV':
@@ -4777,7 +4780,7 @@ def g_vessels(rng):
     if ok_dec(rm) and rm != 1:
         pool.append(_st_num(rng, rm, 'Если соединить сосуды тонкой трубкой (температура прежняя), отношение установившегося давления к начальному давлению в первом сосуде будет равно {v}.', {'k': 'pmix'},
                             f'p = (ν₁ + ν₂)RT/(V₁ + V₂) ⇒ {Q(rm)}'))
-    q = (f'В первом сосуде объёмом {V1 if V1 != V2 else ""}{"V" if V1 != V2 else "V"} находится {n1} моль разреженного газа ({g1}), во втором сосуде объёмом {V2 if V1 != V2 else ""}V — {n2} моль разреженного газа ({g2}). '
+    q = (f'В первом сосуде объёмом {V1 if V1 != V2 else ""}{"V" if V1 != V2 else "V"} находится {n1} моль разреженного {GEN_G[g1]}, во втором сосуде объёмом {V2 if V1 != V2 else ""}V — {n2} моль разреженного {GEN_G[g2]}. '
          f'Температуры газов одинаковы. Газы считать идеальными.').replace('объёмом 1V', 'объёмом V')
     return many_card('ph-ege-09-vessels', rng, q, pool, {'n1': n1, 'n2': n2, 'V1': V1, 'V2': V2}, tail='Выберите все верные утверждения.')
 
@@ -5116,6 +5119,14 @@ def g_formula_coef(rng):
     right += rng.sample(traps, 2)
     if len({(f, c) for f, c, _ in right}) != 4:
         raise Retry
+    for _, c, _u in right:
+        mnt = Fr(c)
+        while mnt >= 10:
+            mnt /= 10
+        while mnt < 1:
+            mnt *= 10
+        if not ok_dec(mnt, 1):
+            raise Retry
     rng.shuffle(right)
     rlist = [(str(i + 1), f, str(c)) for i, (f, c, u) in enumerate(right)]
     lett = 'abcd'

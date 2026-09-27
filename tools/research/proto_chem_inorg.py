@@ -3913,7 +3913,10 @@ def _step_text(r, subj_f, kind, rng, first=False):
     """Фраза для одной стадии. subj_f — «носитель» (вещество, над которым действуют)."""
     others = [x for x in dict.fromkeys(r['lhs']) if x != subj_f and x != 'H2O']
     cond = r.get('cond', '')
-    heat = ' и нагрели' if cond.startswith('t') or ', t' in cond else ''
+    heat = ' при нагревании' if cond.startswith('t') or ', t' in cond else ''
+    if not r.get('aq') and not (cond.startswith('t') or ', t' in cond or 'сплавл' in cond or 'горение' in cond or
+                                'обжиг' in cond or 'O2' in r['lhs'] or len(r['lhs']) == 1):
+        return None
     if first:
         name = ru(subj_f)
         subj = name[0].upper() + name[1:]
@@ -4003,7 +4006,9 @@ for _r in CHAIN_RX:
 def build_chain(rng, n=4):
     starts = [r for r in CHAIN_RX if r['lhs'][0] != 'H2O']
     r1 = rng.choice(starts)
-    subj = [x for x in dict.fromkeys(r1['lhs']) if x != 'H2O']
+    subj = [x for x in dict.fromkeys(r1['lhs']) if x != 'H2O' and x not in I.GASES]
+    if not subj:
+        return None
     A = rng.choice(subj)
     if SUBS[A]['cls'] in ('кислота',) and len(subj) > 1:
         A = [x for x in subj if x != A][0]
@@ -4021,7 +4026,8 @@ def build_chain(rng, n=4):
     steps.append((r1, A, c, kind, t))
     used = {A, c}
     for _ in range(n - 1):
-        cand = [r for r in BY_LHS31.get(c, []) if r is not steps[-1][0]]
+        prevR = set(steps[-1][0]['lhs']) - {steps[-1][1]}
+        cand = [r for r in BY_LHS31.get(c, []) if r is not steps[-1][0] and not (set(r['lhs']) - {c}) & prevR - {'H2O'}]
         rng.shuffle(cand)
         ok = False
         for r in cand:

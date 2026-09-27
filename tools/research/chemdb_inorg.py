@@ -1011,7 +1011,7 @@ for bo, ck in _BASIC_OX.items():
             continue
         if ck == 'Mg' and ao in ('N2O5', 'SO2'):
             continue
-        R([bo, ao], [p], ['соединения'], cond='t' if ao in ('SiO2', 'P2O5') or ck == 'Mg' else '',
+        R([bo, ao], [p], ['соединения'], cond='t' if ao in ('SiO2', 'P2O5') or ck == 'Mg' and ao != 'CO2' else '',
           tags=['основный оксид+кислотный оксид'], phase='гетеро' if ao in ('SiO2', 'P2O5') else None,
           heat='экзо' if ao != 'SiO2' else None)
 for bo, ck in [('Na2O', 'Na'), ('K2O', 'K')]:
@@ -2177,6 +2177,8 @@ for row in _NM:
         continue
     ex = dict(ex)
     typ = ex.pop('type', None) or ['ОВР']
+    if 'aq' not in ex and any(v in ('разб.', 'конц.', 'р-р', 'оч. разб.') for v in (ex.get('form') or {}).values()):
+        ex['aq'] = True
     if len(r) == 1 and len(l) >= 2 and 'соединения' not in typ:
         typ = ['соединения'] + typ
     if len(l) == 1 and len(r) >= 2 and 'разложения' not in typ:
