@@ -2297,46 +2297,64 @@ def _el_state(salt, n0, x):
     return comp, loss
 
 
-def _solve_34_el(p):
-    """Независимый пересчёт через ионный баланс раствора."""
-    salt, n0, x = p['salt'], Fr(p['n0']), Fr(p['x'])
-    m0 = Fr(p['m0'])
-    # масса, ушедшая из раствора (металл/водород на катоде + газ на аноде) — по числу электронов
-    e = {'CuSO4': 2, 'Cu(NO3)2': 2, 'CuCl2': 2, 'AgNO3': 1, 'NaCl': 1, 'KCl': 1}[salt] * x   # моль электронов
+def _el_calc(p):
+    """Независимый пересчёт по данным условия через число электронов и ионный баланс раствора.
+    Возвращает шаги: n(разложившейся соли), m(р-ра после электролиза), n(реагента, вступившего в реакцию)
+    [, m(конечного р-ра)], ответ."""
+    salt = p['salt']
+    m0, w0 = Fr(p['m0']), Fr(p['w0'])
+    n0 = m0 * w0 / 100 / Mi(salt)
+    ez = {'CuSO4': 2, 'Cu(NO3)2': 2, 'CuCl2': 2, 'AgNO3': 1, 'NaCl': 1, 'KCl': 1}[salt]   # e⁻ на формульную единицу
     cat = {'CuSO4': Mi('Cu') / 2, 'Cu(NO3)2': Mi('Cu') / 2, 'CuCl2': Mi('Cu') / 2, 'AgNO3': Mi('Ag'),
-           'NaCl': Mi('H'), 'KCl': Mi('H')}[salt]
-    an = Mi('O') / 2 if salt in ('CuSO4', 'Cu(NO3)2', 'AgNO3') else Mi('Cl')
-    m_after = m0 - e * cat - e * an
-    H = e if salt in ('CuSO4', 'Cu(NO3)2', 'AgNO3') else 0            # моль H⁺ в растворе
-    OH = e if salt in ('NaCl', 'KCl') else 0                         # моль OH⁻
+           'NaCl': Mi('H'), 'KCl': Mi('H')}[salt]                                      # масса на 1 моль e⁻ на катоде
+    an = Mi('O') / 2 if salt in ('CuSO4', 'Cu(NO3)2', 'AgNO3') else Mi('Cl')            # … на аноде
+    kind, val = p['stop']
+    val = Fr(val)
+    if kind == 'an':
+        e = val / VM * (4 if salt in ('CuSO4', 'Cu(NO3)2', 'AgNO3') else 2)
+    elif kind == 'cat':
+        e = val / VM * 2
+    else:
+        e = val / (cat + an)
+    x = e / ez
+    m_after = m0 - e * (cat + an)
+    H = e if salt in ('CuSO4', 'Cu(NO3)2', 'AgNO3') else 0
+    OH = e if salt in ('NaCl', 'KCl') else 0
     metal_ion = (n0 - x) if salt in ('CuSO4', 'Cu(NO3)2', 'CuCl2', 'AgNO3') else 0
-    r, nr = p['reag'], Fr(p['nr'])
-    mr = Fr(p['mr'])
+    r = p['reag']
     if p['mode'] == 'portion':
         f = Fr(p['mp']) / m_after
-        need = {'NaOH': H * f + 2 * metal_ion * f if salt != 'AgNO3' else None,
-                'NaCl': metal_ion * f, 'CuSO4': OH * f / 2}[r]
-        return rs(need * Mi(r) * 100 / Fr(p['wr']), 1)
-    if r == 'NaOH':                                                   # нейтрализация, затем осаждение гидроксида
-        used = H + (2 if salt != 'AgNO3' else 1) * metal_ion
-        left = {'NaOH': nr - used}
-        ppt = metal_ion * Mi('Cu(OH)2')
-        gas = 0
+        need = {'NaOH': H * f + 2 * metal_ion * f, 'NaCl': metal_ion * f, 'CuSO4': OH * f / 2}[r]
+        return [(x, 3), (m_after, 2), (need, 3), (need * Mi(r) * 100 / Fr(p['wr']), 1)]
+    mr = Fr(p['mr'])
+    nr = mr * Fr(p['wr']) / 100 / Mi(r)
+    if r == 'NaOH':
+        used = H + 2 * metal_ion
+        left, lost = {'NaOH': nr - used}, metal_ion * Mi('Cu(OH)2')
     elif r == 'Na2CO3':
-        gas = nr * Mi('CO2')
-        ppt = 0
+        used = nr
+        lost = nr * Mi('CO2')
         left = {'H2SO4': (H - 2 * nr) / 2, 'HNO3': H - 2 * nr, salt: metal_ion}
     elif r == 'NaCl':
-        ppt = metal_ion * Mi('AgCl')
-        gas = 0
-        left = {'NaCl': nr - metal_ion, 'HNO3': H}
-    else:  # CuSO4 к щелочному раствору
-        ppt = nr * Mi('Cu(OH)2')
-        gas = 0
-        left = {'NaOH' if salt == 'NaCl' else 'KOH': OH - 2 * nr, salt: n0 - x}
-    total = m_after + mr - ppt - gas
+        used = metal_ion
+        left, lost = {'NaCl': nr - metal_ion, 'HNO3': H}, metal_ion * Mi('AgCl')
+    else:
+        used = nr
+        left, lost = {'NaOH' if salt == 'NaCl' else 'KOH': OH - 2 * nr, salt: n0 - x}, nr * Mi('Cu(OH)2')
+    total = m_after + mr - lost
     t = p['target']
-    return rs(left[t] * Mi(t) / total * 100, 1)
+    return [(x, 3), (m_after, 2), (used, 3), (total, 2), (left[t] * Mi(t) / total * 100, 1)]
+
+
+def _steps(calc):
+    return lambda p: [rs(v, d) for v, d in calc(p)]
+
+
+def _last(calc):
+    return lambda p: rs(*calc(p)[-1])
+
+
+_solve_34_el = _last(_el_calc)
 
 
 @proto('ch-ege-34-electro', 'ЕГЭ', 34, 'Электролиз раствора соли, затем реакция с другим раствором',
@@ -2363,11 +2381,12 @@ def g34_electro(rng):
     w0, m0 = _nice_sol(rng, n0, salt, (10, 12, 15, 16, 20, 25, 30, 40))
     comp, loss = _el_state(salt, n0, x)
     m_after = m0 - loss
-    stops = [('an', f'на аноде выделилось {ru(x * Fr(k[an], k[salt]) * VM)} л (н.у.) газа')]
+    v_an, v_cat = x * Fr(k[an], k[salt]) * VM, (x * Fr(k[cat], k[salt]) * VM if cat else None)
+    stops = [('an', f'на аноде выделилось {ru(v_an)} л (н.у.) газа', v_an)]
     if cat:
-        stops.append(('cat', f'на катоде собрали {ru(x * Fr(k[cat], k[salt]) * VM)} л (н.у.) газа'))
+        stops.append(('cat', f'на катоде собрали {ru(v_cat)} л (н.у.) газа', v_cat))
     if nice(loss, 2):
-        stops.append(('mass', f'масса раствора уменьшилась на {ru(loss)} г'))
+        stops.append(('mass', f'масса раствора уменьшилась на {ru(loss)} г', loss))
     stop = pick(rng, stops)
     if not nice(x * Fr(k[an], k[salt]) * VM, 3):
         raise Retry
@@ -2390,7 +2409,7 @@ def g34_electro(rng):
         if not nice(mp, 2):
             raise Retry
         need = {'NaOH': H * frac + 2 * metal_ion * frac, 'NaCl': metal_ion * frac, 'CuSO4': OH * frac / 2}[reag]
-        wr = pick(rng, [5, 8, 10, 15, 20, 25])
+        wr = pick(rng, [w for w in (5, 8, 10, 15, 20, 25) if w_ok(reag, w)])
         ans_v = need * M(reag) * 100 / wr
         ans = rnd(ans_v, 1)
         purpose = {'NaOH': 'полного осаждения ионов меди', 'NaCl': 'полного осаждения ионов серебра',
@@ -2399,8 +2418,10 @@ def g34_electro(rng):
              f'электродами. Когда {stop[1]}, ток отключили. Из полученного раствора взяли порцию массой {ru(mp)} г. '
              f'Рассчитайте массу {wr} %-ного раствора {_gw(reag)}, которая потребуется для {purpose} в этой порции. '
              f'' + KIM34 + '(Запишите число с точностью до десятых.)')
-        p = dict(salt=salt, n0=str(n0), x=str(x), m0=str(m0), reag=reag, nr='0', mr='0', mode='portion', mp=str(mp),
+        p = dict(salt=salt, m0=str(m0), w0=w0, stop=[stop[0], str(stop[2])], reag=reag, mode='portion', mp=str(mp),
                  wr=wr, target='')
+        steps = [('n(разложившейся соли), моль', fmt(x, 3)), ('m(раствора после электролиза), г', fmt(m_after, 2)),
+                 (f'n({pretty(reag)}), необходимое для порции, моль', fmt(need, 3)), (f'm(раствора {pretty(reag)}), г', ans)]
         e = f'Разложилось {fmt(x, 3)} моль соли; масса раствора после электролиза {fmt(m_after, 2)} г; в порции ' \
             f'{fmt(frac, 3)} часть веществ; n({pretty(reag)}) = {fmt(need, 4)} моль ⇒ m(р-ра) ≈ {ans} г.'
         wrong = W([need * M(reag), ans_v * 2 if reag == 'CuSO4' else ans_v / 2, need * M(reag) * 100 / wr / frac], 1)
@@ -2426,23 +2447,28 @@ def g34_electro(rng):
         else:
             targets = ['NaOH' if salt == 'NaCl' else 'KOH', salt]
         target = pick(rng, targets)
-        p = dict(salt=salt, n0=str(n0), x=str(x), m0=str(m0), reag=reag, nr=str(nr), mr=str(mr), mode='final',
-                 target=target)
-        ans = _solve_34_el(p)
-        num_ = Fr(ans.replace(',', '.'))
-        guard(Fr(_ans_exact_el(p)), 1)
-        if num_ <= 0:
+        p = dict(salt=salt, n0=str(n0), x=str(x), m0=str(m0), w0=w0, stop=[stop[0], str(stop[2])], reag=reag,
+                 nr=str(nr), mr=str(mr), wr=wr, mode='final', target=target)
+        exact = Fr(_ans_exact_el(p))
+        if exact <= 0:
             raise Retry
+        ans = rnd(exact, 1)
+        used = {'NaOH': H + 2 * metal_ion, 'Na2CO3': nr, 'NaCl': metal_ion, 'CuSO4': nr}[reag]
+        lost = {'NaOH': metal_ion * M('Cu(OH)2'), 'Na2CO3': nr * M('CO2'), 'NaCl': metal_ion * M('AgCl'),
+                'CuSO4': nr * M('Cu(OH)2')}[reag]
+        steps = [('n(разложившейся соли), моль', fmt(x, 3)), ('m(раствора после электролиза), г', fmt(m_after, 2)),
+                 (f'n({pretty(reag)}), вступившего в реакцию, моль', fmt(used, 3)),
+                 ('m(конечного раствора), г', fmt(m_after + mr - lost, 2)), (f'ω({pretty(target)}), %', ans)]
         q = (f'Раствор {name} массой {ru(m0)} г с массовой долей соли {w0} % подвергли электролизу с инертными '
              f'электродами. Когда {stop[1]}, ток отключили. К оставшемуся раствору прилили {ru(mr)} г {wr} %-ного '
              f'раствора {_gw(reag)}. Рассчитайте массовую долю {_gw(target)} в образовавшемся растворе. '
              f'' + KIM34 + '(Запишите число с точностью до десятых.)')
         e = f'Разложилось {fmt(x, 3)} моль {pretty(salt)}; масса раствора после электролиза {fmt(m_after, 2)} г; ' \
-            f'далее реакция с {pretty(reag)} ({fmt(nr, 3)} моль), из раствора уходят осадок/газ ⇒ ω ≈ {ans} %.'
-        exact = Fr(_ans_exact_el(p))
+            f'взято {fmt(nr, 3)} моль {pretty(reag)}, в реакцию вступило {fmt(used, 3)} моль; из раствора уходит ' \
+            f'{fmt(lost, 2)} г осадка/газа, масса конечного раствора {fmt(m_after + mr - lost, 2)} г ⇒ ω ≈ {ans} %.'
         wrong = W([exact * m_after / m0, exact * (m_after + mr) / (m0 + mr), exact * 2], 1)
     eqs = [eqp(lhs, rhs)[1]]
-    return pcard('ch-ege-34-electro', q, ans, e, p=p, wrong=wrong, eqs=eqs)
+    return pcard('ch-ege-34-electro', q, ans, e, p=p, wrong=wrong, eqs=eqs, steps=steps)
 
 
 def _ans_exact_el(p):
@@ -2513,7 +2539,7 @@ def _dec_result(salt, x, r, reag, nr, water, mres):
     return left, m_in - gone
 
 
-def _solve_34_dec(p):
+def _dec_calc(p):
     """Пересчёт от данных условия: n(газа) → x; масса остатка → r; далее баланс раствора."""
     salt = p['salt']
     solid, gases, reag = DEC34[salt]
@@ -2525,10 +2551,14 @@ def _solve_34_dec(p):
         x = Fr(p['V']) / VM / per
     solid_per = Fr(1, 2) if salt == 'NaHCO3' else 1
     r = (mres - x * solid_per * Mi(solid)) / Mi(salt)
-    left, msol = _dec_result(salt, x, r, reag, Fr(p['nr']), Fr(p['water']), mres)
+    nr = Fr(p['mr']) * Fr(p['wr']) / 100 / Mi(reag)
+    left, msol = _dec_result(salt, x, r, reag, nr, Fr(p['water']), mres)
     total = msol + Fr(p['mr']) + Fr(p['water']) * (0 if salt in ('AgNO3', 'Cu(NO3)2', 'Mg(NO3)2') else 1)
     t = p['target']
-    return rs(left[t] * Mi(t) / total * 100, 1)
+    return [(x, 3), (r, 3), (nr - left[reag], 3), (total, 2), (left[t] * Mi(t) / total * 100, 1)]
+
+
+_solve_34_dec = _last(_dec_calc)
 
 
 @proto('ch-ege-34-decomp', 'ЕГЭ', 34, 'Частичное термическое разложение соли, затем реакция остатка с раствором',
@@ -2568,7 +2598,7 @@ def g34_decomp(rng):
     prod_cl = {'CaCO3': 'CaCl2', 'MgCO3': 'MgCl2', 'BaCO3': 'BaCl2', 'NaHCO3': 'NaCl', 'AgNO3': 'HNO3'}.get(salt)
     targets = {'HCl': ['HCl', prod_cl], 'AgNO3': ['AgNO3', 'KNO3'], 'NaOH': ['NaOH', 'NaNO3']}[reag]
     target = pick(rng, targets)
-    p = dict(salt=salt, V=str(V), mres=str(mres), m0=str(m0), nr=str(nr), mr=str(mr), water=str(water), target=target)
+    p = dict(salt=salt, V=str(V), mres=str(mres), m0=str(m0), mr=str(mr), wr=wr, water=str(water), target=target)
     left, msol = _dec_result(salt, x, r, reag, nr, water, mres)
     total = msol + mr + (0 if salt in ('AgNO3', 'Cu(NO3)2', 'Mg(NO3)2') else water)
     exact = left[target] * M(target) / total * 100
@@ -2580,7 +2610,7 @@ def g34_decomp(rng):
         s1 = f'Образец гидрокарбоната натрия массой {ru(m0)} г нагревали, пока его масса не уменьшилась до {ru(mres)} г.'
     else:
         gas_w = 'смеси газов' if len(gases) > 1 else 'газа'
-        cat = ' в присутствии катализатора' if salt == 'KClO3' else ''
+        cat = ''     # без катализатора: иначе он остался бы в твёрдом остатке
         s1 = \
             f'Порцию {sname} нагревали{cat}; разложилась только часть соли. Собрали {ru(V)} л (н.у.) {gas_w}, а твёрдый ' \
             f'остаток имел массу {ru(mres)} г.'
@@ -2588,12 +2618,15 @@ def g34_decomp(rng):
     s2 = f'Остаток перенесли в колбу{wtxt} и добавили {ru(mr)} г раствора {_gw(reag)} с массовой долей {wr} %.'
     q = f'{s1} {s2} Рассчитайте массовую долю {_gw(target)} в образовавшемся растворе. ' + KIM34 + \
         '(Запишите число с точностью до десятых.)'
-    e = f'Разложилось {fmt(x, 3)} моль {pretty(salt)}, осталось {fmt(r, 3)} моль; остаток прореагировал с ' \
-        f'{fmt(nr, 3)} моль {pretty(reag)}; масса раствора {fmt(total, 2)} г ⇒ ω ≈ {ans} %.'
+    e = f'Разложилось {fmt(x, 3)} моль {pretty(salt)}, осталось {fmt(r, 3)} моль; из {fmt(nr, 3)} моль взятого ' \
+        f'{pretty(reag)} в реакцию вступило {fmt(need, 3)} моль; масса конечного раствора {fmt(total, 2)} г ⇒ ω ≈ {ans} %.'
+    steps = [('n(разложившейся соли), моль', fmt(x, 3)), ('n(неразложившейся соли), моль', fmt(r, 3)),
+             (f'n({pretty(reag)}), вступившего в реакцию, моль', fmt(need, 3)), ('m(конечного раствора), г', fmt(total, 2)),
+             (f'ω({pretty(target)}), %', ans)]
     wrong = W([exact * total / (total + (r * M("CO2") if salt in ("CaCO3", "MgCO3", "BaCO3") else 20)),
                left[target] * M(target) / (mres + mr + water) * 100, exact * 2], 1)
     eqs = [eqp([salt], [solid] + [g for g, _ in gases])[1]]
-    return pcard('ch-ege-34-decomp', q, ans, e, p=p, wrong=wrong, eqs=eqs)
+    return pcard('ch-ege-34-decomp', q, ans, e, p=p, wrong=wrong, eqs=eqs, steps=steps)
 
 
 ATOM34 = [  # (X, Y, кислота, соль, элементы отношения)
@@ -2626,7 +2659,7 @@ def _acid_rx(s, acid, salt):
     return [s, acid], prods
 
 
-def _solve_34_atoms(p):
+def _atoms_calc(p):
     X, Y, acid, salt = p['X'], p['Y'], p['acid'], p['salt']
     e1, e2 = p['els']
     a1, a2 = Fr(p['ratio'][0]), Fr(p['ratio'][1])
@@ -2650,8 +2683,13 @@ def _solve_34_atoms(p):
         acid_used += n * Fr(k[acid], k[s])
     total = m + Fr(p['ms']) - gas_m
     if p['target'] == 'salt':
-        return rs(salt_n * Mi(salt) / total * 100, 1)
-    return rs((Fr(p['ms']) * Fr(p['ws']) / 100 - acid_used * Mi(acid)) / total * 100, 1)
+        w = salt_n * Mi(salt) / total * 100
+    else:
+        w = (Fr(p['ms']) * Fr(p['ws']) / 100 - acid_used * Mi(acid)) / total * 100
+    return [(a, 3), (b, 3), (gas_m, 2), (total, 2), (w, 1)]
+
+
+_solve_34_atoms = _last(_atoms_calc)
 
 
 @proto('ch-ege-34-atoms', 'ЕГЭ', 34, 'Смесь веществ с заданным соотношением числа атомов, растворение в кислоте',
@@ -2699,8 +2737,7 @@ def g34_atoms(rng):
     exact = (salt_n * M(salt) if target == 'salt' else (nacid - need) * M(acid)) / total * 100
     ans = rnd(exact, 1)
     rt = f'{ratio.numerator} : {ratio.denominator}'
-    q = (f'Смесь, состоящая из {NAME34[X].split()[0] if False else NAME34[X]}а'[:0] +
-         f'Имеется смесь веществ {pretty(X)} и {pretty(Y)} ({NAME34[X]} и {NAME34[Y]}) массой {ru(m)} г, в которой '
+    q = (f'Имеется смесь веществ {pretty(X)} и {pretty(Y)} ({NAME34[X]} и {NAME34[Y]}) массой {ru(m)} г, в которой '
          f'число атомов {ATOM_G[e1]} относится к числу атомов {ATOM_G[e2]} как {rt}. Смесь полностью растворили в '
          f'{ru(ms)} г {ws} %-ного раствора {_gw(acid)}. Рассчитайте массовую долю '
          f'{_gw(salt) if target == "salt" else _gw(acid)} в образовавшемся растворе. ' + KIM34 + '(Запишите число с точностью до десятых.)')
@@ -2709,13 +2746,16 @@ def g34_atoms(rng):
     wrong = W([exact * total / (m + ms), exact * total / ms, exact / 2], 1)
     p = dict(X=X, Y=Y, acid=acid, salt=salt, els=[e1, e2], ratio=[ratio.numerator, ratio.denominator], m=str(m),
              ms=str(ms), ws=ws, target=target)
-    return pcard('ch-ege-34-atoms', q, ans, e, p=p, wrong=wrong, eqs=eqs)
+    steps = [(f'n({pretty(X)}), моль', fmt(a, 3)), (f'n({pretty(Y)}), моль', fmt(b, 3)),
+             ('m(выделившихся газов), г', fmt(gas_m, 2)), ('m(конечного раствора), г', fmt(total, 2)),
+             (f'ω({pretty(salt) if target == "salt" else pretty(acid)}), %', ans)]
+    return pcard('ch-ege-34-atoms', q, ans, e, p=p, wrong=wrong, eqs=eqs, steps=steps)
 
 
 HYD34_METALS = [('Fe', 'железных опилок', 'FeSO4'), ('Zn', 'цинковой пыли', 'ZnSO4'), ('Mg', 'магниевой стружки', 'MgSO4')]
 
 
-def _solve_34_hyd(p):
+def _hyd_calc(p):
     n0 = Fr(p['mh']) / Mi('CuSO4·5H2O')
     S0 = n0 * Mi('CuSO4') * 100 / Fr(p['w1'])
     met, msalt = p['metal'], p['msalt']
@@ -2724,9 +2764,11 @@ def _solve_34_hyd(p):
     rest = nM - n0
     react = min(rest, nA)
     total = S0 + (n0 + react) * Mi(met) - n0 * Mi('Cu') + Fr(p['mA']) - react * Mi('H2')
-    if p['target'] == 'salt':
-        return rs((n0 + react) * Mi(msalt) / total * 100, 1)
-    return rs((nA - react) * Mi('H2SO4') / total * 100, 1)
+    w = ((n0 + react) * Mi(msalt) if p['target'] == 'salt' else (nA - react) * Mi('H2SO4')) / total * 100
+    return [(n0, 3), (S0, 2), (react, 3), (total, 2), (w, 1)]
+
+
+_solve_34_hyd = _last(_hyd_calc)
 
 
 @proto('ch-ege-34-hydrate', 'ЕГЭ', 34, 'Раствор кристаллогидрата, вытеснение металла, затем кислота',
@@ -2769,12 +2811,17 @@ def g34_hydrate(rng):
          f'меди(II) в котором равна {w1} %. В раствор внесли {ru(mM)} г {mtxt}; после окончания реакции к смеси прилили '
          f'{ru(mA)} г раствора серной кислоты с массовой долей {ru(wA)} %. Рассчитайте массовую долю '
          f'{_gw(msalt) if target == "salt" else "серной кислоты"} в конечном растворе. ' + KIM34 + '(Запишите число с точностью до десятых.)')
-    e = f'n(CuSO₄) = {fmt(n0, 3)} моль; m(р-ра) = {fmt(S0, 2)} г; {pretty(met)} ({fmt(nM, 3)} моль) вытесняет медь, остаток ' \
-        f'{fmt(rest, 3)} моль реагирует с кислотой ({fmt(nA, 3)} моль) ⇒ ω ≈ {ans} %.'
+    e = f'n(CuSO₄) = {fmt(n0, 3)} моль; m(р-ра) = {fmt(S0, 2)} г; {pretty(met)} ({fmt(nM, 3)} моль) вытесняет медь, ' \
+        f'остаётся {fmt(rest, 3)} моль металла; с кислотой ({fmt(nA, 3)} моль) реагирует {fmt(react, 3)} моль; ' \
+        f'масса конечного раствора {fmt(total, 2)} г ⇒ ω ≈ {ans} %.'
+    steps = [('n(CuSO₄), моль', fmt(n0, 3)), ('m(исходного раствора CuSO₄), г', fmt(S0, 2)),
+             (f'n({pretty(met)}), растворившегося в кислоте, моль', fmt(react, 3)),
+             ('m(конечного раствора), г', fmt(total, 2)),
+             (f'ω({pretty(msalt) if target == "salt" else "H₂SO₄"}), %', ans)]
     wrong = W([exact * total / (total + n0 * M('Cu')), (n0 + react) * M(msalt) / (mh + mA + mM) * 100 if target == 'salt'
                else exact * 2, exact / 2], 1)
     eqs = [eqp([met, 'CuSO4'], [msalt, 'Cu'])[1], eqp([met, 'H2SO4'], [msalt, 'H2'])[1]]
-    return pcard('ch-ege-34-hydrate', q, ans, e, p=p, wrong=wrong, eqs=eqs)
+    return pcard('ch-ege-34-hydrate', q, ans, e, p=p, wrong=wrong, eqs=eqs, steps=steps)
 
 
 SOLUB34 = {  # соль: (растворимости, г на 100 г воды, при разных температурах; реакции с реагентом: (реагент, продукт в р-ре, осадок/газ))
@@ -2787,7 +2834,7 @@ SOLUB34 = {  # соль: (растворимости, г на 100 г воды, �
 }
 
 
-def _solve_34_solub(p):
+def _solub_calc(p):
     S, W = Fr(p['S']), Fr(p['W'])
     sat = W * (100 + S) / 100
     ns = Fr(p['mp']) * S / (100 + S) / Mi(p['salt'])
@@ -2799,8 +2846,13 @@ def _solve_34_solub(p):
     total = Fr(p['mp']) + Fr(p['mr']) - out_m
     nr = Fr(p['mr']) * Fr(p['wr']) / 100 / Mi(p['reag'])
     if p['target'] == 'prod':
-        return rs(ns * Fr(k[p['prod']], k[p['salt']]) * Mi(p['prod']) / total * 100, 1)
-    return rs((nr - ns * Fr(k[p['reag']], k[p['salt']])) * Mi(p['reag']) / total * 100, 1)
+        w = ns * Fr(k[p['prod']], k[p['salt']]) * Mi(p['prod']) / total * 100
+    else:
+        w = (nr - ns * Fr(k[p['reag']], k[p['salt']])) * Mi(p['reag']) / total * 100
+    return [(ns * Mi(p['salt']), 2), (ns, 3), (out_m, 2), (total, 2), (w, 1)]
+
+
+_solve_34_solub = _last(_solub_calc)
 
 
 @proto('ch-ege-34-solub', 'ЕГЭ', 34, 'Насыщенный раствор (растворимость), порция раствора и реакция',
@@ -2831,7 +2883,7 @@ def g34_solub(rng):
     k = coef(lhs, rhs)
     need = ns * Fr(k[reag], k[salt])
     nr = need * Fr(rng.choice([11, 12, 13, 15, 16, 18, 20]), 10)
-    wr = pick(rng, [5, 8, 10, 12, 15, 20, 25])
+    wr = pick(rng, [w for w in (5, 8, 10, 12, 15, 20, 25) if w_ok(reag, w)])
     mr = nr * M(reag) * 100 / wr
     mr = Fr(math.ceil(mr))
     nr = mr * wr / 100 / M(reag)
@@ -2849,7 +2901,10 @@ def g34_solub(rng):
         f'из раствора уходит {pretty(out)} ({fmt(out_m, 2)} г) ⇒ ω ≈ {ans} %.'
     wrong = W([exact * total / (mp + mr), exact * (100 + S) / 100, exact * 2], 1)
     p = dict(salt=salt, reag=reag, prod=prod, out=out, S=str(S), W=str(Wt), mp=str(mp), mr=str(mr), wr=wr, target=target)
-    return pcard('ch-ege-34-solub', q, ans, e, p=p, wrong=wrong, eq=eqp(lhs, rhs)[1])
+    steps = [(f'm({pretty(salt)}) в порции, г', fmt(ns * M(salt), 2)), (f'n({pretty(salt)}), моль', fmt(ns, 3)),
+             (f'm({pretty(out)}), удалившегося из раствора, г', fmt(out_m, 2)), ('m(конечного раствора), г', fmt(total, 2)),
+             (f'ω({pretty(prod) if target == "prod" else pretty(reag)}), %', ans)]
+    return pcard('ch-ege-34-solub', q, ans, e, p=p, wrong=wrong, eq=eqp(lhs, rhs)[1], steps=steps)
 
 
 def _oleum_inv(p):

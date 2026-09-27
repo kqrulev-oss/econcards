@@ -1641,8 +1641,8 @@ def _gen_two_rk(pid, rng, pool):
     names = [_rk_text(rng, rk) for rk in rks]
     N = {f: nm(f, rng)}
     if want:
-        q = q_many('два', 'вещества', rng.choice([f'с каждым из которых реагирует {N[f]}',
-                                              f'с которыми вступает в реакцию {N[f]}']))
+        q = q_many('два', 'вещества', rng.choice([f'с которыми {N[f]} вступает в реакцию при подходящих условиях',
+                                              f'которые при подходящих условиях реагируют с веществом «{N[f]}»']))
     else:
         q = q_many('два', 'вещества', f'с которыми не взаимодействует {N[f]}')
     good = [i for i, rk in enumerate(rks) if known(f, rk) == want]
