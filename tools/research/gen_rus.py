@@ -144,6 +144,8 @@ def verb_gaps():
                 i = m.start() - 1
                 if f[i] == 'ё':  # ударная ё — не орфограмма
                     continue
+                if i < 3:  # бр..вший, м..вший: пропуск в корне, а не в окончании или суффиксе
+                    continue
                 raw = f'{f[:i]}[{f[i]}]{f[i+1:]}' + (f'|{hint[1:-1]}' if hint else '')
                 g = Gap(raw, f'verb{conj}')
                 g.lemma, g.conj, g.form = v, conj, tuple(sorted(gram))
@@ -256,13 +258,18 @@ def g_rows_cat(cat, title):
 
 # ---------- ЕГЭ 4: ударение ----------
 
+# не берём: омографы (начАла — сущ.), вариантное ударение (нАискось/наИскось)
+# и спорные записи в udarenie.json (упрОчение — по орфоэпическому словарю упрочЕние)
+STRESS_SKIP = {'начала', 'наискось', 'упрочение', 'занята', 'заняты', 'сорит', 'кладовая', 'бюрократия'}
+
+
 @functools.lru_cache(None)
 def stress_words():
     out = []
     for _, words in UDAR['data']:
         for w in words.split():
             caps = [i for i, ch in enumerate(w) if ch.isupper()]
-            if len(caps) == 1 and w[caps[0]].lower() in VOWELS:
+            if len(caps) == 1 and w[caps[0]].lower() in VOWELS and w.lower() not in STRESS_SKIP:
                 out.append((w.lower(), caps[0]))
     return out
 
@@ -388,7 +395,7 @@ def form_items():
     out = []
     for it in LEX['o8']['forms']:
         lem = it.get('lemma2') or it['lemma']
-        ok = it['ok']
+        ok = it['ok'].split('|')[0]
         g = set(it['g'].split(','))
         if 'impr' in g:
             g |= {'excl'}
@@ -426,7 +433,7 @@ def g_e7(rng):
             break
     lines = []
     for k, it in enumerate(pick):
-        w = it['bad'] if k == 0 else it['ok']
+        w = it['bad'] if k == 0 else it['ok'].split('|')[0]
         lines.append(rng.choice(it['ctx']).replace('({})', w.upper()))
     bad = lines[0]
     rng.shuffle(lines)
@@ -447,13 +454,13 @@ def nom_form(it):
 def g_o8_forms(cats):
     def gen(rng):
         items = [it for it in form_items() if it['cat'] in cats]
-        it = rng.choice(items)
-        frames = list(it['ctx']) + GENERIC.get(it['g'], [])
-        fr = rng.choice(frames)
-        lemma = nom_form(it)
+        it = rng.choice([x for x in items if x.get('sent')])
+        fr = rng.choice(it['sent'])  # своё предложение, слово в скобках — в начальной форме
+        lemma = re.search(r'\(([^)]+)\)', fr).group(1)
+        ok = it['ok'].split('|')[0]
         return {'k': 'word', 'q': f'Раскройте скобки и запишите слово «{lemma}» в соответствующей форме, соблюдая '
-                'нормы современного русского литературного языка.', 't': fr.replace('{}', lemma), 'a': it['ok'],
-                'e': fr.replace('({})', it['ok'])}
+                'нормы современного русского литературного языка.', 't': fr, 'a': it['ok'],
+                'e': re.sub(r'\([^)]+\)', ok, fr, count=1)}
     return gen
 
 
@@ -504,19 +511,22 @@ def g_o8_num(rng):
 def g_o9(kind, label):
     def gen(rng):
         src, dst = rng.choice(LEX['o9'][kind])
-        if not all(known(x) for x in re.findall(r'[а-яё-]+', dst)):
+        if not all(known(x) for x in re.findall(r'[а-яё]+', dst)):
             return None
         a, b = label.split(' → ')
         return {'k': 'word', 'q': f'Замените словосочетание «{src}», построенное на основе {a}, '
-                f'синонимичным словосочетанием со связью {b}. Напишите получившееся словосочетание.',
+                f'синонимичным словосочетанием со связью {b}. Напишите получившееся словосочетание, соблюдая '
+                'нормы современного русского литературного языка.',
                 'a': dst, 'e': f'{src} → {dst}'}
     return gen
 
 
 # ---------- ЕГЭ 15: Н и НН ----------
 
-NN_FRAMES = ['В описи старой усадьбы значатся: {}.', 'Среди находок экспедиции — {}.',
-             'На выставке показали: {}.', 'В витрине музея: {}.']
+NN_FRAMES = ['В рассказе о летних каникулах упоминаются: {}.', 'В сочинении по картине ученик описал: {}.',
+             'В тексте для изложения встречаются сочетания: {}.', 'Для словарного диктанта учитель выбрал: {}.']
+# прилагательные от глаголов (причастного происхождения) — хотя бы одно в каждой карточке, как в КИМ
+VERBAL = ('а[нн]ый', 'е[нн]ый', 'ё[н]ый', 'е[н]ый', 'а[н]ый')
 
 
 @functools.lru_cache(None)
@@ -556,6 +566,9 @@ def g_e15(target):
         items = nn_items()
         k = rng.choice([4, 5, 5, 6])
         pick = rng.sample(items, k)
+        verbal = [g for g in pick if g.raw.endswith(VERBAL) and not re.search(r'(ян|ин|ан)\[', g.raw)]
+        if not verbal:
+            return None
         a = [str(i + 1) for i, g in enumerate(pick) if g.letter == target]
         if not 1 <= len(a) < k:
             return None
@@ -570,18 +583,17 @@ def g_e15(target):
 # ---------- ОГЭ 6: объяснение написания ----------
 
 VOICELESS = 'кпстфхцчшщ'
-ALT_ROOTS = [  # (регулярка на корень, правило, буква по правилу)
-    (r'ла[г]|ло[ж]', 'зависит от последующей согласной: перед Г пишется А, перед Ж — О'),
-    (r'ра[сщ]|ро[с]', 'зависит от последующей согласной: перед СТ и Щ пишется А, перед С — О'),
-    (r'(б|д|м|п|т|бл|ж|ст|ч)[еи](р|ст|г|л|т|ч|с)', 'зависит от суффикса: перед суффиксом -А- пишется И'),
-    (r'к[ао]с', 'зависит от суффикса: перед суффиксом -А- пишется А'),
-    (r'(жи|чи|ни|ми)ма|чина', 'перед суффиксом -А- в корне пишется -ИМ-/-ИН-'),
-    (r'г[ао]р', 'безударной пишется О'),
-    (r'з[ао]р', 'безударной пишется А'),
-    (r'кл[ао]н', 'безударной пишется О'),
-    (r'тв[ао]р', 'безударной пишется О'),
-    (r'пл[ао]в', 'пишется А (исключения: пловец, пловчиха)'),
-    (r'р[ао]вн', 'зависит от значения: «равный, наравне» — А, «ровный, прямой» — О'),
+ALT_ROOTS = [  # (регулярка на корень, объяснение своими словами)
+    (r'ла[г]|ло[ж]', 'в корне с чередованием буква зависит от согласной после неё: перед Г пишется А, перед Ж — О'),
+    (r'ра[сщ]|ро[с]', 'в корне с чередованием буква зависит от согласной после неё: перед СТ и Щ пишется А, перед С — О'),
+    (r'(б|д|м|п|т|бл|ж|ст|ч)[еи](р|ст|г|л|т|ч|с)', 'в корне с чередованием Е/И пишется И, если после корня стоит суффикс -А-, и Е, если его нет'),
+    (r'к[ао]с', 'в корне с чередованием пишется А, если после корня стоит суффикс -А-, и О, если его нет'),
+    (r'(жи|чи|ни|ми)ма|чина', 'в корне с чередованием А(Я)/ИМ(ИН) пишется ИМ (ИН), если после корня стоит суффикс -А-'),
+    (r'г[ао]р', 'в корне -ГАР-/-ГОР- без ударения пишется О'),
+    (r'з[ао]р', 'в корне -ЗАР-/-ЗОР- без ударения пишется А'),
+    (r'кл[ао]н', 'в корне -КЛАН-/-КЛОН- без ударения пишется О'),
+    (r'пл[ао]в', 'в корне -ПЛАВ-/-ПЛОВ- пишется А (исключения: пловец, пловчиха, плывуны)'),
+    (r'р[ао]вн', 'в корне -РАВН-/-РОВН- пишется А, если слово значит «равный, наравне»'),
 ]
 
 
@@ -615,8 +627,8 @@ def o6_facts():
             continue
         for rx, rule in ALT_ROOTS:
             if re.search(rx, g.pre[-3:] + g.letter + g.post[:3]):
-                facts.append((g.full.upper(), 'написание безударной чередующейся гласной в корне ' + rule,
-                              'безударная гласная в корне проверяется ударением'))
+                facts.append((g.full.upper(), rule,
+                              'безударная гласная в корне проверяется ударением: подберите однокоренное слово'))
                 break
     for g in pool('verbs'):
         if g.form == ('3per', 'plur'):
@@ -708,8 +720,7 @@ GEN = {
     'e15-n': g_e15('н'),
     'o6-expl': g_o6,
     'o8-num': g_o8_num,
-    'o8-noun': g_o8_forms({'noun'}),
-    'o8-other': g_o8_forms({'adj', 'verb', 'pron'}),
+    'o8-form': g_o8_forms({'noun', 'adj', 'verb', 'pron'}),
     'o9-upr2sogl': g_o9('upr2sogl', 'управления → согласование'),
     'o9-sogl2upr': g_o9('sogl2upr', 'согласования → управление'),
     'o9-prim2upr': g_o9('prim2upr', 'примыкания → управление'),
@@ -771,7 +782,7 @@ def check_llm(c):
             return 'пустой ответ'
         if pid.startswith(('e25', 'o12-meaning', 'o12-syn', 'e6-excess')):
             low = yo(t.lower())
-            if not any(yo(w.lower()) in low for w in words):
+            if not any(all(yo(x) in low for x in w.lower().split()) for w in words):  # пара: оба слова в тексте
                 return 'выписываемого слова нет в тексте'
         if pid == 'e6-excess' and sum(yo(t.lower()).count(yo(w.lower())) for w in words[:1]) != 1:
             return 'лишнее слово встречается не один раз'
