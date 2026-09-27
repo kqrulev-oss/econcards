@@ -12,7 +12,20 @@
 import math
 from fractions import Fraction as Fr
 
-from pc_core import proto, recipe, pcard, opts, match_opts, exact, fmt, ru, Retry
+from pc_core import proto, recipe, pcard, opts, match_opts, exact, fmt, Retry
+from pc_core import ru as _ru
+
+
+def ru(x):
+    """Число в тексте: только конечные «красивые» дроби (≤ 4 знаков после запятой); иначе — перебор параметров."""
+    if isinstance(x, float):
+        f = Fr(x).limit_denominator(10 ** 6)
+        if abs(float(f) - x) > 1e-9 or exact(f, 4) is None:
+            raise Retry
+        return _ru(f)
+    if isinstance(x, Fr) and exact(x, 4) is None:
+        raise Retry
+    return _ru(x)
 
 # ================================================================= общие помощники
 
@@ -66,6 +79,10 @@ def chg(a, b):
 
 
 def cap1(s):
+    if s.startswith('α-'):
+        return 'Альфа-' + s[2:]
+    if s.startswith('β'):
+        return 'Бета' + s[1:]
     return s[:1].upper() + s[1:]
 
 

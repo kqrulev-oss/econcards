@@ -10,8 +10,20 @@ from collections import Counter, defaultdict
 from fractions import Fraction as Fr
 
 import chemdb_org as D
-from pc_core import (AR, Retry, balance, eq_str, fmt, match_opts, molar, opts, parse_formula, pcard, pretty, proto,
-                     recipe)
+from functools import lru_cache
+
+from pc_core import (AR, Retry, balance, eq_str, fmt, match_opts, molar, opts, pcard, pretty, proto, recipe)
+from pc_core import parse_formula as _parse_formula
+
+
+@lru_cache(maxsize=None)
+def _pf(f):
+    return tuple(_parse_formula(f).items())
+
+
+def parse_formula(f):
+    """parse_formula с кэшем (возвращает новый словарь)."""
+    return dict(_pf(f))
 
 # ================================================================= данные и отображение
 
@@ -26,6 +38,7 @@ SMI = D.SMILES
 LET = 'АБВГД'
 
 
+@lru_cache(maxsize=None)
 def brutto(f):
     return tuple(sorted(parse_formula(f).items()))
 
@@ -44,10 +57,6 @@ def nm(f, rng=None, triv=0.4):
 
 def vw(f):
     return SUB[f].get('view') or pretty(f)
-
-
-def pf(f):
-    return pretty(f)
 
 
 _COND = [(r'\bt\b', 't°'), (r'\bhv\b', 'hν'), (r'Hg2\+', 'Hg²⁺'), (r'Pb2\+', 'Pb²⁺'), (r'Mn2\+', 'Mn²⁺'),
@@ -618,8 +627,13 @@ MOL = [f for f in ORG if f in SMI and '[' not in SMI[f] and 'N(=O)=O' not in SMI
        and SUB[f]['hom'] not in ('жиры',) and parse_formula(f).get('C', 0) <= 10 and f not in _POOL10_SKIP]
 
 
-def info(f):
+@lru_cache(maxsize=None)
+def _info(f):
     return D.smiles_info(SMI[f])
+
+
+def info(f):
+    return _info(f)
 
 
 def _q_two(rng, what):
@@ -691,9 +705,6 @@ def g11_isomers(rng):
             break
     else:
         raise Retry
-    if mode == 'interclass' and rng.random() < 0.5:
-        # ловушка: изомер того же класса вместо одного отвлекающего — нельзя (даст вторую пару); берём гомолог
-        pass
     items = good + dis
     rng.shuffle(items)
     names = [nm(f, rng) for f in items]
@@ -763,8 +774,6 @@ def g11_homologs(rng):
         if len(hs) < 2:
             raise Retry
         good = rng.sample(hs, 2)
-        if homologs(good[0], good[1]) is False and False:
-            pass
     else:
         if not hs:
             raise Retry
@@ -1000,9 +1009,6 @@ def cis_trans(f):
 CT_POOL = [f for f in MOL if SUB[f]['hom'] in ('алкены', 'алкадиены', 'галогеналкены', 'непредельные карбоновые кислоты',
                                                'алкины', 'алканы', 'непредельные спирты', 'непредельные альдегиды')
            and parse_formula(f)['C'] <= 7]
-CT_KNOWN = {'CH3CHCHCH3': True, 'CH2CHCH2CH3': False, '(CH3)2CCHCH3': False, 'CH3CHCHCH2CH3': True, 'C2H4': False,
-            'CH2CHCH3': False, 'CHBrCHBr': True, 'CH2BrCHCHCH2Br': True, 'CH2CHCHCHCH3': True, 'CH2C(CH3)2': False,
-            'CH3CCCH3': False, 'CH2CHCOOH': False}
 
 
 def _solve_ct(p):
@@ -1048,19 +1054,6 @@ FG = {
     'carboxyl': ('в состав молекул которых входит карбоксильная группа', ['карбоновые кислоты', 'аминокислоты'],
                  ['альдегиды', 'кетоны', 'сложные эфиры', 'одноатомные спирты', 'простые эфиры', 'фенолы']),
 }
-
-
-def _fg_has(f, mode):
-    s = SMI[f]
-    if mode == 'carbonyl':
-        return bool(re.search(r'C=O|C\(=O\)|O=C', s)) and not re.search(r'C\(=O\)O|OC=O|O=CO|C\(=O\)\[|O=C\(O', s)
-    if mode == 'hydroxyl':
-        return bool(re.search(r'(^|[C\)c1-9])O($|[\)])|^O[Cc]|\(O\)', s)) and 'C(=O)O' not in s and 'OC=O' not in s
-    if mode == 'amino':
-        return 'N' in s and 'N(=O)' not in s and 'O=N' not in s
-    if mode == 'carboxyl':
-        return bool(re.search(r'C\(=O\)O$|^OC\(=O\)|^OC=O$|C\(=O\)O\)|OC\(=O\)c', s)) and '[' not in s
-    return False
 
 
 FG_POOL = [f for f in MOL if cls_fine(f) and parse_formula(f)['C'] <= 7]
@@ -2281,11 +2274,25 @@ def sig(r):
 
 
 def sig_label(r):
+    key = (tuple(r['lhs']), r.get('cond', ''), r.get('medium', ''), r.get('rk', ''))
+    if key not in _SIGL:
+        _SIGL[key] = _sig_label(r)
+    return _SIGL[key]
+
+
+_SIGL = {}
+
+
+def _sig_label(r):
     rg = reagent_label(r)
     c = scheme_cond(r)
     if not rg:
         return c
-    return rg + (f' ({c})' if c else '')
+    if not c:
+        return rg
+    if c.startswith(rg):
+        return c
+    return rg + (f', {c}' if '(' in c else f' ({c})')
 
 
 def _solve_reagent(p):
@@ -2303,10 +2310,16 @@ def _solve_reagent(p):
     return out
 
 
+_BY_LABEL = None
+
+
 def _gen_reagent(pid, rng, pool):
-    by_label = defaultdict(set)
-    for r in RX:
-        by_label[sig_label(r)].add(sig(r))
+    global _BY_LABEL
+    if _BY_LABEL is None:
+        _BY_LABEL = defaultdict(set)
+        for r in RX:
+            _BY_LABEL[sig_label(r)].add(sig(r))
+    by_label = _BY_LABEL
     rs = pick_distinct(rng, pool, 4, key=lambda r: (r['lhs'][0], r['rhs'][0]))
     labels = list(dict.fromkeys(sig_label(r) for r in rs))
     others = sorted({sig_label(r) for r in pool} - set(labels))
@@ -2615,7 +2628,7 @@ def g15_one(rng):
 # ================================================================= задания 16 и 32: генетическая связь (граф превращений)
 
 KES16 = ['3.20']
-EDGE_RX = [r for r in RX if _ok_rx(r) and SUB[r['lhs'][0]]['cls'] not in ('ацетиленид',)
+EDGE_RX = [r for r in RX if _ok_rx(r) and 'крекинга' not in r['type'] and SUB[r['lhs'][0]]['cls'] not in ('ацетиленид',)
            and SUB[r['rhs'][0]]['cls'] not in ('ацетиленид', 'соль амина') and SUB[r['lhs'][0]]['hom'] != 'дипептиды'
            and SUB[r['rhs'][0]]['hom'] != 'дипептиды' and r['rhs'][0] != r['lhs'][0]]
 OUT = defaultdict(list)
@@ -2814,9 +2827,26 @@ def _solve32(p):
     return out
 
 
+def _reach_n():
+    """Вещества, из которых за ≤ 4 стадии можно получить азотсодержащее (обратный поиск в ширину)."""
+    back = defaultdict(set)
+    for r in EDGE_RX:
+        back[r['rhs'][0]].add(r['lhs'][0])
+    front = {f for f in OUT if any('N' in parse_formula(r['rhs'][0]) for r in OUT[f])}
+    seen = set(front)
+    for _ in range(3):
+        front = {x for f in front for x in back[f]} - seen
+        seen |= front
+    return sorted(seen)
+
+
+REACH_N = _reach_n()
+
+
 def _gen32(pid, rng, theme):
     name, ok = THEMES32[theme]
-    path = _walk(rng, 5, allow=lambda r: ok(r['rhs'][0]) and ok(r['lhs'][0]))
+    start = rng.choice(REACH_N) if theme == 'n' else None
+    path = _walk(rng, 5, start=start, allow=lambda r: ok(r['rhs'][0]) and ok(r['lhs'][0]))
     chain = [path[0]['lhs'][0]] + [r['rhs'][0] for r in path]
     if theme == 'n' and not any('N' in parse_formula(f) for f in chain):
         raise Retry
@@ -2967,8 +2997,6 @@ def _solve_poly(p):
                       'мономеры каучуков и виниловых полимеров'))
 def g25_mon_poly(rng):
     ps = rng.sample(D.POLYMERS, 4)
-    if any(len(p['mon']) > 1 and rng.random() < 0.5 for p in ps):
-        pass
     mode = rng.choice(['mon→poly', 'poly→mon'])
     use = [p for p in ps[:3]]
     if mode == 'mon→poly':
@@ -3007,8 +3035,7 @@ def g25_mon_poly(rng):
         p_ = {'mode': mode, 'left': left, 'right': right}
     if len(set(rt)) < 4:
         raise Retry
-    e = '; '.join(f'{POLY[x]["name"] if x in POLY else nm(x)}' for x in []) or '; '.join(
-        f'{p["name"]}: {" + ".join(nm(m) for m in p["mon"])} → {_unit(p)} ({p["how"]})' for p in use)
+    e = '; '.join(f'{p["name"]}: {" + ".join(nm(m) for m in p["mon"])} → {_unit(p)} ({p["how"]})' for p in use)
     return match_card('ch-ege-25-monomer-polymer', rng, q, lt, rt, ans, e + '.', p_)
 
 

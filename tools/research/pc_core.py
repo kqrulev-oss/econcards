@@ -256,14 +256,14 @@ def _fid(pid, f):
 
 
 def proto(pid, exam, n, title, *, invariant, varies, answer_rule, mistakes=(), solve=None, kind='param', kes=None,
-          fidelity=None):
+          fidelity=None, solve_steps=None):
     """Декоратор генератора прототипа. kind: 'param' (формула) или 'dict' (по таблице веществ/фактов).
     solve(p) -> ответ в том же виде, что card['a'] (строка; для many — список id; для match — dict)."""
     def deco(fn):
         m = _meta(pid, exam, n, title, invariant, varies, answer_rule, mistakes, kind, kes, fidelity)
         if solve is None:
             raise ValueError(f'{pid}: нужен solve(p) для независимого пересчёта')
-        m.update(fn=fn, solve=solve, gen=fn.__name__)
+        m.update(fn=fn, solve=solve, gen=fn.__name__, solve_steps=solve_steps)
         PROTOS[pid] = m
         return fn
     return deco
@@ -280,7 +280,7 @@ def recipe(pid, exam, n, title, *, invariant, varies, answer_rule, mistakes=(), 
     return m
 
 
-def pcard(pid, q, a, e, *, k='num', o=None, p=None, wrong=None, eq=None, eqs=None, nuc=None, extra=None):
+def pcard(pid, q, a, e, *, k='num', o=None, p=None, wrong=None, eq=None, eqs=None, nuc=None, extra=None, steps=None):
     """Карточка прототипа. p — параметры для solve(); eq=(lhs, rhs, kl, kr) / eqs=[...] — уравнения для проверки баланса;
     nuc=(A,Z до, A,Z после) — ядерная реакция; wrong — типичные неверные ответы (для num)."""
     m = PROTOS[pid]
@@ -300,6 +300,9 @@ def pcard(pid, q, a, e, *, k='num', o=None, p=None, wrong=None, eq=None, eqs=Non
         g.setdefault('eqs', []).extend([list(x) for x in eqs])
     if nuc is not None:
         g['nuc'] = list(nuc)
+    if steps:
+        # шаги развёрнутого решения: [(что найти, ответ-строка), …] — частичный балл как в КИМ (баллы за элементы решения)
+        g['steps'] = [[lbl, val] for lbl, val in steps]
     if extra:
         g.update(extra)
     c['gen'] = g
@@ -415,6 +418,16 @@ def check_card(c, m):
         (a0, z0), (a1, z1) = g['nuc'][0], g['nuc'][1]
         if (a0, z0) != (a1, z1):
             errs.append(f'ядерная реакция: A/Z не сохраняются {g["nuc"]}')
+    for st in g.get('steps', []):
+        if len(st) != 2 or not st[0] or not re.fullmatch(r'-?\d+(,\d+)?', str(st[1])):
+            errs.append(f'шаг решения не «(что, число)»: {st!r}')
+    if 'steps' in g and m.get('solve_steps'):
+        try:
+            want = m['solve_steps'](g.get('p', {}))
+            if [str(v) for _, v in g['steps']] != [str(v) for v in want]:
+                errs.append(f'шаги: в карточке {[v for _, v in g["steps"]]}, solve_steps даёт {want}')
+        except Exception as ex:  # noqa: BLE001
+            errs.append(f'solve_steps упал: {type(ex).__name__}: {ex}')
     if k == 'num' and 'wrong' in g and len([w for w in g['wrong'] if w != c['a']]) < 2:
         errs.append('мало дистракторов')
     if re.search(r'\b(None|nan|inf)\b|\{[a-z_]+\}', card_text(c) + c.get('e', '')):
