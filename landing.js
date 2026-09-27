@@ -2,9 +2,13 @@
 // ученика и что видит репетитор. Ученики сюда не попадают — они приходят по
 // ссылке ?t=… и сразу открывают тренажёр.
 
-import { getPrices } from './account.js';
+import { toast } from './lib.js';
+import { getPrices, signedIn } from './account.js';
 
 const STUDIO = 'studio/';
+// «Попробовать» для репетитора — готовый пример в студии с просмотром глазами ученика
+// (а не тренажёр ученика: после него «/» открывал бы тренажёр вместо главной)
+const SAMPLE = 'studio/#/sample';
 const TG = 'https://t.me/trwqxp';
 const FLAME = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3c1 4 5 5 5 10a5 5 0 0 1-10 0c0-3 2-4 2-6 1.5 1 2 2 2 3 0-3 1-5 1-7z"/></svg>';
 const ICONS = {
@@ -51,6 +55,15 @@ const report = `
     <div class="ld-report-copy">Отчёт для родителей — скопировать ↗</div>
   </div>`;
 
+// Код или ссылка от репетитора → его тренажёр. Пустое поле или что-то непохожее — подсказка, а не тишина
+export function openCode(value) {
+  const v = String(value || '').trim();
+  if (!v) { toast('Введите код или ссылку от репетитора'); return; }
+  const id = /[?&]t=([a-z0-9-]+)/i.exec(v)?.[1] || (/^[a-z0-9-]{4,40}$/i.test(v) ? v : '');
+  if (!id) { toast('Не похоже на код от репетитора — проверьте его'); return; }
+  location.href = './?t=' + encodeURIComponent(id.toLowerCase());
+}
+
 export function renderLanding(root, library) {
   const total = library.reduce((n, p) => n + p.cards, 0);
   const rounded = Math.floor(total / 500) * 500;
@@ -59,7 +72,7 @@ export function renderLanding(root, library) {
     <a class="ld-logo" href="./"><img class="ld-mark" src="icons/icon-192.png" alt="" width="40" height="40">Между уроками</a>
     <nav><a href="#how">Как это работает</a><a href="#prices">Тарифы</a><a href="#faq">Вопросы</a></nav>
     <a class="ld-nav-tg" href="${TG}" target="_blank" rel="noopener" aria-label="Написать в Telegram"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 4L3 11l6 2 2 6 3-4 5 4z"/><path d="M9 13l8-6"/></svg></a>
-    <a class="ld-nav-cta" href="login.html">Войти</a>
+    ${signedIn() ? '<a class="ld-nav-cta" href="cabinet/">Кабинет</a>' : '<a class="ld-nav-cta" href="login.html">Войти</a>'}
   </header>
 
   <section class="ld-hero">
@@ -69,7 +82,7 @@ export function renderLanding(root, library) {
       <p class="ld-lead">Соберите тренажёр из своих материалов за&nbsp;15&nbsp;минут. Серии, цель дня и&nbsp;очки возвращают учеников к&nbsp;карточкам, а&nbsp;вы видите, кто занимался, где ошибки и&nbsp;что разобрать на&nbsp;уроке.</p>
       <div class="ld-cta">
         <a class="ld-btn primary" href="${STUDIO}">Собрать тренажёр</a>
-        <a class="ld-btn" href="?p=ege-rus">Попробовать</a>
+        <a class="ld-btn" href="${SAMPLE}">Попробовать</a>
       </div>
       <p class="ld-note">14 дней бесплатно · без установки · работает с&nbsp;телефона</p>
     </div>
@@ -203,10 +216,7 @@ export function renderLanding(root, library) {
       <a href="mailto:kqrulev@yandex.ru">kqrulev@yandex.ru</a> · <a href="offer.html">Оферта</a> · <a href="privacy.html">Персональные данные</a></p>
   </footer>`;
 
-  const join = () => {
-    const c = root.querySelector('#code').value.trim().replace(/.*[?&]t=/, '');
-    if (c) location.search = '?t=' + encodeURIComponent(c);
-  };
+  const join = () => { openCode(root.querySelector('#code').value); };
   root.querySelector('#join').onclick = join;
   // Цены и пробные периоды — с сервера (их можно менять без правки сайта)
   getPrices().then(pr => {
