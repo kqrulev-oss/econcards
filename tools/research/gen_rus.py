@@ -106,6 +106,10 @@ def gaps(lst, cat, src):
     return out
 
 
+PSSV_PRES = {'видеть', 'слышать', 'ненавидеть', 'гнать', 'терпеть', 'любить', 'носить', 'возить',
+             'ценить', 'строить', 'колебаться', 'читать', 'решать', 'держать', 'водить'}
+
+
 def verb_gaps():
     """ЕГЭ 12: личные окончания и суффиксы причастий — формы берём из OpenCorpora."""
     out = []
@@ -129,10 +133,17 @@ def verb_gaps():
                           and 'futr' not in x.tag and 'Infr' not in x.tag), None)
                 if not f:
                     continue
+                # редкие причастия (будимый, каченный) не берём: страдательные — только частотные
+                if 'pssv' in gram and 'pres' in gram and v not in PSSV_PRES:
+                    continue
+                if 'pssv' in gram and 'past' in gram and 'perf' not in p.tag:
+                    continue
                 m = re.search(rx, f)
                 if not m or m.start() == 0 or f[m.start() - 1] not in VOWELS:
                     continue
                 i = m.start() - 1
+                if f[i] == 'ё':  # ударная ё — не орфограмма
+                    continue
                 raw = f'{f[:i]}[{f[i]}]{f[i+1:]}' + (f'|{hint[1:-1]}' if hint else '')
                 g = Gap(raw, f'verb{conj}')
                 g.lemma, g.conj, g.form = v, conj, tuple(sorted(gram))
