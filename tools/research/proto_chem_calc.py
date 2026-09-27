@@ -370,8 +370,8 @@ def g26_water(rng):
     else:
         m = Fr(rng.choice(range(50, 501, 10)))
         x = m * w2 / (100 - w2)
-        q = rng.choice([f'Рассчитайте массу {name}, которую нужно растворить в {m} г воды, чтобы получить раствор с '
-                        f'массовой долей {cw} {w2} %.',
+        q = rng.choice([f'Рассчитайте массу {name}, которую нужно растворить в {m} г воды, чтобы массовая доля {name} в '
+                        f'образовавшемся растворе составила {w2} %.',
                         f'В {m} мл воды растворяют {name}. Какая масса вещества потребуется, чтобы массовая доля {name} в '
                         f'растворе составила {w2} %?'])
         wrong = W([m * w2 / 100, m * w2 / (100 + w2), m * (100 - w2) / w2], dec)
@@ -570,8 +570,8 @@ def g26_molar(rng):
         x = c * V / 1000 * Mf
         q = rng.choice([f'Рассчитайте массу {name}, которая потребуется для приготовления {V} мл раствора с молярной '
                         f'концентрацией {ru(c)} моль/л.',
-                        f'Нужно приготовить {V} мл раствора {name} с концентрацией {ru(c)} моль/л. Какую массу вещества '
-                        f'следует взять?'])
+                        f'Какую массу {name} нужно взять, чтобы приготовить {V} мл раствора, молярная концентрация '
+                        f'которого равна {ru(c)} моль/л?'])
         wrong = W([c * V * Mf, c * Mf, c * V / 1000], dec)
         p = dict(f=f, mode=mode, c=str(c), V=str(V), dec=dec)
         e = f'n = c·V = {ru(c)}·{ru(V / 1000)} = {ru(c * V / 1000)} моль; m = n·M'
@@ -752,9 +752,11 @@ def g27_inv(rng):
         role = pp_sh('образовавш', gnd(f))
         what = {'V': f'объём (н.у.) {role} {gen(f)}', 'm': f'массу {role} {gen(f)}',
                 'n': f'количество вещества {role} {gen(f)} (моль)'}[by]
-    q = rng.choice([f'Реакция протекает по термохимическому уравнению\n{eq}\nВ результате {past} {ru(Q)} кДж теплоты. '
-                    f'Рассчитайте {what}.',
-                    f'Известно, что при протекании реакции\n{eq}\n{past} {ru(Q)} кДж теплоты. Определите {what}.'])
+    q = rng.choice([f'Реакция протекает по термохимическому уравнению\n{eq}\nРассчитайте {what}, если в ходе процесса '
+                    f'{past} {ru(Q)} кДж теплоты.',
+                    f'Определите {what}, если известно, что тепловой эффект процесса составил {ru(Q)} кДж '
+                    f'({"теплота выделялась" if r["q"] > 0 else "теплота поглощалась"}). Термохимическое уравнение '
+                    f'реакции:\n{eq}'])
     q += ' ' + tail(dec)
     unit = {'V': VM, 'm': M(f), 'n': 1}[by]
     e = f'n({pretty(f)}) = {k}·{ru(Q)}/{abs(r["q"])} = {ru(n)} моль' + \
@@ -844,9 +846,11 @@ def g27_gasvol(rng):
     fl = 'израсходованного' if f in r['lhs'] else pp_sh('образовавш', gnd(f))
     given = f'{"израсходовали" if g in r["lhs"] else "получили"} {ru(V)} л {gen(g)}'
     given_p = f'{"израсходовано" if g in r["lhs"] else "получено"} {ru(V)} л {gen(g)}'
-    q = rng.choice([f'В процессе {what} {gen(main[0])} {given}. Рассчитайте объём {fl} {gen(f)} (л).',
-                    f'Какой объём {gen(f)} (л) {"расходуется" if f in r["lhs"] else "образуется"} в процессе {what} '
-                    f'{gen(main[0])}, если {given_p}?'])
+    subj = what if all(x in ('O2', 'H2', 'Cl2') for x in r['lhs']) else f'{what} {gen(main[0])}'
+    pickq = rng.choice if main[0] not in (f, g) else (lambda xs: xs[0])
+    q = pickq([f'В процессе {subj} {given}. Рассчитайте объём {fl} {gen(f)} (л).',
+                    f'Какой объём {gen(f)} (л) {"расходуется" if f in r["lhs"] else "образуется"} в процессе {subj}, '
+                    f'если {given_p}?'])
     q = q + ' ' + pick(rng, GASCOND) + ' ' + tail(dec)
     kl, kr = balance(r['lhs'], r['rhs'])
     e = f'{pretty(eq_str(r["lhs"], r["rhs"], kl, kr))}; V({pretty(f)}) = V({pretty(g)})·{k[f]}/{k[g]} = {ans} л.'
@@ -1160,7 +1164,7 @@ def g28_raw(rng):
         x = (m - pure) / m * 100
         if x <= 0:
             raise Retry
-        q = f'Сырьё ({raw}) массой {ru(m)} г {c["act"]} и получили {got}. Рассчитайте массовую долю примесей в сырье (%).'
+        q = f'Сырьё ({raw}) массой {ru(m)} г {c["act"]} и получили {got}. Какова массовая доля (%) примесей в этом сырье?'
         wrong = W([pure / m * 100, (m - pure) / pure * 100, x / 2], dec)
         p = dict(lhs=r['lhs'], rhs=r['rhs'], g=g, f=f, pv=str(pv), fby=fby, m=str(m), mode=mode, dec=dec)
     ans = rnd(x, dec)
@@ -1238,6 +1242,8 @@ def g28_simple(rng):
     g, f = rng.sample([s for s in lhs + rhs if s != 'H2O'], 2)
     gby = rng.choice(['n', 'm', 'm'] + (['V'] if is_gas(g) else []))
     fby = rng.choice(['V', 'V', 'm'] if is_gas(f) else ['m', 'm', 'n'])
+    if gby == 'n' and fby == 'n':
+        raise Retry
     n = Fr(rng.choice(range(1, 81)), rng.choice([4, 8, 10, 20]))
     v = n * _unit(g, gby)
     if not nice(v, 3):
@@ -1248,13 +1254,17 @@ def g28_simple(rng):
     given = {'n': f'{ru(v)} моль', 'm': f'{ru(v)} г', 'V': f'{ru(v)} л (н.у.)'}[gby]
     role_g = 'израсходовано' if g in lhs else 'получено'
     want = {'V': f'объём (н.у.) {gen(f)}', 'm': f'массу {gen(f)}', 'n': f'количество вещества {gen(f)} (моль)'}[fby]
-    if f in lhs:
-        want = want + ', ' + pp_sh('вступивш', gnd(f)) + ' в реакцию'
+    unit_w = {'V': 'объём (н.у.)', 'm': 'массу', 'n': 'количество вещества'}[fby]
+    tail_n = ' (моль)' if fby == 'n' else ''
+    if f in lhs and len(lhs) == 1:
+        want = f'{unit_w} {"разложившейся" if gnd(f) == "f" else "разложившегося"} {gen(f)}{tail_n}'
+    elif f in lhs:
+        want = f'{unit_w} {gen(f)}{tail_n}, {"вступившей" if gnd(f) == "f" else "вступившего"} в реакцию'
     else:
-        want = {'V': f'объём (н.у.) {pp_sh("образовавш", gnd(f))} {gen(f)}', 'm': f'массу {pp_sh("образовавш", gnd(f))} {gen(f)}',
-                'n': f'количество вещества {pp_sh("образовавш", gnd(f))} {gen(f)} (моль)'}[fby]
-    q = rng.choice([f'При {_prep(proc)} {role_g} {given} {gen(g)}. Рассчитайте {want}.',
-                    f'Определите {want}, если при {_prep(proc)} {role_g} {given} {gen(g)}.'])
+        want = f'{unit_w} {pp_sh("образовавш", gnd(f))} {gen(f)}{tail_n}'
+    pr = _prep(proc).replace(' ' + gen(g), '', 1)
+    q = rng.choice([f'При {pr} {role_g} {given} {gen(g)}. Рассчитайте {want}.',
+                    f'{cap(given)} {gen(g)} {role_g} при {pr}. Определите {want}.'])
     q += ' ' + tail(dec)
     eqs, eq = eqp(lhs, rhs)
     e = f'{eqs}; n({pretty(g)}) = {ru(n)} моль; n({pretty(f)}) = {ru(n)}·{k[f]}/{k[g]} = {fmt(n * k[f] / k[g], 4)} моль ⇒ {ans}.'
@@ -2602,8 +2612,8 @@ def g34_decomp(rng):
         s1 = \
             f'Порцию {sname} нагревали{cat}; разложилась только часть соли. Собрали {ru(V)} л (н.у.) {gas_w}, а твёрдый ' \
             f'остаток имел массу {ru(mres)} г.'
-    wtxt = f'к нему прилили {ru(water)} мл воды, а затем ' if salt in ('AgNO3', 'Cu(NO3)2', 'Mg(NO3)2') else ''
-    s2 = f'Остаток перенесли в колбу, {wtxt}внесли {ru(mr)} г раствора {_gw(reag)} с массовой долей {wr} %.'
+    wtxt = f', прилили к нему {ru(water)} мл воды' if salt in ('AgNO3', 'Cu(NO3)2', 'Mg(NO3)2') else ''
+    s2 = f'Остаток перенесли в колбу{wtxt} и добавили {ru(mr)} г раствора {_gw(reag)} с массовой долей {wr} %.'
     q = f'{s1} {s2} Рассчитайте массовую долю {_gw(target)} в образовавшемся растворе. ' + KIM34 + \
         '(Запишите число с точностью до десятых.)'
     e = f'Разложилось {fmt(x, 3)} моль {pretty(salt)}, осталось {fmt(r, 3)} моль; остаток прореагировал с ' \
@@ -2774,7 +2784,9 @@ def g34_hydrate(rng):
         raise Retry
     rest = nM - n0
     nA = rest * Fr(rng.choice([1, 2, 3, 4, 6, 8]), 4)
-    wA, mA = _nice_sol(rng, nA, 'H2SO4', (5, 9.8, 10, 19.6, 20, 24.5))
+    wA, mA = _nice_sol(rng, nA, 'H2SO4', (Fr(49, 10), Fr(98, 10), 10, Fr(147, 10), Fr(196, 10), 20, Fr(245, 10)))
+    if mA < 40:
+        raise Retry
     target = 'salt' if nA <= rest or rng.random() < 0.6 else 'acid'
     p = dict(mh=str(mh), w1=w1, metal=met, msalt=msalt, mM=str(mM), mA=str(mA), wA=str(wA), target=target)
     react = min(rest, nA)
@@ -2868,7 +2880,28 @@ def g34_solub(rng):
     return pcard('ch-ege-34-solub', q, ans, e, p=p, wrong=wrong, eq=eqp(lhs, rhs)[1])
 
 
+def _oleum_inv(p):
+    m = Fr(p['m'])
+    wd = Fr(p['wel']) / 100
+    if p['el'] == 'O':      # 98a + 80b = m; 64a + 48b = ω·m
+        det = Fr(98 * 48 - 80 * 64)
+        a = (m * 48 - 80 * wd * m) / det
+        b = (98 * wd * m - 64 * m) / det
+    else:                   # 32a + 32b = ω·m
+        tot = wd * m / 32
+        a = (m - 80 * tot) / (98 - 80)
+        b = tot - a
+    nac = a + b
+    salt = p['reag']
+    nr = Fr(p['V']) * Fr(p['c']) / 1000
+    left = (nr - nac) * Mi(salt)
+    rest = m + Fr(p['V']) * Fr(p['rho']) - nac * Mi('BaSO4')
+    return left / (Fr(p['wf']) / 100) - rest
+
+
 def _solve_34_oleum(p):
+    if p['mode'] == 'inverse':
+        return rs(_oleum_inv(p), 0)
     m, pr = Fr(p['m']), Fr(p['p'])
     n = m * (100 - pr) / 100 / Mi('H2SO4') + m * pr / 100 / Mi('SO3')
     W = Fr(p['W'])
@@ -2887,8 +2920,9 @@ def _solve_34_oleum(p):
 @proto('ch-ege-34-oleum', 'ЕГЭ', 34, 'Олеум: растворение в воде и дальнейшая реакция',
        invariant='олеум = H₂SO₄ + SO₃; SO₃ + H₂O = H₂SO₄; n(H₂SO₄) общее; масса раствора = олеум + вода (+ раствор '
                  'реагента − осадок)',
-       varies='масса олеума и доля свободного SO₃, масса воды, второй раствор (KOH, BaCl₂), что найти',
-       answer_rule='массовая доля, %, до десятых',
+       varies='масса олеума и доля свободного SO₃ (или доля атомов O/S), масса воды, второй раствор (KOH, BaCl₂, '
+              'Ba(NO₃)₂), что найти: долю вещества или — как в демоверсии 2027 — объём воды по конечной доле соли',
+       answer_rule='массовая доля, % (до десятых) или объём воды, мл (до целых)',
        mistakes=['не учли серную кислоту из SO₃', 'посчитали массу SO₃ как массу H₂SO₄', 'не вычли осадок BaSO₄'],
        solve=_solve_34_oleum, kes=['5.4', '5.6', '5.7'],
        fidelity=fid('в КИМ — развёрнутое решение; в тренажёре — число, %', 'как задание демоверсии 2027 № 34 (олеум + '
@@ -2899,7 +2933,44 @@ def g34_oleum(rng):
     m = Fr(rng.choice(range(5, 61)))
     n = m * (100 - pr) / 100 / M('H2SO4') + m * pr / 100 / M('SO3')
     Wt = Fr(rng.choice(range(50, 401, 10)))
-    mode = rng.choice(['acid', 'KOH', 'BaCl2', 'BaCl2'])
+    mode = rng.choice(['acid', 'KOH', 'BaCl2', 'BaCl2', 'inverse', 'inverse'])
+    if mode == 'inverse':      # как демоверсия 2027: по составу олеума и конечной доле соли найти объём воды
+        a_, b_ = Fr(rng.randint(1, 10), 100), Fr(rng.randint(2, 20), 100)
+        m = 98 * a_ + 80 * b_
+        el = rng.choice(['O', 'S'])
+        wel_exact = (16 * (4 * a_ + 3 * b_) if el == 'O' else 32 * (a_ + b_)) / m * 100
+        wel = Fr(round(wel_exact * 100), 100)
+        salt = rng.choice(['BaCl2', 'Ba(NO3)2'])
+        c = Fr(rng.choice([20, 25, 30, 35, 40, 42, 50]), 100)
+        V = Fr(rng.choice([250, 300, 400, 500, 600, 750, 1000]))
+        rho = Fr(rng.choice([104, 105, 106, 108, 110]), 100)
+        nac = a_ + b_
+        if V * c / 1000 <= nac * Fr(11, 10):
+            raise Retry
+        Wt = Fr(rng.choice(range(50, 301, 10)))
+        left = (V * c / 1000 - nac) * M(salt)
+        F = m + Wt + V * rho - nac * M('BaSO4')
+        wf = Fr(round(left / F * 10000), 100)
+        if wf <= 0:
+            raise Retry
+        p = dict(mode='inverse', m=str(m), el=el, wel=str(wel), reag=salt, V=str(V), c=str(c), rho=str(rho), wf=str(wf))
+        val = _oleum_inv(p)
+        guard(val, 0, Fr(1, 5))
+        if abs(val - Wt) > 1 or val <= 0:
+            raise Retry
+        ans = fmt(val, 0)
+        elw = 'атомов кислорода' if el == 'O' else 'атомов серы'
+        q = (f'Олеум массой {ru(m)} г, в котором на долю {elw} приходится {ru(wel)} % массы, растворили в воде. Весь '
+             f'полученный раствор прибавили к {ru(V)} мл раствора {_gw(salt)} с молярной концентрацией {ru(c)} моль/л '
+             f'(плотность {ru(rho)} г/мл). После отделения осадка массовая доля {_gw(salt)} в растворе составила {ru(wf)} %. '
+             f'Рассчитайте объём воды (мл), который использовали для растворения олеума. ' + KIM34 +
+             '(Запишите число с точностью до целых.)')
+        e = (f'По составу олеума: n(H₂SO₄) = {fmt(a_, 2)} моль, n(SO₃) = {fmt(b_, 2)} моль, всего H₂SO₄ после растворения '
+             f'{fmt(nac, 2)} моль; осадок BaSO₄ {fmt(nac * M("BaSO4"), 2)} г; остаток соли {fmt(left, 2)} г; из доли соли '
+             f'находим массу раствора и массу воды ≈ {ans} г (мл).')
+        wrong = W([val + nac * M('BaSO4'), val - m, val + V * rho / 10], 0)
+        eqs = [eqp(['SO3', 'H2O'], ['H2SO4'])[1], eqp(['H2SO4', salt], ['BaSO4', 'HCl' if salt == 'BaCl2' else 'HNO3'])[1]]
+        return pcard('ch-ege-34-oleum', q, ans, e, p=p, wrong=wrong, eqs=eqs)
     if mode == 'acid':
         exact = n * M('H2SO4') / (m + Wt) * 100
         p = dict(m=str(m), p=pr, W=str(Wt), mode='acid')
@@ -3126,13 +3197,16 @@ DOSE19 = [  # (формула, название (род. п.), что (им. п.
     ('CaHPO4', 'гидрофосфата кальция', 'таблетка', 'Ca', [100, 150, 200, 250, 300], 'таблетке'),
     ('CuSO4', 'сульфата меди(II)', 'таблетка', 'Cu', [2, 3, 4, 5], 'таблетке'),
 ]
-AGRO19 = [  # (формула, название (род. п.), элемент, норма элемента, г на м², площадь)
-    ('NH4NO3', 'аммиачной селитры (NH₄NO₃)', 'N'), ('KNO3', 'калийной селитры (KNO₃)', 'K'),
-    ('Ca(NO3)2', 'кальциевой селитры (Ca(NO₃)₂)', 'N'), ('K2SO4', 'сульфата калия', 'K'), ('KCl', 'хлорида калия', 'K'),
-    ('Ca(H2PO4)2', 'двойного суперфосфата (Ca(H₂PO₄)₂)', 'P'), ('(NH4)2HPO4', 'гидрофосфата аммония', 'N'),
-    ('CO(NH2)2', 'карбамида (CO(NH₂)₂)', 'N'), ('K2CO3', 'карбоната калия (поташа)', 'K'),
-    ('CaCO3·MgCO3', 'доломитовой муки (CaCO₃·MgCO₃)', 'Mg'),
+AGRO19 = [  # (формула, название удобрения (им. п.), элемент)
+    ('NH4NO3', 'аммиачная селитра (NH₄NO₃)', 'N'), ('KNO3', 'калийная селитра (KNO₃)', 'K'),
+    ('Ca(NO3)2', 'кальциевая селитра (Ca(NO₃)₂)', 'N'), ('K2SO4', 'сульфат калия (K₂SO₄)', 'K'),
+    ('KCl', 'хлорид калия (KCl)', 'K'), ('Ca(H2PO4)2', 'двойной суперфосфат (Ca(H₂PO₄)₂)', 'P'),
+    ('(NH4)2HPO4', 'диаммофос ((NH₄)₂HPO₄)', 'N'), ('CO(NH2)2', 'карбамид (CO(NH₂)₂)', 'N'),
+    ('K2CO3', 'поташ (K₂CO₃)', 'K'), ('CaCO3·MgCO3', 'доломитовая мука (CaCO₃·MgCO₃)', 'Mg'),
 ]
+NORM19 = {'Fe': [10, 12, 14, 15, 18, 20], 'Zn': [8, 10, 12, 15], 'Ca': [200, 250, 300, 400, 500, 600],
+          'Mg': [100, 150, 200, 250, 300], 'I': [Fr(1, 10), Fr(15, 100), Fr(2, 10)], 'F': [1, Fr(3, 2), 2],
+          'Cu': [1, Fr(3, 2), 2]}
 RAW19 = [  # (формула, название (род. п.), элемент, единица)
     ('CuFeS2', 'халькопирита', 'Cu', 'кг'), ('Fe3O4', 'магнетита', 'Fe', 'т'), ('Fe2O3', 'гематита', 'Fe', 'т'),
     ('ZnS', 'сфалерита', 'Zn', 'кг'), ('PbS', 'галенита', 'Pb', 'кг'), ('Cu2S', 'халькозина', 'Cu', 'кг'),
@@ -3185,23 +3259,22 @@ def goge19_dose(rng):
         k = rng.choice([1, 2, 3])
         days = rng.choice([1, 1, 7, 10, 14, 30])
         x = m * k * days * w / 100
-        period = 'в сутки' if days == 1 else f'за {days} дней' if days not in (7, 14) else f'за {days // 7} недел{"ю" if days == 7 else "и"}'
+        period = {1: 'в сутки', 7: 'за неделю', 14: 'за две недели'}.get(days, f'за {days} дней')
         q = (f'В каждой {unit_p} препарата содержится {ru(m)} мг {gname}; остальное — вещества, не содержащие {EL_G[el]}. '
-             f'Препарат принимают по {k} {unit + ("е" if unit == "таблетка" else "е") if k == 1 else ("таблетки" if unit == "таблетка" else "капсулы")} '
+             f'Препарат принимают по {("одной таблетке" if unit == "таблетка" else "одной капсуле") if k == 1 else str(k) + (" таблетки" if unit == "таблетка" else " капсулы")} '
              f'в сутки. Какую массу {EL_G[el]} (в миллиграммах) получает человек {period}? {_intro18(f, el, d18)} '
              f'Запишите число с точностью до {PREC[dec]}.')
-        q = q.replace(f'по 1 {unit}е', f'по 1 {unit[:-1]}е').replace('по 1 таблеткае', 'по одной таблетке').replace('по 1 капсулае', 'по одной капсуле')
         p = dict(type='dose', f=f, el=el, d18=d18, m=str(m), k=k, days=days, dec=dec)
         e = f'ω({el}) ≈ {fmt(w, d18)} %; m({el}) = {ru(m)}·{k}·{days}·{fmt(w, d18)}/100 ≈ {rnd(x, dec)} мг.'
         wrong = W([m * k * days, m * w / 100, x * 100 / w if w else None], dec)
     else:
-        norm = Fr(pick(rng, [Fr(1, 10), Fr(15, 100), 1, 2, 5, 10, 12, 15, 20, 50, 100, 200, 300, 400]))
+        norm = Fr(pick(rng, NORM19[el]))
         k = rng.choice([1, 2, 3])
         x = norm / k / (w / 100)
-        q = (f'Суточная норма {EL_G[el]} для взрослого человека составляет {ru(norm)} мг. Её восполняют приёмом препарата, '
-             f'действующее вещество которого — {pretty(f)}; рекомендовано принимать {k} {"таблетку" if k == 1 else "таблетки"} '
+        q = (f'Для восполнения дефицита {EL_G[el]} врач рекомендовал получать с препаратом {ru(norm)} мг {EL_G[el]} в сутки. '
+             f'Действующее вещество препарата — {pretty(f)}; принимать его нужно по {k} {"таблетке" if k == 1 else "таблетки"} '
              f'в сутки. Вычислите массу {gname} (в миллиграммах), которую должна содержать одна таблетка. '
-             f'{_intro18(f, el, d18)} Запишите число с точностью до {PREC[dec]}.')
+             f'{_intro18(f, el, d18)} Запишите число с точностью до {PREC[dec]}.').replace('по 1 таблетке', 'по одной таблетке')
         p = dict(type='dose_inv', f=f, el=el, d18=d18, norm=str(norm), k=k, dec=dec)
         e = f'ω({el}) ≈ {fmt(w, d18)} %; на одну таблетку {ru(norm)}/{k} мг {el}; m(в-ва) = m({el})/ω ≈ {rnd(x, dec)} мг.'
         wrong = W([norm / (w / 100), norm / k * w / 100, norm / k], dec)
@@ -3226,16 +3299,18 @@ def goge19_agro(rng):
     norm = Fr(rng.choice([2, 3, 4, 5, 6, 8, 10, 12, 15, 20, 25, 30, 40, 50]))
     S = Fr(rng.choice([10, 15, 20, 25, 30, 40, 50, 60, 75, 100, 120, 150, 200, 250, 300, 400]))
     x = norm * S / (w / 100) / div
-    kg = x > 3000 or rng.random() < 0.3
+    kg = x > 1000 or rng.random() < 0.3
     dec = rng.choice([0, 1]) if not kg else 1
     if kg:
         x = x / 1000
     ans = rnd(x, dec)
-    q = (f'Под плодовые деревья вносят {gname} из расчёта {ru(norm)} г {EL_G[el]} на {"1 м²" if div == 1 else "10 м²"} '
-         f'площади. Какую массу удобрения (в {"килограммах" if kg else "граммах"}) нужно внести на участок площадью '
+    q = (f'Под плодовые деревья вносят удобрение — {gname}; норма внесения — {ru(norm)} г {EL_G[el]} на '
+         f'{"1 м²" if div == 1 else "10 м²"} площади. Какую массу удобрения (в {"килограммах" if kg else "граммах"}) нужно внести на участок площадью '
          f'{ru(S)} м²? {_intro18(f, el, d18)} Запишите число с точностью до {PREC[dec]}.')
     if f == 'CaCO3·MgCO3':
         q = q.replace('Под плодовые деревья вносят', 'Для раскисления почвы и восполнения магния вносят')
+    if rng.random() < 0.3:
+        q = q.replace('Под плодовые деревья', 'Под картофель').replace('площади', 'поля')
     p = dict(type='agro', f=f, el=el, d18=d18, norm=str(norm * (Fr(1, 1000) if kg else 1)), S=str(S), div=div, dec=dec)
     e = f'ω({el}) ≈ {fmt(w, d18)} %; m({el}) = {ru(norm)}·{ru(S)}/{div} г; m(удобрения) = m({el})/ω ≈ {ans} {"кг" if kg else "г"}.'
     wrong = W([x * (w / 100) ** 2, x * div if div > 1 else x * 10, norm * S * (w / 100) / div / (1000 if kg else 1)], dec)

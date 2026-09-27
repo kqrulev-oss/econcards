@@ -1749,12 +1749,18 @@ def g_17types(rng):
     rng.shuffle(pick)
     ans = [str(i + 1) for i, t in enumerate(pick) if a[t]]
     d = describe(r)
-    q = (f'Из предложенного перечня выберите все типы реакций, к которым можно отнести {d}. '
-         f'Запишите номера выбранных ответов.')
+    many = 'все типы реакций' if k_yes > 2 or rng.random() < 0.5 else 'два типа реакций'
+    if rng.random() < 0.55:
+        q = (f'Из предложенного перечня выберите {many}, к которым можно отнести реакцию, протекающую в соответствии '
+             f'с уравнением {eq_text(r["lhs"], r["rhs"])}. Запишите номера выбранных ответов.')
+    else:
+        q = (f'Из предложенного перечня выберите {many}, к которым можно отнести {d}. '
+             f'Запишите номера выбранных ответов.')
     e = f'{eq_text(r["lhs"], r["rhs"])}: ' + ', '.join(t for t in pick if a[t]) + '.'
-    return card(pid, q, ans, e, k='many', o=opts([t if t in ('нейтрализации', 'ионного обмена', 'соединения',
-                                                              'разложения', 'замещения', 'обмена') and False else t
-                                                  for t in pick]),
+    word = rng.random() < 0.5
+    lab = lambda t: (('реакция ' + t) if t in ('нейтрализации', 'ионного обмена', 'соединения', 'разложения',
+                                              'замещения', 'обмена') else (t + ' реакция')) if word else t
+    return card(pid, q, ans, e, k='many', o=opts([lab(t) for t in pick]),
                 p={'rid': r['rid'], 'types': pick}, eqs=[(r['lhs'], r['rhs'], *r['k'])])
 
 
@@ -1942,3 +1948,695 @@ def g_17reag(rng):
     e = '; '.join(ex) + f' — {phr}.'
     return card(pid, q, ans, e, k='many', o=opts(txt),
                 p={'R': R, 'RL': RL, 'type': T, 'items': [list(x) for x in items]})
+
+
+# ================================================================= 19. ОВР: свойства элемента, окислитель/восстановитель
+
+def _sgn(v):
+    return f'+{v}' if v > 0 else ('0' if v == 0 else f'−{-v}')
+
+
+def redox_roles(r):
+    """{'ox': (el, from, to), 'red': (el, from, to)} или None, если картина не однозначна (несколько элементов)."""
+    ch = ox_changes(r)
+    if not ch:
+        return None
+    ups, downs = [], []
+    for e, (L, Rr) in ch.items():
+        if len(L) != 1:
+            # сопропорционирование (NH4NO2 → N2): N и окислитель, и восстановитель — отдельный случай
+            if len(L) == 2 and len(Rr) == 1:
+                lo, hi = sorted(L)
+                (p,) = Rr
+                if lo < p < hi:
+                    ups.append((e, lo, p))
+                    downs.append((e, hi, p))
+                    continue
+            return None
+        (a,) = L
+        higher = [x for x in Rr if x > a]
+        lower = [x for x in Rr if x < a]
+        if len(higher) > 1 or len(lower) > 1:
+            return None
+        if higher:
+            ups.append((e, a, higher[0]))
+        if lower:
+            downs.append((e, a, lower[0]))
+    if len(ups) != 1 or len(downs) != 1:
+        return None
+    return {'red': ups[0], 'ox': downs[0]}
+
+
+def agent_formula(r, role):
+    """Формула вещества-окислителя/восстановителя среди реагентов (единственная), иначе None."""
+    rr = redox_roles(r)
+    if not rr:
+        return None
+    e, a, b = rr[role]
+    cands = [f for f in dict.fromkeys(r['lhs']) if (ox_of(f) or {}).get(e) == a]
+    return cands[0] if len(cands) == 1 else None
+
+
+REDOX19 = [r for r in RX if redox_roles(r) and 'электролиз' not in r['type'] and len(r['lhs']) <= 3]
+
+
+def _show19(r, mode):
+    return eq_text(r['lhs'], r['rhs']).replace('→', '=') if mode == 'eq' else scheme_text(r['lhs'], r['rhs'])
+
+
+def _solve_19change(p):
+    ans = {}
+    for i, rid in enumerate(p['rids']):
+        r = RX_BY_ID[rid]
+        # независимо: сравниваем ст. ок. по каждому элементу в реагентах и продуктах
+        L, Rr = {}, {}
+        for side, d in ((r['lhs'], L), (r['rhs'], Rr)):
+            for f in side:
+                for e, v in (ox_of(f) or {}).items():
+                    d.setdefault(e, set()).add(v)
+        found = None
+        for e in L:
+            for a in L[e]:
+                for b in Rr.get(e, ()):
+                    if (p['role'] == 'red' and b > a or p['role'] == 'ox' and b < a) and b not in L[e]:
+                        found = f'{_sgn(a)} → {_sgn(b)}'
+        hits = [str(j + 1) for j, t in enumerate(p['opts']) if t == found]
+        if len(hits) != 1:
+            return {'err': rid}
+        ans[LET[i]] = hits[0]
+    return ans
+
+
+_EL_RU = {'N': 'азота', 'S': 'серы', 'Cl': 'хлора', 'C': 'углерода', 'P': 'фосфора', 'Fe': 'железа', 'Cu': 'меди',
+          'Mn': 'марганца', 'Cr': 'хрома', 'I': 'иода', 'Br': 'брома', 'H': 'водорода', 'O': 'кислорода',
+          'Si': 'кремния', 'Zn': 'цинка', 'Al': 'алюминия', 'Mg': 'магния', 'Na': 'натрия', 'K': 'калия', 'Ca': 'кальция',
+          'Ag': 'серебра', 'Pb': 'свинца', 'Hg': 'ртути', 'F': 'фтора', 'Ba': 'бария', 'Li': 'лития'}
+
+
+def _pick19(rng, pred, k=3, theme=None):
+    pool = [r for r in REDOX19 if pred(r)]
+    if theme:
+        pool = [r for r in pool if theme(r)]
+    if len(pool) < k:
+        raise Retry
+    out, keys = [], set()
+    for r in shuffled(rng, pool):
+        key = frozenset(r['lhs'])
+        if key in keys:
+            continue
+        keys.add(key)
+        out.append(r)
+        if len(out) == k:
+            return out
+    raise Retry
+
+
+@proto('ch-ege-19-change', 'ЕГЭ', 19, 'Уравнение/схема ОВР ↔ изменение степени окисления восстановителя (окислителя)',
+       invariant='расставить степени окисления, найти элемент, который их повышает (понижает), записать переход',
+       varies='три ОВР неорганической химии, роль (восстановитель/окислитель), запись: схема или уравнение',
+       answer_rule='каждой реакции — переход степени окисления элемента-восстановителя (окислителя)',
+       mistakes=['путают окислитель и восстановитель', 'пишут изменение для «зрителя» (NO₃⁻ в нитрате)',
+                 'ошибаются со степенью окисления в пероксидах и сложных анионах'],
+       solve=_solve_19change, kind='dict', kes=['1.12'],
+       fidelity=FID(19, trap='в перечне — обратные переходы (+4 → +2 вместо +2 → +4) и переходы другого элемента той же '
+                             'реакции', scale='3 реакции × 4 перехода — как демоверсия 2027 (Cu₂O, Cu, CuO) и ~24 задания '
+                             'банка', kes=['1.12'], fmt_='три цифры под буквами А–В'))
+def g_19change(rng):
+    pid = 'ch-ege-19-change'
+    role = rng.choice(['red', 'red', 'ox'])
+    el = rng.choice(['N', 'S', 'Cl', 'C', 'Fe', 'Cu', 'Mn', 'Cr', 'P', 'H', 'I', 'O', None, None])
+    theme = (lambda r: any(el in els(f) for f in r['lhs'])) if el else None
+    rs = _pick19(rng, lambda r: True, 3, theme)
+    chg = []
+    for r in rs:
+        e, a, b = redox_roles(r)[role]
+        chg.append(f'{_sgn(a)} → {_sgn(b)}')
+    if len(set(chg)) < 2 and rng.random() < 0.8:
+        raise Retry
+    # дистракторы: обратные переходы и переходы «другой роли»
+    dis = []
+    for r in rs:
+        rr = redox_roles(r)
+        other = 'ox' if role == 'red' else 'red'
+        e, a, b = rr[role]
+        e2, a2, b2 = rr[other]
+        dis += [f'{_sgn(b)} → {_sgn(a)}', f'{_sgn(a2)} → {_sgn(b2)}']
+    opts_ = list(dict.fromkeys(chg))
+    for d in shuffled(rng, dis):
+        if len(opts_) >= 4:
+            break
+        if d not in opts_:
+            opts_.append(d)
+    if len(opts_) < 4:
+        raise Retry
+    rng.shuffle(opts_)
+    ans = {LET[i]: str(opts_.index(c) + 1) for i, c in enumerate(chg)}
+    mode = rng.choice(['eq', 'scheme'])
+    who = 'восстановителя' if role == 'red' else 'окислителя'
+    q = (f'Установите соответствие между {"уравнением" if mode == "eq" else "схемой"} реакции и изменением степени '
+         f'окисления {who} в этой реакции: к каждой позиции, обозначенной буквой, подберите соответствующую позицию, '
+         f'обозначенную цифрой. Запишите в таблицу выбранные цифры под соответствующими буквами.')
+    e = '; '.join(f'{LET[i]}) {_EL_RU.get(redox_roles(r)[role][0], redox_roles(r)[role][0])}: {chg[i]}'
+                  for i, r in enumerate(rs)) + '.'
+    return card(pid, q, ans, e, k='match', o=match_opts([_show19(r, mode) for r in rs], opts_),
+                p={'rids': [r['rid'] for r in rs], 'role': role, 'opts': opts_},
+                eqs=[(r['lhs'], r['rhs'], *r['k']) for r in rs])
+
+
+PROPS19 = ['только окислитель', 'только восстановитель', 'и окислитель, и восстановитель',
+           'не проявляет окислительно-восстановительных свойств']
+
+
+def _prop_el(r, el):
+    L, Rr = set(), set()
+    for f in r['lhs']:
+        o = ox_of(f)
+        if o is None:
+            return None
+        if el in o:
+            L.add(o[el])
+    for f in r['rhs']:
+        o = ox_of(f)
+        if o is None:
+            return None
+        if el in o:
+            Rr.add(o[el])
+    if not L:
+        return None
+    up = any(b > a for a in L for b in Rr if b not in L)
+    down = any(b < a for a in L for b in Rr if b not in L)
+    if up and down:
+        return PROPS19[2]
+    if up:
+        return PROPS19[1]
+    if down:
+        return PROPS19[0]
+    return PROPS19[3]
+
+
+def _solve_19prop(p):
+    ans = {}
+    for i, rid in enumerate(p['rids']):
+        pr = _prop_el(RX_BY_ID[rid], p['el'])
+        hits = [str(j + 1) for j, t in enumerate(p['opts']) if t == pr]
+        if len(hits) != 1:
+            return {'err': rid}
+        ans[LET[i]] = hits[0]
+    return ans
+
+
+@proto('ch-ege-19-property', 'ЕГЭ', 19, 'Уравнение/схема ↔ свойство элемента (окислитель, восстановитель, оба, не проявляет)',
+       invariant='сравнить степени окисления выбранного элемента в реагентах и продуктах',
+       varies='элемент (N, S, Cl, P, C, H, Fe, Cu, Mn, Cr, I, Br), три реакции с его участием, включая реакции без '
+              'изменения его степени окисления и диспропорционирование',
+       answer_rule='повышает степень окисления — восстановитель; понижает — окислитель; и то и другое — '
+                   'диспропорционирование/сопропорционирование; не меняет — не проявляет',
+       mistakes=['реакцию обмена с участием элемента считают ОВР', 'не замечают диспропорционирование (Cl₂ + KOH)',
+                 'путают окислитель и восстановитель'],
+       solve=_solve_19prop, kind='dict', kes=['1.12'],
+       fidelity=FID(19, trap='одна из реакций — без изменения ст. ок. элемента, одна — диспропорционирование',
+                    scale='3 реакции × 4 свойства — как демоверсия 2027 (свойство водорода) и ~25 заданий банка',
+                    kes=['1.12'], fmt_='три цифры под буквами А–В'))
+def g_19prop(rng):
+    pid = 'ch-ege-19-property'
+    el = rng.choice(['N', 'S', 'Cl', 'P', 'C', 'H', 'Fe', 'Cu', 'Mn', 'Cr', 'I', 'Br', 'O'])
+    pool = [r for r in RX if any(el in els(f) for f in r['lhs']) and _prop_el(r, el) and len(r['lhs']) <= 3 and
+            'электролиз' not in r['type'] and not (el in ('H', 'O') and _prop_el(r, el) == PROPS19[3] and
+                                                     rng.random() < 0.3)]
+    by = {}
+    for r in pool:
+        by.setdefault(_prop_el(r, el), []).append(r)
+    kinds = [k for k in by if by[k]]
+    if len(kinds) < 2:
+        raise Retry
+    chosen = rng.sample(kinds, min(3, len(kinds)))
+    while len(chosen) < 3:
+        chosen.append(rng.choice(kinds))
+    rs = []
+    for k in chosen:
+        cand = [r for r in by[k] if r not in rs]
+        if not cand:
+            raise Retry
+        rs.append(rng.choice(cand))
+    rng.shuffle(rs)
+    opts_ = PROPS19[:]
+    ans = {LET[i]: str(opts_.index(_prop_el(r, el)) + 1) for i, r in enumerate(rs)}
+    mode = rng.choice(['eq', 'scheme'])
+    q = (f'Установите соответствие между {"уравнением" if mode == "eq" else "схемой"} реакции и свойством '
+         f'{_EL_RU[el]}, которое этот элемент проявляет в этой реакции: к каждой позиции, обозначенной буквой, '
+         f'подберите соответствующую позицию, обозначенную цифрой. Запишите в таблицу выбранные цифры под '
+         f'соответствующими буквами.')
+    e = '; '.join(f'{LET[i]}) {_prop_el(r, el)}' for i, r in enumerate(rs)) + '.'
+    return card(pid, q, ans, e, k='match', o=match_opts([_show19(r, mode) for r in rs], opts_),
+                p={'rids': [r['rid'] for r in rs], 'el': el, 'opts': opts_},
+                eqs=[(r['lhs'], r['rhs'], *r['k']) for r in rs])
+
+
+def _solve_19agent(p):
+    ans = {}
+    for i, rid in enumerate(p['rids']):
+        r = RX_BY_ID[rid]
+        # независимо: вещество реагентов, в котором элемент меняет степень окисления в нужную сторону
+        found = []
+        for f in dict.fromkeys(r['lhs']):
+            of = ox_of(f) or {}
+            for e, a in of.items():
+                prod = {(ox_of(g) or {}).get(e) for g in r['rhs']} - {None}
+                if p['role'] == 'red' and any(b > a for b in prod) or p['role'] == 'ox' and any(b < a for b in prod):
+                    if not any((ox_of(g) or {}).get(e) == a for g in r['rhs']) or True:
+                        found.append(f)
+        found = list(dict.fromkeys(found))
+        hits = [str(j + 1) for j, t in enumerate(p['opts']) if t in found]
+        if len(hits) != 1:
+            return {'err': rid}
+        ans[LET[i]] = hits[0]
+    return ans
+
+
+@proto('ch-ege-19-agent', 'ЕГЭ', 19, 'Уравнение ОВР ↔ формула окислителя (восстановителя)',
+       invariant='найти в реагентах вещество, содержащее элемент, который понижает (повышает) степень окисления',
+       varies='три ОВР, роль, набор формул в правом столбце',
+       answer_rule='каждой реакции — формула её окислителя (восстановителя)',
+       mistakes=['называют восстановителем продукт', 'путают роли при участии азотсодержащих веществ'],
+       solve=_solve_19agent, kind='dict', kes=['1.12'],
+       fidelity=FID(19, trap='в правом столбце — вещества тех же реакций в другой роли',
+                    scale='3 уравнения × 4 формулы — как задания банка «…и формулой восстановителя в этой реакции»',
+                    kes=['1.12'], fmt_='три цифры под буквами А–В'))
+def g_19agent(rng):
+    pid = 'ch-ege-19-agent'
+    role = rng.choice(['red', 'ox'])
+    el = rng.choice(['N', 'S', 'Cl', 'C', 'H', 'Fe', 'Mn', 'Cr', 'I', None])
+    theme = (lambda r: any(el in els(f) for f in r['lhs'])) if el else None
+    rs = _pick19(rng, lambda r: agent_formula(r, role) and agent_formula(r, 'ox' if role == 'red' else 'red'), 3,
+                 theme)
+    ag = [agent_formula(r, role) for r in rs]
+    if len(set(ag)) < 3:
+        raise Retry
+    other = [agent_formula(r, 'ox' if role == 'red' else 'red') for r in rs]
+    opts_ = list(ag)
+    for o in shuffled(rng, other):
+        if o not in opts_:
+            opts_.append(o)
+            break
+    if len(opts_) < 4:
+        raise Retry
+    # ни одна из «чужих» формул не должна быть агентом другой реакции той же роли
+    for i, r in enumerate(rs):
+        roles_here = [f for f in opts_ if f in r['lhs'] and f == agent_formula(r, role)]
+        if len(roles_here) != 1:
+            raise Retry
+        for f in opts_:
+            if f != ag[i] and f in r['lhs']:
+                of = ox_of(f) or {}
+                e, a, b = redox_roles(r)[role]
+                if of.get(e) == a:
+                    raise Retry
+    rng.shuffle(opts_)
+    ans = {LET[i]: str(opts_.index(a) + 1) for i, a in enumerate(ag)}
+    who = 'восстановителя' if role == 'red' else 'окислителя'
+    q = (f'Установите соответствие между уравнением реакции и формулой {who} в этой реакции: к каждой позиции, '
+         f'обозначенной буквой, подберите соответствующую позицию, обозначенную цифрой. Запишите в таблицу выбранные '
+         f'цифры под соответствующими буквами.')
+    e = '; '.join(f'{LET[i]}) {who[:-1] + "ь"} — {F(a)}' for i, a in enumerate(ag)) + '.'
+    return card(pid, q, ans, e, k='match', o=match_opts([_show19(r, 'eq') for r in rs], [F(x) for x in opts_]),
+                p={'rids': [r['rid'] for r in rs], 'role': role, 'opts': opts_},
+                eqs=[(r['lhs'], r['rhs'], *r['k']) for r in rs])
+
+
+IONS19 = [  # (запись, элемент, ст. ок.)
+    ('S²⁻', 'S', -2), ('HS⁻', 'S', -2), ('SO₃²⁻', 'S', 4), ('HSO₃⁻', 'S', 4), ('SO₄²⁻', 'S', 6), ('NO₃⁻', 'N', 5),
+    ('NO₂⁻', 'N', 3), ('NH₄⁺', 'N', -3), ('Cl⁻', 'Cl', -1), ('ClO⁻', 'Cl', 1), ('ClO₃⁻', 'Cl', 5),
+    ('ClO₄⁻', 'Cl', 7), ('Br⁻', 'Br', -1), ('I⁻', 'I', -1), ('MnO₄⁻', 'Mn', 7), ('MnO₄²⁻', 'Mn', 6),
+    ('Mn²⁺', 'Mn', 2), ('Cr₂O₇²⁻', 'Cr', 6), ('CrO₄²⁻', 'Cr', 6), ('Fe²⁺', 'Fe', 2), ('Cu²⁺', 'Cu', 2),
+    ('Ag⁺', 'Ag', 1), ('H⁻', 'H', -1), ('H⁺', 'H', 1), ('Sn²⁺', 'Sn', 2), ('Cu⁺', 'Cu', 1), ('BrO₃⁻', 'Br', 5),
+    ('IO₃⁻', 'I', 5), ('S₂O₃²⁻', 'S', 2), ('Hg²⁺', 'Hg', 2), ('Zn²⁺', 'Zn', 2), ('Al³⁺', 'Al', 3),
+]
+_OX_RANGE = {'S': (-2, 6), 'N': (-3, 5), 'Cl': (-1, 7), 'Br': (-1, 7), 'I': (-1, 7), 'Mn': (0, 7), 'Cr': (0, 6),
+             'Fe': (0, 3), 'Cu': (0, 2), 'Ag': (0, 1), 'H': (-1, 1), 'Sn': (0, 4), 'Hg': (0, 2), 'Zn': (0, 2),
+             'Al': (0, 3)}
+
+
+def _ion_prop(el, v):
+    lo, hi = _OX_RANGE[el]
+    if lo < v < hi:
+        return PROPS19[2]
+    return PROPS19[0] if v == hi else PROPS19[1]
+
+
+def _solve_19ion(p):
+    table = {t: (e, v) for t, e, v in IONS19}
+    ans = {}
+    for i, t in enumerate(p['ions']):
+        e, v = table[t]
+        # другим путём: сравнение с высшей/низшей степенью окисления по группе ПСХЭ
+        hi = {'S': 6, 'N': 5, 'Cl': 7, 'Br': 7, 'I': 7, 'Mn': 7, 'Cr': 6, 'Fe': 3, 'Cu': 2, 'Ag': 1, 'H': 1, 'Sn': 4,
+              'Hg': 2, 'Zn': 2, 'Al': 3}[e]
+        lo = {'S': -2, 'N': -3, 'Cl': -1, 'Br': -1, 'I': -1, 'H': -1}.get(e, 0)
+        pr = 'только окислитель' if v >= hi else ('только восстановитель' if v <= lo else
+                                                  'и окислитель, и восстановитель')
+        hits = [str(j + 1) for j, t2 in enumerate(p['opts']) if t2 == pr]
+        ans[LET[i]] = hits[0]
+    return ans
+
+
+@proto('ch-ege-19-ion', 'ЕГЭ', 19, 'Формула иона ↔ окислительно-восстановительные свойства, которые он может проявлять',
+       invariant='сравнить степень окисления элемента в ионе с его высшей и низшей степенями окисления',
+       varies='ионы серы, азота, галогенов, марганца, хрома, металлов',
+       answer_rule='высшая ст. ок. — только окислитель; низшая — только восстановитель; промежуточная — оба',
+       mistakes=['SO₃²⁻ и NO₂⁻ считают только восстановителями', 'NH₄⁺ считают окислителем',
+                 'MnO₄²⁻ считают только окислителем'],
+       solve=_solve_19ion, kind='dict', kes=['1.12'],
+       fidelity=FID(19, trap='промежуточные степени окисления (SO₃²⁻, NO₂⁻, ClO⁻, MnO₄²⁻, Fe²⁺)',
+                    scale='3–4 иона × 3 свойства — как задания банка «…формулой иона и '
+                          'окислительно-восстановительными свойствами, которые он способен проявлять»', kes=['1.12'],
+                    fmt_='цифры под буквами А–Г'))
+def g_19ion(rng):
+    pid = 'ch-ege-19-ion'
+    k = rng.choice([3, 4])
+    ions = rng.sample(IONS19, k)
+    props = [_ion_prop(e, v) for _, e, v in ions]
+    if len(set(props)) < 2:
+        raise Retry
+    opts_ = PROPS19[:3]
+    ans = {LET[i]: str(opts_.index(pr) + 1) for i, pr in enumerate(props)}
+    q = ('Установите соответствие между формулой иона и окислительно-восстановительными свойствами, которые этот ион '
+         'способен проявлять: к каждой позиции, обозначенной буквой, подберите соответствующую позицию, обозначенную '
+         'цифрой. Запишите в таблицу выбранные цифры под соответствующими буквами.')
+    e = '; '.join(f'{t}: {_EL_RU.get(el, el)} {_sgn(v)} — {pr}' for (t, el, v), pr in zip(ions, props)) + '.'
+    return card(pid, q, ans, e, k='match', o=match_opts([t for t, _, _ in ions], opts_),
+                p={'ions': [t for t, _, _ in ions], 'opts': opts_})
+
+
+# ================================================================= 20. Электролиз
+
+EL_TABLE = {(x['f'], x['medium']): x for x in I.ELECTROLYSIS}
+
+
+def _el_rule(f, melt=False):
+    """Независимое правило (для solve): продукты на инертных электродах."""
+    s = SUBS[f]
+    comp = parse_formula(f)
+    if f in ('NaOH', 'KOH', 'LiOH', 'RbOH'):
+        m, an = f[:-2], 'OH'
+    elif s['cls'] == 'кислота':
+        m, an = 'H', {'HCl': 'Cl', 'HBr': 'Br', 'HI': 'I', 'H2SO4': 'SO4', 'HNO3': 'NO3'}[f]
+    elif f == 'Al2O3':
+        return ['Al'], ['O2']
+    else:
+        io = s.get('ion')
+        if io:
+            m, an = CAT[io['cat']][3], io['an']
+        else:
+            m = [e for e in comp if e in METALS][0]
+            an = 'Cl' if 'Cl' in comp else 'SO4'
+    halo = {'Cl': 'Cl2', 'Br': 'Br2', 'I': 'I2', 'F': 'F2'}
+    if melt:
+        return [m], ([halo[an]] if an in halo else ['O2', 'H2O'])
+    order = I.ACTIVITY
+    if m == 'H':
+        cat = ['H2']
+    elif m in order and order.index(m) > order.index('H2'):
+        cat = [m]
+    elif m in order and order.index(m) > order.index('Al'):
+        cat = [m, 'H2']
+    else:
+        cat = ['H2']
+    if an in ('Cl', 'Br', 'I'):
+        anode = [halo[an]]
+    elif an == 'S':
+        anode = ['S']
+    elif an == 'CH3COO':
+        anode = ['C2H6', 'CO2']
+    else:
+        anode = ['O2']
+    return cat, anode
+
+
+_CLS_WORD = {'H2': 'водород', 'O2': 'кислород', 'Cl2': 'галоген', 'Br2': 'галоген', 'I2': 'галоген', 'F2': 'галоген',
+             'S': 'сера'}
+
+
+def el_class(cat, anode):
+    c = ['металл' if x not in ('H2',) else 'водород' for x in cat]
+    if cat == ['H2']:
+        c = ['водород']
+    elif len(cat) == 2:
+        c = ['металл', 'водород']
+    a = [_CLS_WORD.get(x, x) for x in anode]
+    words = c + a
+    return words[0] + ' и ' + words[1] if len(words) == 2 else ', '.join(words[:-1]) + ' и ' + words[-1]
+
+
+def _solve_20cls(p):
+    ans = {}
+    for i, f in enumerate(p['items']):
+        cat, an = _el_rule(f)
+        pr = el_class(cat, an)
+        hits = [str(j + 1) for j, t in enumerate(p['opts']) if t == pr]
+        if len(hits) != 1:
+            return {'err': f}
+        ans[LET[i]] = hits[0]
+    return ans
+
+
+SOL20 = [x['f'] for x in I.ELECTROLYSIS if x['medium'] == 'раствор' and x['anode'] != ['C2H6', 'CO2']]
+
+
+@proto('ch-ege-20-classes', 'ЕГЭ', 20, 'Соль (название/формула) ↔ продукты электролиза водного раствора (металл/водород, '
+                                       'кислород/галоген)',
+       invariant='катод: до Al — водород, после H — металл, между ними — металл и водород; анод: бескислородный '
+                 'анион (кроме F⁻) — его простое вещество, кислородсодержащий и F⁻ — кислород',
+       varies='соли, щёлочи и кислоты разных металлов и анионов; число позиций 3–4',
+       answer_rule='каждому веществу — пара (тройка) продуктов на инертных электродах',
+       mistakes=['для солей Al, Mg пишут металл', 'для фторидов пишут фтор', 'для нитратов пишут NO₂',
+                 'для металлов средней активности забывают водород'],
+       solve=_solve_20cls, kind='dict', kes=['1.13'],
+       fidelity=FID(20, trap='соли Al/Mg/щелочных металлов (водород), фториды и нитраты (кислород), соли Fe, Zn, Pb '
+                             '(металл, водород и кислород)', scale='3–4 соли × 4–6 вариантов продуктов — как '
+                             'демоверсия 2027 (нитрат ртути(II), нитрат рубидия, хлорид алюминия) и 82 задания банка',
+                    kes=['1.13'], fmt_='цифры под буквами'))
+def g_20cls(rng):
+    pid = 'ch-ege-20-classes'
+    k = rng.choice([3, 3, 4])
+    items = rng.sample(SOL20, k)
+    prods = [el_class(*_el_rule(f)) for f in items]
+    base = ['металл и кислород', 'металл и галоген', 'водород и галоген', 'водород и кислород']
+    extra = ['металл, водород и кислород', 'металл, водород и галоген', 'водород и сера']
+    opts_ = list(base)
+    for x in prods:
+        if x not in opts_:
+            opts_.append(x)
+    for x in shuffled(rng, extra):
+        if len(opts_) >= (4 if k == 3 else 6):
+            break
+        if x not in opts_:
+            opts_.append(x)
+    if len(set(prods)) < 2:
+        raise Retry
+    ans = {LET[i]: str(opts_.index(x) + 1) for i, x in enumerate(prods)}
+    by_name = rng.random() < 0.5
+    q = (f'Установите соответствие между {"солью" if by_name else "формулой вещества"} и продуктами электролиза '
+         f'водного раствора {"этой соли" if by_name else "этого вещества"}, которые выделяются на инертных '
+         f'электродах: к каждой позиции, обозначенной буквой, подберите соответствующую позицию, обозначенную цифрой. '
+         f'Запишите в таблицу выбранные цифры под соответствующими буквами.')
+    left = [ru(f) if by_name else F(f) for f in items]
+    e = '; '.join(f'{F(f)}: катод — {", ".join(F(x) for x in EL_TABLE[(f, "раствор")]["cathode"])}, анод — '
+                  f'{", ".join(F(x) for x in EL_TABLE[(f, "раствор")]["anode"])}' for f in items) + '.'
+    return card(pid, q, ans, e, k='match', o=match_opts(left, opts_), p={'items': items, 'opts': opts_})
+
+
+def _prod_txt(cat, anode):
+    return ', '.join(F(x) for x in cat + anode)
+
+
+def _solve_20f(p):
+    ans = {}
+    for i, f in enumerate(p['items']):
+        pr = _prod_txt(*_el_rule(f))
+        hits = [str(j + 1) for j, t in enumerate(p['opts']) if t == pr]
+        if len(hits) != 1:
+            return {'err': f}
+        ans[LET[i]] = hits[0]
+    return ans
+
+
+@proto('ch-ege-20-formulas', 'ЕГЭ', 20, 'Формула вещества ↔ конкретные продукты электролиза раствора',
+       invariant='те же правила катода и анода, продукты — конкретные вещества',
+       varies='соли, щёлочи, кислоты; дистракторы — NO₂, SO₂, металл вместо водорода и т. п.',
+       answer_rule='каждой формуле — набор веществ, выделяющихся на катоде и аноде',
+       mistakes=['для нитратов пишут NO₂, для сульфатов SO₂', 'для солей активных металлов пишут металл'],
+       solve=_solve_20f, kind='dict', kes=['1.13'],
+       fidelity=FID(20, trap='«продукты разложения аниона» (NO₂, SO₂) вместо кислорода; металл вместо водорода',
+                    scale='3–4 формулы × 4–6 вариантов — как задания банка «ВЕЩЕСТВО — ПРОДУКТЫ ЭЛЕКТРОЛИЗА: '
+                          'H₂, O₂ / Hg, O₂ / Hg, NO₂…»', kes=['1.13'], fmt_='цифры под буквами'))
+def g_20f(rng):
+    pid = 'ch-ege-20-formulas'
+    k = rng.choice([3, 4])
+    items = rng.sample(SOL20, k)
+    true = [_prod_txt(*_el_rule(f)) for f in items]
+    if len(set(true)) < k:
+        raise Retry
+    dis = []
+    for f in items:
+        cat, an = _el_rule(f)
+        io = SUBS[f].get('ion') or {}
+        m = CAT[io['cat']][3] if io.get('cat') in CAT else None
+        if an == ['O2'] and io.get('an') == 'NO3':
+            dis.append(_prod_txt(cat, ['NO2']))
+        if an == ['O2'] and io.get('an') == 'SO4':
+            dis.append(_prod_txt(cat, ['SO2']))
+        if cat == ['H2'] and m and m not in ('N',):
+            dis.append(_prod_txt([m], an))
+        if cat != ['H2']:
+            dis.append(_prod_txt(['H2'], an))
+    opts_ = list(dict.fromkeys(true))
+    for d in shuffled(rng, dis):
+        if len(opts_) >= k + 1 + (1 if k == 4 else 0):
+            break
+        if d not in opts_:
+            opts_.append(d)
+    if len(opts_) < k + 1:
+        raise Retry
+    rng.shuffle(opts_)
+    ans = {LET[i]: str(opts_.index(t) + 1) for i, t in enumerate(true)}
+    q = ('Установите соответствие между формулой вещества и продуктами электролиза водного раствора этого вещества, '
+         'которые образуются на инертных электродах: к каждой позиции, обозначенной буквой, подберите '
+         'соответствующую позицию, обозначенную цифрой. Запишите в таблицу выбранные цифры под соответствующими '
+         'буквами.')
+    e = '; '.join(f'{F(f)} → {t}' for f, t in zip(items, true)) + '.'
+    return card(pid, q, ans, e, k='match', o=match_opts([F(f) for f in items], opts_), p={'items': items, 'opts': opts_})
+
+
+METHODS20 = []   # (текст способа, electrolyte, medium)
+for _x in I.ELECTROLYSIS:
+    if _x['medium'] == 'раствор' and _x['anode'] != ['C2H6', 'CO2'] and SUBS[_x['f']]['cls'] == 'соль':
+        METHODS20.append((f'водного раствора {F(_x["f"])}', _x['f'], 'раствор'))
+    elif _x['medium'] == 'расплав':
+        METHODS20.append((f'расплава {F(_x["f"])}', _x['f'], 'расплав'))
+METHODS20.append(('раствора Al₂O₃ в расплавленном криолите', 'Al2O3', 'расплав'))
+TARGETS20 = ['Na', 'K', 'Li', 'Ca', 'Mg', 'Ba', 'Al', 'F2', 'Cl2', 'Br2', 'I2', 'H2', 'O2', 'Cu', 'Ag', 'Hg']
+
+
+def _method_products(f, medium):
+    cat, an = _el_rule(f, melt=(medium == 'расплав'))
+    return set(cat) | set(an)
+
+
+def _solve_20m(p):
+    ans = {}
+    for i, t in enumerate(p['targets']):
+        hits = [str(j + 1) for j, (txt, f, med) in enumerate(p['methods']) if t in _method_products(f, med)]
+        if len(hits) != 1:
+            return {'err': t}
+        ans[LET[i]] = hits[0]
+    return ans
+
+
+@proto('ch-ege-20-obtain', 'ЕГЭ', 20, 'Вещество ↔ возможный способ его получения электролизом',
+       invariant='понять, какие продукты дают электролиз расплава и раствора; активные металлы и фтор — только из '
+                 'расплавов, алюминий — из раствора Al₂O₃ в криолите',
+       varies='металлы, галогены, водород, кислород; способы — расплавы и растворы разных солей',
+       answer_rule='каждому веществу — способ, при котором оно выделяется на электроде',
+       mistakes=['активный металл получают электролизом водного раствора', 'фтор — из раствора фторида',
+                 'алюминий — из водного раствора AlCl₃'],
+       solve=_solve_20m, kind='dict', kes=['1.13'],
+       fidelity=FID(20, trap='водные растворы солей активных металлов и фторидов дают водород и кислород',
+                    scale='3–4 вещества × 4–5 способов — как демоверсия 2027 (алюминий, фтор, калий) и задания банка '
+                          '«…и возможным способом его получения путём электролиза»', kes=['1.13'],
+                    fmt_='цифры под буквами'))
+def g_20m(rng):
+    pid = 'ch-ege-20-obtain'
+    k = rng.choice([3, 4])
+    for _ in range(40):
+        targets = rng.sample(TARGETS20, k)
+        methods = []
+        ok = True
+        for t in targets:
+            cands = [m for m in METHODS20 if t in _method_products(m[1], m[2])]
+            if not cands:
+                ok = False
+                break
+            methods.append(rng.choice(cands))
+        if not ok:
+            continue
+        # дистракторы: «ловушки» — водные растворы солей тех же металлов/галогенов
+        traps = [m for m in METHODS20 if m not in methods and any(
+            (t in els(m[1]) or t[:-1] in els(m[1])) for t in targets)]
+        others = [m for m in METHODS20 if m not in methods and m not in traps]
+        n_opts = k + 1
+        pool = shuffled(rng, traps)[:2] + shuffled(rng, others)
+        for m in pool:
+            if len(methods) >= n_opts:
+                break
+            if m not in methods:
+                methods.append(m)
+        rng.shuffle(methods)
+        ans = {}
+        for i, t in enumerate(targets):
+            hits = [str(j + 1) for j, m in enumerate(methods) if t in _method_products(m[1], m[2])]
+            if len(hits) != 1:
+                ok = False
+                break
+            ans[LET[i]] = hits[0]
+        if ok and len({m[0] for m in methods}) == len(methods):
+            break
+    else:
+        raise Retry
+    names = {'Na': 'натрий', 'K': 'калий', 'Li': 'литий', 'Ca': 'кальций', 'Mg': 'магний', 'Ba': 'барий',
+             'Al': 'алюминий', 'F2': 'фтор', 'Cl2': 'хлор', 'Br2': 'бром', 'I2': 'иод', 'H2': 'водород',
+             'O2': 'кислород', 'Cu': 'медь', 'Ag': 'серебро', 'Hg': 'ртуть'}
+    q = ('Установите соответствие между веществом и возможным способом его получения путём электролиза: к каждой '
+         'позиции, обозначенной буквой, подберите соответствующую позицию, обозначенную цифрой. Запишите в таблицу '
+         'выбранные цифры под соответствующими буквами.')
+    e = '; '.join(f'{names[t]} — электролиз {methods[int(ans[LET[i]]) - 1][0]}' for i, t in enumerate(targets)) + '.'
+    return card(pid, q, ans, e, k='match', o=match_opts([names[t] for t in targets], [m[0] for m in methods]),
+                p={'targets': targets, 'methods': [list(m) for m in methods]})
+
+
+def _solve_20el(p):
+    ans = {}
+    for i, f in enumerate(p['items']):
+        cat, an = _el_rule(f)
+        pr = (cat if p['el'] == 'катод' else an)
+        pr = pr[0] if len(pr) == 1 else None
+        hits = [str(j + 1) for j, t in enumerate(p['opts']) if pr and t == pr]
+        if len(hits) != 1:
+            return {'err': f}
+        ans[LET[i]] = hits[0]
+    return ans
+
+
+@proto('ch-ege-20-electrode', 'ЕГЭ', 20, 'Формула соли ↔ продукт на инертном аноде (катоде) при электролизе раствора',
+       invariant='правило анода (или катода) для водного раствора',
+       varies='электрод, 4 соли, 5–6 вариантов продукта',
+       answer_rule='каждой соли — вещество, выделяющееся на указанном электроде',
+       mistakes=['на аноде при электролизе фторида пишут F₂', 'на катоде при электролизе соли Mg пишут Mg'],
+       solve=_solve_20el, kind='dict', kes=['1.13'],
+       fidelity=FID(20, trap='фториды, нитраты, сульфаты (кислород на аноде), соли активных металлов (водород)',
+                    scale='4 соли × 5–6 продуктов — задания банка прежних лет «…продуктом, образующимся на инертном '
+                          'аноде»', kes=['1.13'], fmt_='четыре цифры под буквами А–Г'))
+def g_20el(rng):
+    pid = 'ch-ege-20-electrode'
+    el = rng.choice(['анод', 'катод'])
+    pool = [f for f in SOL20 if len(_el_rule(f)[0 if el == 'катод' else 1]) == 1]
+    items = rng.sample(pool, 4)
+    prods = [_el_rule(f)[0 if el == 'катод' else 1][0] for f in items]
+    if len(set(prods)) < 2:
+        raise Retry
+    extra = ['H2', 'O2', 'Cl2', 'S', 'SO2', 'NO2', 'F2', 'Br2', 'Na', 'Cu'] if el == 'анод' else \
+        ['H2', 'Cu', 'Ag', 'Hg', 'Na', 'K', 'Mg', 'Al', 'Ca', 'Ba']
+    opts_ = list(dict.fromkeys(prods))
+    for x in shuffled(rng, extra):
+        if len(opts_) >= 5:
+            break
+        if x not in opts_:
+            opts_.append(x)
+    rng.shuffle(opts_)
+    ans = {LET[i]: str(opts_.index(p) + 1) for i, p in enumerate(prods)}
+    word = 'аноде' if el == 'анод' else 'катоде'
+    q = (f'Установите соответствие между формулой соли и продуктом, образующимся на инертном {word} при электролизе '
+         f'её водного раствора: к каждой позиции, обозначенной буквой, подберите соответствующую позицию, '
+         f'обозначенную цифрой. Запишите в таблицу выбранные цифры под соответствующими буквами.')
+    e = '; '.join(f'{F(f)} — {F(p)}' for f, p in zip(items, prods)) + '.'
+    return card(pid, q, ans, e, k='match', o=match_opts([F(f) for f in items], [F(x) for x in opts_]),
+                p={'items': items, 'opts': opts_, 'el': el})

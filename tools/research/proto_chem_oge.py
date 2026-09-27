@@ -1945,7 +1945,16 @@ def observe(a, b):
             return frozenset(tags)
         if x in BAMP and y in ('NaOH', 'KOH'):
             return frozenset({'растворение'})
-        if x in INSOL12 and (y in ALK or y in SOL_EL):
+        if x in INSOL12 and y in ALK:
+            if x in ('ZnO', 'Al2O3'):
+                return frozenset({'растворение'}) if y in ('NaOH', 'KOH') else None
+            if x in BAMP or x in ('Fe(OH)3', 'Fe2O3'):
+                return None
+            return frozenset({'нет'})
+        if x in INSOL12 and y in SOL_EL:
+            c, an = _ions(y)
+            if c in ('Na', 'K') and an in ('Cl', 'NO3', 'SO4') and x not in ('FeS', 'ZnS'):
+                return frozenset({'нет'})
             return None
     # металл + кислота / соль
     for x, y in ((a, b), (b, a)):
@@ -2090,17 +2099,19 @@ def _p12_text(f):
 
 
 def _gen12(rng, pid, level, filt=None):
-    cands = [(a, b, ob, sign_text(ob, level)) for a, b, ob in PAIRS12 if (filt is None or filt(a, b, ob))]
+    cands = [(a, b, ob, sign_text(ob, level)) for a, b, ob in PAIRS12 if (filt is None or filt(a, b, ob))
+             and not ({a, b} & EXOTIC) and not any(t.split(':')[-1] in EXOTIC for t in ob)]
     cands = [c for c in cands if c[3]]
-    none_share = 0.15 if level in ('general', 'gas', 'solid') else 0.0
+    none_c = [c for c in cands if c[3] == 'видимые признаки реакции отсутствуют' and c[0] in SOL_EL and c[1] in SOL_EL]
+    some_c = [c for c in cands if c[3] != 'видимые признаки реакции отсутствуют']
     chosen, used = [], set()
     for _ in range(80):
         if len(chosen) == 3:
             break
-        c = rng.choice(cands)
-        if c[3] == 'видимые признаки реакции отсутствуют' and rng.random() > none_share:
-            continue
-        if {c[0], c[1]} & used or any(x[3] == c[3] for x in chosen) and rng.random() < 0.85:
+        use_none = level in ('general', 'gas', 'solid') and none_c and rng.random() < 0.12 and \
+            not any(x[3] == 'видимые признаки реакции отсутствуют' for x in chosen)
+        c = rng.choice(none_c if use_none else some_c)
+        if {c[0], c[1]} & used or any(x[3] == c[3] for x in chosen) and rng.random() < 0.9:
             continue
         chosen.append(c)
         used |= {c[0], c[1]}
@@ -2150,7 +2161,7 @@ _F12 = lambda scale, trap: F(MATCH3 + ' (3 пары веществ, 4 призн
        fidelity=_F12('как в банке: «K2CO3 и HCl», «K2SiO3 и HCl», «Ca(OH)2 и HCl», «Mg(OH)2 и H2SO4»',
                      'нейтрализация без признаков, силикат + кислота — осадок'))
 def g12_general(rng):
-    return _gen12(rng, 'ch-oge-12-general', 'general')
+    return _gen12(rng, 'ch-oge-12-general', 'general', lambda a, b, ob: not ({a, b} & set(METAL12 + OX_B + OX_AM)))
 
 
 @proto('ch-oge-12-precipitate-color', 'ОГЭ', 12, 'Признак реакции: цвет выпадающего осадка',
@@ -2173,7 +2184,7 @@ def g12_color(rng):
        solve=_solve12, kind='dict', kes=['1.6', '5.5'],
        fidelity=_F12('как в банке: «K2SO3 и HCl», «K2CO3 и HCl», «Na2S и HCl», «NH4Br и NaOH»', 'SO2/CO2/H2S — различие по запаху'))
 def g12_gas(rng):
-    return _gen12(rng, 'ch-oge-12-gas', 'gas')
+    return _gen12(rng, 'ch-oge-12-gas', 'gas', lambda a, b, ob: not ({a, b} & set(INSOL12)))
 
 
 @proto('ch-oge-12-solids', 'ОГЭ', 12, 'Признак реакции с участием твёрдых веществ и металлов (растворение, окраска, налёт)',
@@ -2835,7 +2846,7 @@ STEM16 = {'лаб': 'Из перечисленных суждений о пра�
                  'выберите верное(-ые) суждение(-я).',
           'быт': 'Из перечисленных суждений о правилах безопасного обращения с веществами в лаборатории и быту '
                  'выберите верное(-ые) суждение(-я).',
-          'смеси': 'Из перечисленных суждений о чистых веществах, смесях и способах их разделения выберите верное(-ые) '
+          'смеси': 'Из перечисленных суждений о веществах, смесях и методах разделения смесей выберите верное(-ые) '
                    'суждение(-я).'}
 END16 = ' Запишите в поле ответа номер(а) верного(-ых) суждения(-й).'
 
@@ -3059,70 +3070,67 @@ def _dist(s1, s2, r, fn):
     return o1 != o2
 
 
+from functools import lru_cache
+
+
+@lru_cache(maxsize=None)
+def obs17c(s, r):
+    return obs17(s, r)
+
+
+def _pairs17(mode):
+    if mode == 'solid':
+        return [tuple(p) for p in SOLID17]
+    pool = [f for f in SOL_EL if f in SALT or f in ALK or f in STRONG]
+    out = []
+    for i, a in enumerate(pool):
+        for b in pool[i + 1:]:
+            ia, ib = _ions(a), _ions(b)
+            if mode == 'sol' and (ia[0] == ib[0]) != (ia[1] == ib[1]):
+                out.append((a, b))
+            if mode == 'ind' and medium(a) and medium(b) and (medium(a) != medium(b) or (ia[0] == ib[0]) != (ia[1] == ib[1])):
+                out.append((a, b))
+    return out
+
+
+PAIRS17 = {m: _pairs17(m) for m in ('sol', 'ind', 'solid')}
+REAG17 = {'sol': R17_SOL, 'ind': R17_SOL, 'solid': ['HCl', 'HNO3', 'H2SO4', 'NaOH', 'KOH', 'Ba(OH)2', 'CuSO4', 'AgNO3',
+                                                    'NaCl', 'KNO3', 'Na2SO4', 'BaCl2', 'FeSO4', 'CuCl2']}
+
+
 def _gen17(rng, pid, mode):
-    reagents = list(R17_SOL)
-    if mode == 'ind':
-        reagents += list(INDICATORS)
-    for _ in range(80):
-        pairs = []
-        while len(pairs) < 3:
-            if mode == 'solid':
-                pr = list(rng.choice(SOLID17))
-            elif mode == 'ind':
-                pool = [f for f in SOL_EL if medium(f)]
-                pr = rng.sample(pool, 2)
-                if medium(pr[0]) == medium(pr[1]) and rng.random() < 0.6:
-                    continue
-            else:
-                pool = [f for f in SOL_EL if f in SALT or f in ALK or f in STRONG]
-                a = rng.choice(pool)
-                ia = _ions(a)
-                same = [f for f in pool if f != a and _ions(f) and (
-                    _ions(f)[0] == ia[0]) != (_ions(f)[1] == ia[1])]
-                if not same:
-                    continue
-                pr = [a, rng.choice(same)]
-            rng.shuffle(pr)
-            if any(set(pr) & set(p) for p in pairs):
-                continue
-            pairs.append(pr)
-        # для каждой пары — реактив, который её различает
-        opts4 = []
-        for pr in pairs:
-            good = [r for r in reagents if r not in pr and _dist(pr[0], pr[1], r, obs17)]
-            if mode == 'ind':
-                gi = [r for r in good if r in INDICATORS]
-                good = gi if gi and rng.random() < 0.7 else good
-            if not good:
-                break
-            opts4.append(rng.choice(good))
+    for _ in range(60):
+        if mode == 'ind':
+            reag = rng.sample(list(INDICATORS), rng.choice([1, 2])) 
+            reag += rng.sample([r for r in REAG17['ind'] if r not in reag], 4 - len(reag))
         else:
-            fill = [r for r in reagents if r not in opts4 and all(r not in p for p in pairs)]
-            rng.shuffle(fill)
-            for r in fill:
-                if len(set(opts4)) >= 4:
-                    break
-                if r not in opts4:
-                    opts4.append(r)
-            opts4 = list(dict.fromkeys(opts4))[:4]
-            if len(opts4) < 4:
+            reag = rng.sample(REAG17[mode], 4)
+        comp = []
+        for a, b in PAIRS17[mode]:
+            if a in reag or b in reag:
                 continue
-            # однозначность: для каждой пары ровно один реактив из четырёх различает её; все наблюдения определены
-            ok = True
-            ans = {}
-            for i, pr in enumerate(pairs):
-                ds = [_dist(pr[0], pr[1], r, obs17) if r not in pr else None for r in opts4]
-                if any(d is None for d in ds) or sum(ds) != 1:
-                    ok = False
-                    break
-                ans[LET[i]] = str(ds.index(True) + 1)
-            if ok:
+            ds = [_dist(a, b, r, obs17c) for r in reag]
+            if any(d is None for d in ds) or sum(ds) != 1:
+                continue
+            comp.append(((a, b), ds.index(True)))
+        rng.shuffle(comp)
+        pairs, ans_idx, used = [], [], set()
+        for (a, b), k in comp:
+            if {a, b} & used:
+                continue
+            if ans_idx.count(k) >= 2:
+                continue
+            pairs.append([a, b] if rng.random() < 0.5 else [b, a])
+            ans_idx.append(k)
+            used |= {a, b}
+            if len(pairs) == 3:
                 break
+        if len(pairs) == 3 and len(set(ans_idx)) >= 2 and (mode != 'ind' or any(reag[k] in INDICATORS for k in ans_idx)):
+            break
     else:
         raise Retry
-    order = shuffled(rng, range(4))
-    opts4 = [opts4[k] for k in order]
-    ans = {k: str(order.index(int(v) - 1) + 1) for k, v in ans.items()}
+    opts4 = reag
+    ans = {LET[i]: str(k + 1) for i, k in enumerate(ans_idx)}
     sol_tag = mode != 'solid'
     left = [f'{disp(a)} и {disp(b)}' for a, b in pairs]
     right = [r if r in INDICATORS else disp(r) + (' (р-р)' if sol_tag and r not in ('Cu', 'Zn') and rng.random() < 0.3 else '')
@@ -3141,9 +3149,10 @@ def _gen17(rng, pid, mode):
     q += END_M
     parts = []
     for i, (a, b) in enumerate(pairs):
-        r = opts4[int(ans[LET[i]]) - 1]
-        oa, ob = obs17(a, r), obs17(b, r)
-        parts.append(f'{LET[i]}) с {r if r in INDICATORS else disp(r)}: {disp(a)} — {_obs_words(oa)}, {disp(b)} — {_obs_words(ob)}.')
+        r = opts4[ans_idx[i]]
+        oa, ob = obs17c(a, r), obs17c(b, r)
+        rt = {'фенолфталеин': 'фенолфталеина', 'лакмус': 'лакмуса', 'метилоранж': 'метилоранжа'}.get(r) or disp(r)
+        parts.append(f'{LET[i]}) при добавлении {rt}: {disp(a)} — {_obs_words(oa)}, {disp(b)} — {_obs_words(ob)}.')
     e = ' '.join(parts) + ' Ответ: ' + ''.join(ans[x] for x in LET[:3]) + '.'
     return pcard(pid, q, ans, e, k='match', o=o, p={'pairs': pairs, 'reagents': opts4})
 
@@ -3156,7 +3165,9 @@ def _obs_words(t):
     for x in sorted(t):
         k, _, v = x.partition(':')
         if k == 'окраска':
-            w.append(f'окраска {v}')
+            w.append({'бесцветный': 'окраска не появляется', 'малиновый': 'малиновая окраска', 'красный': 'красная окраска',
+                      'фиолетовый': 'фиолетовая окраска', 'синий': 'синяя окраска', 'оранжевый': 'оранжевая окраска',
+                      'жёлтый': 'жёлтая окраска'}[v])
         elif k == 'осадок':
             col = D.PRECIP_COLOR.get(v)
             w.append(f'осадок {pretty(v)}' + (f' ({col})' if col else ''))
@@ -3225,3 +3236,392 @@ def g17_ind(rng):
                      'амфотерность, нерастворимость BaSO4'))
 def g17_solid(rng):
     return _gen17(rng, 'ch-oge-17-solids', 'solid')
+
+
+# ================================================================= 20. ОВР: электронный баланс (шаги развёрнутого ответа)
+# Схема | вещество-восстановитель:элемент:было>стало | вещество-окислитель:элемент:было>стало
+# (разметка ручная — генератор; solve пересчитывает роли и коэффициенты по степеням окисления независимо).
+_S20 = r"""
+Cu + HNO3 = Cu(NO3)2 + NO2 + H2O | Cu:Cu:0>2 | HNO3:N:5>4
+Cu + HNO3 = Cu(NO3)2 + NO + H2O | Cu:Cu:0>2 | HNO3:N:5>2
+Ag + HNO3 = AgNO3 + NO2 + H2O | Ag:Ag:0>1 | HNO3:N:5>4
+Ag + HNO3 = AgNO3 + NO + H2O | Ag:Ag:0>1 | HNO3:N:5>2
+Mg + HNO3 = Mg(NO3)2 + N2O + H2O | Mg:Mg:0>2 | HNO3:N:5>1
+Zn + HNO3 = Zn(NO3)2 + N2O + H2O | Zn:Zn:0>2 | HNO3:N:5>1
+Ca + HNO3 = Ca(NO3)2 + N2O + H2O | Ca:Ca:0>2 | HNO3:N:5>1
+Al + HNO3 = Al(NO3)3 + N2O + H2O | Al:Al:0>3 | HNO3:N:5>1
+Zn + HNO3 = Zn(NO3)2 + N2 + H2O | Zn:Zn:0>2 | HNO3:N:5>0
+Mg + HNO3 = Mg(NO3)2 + NH4NO3 + H2O | Mg:Mg:0>2 | HNO3:N:5>-3
+Fe + HNO3 = Fe(NO3)3 + NO + H2O | Fe:Fe:0>3 | HNO3:N:5>2
+Zn + H2SO4 = ZnSO4 + H2S + H2O | Zn:Zn:0>2 | H2SO4:S:6>-2
+Zn + H2SO4 = ZnSO4 + S + H2O | Zn:Zn:0>2 | H2SO4:S:6>0
+Mg + H2SO4 = MgSO4 + S + H2O | Mg:Mg:0>2 | H2SO4:S:6>0
+Mg + H2SO4 = MgSO4 + H2S + H2O | Mg:Mg:0>2 | H2SO4:S:6>-2
+Al + H2SO4 = Al2(SO4)3 + S + H2O | Al:Al:0>3 | H2SO4:S:6>0
+Al + H2SO4 = Al2(SO4)3 + H2S + H2O | Al:Al:0>3 | H2SO4:S:6>-2
+Cu + H2SO4 = CuSO4 + SO2 + H2O | Cu:Cu:0>2 | H2SO4:S:6>4
+Ag + H2SO4 = Ag2SO4 + SO2 + H2O | Ag:Ag:0>1 | H2SO4:S:6>4
+Fe + H2SO4 = Fe2(SO4)3 + SO2 + H2O | Fe:Fe:0>3 | H2SO4:S:6>4
+C + HNO3 = CO2 + NO2 + H2O | C:C:0>4 | HNO3:N:5>4
+S + HNO3 = H2SO4 + NO2 + H2O | S:S:0>6 | HNO3:N:5>4
+P + HNO3 = H3PO4 + NO2 + H2O | P:P:0>5 | HNO3:N:5>4
+P + HNO3 + H2O = H3PO4 + NO | P:P:0>5 | HNO3:N:5>2
+S + HNO3 = H2SO4 + NO | S:S:0>6 | HNO3:N:5>2
+C + H2SO4 = CO2 + SO2 + H2O | C:C:0>4 | H2SO4:S:6>4
+P + H2SO4 = H3PO4 + SO2 + H2O | P:P:0>5 | H2SO4:S:6>4
+S + H2SO4 = SO2 + H2O | S:S:0>4 | H2SO4:S:6>4
+I2 + HNO3 = HIO3 + NO + H2O | I2:I:0>5 | HNO3:N:5>2
+NH3 + O2 = NO + H2O | NH3:N:-3>2 | O2:O:0>-2
+NH3 + O2 = N2 + H2O | NH3:N:-3>0 | O2:O:0>-2
+NH3 + CuO = Cu + N2 + H2O | NH3:N:-3>0 | CuO:Cu:2>0
+NH3 + Cl2 = N2 + HCl | NH3:N:-3>0 | Cl2:Cl:0>-1
+H2S + O2 = SO2 + H2O | H2S:S:-2>4 | O2:O:0>-2
+H2S + O2 = S + H2O | H2S:S:-2>0 | O2:O:0>-2
+H2S + HNO3 = S + NO2 + H2O | H2S:S:-2>0 | HNO3:N:5>4
+H2S + HNO3 = H2SO4 + NO2 + H2O | H2S:S:-2>6 | HNO3:N:5>4
+H2S + HNO3 = S + NO + H2O | H2S:S:-2>0 | HNO3:N:5>2
+H2S + SO2 = S + H2O | H2S:S:-2>0 | SO2:S:4>0
+H2S + Cl2 + H2O = H2SO4 + HCl | H2S:S:-2>6 | Cl2:Cl:0>-1
+H2S + Br2 = S + HBr | H2S:S:-2>0 | Br2:Br:0>-1
+H2S + Br2 + H2O = H2SO4 + HBr | H2S:S:-2>6 | Br2:Br:0>-1
+HI + H2SO4 = I2 + H2S + H2O | HI:I:-1>0 | H2SO4:S:6>-2
+HI + H2SO4 = I2 + SO2 + H2O | HI:I:-1>0 | H2SO4:S:6>4
+HBr + H2SO4 = Br2 + SO2 + H2O | HBr:Br:-1>0 | H2SO4:S:6>4
+HCl + MnO2 = MnCl2 + Cl2 + H2O | HCl:Cl:-1>0 | MnO2:Mn:4>2
+HBr + MnO2 = MnBr2 + Br2 + H2O | HBr:Br:-1>0 | MnO2:Mn:4>2
+KMnO4 + HCl = KCl + MnCl2 + Cl2 + H2O | HCl:Cl:-1>0 | KMnO4:Mn:7>2
+K2Cr2O7 + HCl = KCl + CrCl3 + Cl2 + H2O | HCl:Cl:-1>0 | K2Cr2O7:Cr:6>3
+KClO3 + HCl = KCl + Cl2 + H2O | HCl:Cl:-1>0 | KClO3:Cl:5>0
+PH3 + O2 = P2O5 + H2O | PH3:P:-3>5 | O2:O:0>-2
+NO2 + O2 + H2O = HNO3 | NO2:N:4>5 | O2:O:0>-2
+NO + O2 + H2O = HNO3 | NO:N:2>5 | O2:O:0>-2
+SO2 + Br2 + H2O = H2SO4 + HBr | SO2:S:4>6 | Br2:Br:0>-1
+SO2 + Cl2 + H2O = H2SO4 + HCl | SO2:S:4>6 | Cl2:Cl:0>-1
+SO2 + HNO3 + H2O = H2SO4 + NO | SO2:S:4>6 | HNO3:N:5>2
+SO2 + HNO3 = H2SO4 + NO2 | SO2:S:4>6 | HNO3:N:5>4
+Fe2O3 + CO = Fe + CO2 | CO:C:2>4 | Fe2O3:Fe:3>0
+Fe2O3 + H2 = Fe + H2O | H2:H:0>1 | Fe2O3:Fe:3>0
+Fe2O3 + C = Fe + CO | C:C:0>2 | Fe2O3:Fe:3>0
+CuO + C = Cu + CO2 | C:C:0>4 | CuO:Cu:2>0
+Fe2O3 + Al = Al2O3 + Fe | Al:Al:0>3 | Fe2O3:Fe:3>0
+FeO + HNO3 = Fe(NO3)3 + NO2 + H2O | FeO:Fe:2>3 | HNO3:N:5>4
+FeO + HNO3 = Fe(NO3)3 + NO + H2O | FeO:Fe:2>3 | HNO3:N:5>2
+Fe(OH)2 + O2 + H2O = Fe(OH)3 | Fe(OH)2:Fe:2>3 | O2:O:0>-2
+Fe(OH)2 + HNO3 = Fe(NO3)3 + NO + H2O | Fe(OH)2:Fe:2>3 | HNO3:N:5>2
+FeCl3 + KI = FeCl2 + KCl + I2 | KI:I:-1>0 | FeCl3:Fe:3>2
+FeCl3 + H2S = FeCl2 + S + HCl | H2S:S:-2>0 | FeCl3:Fe:3>2
+FeCl3 + HI = FeCl2 + HCl + I2 | HI:I:-1>0 | FeCl3:Fe:3>2
+KClO3 + P = KCl + P2O5 | P:P:0>5 | KClO3:Cl:5>-1
+KClO3 + S = KCl + SO2 | S:S:0>4 | KClO3:Cl:5>-1
+KClO3 + C = KCl + CO2 | C:C:0>4 | KClO3:Cl:5>-1
+Na2SO3 + HNO3 = Na2SO4 + NO2 + H2O | Na2SO3:S:4>6 | HNO3:N:5>4
+K2SO3 + HNO3 = K2SO4 + NO + H2O | K2SO3:S:4>6 | HNO3:N:5>2
+K2SO3 + KMnO4 + H2O = K2SO4 + MnO2 + KOH | K2SO3:S:4>6 | KMnO4:Mn:7>4
+CuS + HNO3 = CuSO4 + NO2 + H2O | CuS:S:-2>6 | HNO3:N:5>4
+K2S + HNO3 = K2SO4 + NO + H2O | K2S:S:-2>6 | HNO3:N:5>2
+ZnS + O2 = ZnO + SO2 | ZnS:S:-2>4 | O2:O:0>-2
+Mg + CO2 = MgO + C | Mg:Mg:0>2 | CO2:C:4>0
+Al + NaOH + H2O = Na(Al(OH)4) + H2 | Al:Al:0>3 | H2O:H:1>0
+Si + NaOH + H2O = Na2SiO3 + H2 | Si:Si:0>4 | H2O:H:1>0
+Cr(OH)3 + Cl2 + KOH = K2CrO4 + KCl + H2O | Cr(OH)3:Cr:3>6 | Cl2:Cl:0>-1
+H2O2 + KI + H2SO4 = I2 + K2SO4 + H2O | KI:I:-1>0 | H2O2:O:-1>-2
+HNO2 + HI = I2 + NO + H2O | HI:I:-1>0 | HNO2:N:3>2
+KI + Cu(NO3)2 = CuI + I2 + KNO3 | KI:I:-1>0 | Cu(NO3)2:Cu:2>1
+MnO2 + KClO3 + KOH = K2MnO4 + KCl + H2O | MnO2:Mn:4>6 | KClO3:Cl:5>-1
+Br2 + KI = KBr + I2 | KI:I:-1>0 | Br2:Br:0>-1
+Cl2 + KBr = KCl + Br2 | KBr:Br:-1>0 | Cl2:Cl:0>-1
+"""
+
+
+def _parse20(text):
+    out = []
+    for line in text.strip().splitlines():
+        eq, red, ox = [x.strip() for x in line.split('|')]
+        lhs, rhs = [x.strip().split(' + ') for x in eq.split('=')]
+        rs, re_, rab = red.split(':')
+        os_, oe, oab = ox.split(':')
+        ra, rb = map(int, rab.split('>'))
+        oa, ob = map(int, oab.split('>'))
+        out.append(dict(lhs=lhs, rhs=rhs, red=(rs, re_, ra, rb), ox=(os_, oe, oa, ob)))
+    return out
+
+
+EXTRA20 = {'CuI': 'иодид меди(I)', 'MnBr2': 'бромид марганца(II)', 'HIO3': 'иодноватая кислота', 'K2SiO3': 'силикат калия'}
+S20 = []
+for _s in _parse20(_S20):
+    try:
+        _kl, _kr = balance(_s['lhs'], _s['rhs'])
+    except ValueError:
+        continue
+    _s['k'] = (_kl, _kr)
+    S20.append(_s)
+
+
+def half_text(el, a, b, simple_from, simple_to):
+    """Уравнение процесса: «Cu⁰ − 2ē → Cu⁺²», «N⁺⁵ + 1ē → N⁺⁴», «Cl₂⁰ + 2ē → 2Cl⁻¹», «2N⁻³ − 6ē → N₂⁰»."""
+    n = 2 if (simple_from and el in DIATOMIC) or (simple_to and el in DIATOMIC) else 1
+    e = n * abs(b - a)
+    left = f'{el}₂{ox_sup(a)}' if simple_from and el in DIATOMIC else (f'{n}{el}{ox_sup(a)}' if n > 1 else f'{el}{ox_sup(a)}')
+    right = f'{el}₂{ox_sup(b)}' if simple_to and el in DIATOMIC else (f'{n}{el}{ox_sup(b)}' if n > 1 else f'{el}{ox_sup(b)}')
+    return f'{left} {"−" if b > a else "+"} {e}ē → {right}'
+
+
+def _is_simple(f):
+    return len(parse_formula(f)) == 1
+
+
+def _half_from(sch, which):
+    sp, el, a, b = sch[which]
+    tgt = [f for f in sch['rhs'] if el in parse_formula(f) and b in ox_states(f).get(el, [])]
+    simple_to = any(_is_simple(f) for f in tgt)
+    return half_text(el, a, b, _is_simple(sp), simple_to)
+
+
+def scheme_str(sch):
+    return ' + '.join(disp(x) for x in sch['lhs']) + ' → ' + ' + '.join(disp(x) for x in sch['rhs'])
+
+
+INTRO20 = 'Для предложенной схемы реакции\n{s}\n'
+TASK20 = ('1) запишите уравнения процессов окисления и восстановления, составьте электронный баланс;\n'
+          '2) на основании электронного баланса определите коэффициенты и запишите молекулярное уравнение реакции;\n'
+          '3) запишите в отдельной строчке(-ах) формулы вещества/частицы окислителя и восстановителя; укажите, какое(-ая) '
+          'из этих веществ/частиц является окислителем, а какое(-ая) – восстановителем.')
+
+
+def _solution20(sch):
+    kl, kr = sch['k']
+    eq = eq_text((sch['lhs'], sch['rhs'], kl, kr))
+    return (f'Электронный баланс: {_half_from(sch, "red")} (окисление); {_half_from(sch, "ox")} (восстановление). '
+            f'Уравнение: {eq}. Восстановитель — {disp(sch["red"][0])} ({sch["red"][1]} в степени окисления '
+            f'{sch["red"][2]:+d}), окислитель — {disp(sch["ox"][0])} ({sch["ox"][1]} в степени окисления '
+            f'{sch["ox"][2]:+d}).').replace('+0)', '0)')
+
+
+def roles_calc(lhs, rhs):
+    """solve: окислитель и восстановитель по степеням окисления. Возвращает (окислители, восстановители)."""
+    R_states = {}
+    for f in rhs:
+        for e, sts in ox_states(f).items():
+            R_states.setdefault(e, set()).update(sts)
+    oxs, reds = [], []
+    for f in lhs:
+        up = down = False
+        for e, sts in ox_states(f).items():
+            if e in ('H', 'O') and not (_is_simple(f) or f in ('H2O2',) or 'H2' in rhs or 'O2' in rhs and e == 'O'):
+                if not (e == 'H' and 'H2' in rhs):
+                    continue
+            for x in sts:
+                if any(y > x for y in R_states.get(e, ())) and not (e == 'O' and 'O2' not in rhs):
+                    up = True
+                if any(y < x for y in R_states.get(e, ())):
+                    down = True
+        if up and not down:
+            reds.append(f)
+        if down and not up:
+            oxs.append(f)
+    return oxs, reds
+
+
+S20_ROLES = [s for s in S20 if s['ox'][0] != s['red'][0]]
+
+
+def _solve20_roles(p):
+    oxs, reds = roles_calc(p['lhs'], p['rhs'])
+    if len(oxs) != 1 or len(reds) != 1:
+        return f'роли не однозначны: {oxs} {reds}'
+    return {'А': str(p['items'].index(oxs[0]) + 1), 'Б': str(p['items'].index(reds[0]) + 1)}
+
+
+_F20 = lambda step: F('развёрнутый ответ (3 балла: баланс, уравнение, окислитель/восстановитель); в тренажёре — шаг: ' + step,
+                     'условие — как в демоверсии 2027 №20 («Для предложенной схемы реакции … 1) … 2) … 3) …»)', 'В', 20,
+                     'схемы школьного уровня как в банке: металлы и неметаллы с HNO3 и H2SO4(конц.), H2S, NH3, HCl + '
+                     'MnO2/KMnO4/KClO3, FeCl3 + KI, KClO3 + P/S', 'кислота как окислитель и как среда; «лишняя» H2O',
+                     ['5.3'], '3 балла по критериям; шаг проверяется автоматически')
+
+
+@proto('ch-oge-20-roles', 'ОГЭ', 20, 'ОВР (электронный баланс): окислитель и восстановитель в схеме реакции',
+       invariant='схема ОВР из задания 20; установить, какое вещество окислитель, какое восстановитель',
+       varies='схема (металлы/неметаллы с кислотами-окислителями, сероводород, аммиак, галогеноводороды, соли железа(III) …)',
+       answer_rule='восстановитель содержит элемент, повышающий степень окисления; окислитель — понижающий',
+       mistakes=['азотную кислоту в роли среды не считают окислителем', 'путают окислитель с продуктом восстановления',
+                 'воду считают окислителем'],
+       solve=_solve20_roles, kind='param', kes=['5.3'], fidelity=_F20('окислитель и восстановитель (соответствие)'))
+def g20_roles(rng):
+    sch = rng.choice(S20_ROLES)
+    items = shuffled(rng, list(dict.fromkeys(sch['lhs'] + sch['rhs'])))
+    o = match_opts(['окислитель', 'восстановитель'], [disp(f) for f in items])
+    a = {'А': str(items.index(sch['ox'][0]) + 1), 'Б': str(items.index(sch['red'][0]) + 1)}
+    q = (INTRO20.format(s=scheme_str(sch)) + TASK20 + '\n\nДля самопроверки шага 3 установите соответствие между ролью '
+         'вещества в реакции и его формулой: к каждой позиции, обозначенной буквой, подберите соответствующую позицию, '
+         'обозначенную цифрой.')
+    kl, kr = sch['k']
+    return pcard('ch-oge-20-roles', q, a, _solution20(sch), k='match', o=o, eq=(sch['lhs'], sch['rhs'], kl, kr),
+                 p={'lhs': sch['lhs'], 'rhs': sch['rhs'], 'items': items})
+
+
+def _halves_calc(lhs, rhs):
+    """solve: процессы окисления и восстановления по степеням окисления."""
+    oxs, reds = roles_calc(lhs, rhs)
+    res = {}
+    for key, sp in (('red', reds[0]), ('ox', oxs[0])):
+        best = None
+        for e, sts in ox_states(sp).items():
+            a = sts[0]
+            for f in rhs:
+                if e in parse_formula(f):
+                    for b in ox_states(f)[e]:
+                        if (key == 'red' and b > a) or (key == 'ox' and b < a):
+                            if e in ('H', 'O') and not _is_simple(f) and not _is_simple(sp) and sp != 'H2O2':
+                                continue
+                            best = half_text(e, a, b, _is_simple(sp), _is_simple(f))
+        res[key] = best
+    return res
+
+
+def _solve20_halves(p):
+    h = _halves_calc(p['lhs'], p['rhs'])
+    try:
+        return {'А': str(p['items'].index(h['red']) + 1), 'Б': str(p['items'].index(h['ox']) + 1)}
+    except ValueError:
+        return f'нет процесса среди вариантов: {h}'
+
+
+S20_HALF = [s for s in S20_ROLES if s['red'][1] != s['ox'][1] or s['red'][2] != s['ox'][3]]
+
+
+@proto('ch-oge-20-electron-balance', 'ОГЭ', 20, 'ОВР (электронный баланс): уравнения процессов окисления и восстановления',
+       invariant='схема ОВР из задания 20; выбрать верно записанные процессы окисления и восстановления',
+       varies='схема; отвлекающие варианты — неверное число электронов, перепутан знак (отдача/присоединение), '
+              'пропущен коэффициент 2 у двухатомной молекулы',
+       answer_rule='окисление: атом отдаёт электроны, степень окисления растёт; число электронов = изменение степени '
+                   'окисления × число атомов',
+       mistakes=['для Cl2 пишут 1ē вместо 2ē', 'окисление записывают с «+ē»', 'путают конечную степень окисления'],
+       solve=_solve20_halves, kind='param', kes=['5.3'], fidelity=_F20('процессы окисления и восстановления (соответствие)'))
+def g20_halves(rng):
+    sch = rng.choice(S20_HALF)
+    hr, ho = _half_from(sch, 'red'), _half_from(sch, 'ox')
+    wrong = set()
+    for (sp, el, a, b) in (sch['red'], sch['ox']):
+        tsimple = any(_is_simple(f) for f in sch['rhs'] if el in parse_formula(f) and b in ox_states(f)[el])
+        right = half_text(el, a, b, _is_simple(sp), tsimple)
+        m = re.match(r'^(.*) ([+−]) (\d+)ē → (.*)$', right)
+        n = int(m.group(3))
+        for n2 in (n + 1, n - 1, n * 2):
+            if n2 > 0 and n2 != n:
+                wrong.add(f'{m.group(1)} {m.group(2)} {n2}ē → {m.group(4)}')
+        wrong.add(f'{m.group(1)} {"+" if m.group(2) == "−" else "−"} {n}ē → {m.group(4)}')
+    wrong -= {hr, ho}
+    items = shuffled(rng, [hr, ho] + rng.sample(sorted(wrong), 2))
+    o = match_opts(['процесс окисления', 'процесс восстановления'], items)
+    a = {'А': str(items.index(hr) + 1), 'Б': str(items.index(ho) + 1)}
+    q = (INTRO20.format(s=scheme_str(sch)) + TASK20 + '\n\nДля самопроверки шага 1 установите соответствие между '
+         'процессом и его уравнением: к каждой позиции, обозначенной буквой, подберите соответствующую позицию, '
+         'обозначенную цифрой.')
+    kl, kr = sch['k']
+    return pcard('ch-oge-20-electron-balance', q, a, _solution20(sch), k='match', o=o, eq=(sch['lhs'], sch['rhs'], kl, kr),
+                 p={'lhs': sch['lhs'], 'rhs': sch['rhs'], 'items': items})
+
+
+def coef_by_electrons(lhs, rhs):
+    """solve: коэффициенты методом электронного баланса и последующего подбора по атомам (без общего решения системы).
+    1) из процессов окисления/восстановления — множители для восстановителя и продукта восстановления;
+    2) остальные коэффициенты — по одному элементу, встречающемуся у единственного неизвестного вещества."""
+    oxs, reds = roles_calc(lhs, rhs)
+    if len(oxs) != 1 or len(reds) != 1:
+        raise ValueError('роли')
+    red, ox = reds[0], oxs[0]
+    # электроны на формульную единицу восстановителя и продукта восстановления
+    e_red = 0
+    Rst = {}
+    for f in rhs:
+        for e, sts in ox_states(f).items():
+            Rst.setdefault(e, []).append((f, sts))
+    for e, sts in ox_states(red).items():
+        for x in sts:
+            ups = [y for f, ss in Rst.get(e, []) for y in ss if y > x]
+            if ups:
+                e_red += parse_formula(red)[e] * (max(ups) - x)
+    prod = None
+    for e, sts in ox_states(ox).items():
+        x = sts[0]
+        for f, ss in Rst.get(e, []):
+            for y in ss:
+                if y < x and f != red:
+                    prod = (f, e, parse_formula(f)[e] * (x - y) if len(ss) == 1 else (x - y))
+    if prod is None or e_red == 0:
+        raise ValueError('нет продукта восстановления')
+    species = lhs + rhs
+    coef = {red: Fr(prod[2]), prod[0]: Fr(e_red)}
+    for _ in range(20):
+        if len(coef) == len(species):
+            break
+        progress = False
+        for el in {e for f in species for e in parse_formula(f)}:
+            unk = [f for f in species if el in parse_formula(f) and f not in coef]
+            if len(unk) != 1:
+                continue
+            u = unk[0]
+            left = sum(coef[f] * parse_formula(f)[el] for f in lhs if f in coef and el in parse_formula(f))
+            right = sum(coef[f] * parse_formula(f)[el] for f in rhs if f in coef and el in parse_formula(f))
+            val = (left - right) if u in rhs else (right - left)
+            coef[u] = val / parse_formula(u)[el]
+            progress = True
+        if not progress:
+            raise ValueError('не подобрать')
+    vals = [coef[f] for f in species]
+    if any(v <= 0 for v in vals):
+        raise ValueError('отрицательный коэффициент')
+    from math import lcm, gcd
+    m = 1
+    for v in vals:
+        m = lcm(m, v.denominator)
+    ints = [int(v * m) for v in vals]
+    g = 0
+    for v in ints:
+        g = gcd(g, v)
+    ints = [v // g for v in ints]
+    if not check_balance(lhs, rhs, ints[:len(lhs)], ints[len(lhs):]):
+        raise ValueError('баланс не сошёлся')
+    return ints
+
+
+def _coef_ok(s):
+    kl, kr = s['k']
+    if max(kl + kr) > 9 or s['ox'][0] == s['red'][0]:
+        return False
+    try:
+        return coef_by_electrons(s['lhs'], s['rhs']) == list(kl) + list(kr)
+    except (ValueError, KeyError, ZeroDivisionError, TypeError):
+        return False
+
+
+S20_COEF = [s for s in S20 if _coef_ok(s)]
+
+
+def _solve20_coef(p):
+    return ''.join(str(x) for x in coef_by_electrons(p['lhs'], p['rhs']))
+
+
+@proto('ch-oge-20-coefficients', 'ОГЭ', 20, 'ОВР (электронный баланс): коэффициенты в уравнении реакции',
+       invariant='схема ОВР из задания 20; расставить коэффициенты методом электронного баланса',
+       varies='схема ОВР (коэффициенты не больше 9)',
+       answer_rule='множители электронного баланса — коэффициенты перед восстановителем и продуктом восстановления, '
+                   'остальные — по сохранению атомов (последними — водород и кислород)',
+       mistakes=['кислоту-среду учитывают только в окислителе', 'забывают коэффициент перед водой',
+                 'не удваивают электроны для двухатомных молекул'],
+       solve=_solve20_coef, kind='param', kes=['5.3'],
+       fidelity=_F20('коэффициенты — цифры подряд в порядке записи веществ в схеме'))
+def g20_coef(rng):
+    sch = rng.choice(S20_COEF)
+    kl, kr = sch['k']
+    ans = ''.join(str(x) for x in list(kl) + list(kr))
+    q = (INTRO20.format(s=scheme_str(sch)) + TASK20 + '\n\nДля самопроверки шага 2 запишите в ответ коэффициенты уравнения '
+         'по порядку следования веществ в схеме (цифры подряд, коэффициент 1 тоже записывается).')
+    wrong = []
+    ks = list(kl) + list(kr)
+    for i in range(len(ks)):
+        w = ks[:]
+        w[i] = w[i] + 1 if w[i] < 9 else w[i] - 1
+        wrong.append(''.join(map(str, w)))
+    return pcard('ch-oge-20-coefficients', q, ans, _solution20(sch), k='num', eq=(sch['lhs'], sch['rhs'], kl, kr),
+                 p={'lhs': sch['lhs'], 'rhs': sch['rhs']}, wrong=wrong[:3])
