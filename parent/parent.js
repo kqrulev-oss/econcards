@@ -114,7 +114,7 @@ async function viewChildren() {
     catch (err) { toast(err.message); }
   };
   $app.querySelector('#add').onclick = add;
-  $app.querySelector('#code').onkeydown = e => e.key === 'Enter' && add();
+  $app.querySelector('#code').onkeydown = e => { if (e.key === 'Enter') add(); };
   $app.querySelector('#logout').onclick = async () => { await logout(); route(); };
   $app.querySelectorAll('[data-pay]').forEach(b => b.onclick = () => payDialog({ product: 'lib', forAcct: b.dataset.pay, forName: b.dataset.name }));
   $app.querySelectorAll('[data-unlink]').forEach(b => b.onclick = async () => {

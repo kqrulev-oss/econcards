@@ -23,7 +23,7 @@
    ============================================================ */
 
 import { confirmTelegram, getAccount, planStatus } from './auth.js';
-import { extend } from './billing.js';
+import { extend, savePromo, normCode } from './billing.js';
 
 const MARK = '<!-- via-telegram -->'; // наши issue и комментарии — не пересылаем их обратно
 const AGENTS = { claude: 'Claude', codex: 'Codex', gemini: 'Gemini' };
@@ -65,6 +65,7 @@ const HELP = `Пишите задачу обычным текстом — Gemini
 /status — открытые задачи
 /grant кто tutor|lib дней — выдать доступ вручную (кто: id аккаунта, почта или id в Telegram)
 /stats — аккаунты, пробные периоды, оплаты
+/promo — промокоды: /promo add КОД скидка 20 [tutor|lib|any] [лимит] [дней]; /promo add КОД дни 14 [tutor|lib] …; /promo off КОД
 Ответ реплаем на сообщение агента уходит ему же в задачу.`;
 
 // ---------- GitHub ----------
@@ -159,6 +160,38 @@ async function onMessage(env, msg) {
     if (!acct) return say(env, 'Аккаунт не найден.');
     const until = new Date(planStatus(acct, product).until).toLocaleDateString('ru-RU');
     return say(env, `Готово: ${acct.name || acct.email || acct.id} — ${product === 'tutor' ? 'студия' : 'библиотека'} до ${until}.`);
+  }
+
+  if (cmd === '/promo') {
+    const [act, rawCode, kindArg, valArg, prodArg = 'any', usesArg = '0', daysArg = '0'] = rest;
+    const list = async () => {
+      const keys = (await env.DB.list({ prefix: 'promo:' })).keys;
+      const all = (await Promise.all(keys.map(k => env.DB.get(k.name, 'json')))).filter(Boolean);
+      return all.length ? all.map(p => `${p.off ? '⛔' : '✅'} ${p.code} — ${p.kind === 'discount' ? `−${p.value}%` : `+${p.value} дн.`} · ${p.product} · использован ${p.used || 0}${p.maxUses ? '/' + p.maxUses : ''}${p.until ? ' · до ' + new Date(p.until).toLocaleDateString('ru-RU') : ''}`).join('\n')
+        : 'Промокодов пока нет.\nПример: /promo add START20 скидка 20 any 50 30';
+    };
+    if (!act) return say(env, await list());
+    const code = normCode(rawCode);
+    if (act === 'off' || act === 'on') {
+      const promo = code && await env.DB.get(`promo:${code}`, 'json');
+      if (!promo) return say(env, 'Нет такого промокода.');
+      promo.off = act === 'off';
+      await savePromo(env, promo);
+      return say(env, `${code} ${promo.off ? 'выключен' : 'включён'}.`);
+    }
+    if (act === 'add') {
+      const kind = /^(скидка|discount|%)$/i.test(kindArg || '') ? 'discount' : /^(дни|days|дней)$/i.test(kindArg || '') ? 'days' : null;
+      const value = Number(valArg), maxUses = Number(usesArg), validDays = Number(daysArg);
+      const product = ['tutor', 'lib', 'any'].includes(prodArg) ? prodArg : null;
+      if (!code || code.length < 3 || !kind || !product || !(maxUses >= 0) || !(validDays >= 0)
+        || (kind === 'discount' ? !(value >= 1 && value <= 90) : !(value >= 1 && value <= 365))) {
+        return say(env, 'Формат:\n/promo add КОД скидка 20 [tutor|lib|any] [лимит] [дней действия]\n/promo add КОД дни 14 [tutor|lib|any] [лимит] [дней действия]\nСкидка 1–90%, дни 1–365; лимит и срок 0 — без ограничений.');
+      }
+      if (await env.DB.get(`promo:${code}`)) return say(env, 'Такой код уже есть — выберите другое название.');
+      await savePromo(env, { code, kind, value, product, maxUses, used: 0, until: validDays ? Date.now() + validDays * 86400e3 : 0, created: Date.now() });
+      return say(env, `Готово: ${code} — ${kind === 'discount' ? `скидка ${value}%` : `+${value} дней`} (${product})${maxUses ? `, до ${maxUses} использований` : ''}${validDays ? `, действует ${validDays} дней` : ''}.`);
+    }
+    return say(env, await list());
   }
 
   if (cmd === '/stats') {

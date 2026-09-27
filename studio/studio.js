@@ -329,7 +329,7 @@ function editCard(p, index, onSave) {
     const n = $('#optlist').children.length;
     $('#optlist').insertAdjacentHTML('beforeend', optRow({ id: ids[n] || String(n + 1), t: '' }, false));
   };
-  $('#optlist').onclick = e => e.target.closest('.rm') && e.target.closest('.opt-edit').remove();
+  $('#optlist').onclick = e => { if (e.target.closest('.rm')) e.target.closest('.opt-edit').remove(); };
   $('#cancel').onclick = close;
   $('#save').onclick = () => {
     const k = $('#k').value;

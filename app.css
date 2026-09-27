@@ -857,3 +857,9 @@ input:focus, select:focus, textarea:focus { outline: 3px solid var(--accent); ou
   .tabs a { flex: 1 1 auto; text-align: center; padding: 8px 10px; }
 }
 .time-input { width: 170px; flex: none; }
+.promo { margin-top: 12px; }
+.promo summary { cursor: pointer; font-weight: 800; color: var(--accent); }
+.promo .row { margin-top: 10px; }
+.promo .row > .btn { flex: none; }
+.promo-msg:not(:empty) { margin: 8px 0 0; font-weight: 700; }
+.pay-opt b s { font-size: 15px; opacity: .55; margin-right: 4px; }

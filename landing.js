@@ -218,5 +218,5 @@ export function renderLanding(root, library) {
     root.querySelector('.ld-phone-hint').textContent = o.dataset.ok ? '+10 · Верно! Так ученик занимается каждый день' : 'Ошибка вернётся завтра — и репетитор её увидит';
     root.querySelector('.ld-phone-hint').classList.add(o.dataset.ok ? 'ok' : 'bad');
   });
-  root.querySelector('#code').onkeydown = e => e.key === 'Enter' && join();
+  root.querySelector('#code').onkeydown = e => { if (e.key === 'Enter') join(); };
 }

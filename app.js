@@ -647,7 +647,7 @@ async function viewLibrary() {
     if (c) location.search = '?t=' + encodeURIComponent(c);
   };
   $app.querySelector('#join').onclick = join;
-  $app.querySelector('#code').onkeydown = e => e.key === 'Enter' && join();
+  $app.querySelector('#code').onkeydown = e => { if (e.key === 'Enter') join(); };
 }
 
 function viewName() {
@@ -674,7 +674,7 @@ function viewName() {
     route();
   };
   $app.querySelector('#ok').onclick = ok;
-  $app.querySelector('#name').onkeydown = e => e.key === 'Enter' && ok();
+  $app.querySelector('#name').onkeydown = e => { if (e.key === 'Enter') ok(); };
 }
 
 // ---------- навигация ----------
