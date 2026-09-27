@@ -22,6 +22,7 @@
   --ok: #0F6B3A;  --ok-fill: #3DDC84; --ok-bg: #DBF8E7;
   --bad: #B42318; --bad-fill: #FF8A70; --bad-bg: #FFE4DE;
   --mid: #8A5A00; --mid-fill: #FFC93C; --mid-bg: #FFF1C7;
+  --tg: #2AABEE;           /* кнопки «Напоминать в Telegram»: узнаваемый цвет, текст на нём — тёмный */
   --radius: 22px;
   --bw: 2.5px;
   --shadow: 0 5px 0 var(--ink);
@@ -39,6 +40,7 @@
     --ok: #5BE89A;  --ok-bg: #123A27;
     --bad: #FF9A85; --bad-bg: #40181A;
     --mid: #FFD166; --mid-bg: #3A2E10;
+    --tg: #2AABEE;
     color-scheme: dark;
   }
 }
@@ -347,6 +349,8 @@ input:focus, select:focus, textarea:focus { outline: 3px solid var(--accent); ou
 .students { border-collapse: collapse; width: 100%; font-size: 14px; font-weight: 600; }
 .students th { text-align: left; background: var(--ink); color: #fff; font-weight: 800; padding: 12px 10px; white-space: nowrap; }
 .students td { padding: 12px 10px; border-bottom: 2px solid var(--line); vertical-align: top; }
+.students td.ok { color: var(--ok); font-weight: 800; }
+.students td.late { color: var(--bad); font-weight: 800; }
 .students tr:last-child td { border-bottom: 0; }
 .late { color: var(--bad); }
 .nowrap { white-space: nowrap; }
@@ -954,3 +958,29 @@ input:focus, select:focus, textarea:focus { outline: 3px solid var(--accent); ou
 .role-ico.small svg { width: 20px; height: 20px; }
 .cab-name { margin-bottom: 16px; }
 .cab-go { width: 100%; }
+
+/* ---------- задание репетитора и напоминания в Telegram (приложение ученика) ----------
+   .hw-card — карточка задания на главной под «Целью дня»: полоса слева показывает срок
+   (цвет набора — идёт, --mid — сегодня последний день, --bad — срок прошёл, --ok — выполнено).
+   .tg-panel — панель в профиле, .btn.tg — кнопки «Напоминать в Telegram» (профиль и «Готово»). */
+.hw-card { display: grid; gap: 12px; border-left-width: 12px; border-left-color: var(--accent); }
+.hw-card.ok { border-left-color: var(--ok-fill); }
+.hw-card.mid { border-left-color: var(--mid-fill); }
+.hw-card.bad { border-left-color: var(--bad-fill); }
+.hw-card > * { margin: 0; }
+.hw-card .row { justify-content: space-between; align-items: flex-start; }
+.hw-card .row b { flex: 1 1 150px; min-width: 0; font: 800 15px/1.35 var(--display); overflow-wrap: anywhere; }
+.hw-card .pill { white-space: normal; text-align: center; }
+.hw-card p { font-weight: 700; line-height: 1.45; white-space: pre-line; overflow-wrap: anywhere; }
+.hw-card .goal .bar { height: 14px; background: var(--line); border: 2px solid var(--ink); }
+.hw-card .goal .bar i { background: var(--accent); border-radius: 0; }
+.hw-card.ok .goal .bar i { background: var(--ok-fill); }
+.hw-card .goal b { font-family: var(--display); }
+.hw-card > .btn { width: 100%; margin: 0; }
+@media (min-width: 600px) { .hw-card > .btn { justify-self: start; width: auto; min-width: 240px; } }
+.tg-panel p .pill { display: inline-block; margin: 0 6px 4px 0; vertical-align: 1px; }
+.btn.tg { background: var(--tg); color: #1B1440; }
+.btn.tg svg { font-size: 20px; fill: none; stroke: currentColor; stroke-width: 2.4; }
+.finish .tg-note { margin-top: -8px; }
+/* Время в панели календаря: .row > input сжимал поле до «07» на 360–375 px — теперь кнопка переносится */
+.row > .time-input { flex: none; }

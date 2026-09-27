@@ -55,6 +55,32 @@ export async function loadLibrary(root = './') {
 
 // ---------- мелочи ----------
 
+// Конспект урока из набора: набор репетитора приходит с сервера как есть, поэтому
+// оставляем только простую разметку (белый список тегов, из атрибутов — class).
+// Скрипты, обработчики событий, ссылки и картинки вырезаются — иначе чужой набор
+// мог бы украсть вход у ученика.
+const SAFE_TAGS = new Set(['P', 'B', 'I', 'U', 'EM', 'STRONG', 'BR', 'DIV', 'SPAN', 'H3', 'H4', 'UL', 'OL', 'LI',
+  'TABLE', 'THEAD', 'TBODY', 'TR', 'TD', 'TH', 'SUP', 'SUB', 'SMALL', 'BLOCKQUOTE', 'CODE', 'PRE', 'HR']);
+export function safeHtml(html) {
+  const doc = new DOMParser().parseFromString(`<body>${String(html ?? '')}</body>`, 'text/html');
+  const clean = node => {
+    for (const ch of [...node.childNodes]) {
+      if (ch.nodeType === 3) continue;
+      if (ch.nodeType !== 1 || !SAFE_TAGS.has(ch.tagName)) {
+        // Незнакомый тег: текст внутри оставляем (кроме script/style и т. п.), сам тег — нет
+        if (ch.nodeType === 1 && !/^(SCRIPT|STYLE|IFRAME|OBJECT|EMBED|TEMPLATE|NOSCRIPT|SVG|MATH|TEXTAREA|SELECT)$/.test(ch.tagName)) {
+          clean(ch); ch.replaceWith(...ch.childNodes);
+        } else ch.remove();
+        continue;
+      }
+      for (const a of [...ch.attributes]) if (a.name !== 'class') ch.removeAttribute(a.name);
+      clean(ch);
+    }
+  };
+  clean(doc.body);
+  return doc.body.innerHTML;
+}
+
 export const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 // Формулы в данных помечены ⟦ ⟧: формула на всю строку — отдельным блоком,
 // внутри текста — выделенным фрагментом; ^2, ^{n}, ^(−1) — степени
@@ -74,6 +100,11 @@ const aiText = s => text(String(s || '')
   .replace(/^\s*[*-]\s+/gm, '• '))
   .replace(/\*\*(.+?)\*\*/g, '<b>$1</b>');
 export const day = (d = new Date()) => Math.floor((d - d.getTimezoneOffset() * 60000) / 86400000);
+// Срок задания 'YYYY-MM-DD' → номер дня (тот же счёт, что day()) и подпись «сб, 3 октября»
+export const dueDay = due => { const [y, m, d] = String(due).split('-').map(Number); return Date.UTC(y, m - 1, d) / 864e5; };
+const WD = ['вс', 'пн', 'вт', 'ср', 'чт', 'пт', 'сб'];
+const MON = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'];
+export const dueText = due => { const t = new Date(dueDay(due) * 864e5); return `${WD[t.getUTCDay()]}, ${t.getUTCDate()} ${MON[t.getUTCMonth()]}`; };
 export const uid = (n = 8) => Array.from(crypto.getRandomValues(new Uint8Array(n)), b => 'abcdefghijkmnpqrstuvwxyz23456789'[b % 32]).join('');
 export const plural = (n, one, few, many) => {
   const m10 = n % 10, m100 = n % 100;

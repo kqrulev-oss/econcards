@@ -6,6 +6,8 @@
    PUT  /packs/:id                сохранить набор (X-Key; первый PUT задаёт ключ)
    POST /packs/:id/progress       ученик присылает сводку прогресса
    GET  /packs/:id/progress       репетитор смотрит учеников (X-Key)
+   /packs/:id/hw, /packs/:id/notify*, GET /me/notify, cron
+                                  задания и уведомления в Telegram (worker/notify.js)
    /pay/*                         тарифы и оплата ЮKassa (worker/billing.js)
    /auth/*, /me/*                 аккаунты: вход, облачная копия (worker/auth.js)
    /tg, /tg/setup, /gh            Telegram-бот для задач Claude и Codex (worker/bot.js)
@@ -21,6 +23,7 @@
 import { handleBot } from './bot.js';
 import { handleAuth, sessionAccount, parentCode, planStatus, saveAccount, getAccount } from './auth.js';
 import { handleBilling, checkPublish, checkNewStudent, trimLibrary, LIB_PACKS } from './billing.js';
+import { handleNotify, withHw, progressFlags, alertTutorFull, meNotify, runNotify } from './notify.js';
 
 // «-latest» — псевдонимы Google на актуальную модель: конкретные версии
 // закрывают для новых ключей (так случилось с gemini-2.5-flash)
@@ -35,7 +38,7 @@ const MAX_REQUEST_AI = 15e6; // генерация с PDF и фото
 
 const cors = origin => ({
   'Access-Control-Allow-Origin': origin || '*',
-  'Access-Control-Allow-Methods': 'GET, POST, PUT, PATCH, OPTIONS',
+  'Access-Control-Allow-Methods': 'GET, POST, PUT, PATCH, DELETE, OPTIONS',
   'Access-Control-Allow-Headers': 'Content-Type, X-Key, Authorization',
   'Access-Control-Max-Age': '86400',
 });
@@ -197,11 +200,12 @@ const readJson = async (req, max) => {
   try { return JSON.parse(t); } catch { throw new HttpError(400, 'Некорректный запрос.'); }
 };
 
-async function handle(req, env) {
+async function handle(req, env, ctx) {
   const url = new URL(req.url);
   const parts = url.pathname.split('/').filter(Boolean);
   if (!env.DB) throw new HttpError(500, 'На сервере не подключено хранилище DB (KV).');
 
+  if (parts[0] === 'me' && parts[1] === 'notify' && parts.length === 2 && req.method === 'GET') return meNotify(env, req);
   if (parts[0] === 'auth' || parts[0] === 'me') return handleAuth(req, env, parts);
   if (parts[0] === 'pay') return handleBilling(req, env, parts);
 
@@ -219,9 +223,10 @@ async function handle(req, env) {
   if (!/^[a-z0-9-]{4,40}$/.test(id)) throw new HttpError(400, 'Некорректный код набора.');
 
   if (parts.length === 2 && req.method === 'GET') {
-    const pack = await env.DB.get(`pack:${id}`);
+    const [pack, hw] = await Promise.all([env.DB.get(`pack:${id}`), env.DB.get(`hw:${id}`)]);
     if (!pack) throw new HttpError(404, 'Набор не найден. Проверьте код у репетитора.');
-    return new Response(pack, { headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-cache' } });
+    // Задание репетитора приходит внутри набора — попадает и в офлайн-копию ученика
+    return new Response(withHw(pack, hw), { headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-cache' } });
   }
 
   if (parts.length === 2 && req.method === 'PUT') {
@@ -234,20 +239,51 @@ async function handle(req, env) {
     if (!pack.title || !Array.isArray(pack.cards) || !Array.isArray(pack.topics)) throw new HttpError(400, 'Набор без названия, тем или карточек.');
     pack.id = id;
     pack.updated = Date.now();
+    delete pack.hw; // задание хранится отдельно (hw:<id>) и вставляется при чтении
     if (!owner) await env.DB.put(`owner:${id}`, await sha256(key));
-    await env.DB.put(`pack:${id}`, JSON.stringify(pack));
+    // Название и репетитор — в метаданных того же ключа: бот читает их, не открывая набор
+    await env.DB.put(`pack:${id}`, JSON.stringify(pack), { metadata: { t: cut(pack.title, 60), u: cut(pack.tutor, 60) } });
     // Репетитор вошёл в аккаунт — набор привязывается к нему (доступ с любого устройства)
     if (acct && !owner) await env.DB.put(`packacct:${id}`, acct.id);
     return { ok: true, id, updated: pack.updated };
   }
 
   if (parts[2] === 'progress' && req.method === 'POST') {
-    if (!await env.DB.get(`owner:${id}`)) throw new HttpError(404, 'Набор не найден.');
+    // Метаданные pack:<id> вместо owner:<id> — то же одно чтение (тело набора не читаем): pack:<id>
+    // есть ровно у опубликованных наборов (owner пишется перед ним, оба не удаляются)
+    const pk = await env.DB.getWithMetadata(`pack:${id}`, { type: 'stream' });
+    pk.value?.cancel?.().catch?.(() => {});
+    if (!pk.value) throw new HttpError(404, 'Набор не найден.');
     const { sid, name, stats } = await readJson(req, MAX_STATS);
     if (!/^[a-z0-9]{6,20}$/.test(sid || '') || !name) throw new HttpError(400, 'Нет имени ученика.');
+    // Название и репетитора бот пишет родителю от своего имени — только из набора, не от ученика
+    // (запрос без входа: иначе любой, кто знает sid, подписал бы отчёт своим текстом)
+    let meta = pk.metadata;
+    // Набор опубликован до метаданных: один раз достаём название из тела и дописываем метаданные
+    // (одна запись на старый набор; большие тела не разбираем — хватит лимита CPU)
+    if (!meta) {
+      const raw = await env.DB.get(`pack:${id}`);
+      if (raw && raw.length < 1e6) {
+        try {
+          const pack = JSON.parse(raw);
+          meta = { t: cut(pack.title || '', 60), u: cut(pack.tutor || '', 60) };
+          await env.DB.put(`pack:${id}`, raw, { metadata: meta });
+        } catch (err) { console.error('pack meta backfill', id, err?.message); }
+      }
+    }
+    if (stats && typeof stats === 'object') { stats.title = meta?.t || ''; stats.tutor = meta?.u || ''; }
     // Новый ученик сверх бесплатного лимита репетитора не добавляется
     const known = await env.DB.get(`prog:${id}:${sid}`);
-    const tutor = known ? null : await checkNewStudent(env, id);
+    let tutor = null;
+    if (!known) {
+      try {
+        tutor = await checkNewStudent(env, id);
+      } catch (err) {
+        // Ученик не смог присоединиться — репетитору сообщение в Telegram, иначе он не узнает
+        if (err.status === 402) ctx?.waitUntil(alertTutorFull(env, id, name).catch(e => console.error('notify full', e?.message)));
+        throw err;
+      }
+    }
     // Ученик вошёл в аккаунт — запоминаем, чтобы репетитор мог выдать код для родителя;
     // у репетитора с тарифом ученики получают и библиотеку ЕГЭ
     const acct = await sessionAccount(env, req);
@@ -281,8 +317,10 @@ async function handle(req, env) {
       rows.forEach(r => r && students.push(JSON.parse(r)));
       cursor = list.list_complete ? null : list.cursor;
     } while (cursor);
-    return { students };
+    return progressFlags(env, id, students);
   }
+
+  if (parts[2] === 'hw' || parts[2] === 'notify') return handleNotify(req, env, id, parts, ctx, () => requireOwner(env, id, req));
 
   throw new HttpError(404, 'Нет такого адреса.');
 }
@@ -308,7 +346,7 @@ export default {
     if (req.method === 'OPTIONS') return new Response(null, { headers: cors(origin) });
     let res;
     try {
-      const out = await handle(req, env);
+      const out = await handle(req, env, ctx);
       res = out instanceof Response ? out : Response.json(out);
     } catch (err) {
       const status = err.status || 500;
@@ -319,5 +357,10 @@ export default {
     // Явная кодировка: иначе браузер, открывший ответ напрямую, показывает кракозябры
     if ((headers.get('Content-Type') || '').startsWith('application/json')) headers.set('Content-Type', 'application/json; charset=utf-8');
     return new Response(res.body, { status: res.status, headers });
+  },
+  // Cron '*/5 * * * *': напоминания, отчёты родителям, сообщения репетиторам (worker/notify.js).
+  // Время слота — из scheduledTime: опоздавший запуск не сдвигает слоты
+  async scheduled(controller, env, ctx) {
+    ctx.waitUntil(runNotify(env, controller.scheduledTime).catch(err => console.error('notify cron', err?.message)));
   },
 };

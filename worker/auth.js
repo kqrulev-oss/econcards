@@ -71,10 +71,10 @@ export function startTrial(env, acct, product) {
   return true;
 }
 
-// Доступ сейчас: пробный, оплаченный или (для библиотеки) через репетитора с тарифом
-export function planStatus(acct, product) {
+// Доступ сейчас: пробный, оплаченный или (для библиотеки) через репетитора с тарифом.
+// now — для cron: считает на время своего слота, а не на момент запуска
+export function planStatus(acct, product, now = Date.now()) {
   const p = acct?.plans?.[product] || {};
-  const now = Date.now();
   const via = product === 'lib' ? acct?.plans?.libVia || 0 : 0;
   const until = Math.max(p.trialEnd || 0, p.paidUntil || 0, via);
   return { active: until > now, until, trialEnd: p.trialEnd || 0, paidUntil: p.paidUntil || 0, via,
@@ -124,7 +124,8 @@ export async function login(env, provider, sub, profile = {}, current = null) {
 
 // ---------- Telegram: вход по диплинку бота ----------
 
-async function botName(env) {
+// Имя бота для ссылок t.me (вход, уведомления); кэш на неделю
+export async function botName(env) {
   let name = await env.DB.get('tg:botname');
   if (!name && env.TG_TOKEN) {
     const r = await fetch(`https://api.telegram.org/bot${env.TG_TOKEN}/getMe`).then(x => x.json()).catch(() => ({}));

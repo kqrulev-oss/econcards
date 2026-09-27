@@ -1,7 +1,7 @@
 // Студия репетитора: собрать набор из своих материалов (через ИИ) или из
 // библиотеки, опубликовать ссылку для учеников и смотреть их прогресс.
-import { signedIn, account, loginDialog, logout, refreshAccount, addRole, finishRedirectLogin, finishPayment, payDialog, planOf, daysLeft, dateRu } from '../account.js';
-import { store, api, apiBase, ai, loadPack, loadLibrary, renderCard, esc, text, day, uid, plural, el, toast, modal, KIND_NAMES } from '../lib.js';
+import { signedIn, account, loginDialog, logout, refreshAccount, addRole, finishRedirectLogin, finishPayment, payDialog, planOf, daysLeft, dateRu, TG_ICON, openLink } from '../account.js';
+import { store, api, apiBase, ai, loadPack, loadLibrary, renderCard, esc, text, day, uid, plural, el, toast, modal, dueDay, dueText, KIND_NAMES } from '../lib.js';
 
 const $app = document.getElementById('app');
 const ROOT = '../';
@@ -94,6 +94,38 @@ function bindAccount(root) {
 }
 const touch = p => { p.edited = Date.now(); persist(); };
 
+// Telegram репетитора (GET /me/notify): подключён ли бот и свежая ссылка t_ на час.
+// Ответ держим минуту — список перерисовывается часто, а каждый запрос — 3 чтения KV
+const tzNow = () => -new Date().getTimezoneOffset();
+let tgMe = null, tgWait = false;
+async function tgPanel(slot) {
+  if (!tgMe || Date.now() - tgMe.at > 60e3) tgMe = { at: Date.now(), p: api(`/me/notify?tz=${tzNow()}`).catch(() => null) };
+  const { at, p } = tgMe, r = await p;
+  if (!slot.isConnected || !r) return;
+  if (r.tutor?.on) {
+    slot.innerHTML = `<p class="muted small-note">Telegram подключён · задания — командой /dz${r.bot ? ` в <a href="https://t.me/${esc(r.bot.slice(1))}" target="_blank" rel="noopener">${esc(r.bot)}</a>` : ''}</p>`;
+    return;
+  }
+  if (!r.link) { slot.innerHTML = ''; return; } // бот не настроен или нет роли репетитора
+  slot.innerHTML = `<section class="panel cab-tip"><h2>Telegram для репетитора</h2>
+    <p class="muted">Задания ученикам командой /dz, сообщение, если новый ученик не может присоединиться, и напоминание о конце тарифа.</p>
+    <a class="btn primary" id="tg-link" target="_blank" rel="noopener" href="${esc(r.link)}">${TG_ICON}Подключить Telegram</a>
+    <p class="muted small-note">Откроется бот — нажмите «Запустить». Ссылка действует час.</p></section>`;
+  slot.querySelector('#tg-link').onclick = e => {
+    tgWait = true;
+    tgMe = null;
+    if (Date.now() - at < 50 * 60e3) return;
+    // Страница открыта почти час — ссылка вот-вот истечёт, берём свежую
+    e.preventDefault();
+    api(`/me/notify?tz=${tzNow()}`).then(x => { if (x.link) openLink(x.link); }).catch(err => toast(err.message));
+  };
+}
+// Вернулись из Telegram после «Подключить» — сразу видно, что бот подключён
+document.addEventListener('visibilitychange', () => {
+  const slot = document.getElementById('tg-me');
+  if (!document.hidden && tgWait && slot) { tgWait = false; tgPanel(slot); }
+});
+
 const studentLink = id => new URL(`${ROOT}?t=${id}`, location.href).href;
 const isPublished = p => p.published && p.published >= p.edited;
 
@@ -156,6 +188,7 @@ function viewList() {
       <div class="brand-by">Между уроками · тренажёр для учеников</div></div>
       <div class="acct-bar">${accountBar()}</div></header>
     ${tariffPanel()}
+    ${signedIn() && apiBase() ? '<div id="tg-me"></div>' : ''}
     ${signedIn() ? '' : `<section class="panel login-hint"><b>Войдите, чтобы ничего не потерять.</b> Сейчас тренажёры и доступ к ученикам хранятся только в этом браузере. С аккаунтом они сохраняются в облаке и открываются с телефона и компьютера. <a class="link-btn" href="${ROOT}login.html?role=tutor&next=studio/">Войти</a></section>`}
     <section class="panel steps-intro">
       <ol>
@@ -174,6 +207,8 @@ function viewList() {
         <span class="topic-meta">${isPublished(p) ? 'опубликован' : p.published ? 'есть правки' : 'черновик'}</span></a>`).join('')}` : ''}
     ${apiBase() ? '' : `<section class="panel warn-box"><b>Сервер не подключён.</b> Можно собирать наборы и смотреть их, но для ИИ, ссылок ученикам и отчётов нужен адрес сервера — укажите его в настройках тренажёра (инструкция в worker/README.md).</section>`}`;
   bindAccount($app);
+  const tgSlot = $app.querySelector('#tg-me');
+  if (tgSlot) tgPanel(tgSlot);
   $app.querySelector('#new').onclick = () => { location.hash = `#/p/${newPack()}/add`; };
   $app.querySelector('#sample').onclick = async e => {
     e.target.disabled = true;
@@ -624,18 +659,75 @@ function lessonPlan(p, students) {
   </section>`;
 }
 
-function parentReport(p, s) {
+// Сколько карточек задания решил ученик: счётчик в сводке относится к заданию с тем же id
+const hwDone = (st, hw) => (hw && st.hw?.id === hw.id ? Math.max(0, Math.floor(st.hw.d) || 0) : 0);
+
+// Строка о задании — слово в слово как в отчёте бота родителю (worker/notify.js parentReportText)
+function parentReport(p, s, hw) {
   const st = s.stats;
   const acc = st.week.d ? Math.round(st.week.ok / st.week.d * 100) : 0;
   const weak = weakTopics(p, st);
+  const d = hwDone(st, hw);
   return [
     `${s.name} — тренажёр «${p.title}», последние 7 дней:`,
     `• занимался(ась) ${plural(st.week.days, 'день', 'дня', 'дней')} из 7, решено ${plural(st.week.d, 'задание', 'задания', 'заданий')};`,
     `• точность ${acc}%${trend(st)}, серия без пропусков — ${plural(st.streak, 'день', 'дня', 'дней')};`,
-    `• освоено ${st.mastered} из ${st.total} карточек курса.`,
+    `• освоено ${st.mastered} из ${st.total} карточек курса${hw ? ';' : '.'}`,
+    ...(hw ? [`• задание репетитора «${hw.text}» до ${dueText(hw.due)}: сделано ${d} из ${hw.goal}${d >= hw.goal ? ' — выполнено' : ''}.`] : []),
     weak.length ? `Что подтягиваем на занятиях: ${weak.map(w => w.title.replace(/^\d+\.\s*/, '')).join(', ')}.` : 'Слабых тем сейчас нет — держим темп.',
     p.tutor ? `\n${p.tutor}` : '',
   ].join('\n').trim();
+}
+
+// Задание тренажёра — одно на всех учеников. Задание и счётчики берём только из ответа /progress
+function hwPanel(p, hw, students) {
+  if (!hw) return `<section class="panel"><h2>Задание</h2>
+    <p class="muted">Задайте, сколько карточек решить к сроку, — ученики увидят задание в тренажёре, а подключившие Telegram получат сообщение.</p>
+    <button class="btn primary" id="hw-new">Задать задание</button></section>`;
+  const topic = hw.topic ? hw.topicTitle || p.topics.find(t => t.id === hw.topic)?.title || hw.topic : null;
+  const done = students.filter(s => hwDone(s.stats, hw) >= hw.goal).length;
+  return `<section class="panel"><h2>Задание</h2>
+    <p><b>${esc(hw.text)}</b></p>
+    <p class="muted">${topic ? `Тема «${esc(topic)}»` : 'Весь тренажёр'} · ${plural(hw.goal, 'карточка', 'карточки', 'карточек')} · до ${dueText(hw.due)}${day() > dueDay(hw.due) ? ' · срок прошёл' : ''}</p>
+    ${students.length ? `<p>Выполнили ${done} из ${students.length}</p>` : ''}
+    <div class="row"><button class="btn" id="hw-new">Новое задание</button><button class="btn ghost danger" id="hw-del">Снять задание</button></div></section>`;
+}
+
+// Окно задания. Срок — дата по часам репетитора; сервер принимает до +90 дней по UTC
+function hwDialog(p, hw, onDone) {
+  const iso = d => new Date(d * 864e5).toISOString().slice(0, 10);
+  // Темы без карточек ученику не решить, а id темы сервер принимает только вида [\w-]
+  const topics = p.topics.filter(t => /^[\w-]{1,40}$/.test(t.id) && p.cards.some(c => c.t === t.id));
+  const { box, close } = modal(`
+    <h3>${hw ? 'Новое задание' : 'Задание ученикам'}</h3>
+    <div class="field"><label for="hw-text">Что сделать (увидит ученик)</label><textarea id="hw-text" rows="3" maxlength="300" placeholder="Например: повторить правило и решить 20 карточек"></textarea></div>
+    <div class="field"><label for="hw-topic">Тема</label><select id="hw-topic"><option value="">Весь тренажёр</option>${topics.map(t =>
+      `<option value="${esc(t.id)}">${esc(t.title)} · ${p.cards.filter(c => c.t === t.id).length}</option>`).join('')}</select></div>
+    <div class="grid2">
+      <div class="field"><label for="hw-goal">Сколько карточек</label><input id="hw-goal" type="number" inputmode="numeric" min="1" max="200" value="20"></div>
+      <div class="field"><label for="hw-due">Срок</label><input id="hw-due" type="date" min="${iso(day())}" max="${iso(Math.floor(Date.now() / 864e5) + 90)}" value="${iso(day() + 7)}"></div>
+    </div>
+    ${hw ? '<p class="muted">Новое задание заменит текущее — счётчики учеников начнутся с нуля.</p>' : ''}
+    <div class="row"><button class="btn primary" id="hw-send">Отправить ученикам</button><button class="btn ghost" id="hw-cancel">Отмена</button></div>`);
+  const $ = s => box.querySelector(s);
+  $('#hw-cancel').onclick = close;
+  $('#hw-send').onclick = async e => {
+    const goal = Number($('#hw-goal').value), due = $('#hw-due').value, topic = $('#hw-topic').value || null;
+    if (!Number.isInteger(goal) || goal < 1 || goal > 200) return toast('Сколько карточек — от 1 до 200');
+    if (!due) return toast('Укажите срок');
+    e.target.disabled = true;
+    try {
+      const r = await api(`/packs/${p.id}/hw`, { method: 'PUT', key: db.keys[p.id], body: {
+        text: $('#hw-text').value.trim(), topic, topicTitle: topic ? topics.find(t => t.id === topic).title : null,
+        goal, due, tutor: p.tutor, title: p.title } });
+      close();
+      // now — сообщение ушло сразу; later — у кого сейчас ночь или лимит рассылок: придёт вечерним напоминанием
+      toast(r.repeat ? 'Это задание уже отправлено' : 'Задание отправлено'
+        + (r.tg?.now ? ` · в Telegram — ${plural(r.tg.now, 'ученику', 'ученикам', 'ученикам')}` : '')
+        + (r.tg?.later ? ` · ещё ${r.tg.later} — вечером` : ''));
+      onDone();
+    } catch (err) { toast(err.message); e.target.disabled = false; }
+  };
 }
 
 async function viewStudents(p) {
@@ -644,38 +736,42 @@ async function viewStudents(p) {
     box.innerHTML = `<div class="panel empty">Опубликуйте тренажёр и отправьте ссылку ученикам — здесь появится их прогресс. <a href="#/p/${p.id}/publish">Опубликовать</a></div>`;
     return;
   }
-  let students;
+  let students, hw;
   try {
-    ({ students } = await api(`/packs/${p.id}/progress`, { key: db.keys[p.id] }));
+    ({ students, hw = null } = await api(`/packs/${p.id}/progress`, { key: db.keys[p.id] }));
   } catch (err) {
     box.innerHTML = `<div class="panel empty">${esc(err.message)}</div>`;
     return;
   }
   if (!students.length) {
-    box.innerHTML = `<div class="panel empty">Пока никто не занимался. Ссылка для учеников: <a href="${esc(studentLink(p.id))}" target="_blank">${esc(studentLink(p.id))}</a></div>`;
-    return;
-  }
-  students.sort((a, b) => b.at - a.at);
-  const t = day();
-  const active = students.filter(s => Date.now() - s.at < 7 * 864e5).length;
-  box.innerHTML = `
+    // Задание можно задать заранее — ученики увидят его с первого открытия
+    box.innerHTML = `${hwPanel(p, hw, students)}<div class="panel empty">Пока никто не занимался. Ссылка для учеников: <a href="${esc(studentLink(p.id))}" target="_blank">${esc(studentLink(p.id))}</a></div>`;
+  } else {
+    students.sort((a, b) => b.at - a.at);
+    const t = day();
+    const active = students.filter(s => Date.now() - s.at < 7 * 864e5).length;
+    const overdue = hw && t > dueDay(hw.due);
+    box.innerHTML = `
     <div class="hero-stats wide-stats">
       <div><b>${students.length}</b><span>учеников</span></div>
       <div><b>${active}</b><span>занимались за неделю</span></div>
       <div><b>${students.reduce((n, s) => n + (s.stats.week?.d || 0), 0)}</b><span>карточек за неделю</span></div>
     </div>
+    ${hwPanel(p, hw, students)}
     <div class="table-wrap"><table class="students">
-      <thead><tr><th>Ученик</th><th>Был(а)</th><th>Сегодня</th><th>7 дней</th><th>Точность</th><th>Серия</th><th>Освоено</th><th>Слабые темы</th><th></th></tr></thead>
+      <thead><tr><th>Ученик</th><th>Был(а)</th><th>Сегодня</th><th>7 дней</th><th>Задание</th><th>Точность</th><th>Серия</th><th>Освоено</th><th>Слабые темы</th><th></th></tr></thead>
       <tbody>${students.map((s, i) => {
         const st = s.stats;
         const acc = st.week?.d ? Math.round(st.week.ok / st.week.d * 100) : null;
         const todayDone = day(new Date(s.at)) === t ? st.today.d : 0;
         const weak = weakTopics(p, st);
+        const d = hwDone(st, hw);
         return `<tr>
-          <td><button class="link-btn" data-stu="${i}">${esc(s.name)}</button></td>
+          <td><button class="link-btn" data-stu="${i}">${esc(s.name)}</button>${s.tg ? ' <span class="pill ok" title="Напоминания в Telegram включены">TG</span>' : ''}</td>
           <td class="${Date.now() - s.at > 3 * 864e5 ? 'late' : ''}">${ago(s.at)}</td>
           <td>${todayDone || '—'}</td>
           <td>${st.week?.d || 0} <span class="muted">· ${st.week?.days || 0} дн.</span>${activityStrip(st)}</td>
+          ${hw ? `<td class="${d >= hw.goal ? 'ok' : overdue ? 'late' : ''}">${d}/${hw.goal}</td>` : '<td>—</td>'}
           <td>${acc === null ? '—' : `<span class="${acc < 60 ? 'late' : ''}">${acc}%</span>`}</td>
           <td>${st.streak || 0}</td>
           <td>${st.mastered}/${st.total}</td>
@@ -683,20 +779,32 @@ async function viewStudents(p) {
           <td class="nowrap"><button class="btn small" data-err="${i}">Ошибки</button> <button class="btn small" data-rep="${i}">Отчёт</button></td>
         </tr>`;
       }).join('')}</tbody></table></div>
-    <p class="muted">Ученик отправляет прогресс после каждого занятия. «Отчёт» — готовый текст для родителей.</p>
+    <p class="muted">Ученик отправляет прогресс после каждого занятия. «Отчёт» — готовый текст для родителей, а «Отчёты родителю в Telegram» в карточке ученика присылают его родителю каждое воскресенье.</p>
     ${lessonPlan(p, students)}`;
+  }
   box.onclick = e => {
     const b = e.target.closest('button');
     if (!b) return;
+    // После записи или снятия задания панель и колонка рисуются заново по свежему /progress
+    if (b.id === 'hw-new') return hwDialog(p, hw, route);
+    if (b.id === 'hw-del') {
+      if (!confirm('Снять задание? Ученики перестанут его видеть.')) return;
+      b.disabled = true;
+      api(`/packs/${p.id}/hw`, { method: 'DELETE', key: db.keys[p.id] })
+        .then(() => { toast('Задание снято'); route(); })
+        .catch(err => { toast(err.message); b.disabled = false; });
+      return;
+    }
     if (b.id === 'copy-plan') {
       const txt = [...box.querySelectorAll('.plan h3, .plan li')].map(x => (x.tagName === 'H3' ? '\n' : '• ') + x.textContent.replace(/\s+/g, ' ').trim()).join('\n').trim();
       navigator.clipboard.writeText(`План урока — ${p.title}\n${txt}`).then(() => toast('Скопировано'));
       return;
     }
-    if (b.dataset.stu !== undefined) return studentCard(p, students[+b.dataset.stu]);
+    if (b.dataset.stu !== undefined) return studentCard(p, students[+b.dataset.stu], hw);
     const s = students[+(b.dataset.err ?? b.dataset.rep)];
+    if (!s) return;
     if (b.dataset.rep !== undefined) {
-      const txt = parentReport(p, s);
+      const txt = parentReport(p, s, hw);
       const { box: m } = modal(`<h3>Отчёт для родителей</h3><textarea rows="9" id="rep">${esc(txt)}</textarea>
         <div class="row"><button class="btn primary" id="copy">Скопировать</button></div>`);
       m.querySelector('#copy').onclick = () => navigator.clipboard.writeText(m.querySelector('#rep').value).then(() => toast('Скопировано'));
@@ -710,7 +818,7 @@ async function viewStudents(p) {
 }
 
 // Подробно про одного ученика: активность, все темы по точности, последние ошибки
-function studentCard(p, s) {
+function studentCard(p, s, hw) {
   const st = s.stats;
   const acc = st.week?.d ? Math.round(st.week.ok / st.week.d * 100) : null;
   const topics = Object.entries(st.topics || {})
@@ -721,6 +829,7 @@ function studentCard(p, s) {
   const { box } = modal(`
     <h3>${esc(s.name)}</h3>
     <p class="muted">Был(а) ${ago(s.at)} · серия ${plural(st.streak || 0, 'день', 'дня', 'дней')}</p>
+    <p class="muted">Напоминания в Telegram: ${s.tg ? 'включены' : 'не подключены — попросите ученика: тренажёр → Профиль → «Напоминания в Telegram»'}</p>
     <div class="hero-stats wide-stats">
       <div><b>${st.week?.d || 0}</b><span>карточек за 7 дней</span></div>
       <div><b>${acc === null ? '—' : acc + '%'}</b><span>точность</span></div>
@@ -735,16 +844,58 @@ function studentCard(p, s) {
         <span class="bar"><i style="width:${t.acc ?? 0}%;background:${(t.acc ?? 100) < 60 ? 'var(--bad)' : (t.acc ?? 0) < 80 ? 'var(--mid)' : 'var(--ok)'}"></i></span>
         <b>${t.acc === null ? '—' : t.acc + '%'}</b><small>${t.m} из ${t.s} освоено</small></div>`).join('')}</div>` : '<p class="muted">Пока нет данных по темам.</p>'}
     ${errs.length ? `<h2>Последние ошибки</h2><ol class="err-list">${errs.map(c => `<li>${esc(c.q.replace(/\s+/g, ' ').slice(0, 200))}</li>`).join('')}</ol>` : ''}
-    <div class="row"><button class="btn primary" id="stu-rep">Отчёт для родителей</button><button class="btn" id="stu-code">Код для родителя</button></div>
+    <div class="row"><button class="btn primary" id="stu-rep">Отчёт для родителей</button><button class="btn" id="stu-tg">${TG_ICON}Отчёты родителю в Telegram</button><button class="btn" id="stu-code">Код для родителя</button></div>
+    <div id="stu-tg-state"></div>
     <div id="stu-code-out"></div>`);
+  const out = box.querySelector('#stu-code-out'), state = box.querySelector('#stu-tg-state');
   box.querySelector('#stu-code').onclick = async () => {
-    const out = box.querySelector('#stu-code-out');
     try {
       const { code } = await api(`/packs/${p.id}/parent-code`, { method: 'POST', body: { sid: s.sid }, key: db.keys[p.id] });
       out.innerHTML = `<div class="code-big">${esc(code)}</div><p class="muted">Родитель открывает ${esc(new URL(ROOT + 'login.html?role=parent', location.href).href)}, входит и вводит код. Действует сутки.</p>`;
     } catch (err) { out.innerHTML = `<p class="muted">${esc(err.message)}</p>`; }
   };
-  box.querySelector('#stu-rep').onclick = () => navigator.clipboard.writeText(parentReport(p, s)).then(() => toast('Отчёт скопирован'));
+  box.querySelector('#stu-rep').onclick = () => navigator.clipboard.writeText(parentReport(p, s, hw)).then(() => toast('Отчёт скопирован'));
+
+  // Отчёты родителю в Telegram: ссылка r_ на 7 дней. Отчёты идут, пока активен тариф репетитора;
+  // «Отключить» гасит и подписки родителей, и все выданные ссылки
+  const drawTg = () => {
+    const paused = s.parents > 0 && signedIn() && !planOf('tutor').active;
+    state.innerHTML = `${s.parents ? `<p>Подписано родителей: ${s.parents} <button class="btn small ghost danger" id="stu-tg-off">Отключить отчёты</button></p>` : ''}
+      ${paused ? '<p class="muted">Отчёты родителям приостановлены — тариф закончился.</p> <button class="btn small primary" id="stu-pay">Продлить</button>' : ''}`;
+    state.querySelector('#stu-pay')?.addEventListener('click', () => payDialog({ product: 'tutor' }));
+    state.querySelector('#stu-tg-off')?.addEventListener('click', async e => {
+      if (!confirm('Родители перестанут получать отчёты об этом ученике, старые ссылки тоже перестанут работать.')) return;
+      e.target.disabled = true;
+      try {
+        await api(`/packs/${p.id}/notify/parent-off`, { method: 'POST', body: { sid: s.sid }, key: db.keys[p.id] });
+        s.parents = 0;
+        out.innerHTML = ''; // показанная ссылка тоже больше не действует
+        drawTg();
+        toast('Отчёты родителям отключены');
+      } catch (err) { toast(err.message); e.target.disabled = false; }
+    });
+  };
+  drawTg();
+  box.querySelector('#stu-tg').onclick = async e => {
+    const btn = e.currentTarget;
+    btn.disabled = true;
+    try {
+      const r = await api(`/packs/${p.id}/notify/parent`, { method: 'POST', body: { sid: s.sid }, key: db.keys[p.id] });
+      s.parents = r.parents;
+      drawTg();
+      const name = String(s.name || '').trim().split(/\s+/)[0];
+      const share = `https://t.me/share/url?url=${encodeURIComponent(r.link)}&text=${encodeURIComponent(`Отчёты о занятиях в Telegram: ${name}`)}`;
+      out.innerHTML = `<p>Отправьте ссылку родителю. Он откроет бота, нажмёт «Запустить» — и сразу получит отчёт, а дальше каждое воскресенье. Ссылка действует 7 дней.</p>
+        <div class="row"><input readonly id="stu-tg-link" value="${esc(r.link)}" aria-label="Ссылка для родителя"><button class="btn" id="stu-tg-copy">Скопировать</button></div>
+        <p><a class="btn" target="_blank" rel="noopener" href="${esc(share)}">${TG_ICON}Отправить в Telegram</a></p>`;
+      out.querySelector('#stu-tg-copy').onclick = () => navigator.clipboard.writeText(r.link).then(() => toast('Скопировано'));
+    } catch (err) {
+      // Тариф репетитора неактивен — ссылки нет, сразу предлагаем продлить
+      if (err.status === 402) { toast(err.message); payDialog({ product: 'tutor' }); }
+      else out.innerHTML = `<p class="muted">${esc(err.message)}</p>`;
+    }
+    btn.disabled = false;
+  };
 }
 
 // ---------- настройки и публикация ----------

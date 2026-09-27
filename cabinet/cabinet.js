@@ -3,7 +3,7 @@
 // библиотека), родитель (дети и оплата). Ролей у одного аккаунта может быть несколько.
 import { store, api, esc, day, plural, toast, loadLibrary } from '../lib.js';
 import { signedIn, account, logout, addRole, finishRedirectLogin, finishPayment, refreshAccount,
-  loginDialog, payDialog, planOf, daysLeft, dateRu } from '../account.js';
+  loginDialog, payDialog, planOf, daysLeft, dateRu, TG_ICON, openLink } from '../account.js';
 import { renderChildren, stats } from '../parent/view.js';
 
 const $app = document.getElementById('app');
@@ -55,6 +55,36 @@ function planPanel(product, { name, free, via }) {
   return `<div class="panel plan ${tone} cab-plan"><span>${text}</span>${btn ? `<button class="btn small primary" data-pay="${product}">${btn}</button>` : ''}</div>`;
 }
 const bindPay = box => box.querySelectorAll('[data-pay]').forEach(b => { b.onclick = () => payDialog({ product: b.dataset.pay }); });
+
+// Telegram репетитора (GET /me/notify): подключён ли бот и свежая ссылка t_ на час.
+// Та же панель, что в студии (studio.js tgPanel)
+const tzNow = () => -new Date().getTimezoneOffset();
+let tgWait = false;
+async function tgPanel(slot) {
+  const at = Date.now(), r = await api(`/me/notify?tz=${tzNow()}`).catch(() => null);
+  if (!slot.isConnected || !r) return;
+  if (r.tutor?.on) {
+    slot.innerHTML = `<p class="muted small-note">Telegram подключён · задания — командой /dz${r.bot ? ` в <a href="https://t.me/${esc(r.bot.slice(1))}" target="_blank" rel="noopener">${esc(r.bot)}</a>` : ''}</p>`;
+    return;
+  }
+  if (!r.link) { slot.innerHTML = ''; return; } // бот не настроен или нет роли репетитора
+  slot.innerHTML = `<section class="panel cab-tip"><h2>Telegram для репетитора</h2>
+    <p class="muted">Задания ученикам командой /dz, сообщение, если новый ученик не может присоединиться, и напоминание о конце тарифа.</p>
+    <a class="btn primary" id="tg-link" target="_blank" rel="noopener" href="${esc(r.link)}">${TG_ICON}Подключить Telegram</a>
+    <p class="muted small-note">Откроется бот — нажмите «Запустить». Ссылка действует час.</p></section>`;
+  slot.querySelector('#tg-link').onclick = e => {
+    tgWait = true;
+    if (Date.now() - at < 50 * 60e3) return;
+    // Страница открыта почти час — ссылка вот-вот истечёт, берём свежую
+    e.preventDefault();
+    api(`/me/notify?tz=${tzNow()}`).then(x => { if (x.link) openLink(x.link); }).catch(err => toast(err.message));
+  };
+}
+// Вернулись из Telegram после «Подключить» — сразу видно, что бот подключён
+document.addEventListener('visibilitychange', () => {
+  const slot = document.getElementById('tg-me');
+  if (!document.hidden && tgWait && slot) { tgWait = false; tgPanel(slot); }
+});
 
 // ---------- выбор роли ----------
 
@@ -148,12 +178,14 @@ async function viewTutor() {
           <span class="cab-li-main"><b>${esc(p.title)}</b><small>${plural(p.cards?.length || 0, 'карточка', 'карточки', 'карточек')} · ${p.published ? (p.published >= p.edited ? 'опубликован' : 'есть правки') : 'черновик'}</small></span>
           <span class="pill">${plural(students.length, 'ученик', 'ученика', 'учеников')}</span></a></li>`).join('')}</ul>
     </section>` : ''}
+    <div id="tg-me"></div>
     <section class="panel cab-tip">
       <h2>Родителям</h2>
-      <p class="muted">Отчёт родителю — в тренажёре: Ученики → ученик → «Отчёт». Или дайте родителю код: он увидит прогресс ребёнка в своём кабинете.</p>
+      <p class="muted">Отчёт родителю может приходить в Telegram каждое воскресенье: Студия → Ученики → ученик → «Отчёты родителю в Telegram». Или дайте код — родитель увидит прогресс в своём кабинете.</p>
       <a class="btn" href="${studio$}">Открыть студию</a>
     </section>`;
   bindPay(box);
+  tgPanel(box.querySelector('#tg-me'));
 }
 
 // ---------- ученик ----------
@@ -308,10 +340,16 @@ function route() {
   ({ tutor: viewTutor, student: viewStudent, parent: viewParent, settings: viewSettings })[r]();
 }
 
+const PAY_WANT = 'zd-pay-want';
+
 async function main() {
   await finishRedirectLogin();
   // Вернулись после оплаты — платёж применяем даже без входа (например, банк открыл другой браузер)
   await finishPayment();
+  // Кнопки «Продлить» из бота ведут на cabinet/?pay=tutor#tutor — сразу окно оплаты. Страница
+  // входа возвращает в кабинет без ?pay, поэтому до входа желание оплатить ждёт в sessionStorage
+  const pay = [params.get('pay'), sessionStorage.getItem(PAY_WANT)].find(p => p === 'tutor' || p === 'lib');
+  if (pay) sessionStorage.setItem(PAY_WANT, pay);
   if (!signedIn()) {
     // Ссылка вида cabinet/#parent — на странице входа сразу открыта нужная вкладка
     const want = location.hash.slice(1);
@@ -321,6 +359,15 @@ async function main() {
   if (!await refreshAccount() && !signedIn()) { location.replace('../login.html?next=cabinet/'); return; }
   window.addEventListener('hashchange', route);
   route();
+  sessionStorage.removeItem(PAY_WANT);
+  if (pay) {
+    // ?pay убираем из адреса сразу: payDialog берёт адрес возврата из ЮKassa из location,
+    // и с ?pay окно оплаты открылось бы снова после оплаты
+    const q = new URLSearchParams(location.search);
+    q.delete('pay');
+    history.replaceState(null, '', location.pathname + (q.toString() ? '?' + q : '') + location.hash);
+    payDialog({ product: pay });
+  }
 }
 
 main();
