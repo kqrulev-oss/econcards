@@ -1,7 +1,7 @@
 // Студия репетитора: собрать набор из своих материалов (через ИИ) или из
 // библиотеки, опубликовать ссылку для учеников и смотреть их прогресс.
 import { signedIn, account, loginDialog, logout, refreshAccount, addRole, finishRedirectLogin, finishPayment, payDialog, planOf, daysLeft, dateRu, TG_ICON, openLink } from '../account.js';
-import { store, api, apiBase, ai, loadPack, loadLibrary, renderCard, esc, text, day, uid, plural, el, toast, modal, dueDay, dueText, KIND_NAMES } from '../lib.js';
+import { store, api, apiBase, ai, loadPack, loadLibrary, renderCard, esc, text, day, uid, plural, el, toast, modal, dueDay, dueText, whenText, videoEmbed, KIND_NAMES } from '../lib.js';
 
 const $app = document.getElementById('app');
 const ROOT = '../';
@@ -143,7 +143,7 @@ function newPack() {
 // ---------- общий каркас ----------
 
 function shell(p, tab, body) {
-  const tabs = [['cards', `Карточки · ${p.cards.length}`], ['add', 'Добавить'], ['students', 'Ученики'], ['settings', 'Настройки'], ['publish', isPublished(p) ? 'Ссылка' : 'Опубликовать']];
+  const tabs = [['cards', `Карточки · ${p.cards.length}`], ['add', 'Добавить'], ['course', 'Курс'], ['students', 'Ученики'], ['settings', 'Настройки'], ['publish', isPublished(p) ? 'Ссылка' : 'Опубликовать']];
   $app.innerHTML = `
     <header class="top">
       <a class="back" href="#/">←</a>
@@ -662,18 +662,25 @@ function lessonPlan(p, students) {
 // Сколько карточек задания решил ученик: счётчик в сводке относится к заданию с тем же id
 const hwDone = (st, hw) => (hw && st.hw?.id === hw.id ? Math.max(0, Math.floor(st.hw.d) || 0) : 0);
 
-// Строка о задании — слово в слово как в отчёте бота родителю (worker/notify.js parentReportText)
+// ДЗ курса из сводки ученика ({n, onTime}); числа приходят от ученика — только целые, onTime ≤ n
+const courseDone = st => {
+  const n = Math.max(0, Math.floor(st.course?.n) || 0);
+  return { n, onTime: Math.min(n, Math.max(0, Math.floor(st.course?.onTime) || 0)) };
+};
+
+// Строки о задании и ДЗ курса — слово в слово как в отчёте бота родителю (worker/notify.js parentReportText)
 function parentReport(p, s, hw) {
   const st = s.stats;
   const acc = st.week.d ? Math.round(st.week.ok / st.week.d * 100) : 0;
   const weak = weakTopics(p, st);
-  const d = hwDone(st, hw);
+  const d = hwDone(st, hw), c = courseDone(st);
   return [
     `${s.name} — тренажёр «${p.title}», последние 7 дней:`,
     `• занимался(ась) ${plural(st.week.days, 'день', 'дня', 'дней')} из 7, решено ${plural(st.week.d, 'задание', 'задания', 'заданий')};`,
     `• точность ${acc}%${trend(st)}, серия без пропусков — ${plural(st.streak, 'день', 'дня', 'дней')};`,
-    `• освоено ${st.mastered} из ${st.total} карточек курса${hw ? ';' : '.'}`,
-    ...(hw ? [`• задание репетитора «${hw.text}» до ${dueText(hw.due)}: сделано ${d} из ${hw.goal}${d >= hw.goal ? ' — выполнено' : ''}.`] : []),
+    `• освоено ${st.mastered} из ${st.total} карточек курса${hw || c.n ? ';' : '.'}`,
+    ...(hw ? [`• задание репетитора «${hw.text}» до ${dueText(hw.due)}: сделано ${d} из ${hw.goal}${d >= hw.goal ? ' — выполнено' : ''}${c.n ? ';' : '.'}`] : []),
+    ...(c.n ? [`• ДЗ курса: ${c.onTime} из ${c.n} в срок.`] : []),
     weak.length ? `Что подтягиваем на занятиях: ${weak.map(w => w.title.replace(/^\d+\.\s*/, '')).join(', ')}.` : 'Слабых тем сейчас нет — держим темп.',
     p.tutor ? `\n${p.tutor}` : '',
   ].join('\n').trim();
@@ -751,6 +758,7 @@ async function viewStudents(p) {
     const t = day();
     const active = students.filter(s => Date.now() - s.at < 7 * 864e5).length;
     const overdue = hw && t > dueDay(hw.due);
+    const hasCourse = p.course?.lessons?.some(l => l.hw); // колонка «ДЗ курса» — только если в курсе есть ДЗ
     box.innerHTML = `
     <div class="hero-stats wide-stats">
       <div><b>${students.length}</b><span>учеников</span></div>
@@ -759,7 +767,7 @@ async function viewStudents(p) {
     </div>
     ${hwPanel(p, hw, students)}
     <div class="table-wrap"><table class="students">
-      <thead><tr><th>Ученик</th><th>Был(а)</th><th>Сегодня</th><th>7 дней</th><th>Задание</th><th>Точность</th><th>Серия</th><th>Освоено</th><th>Слабые темы</th><th></th></tr></thead>
+      <thead><tr><th>Ученик</th><th>Был(а)</th><th>Сегодня</th><th>7 дней</th><th>Задание</th>${hasCourse ? '<th>ДЗ курса</th>' : ''}<th>Точность</th><th>Серия</th><th>Освоено</th><th>Слабые темы</th><th></th></tr></thead>
       <tbody>${students.map((s, i) => {
         const st = s.stats;
         const acc = st.week?.d ? Math.round(st.week.ok / st.week.d * 100) : null;
@@ -772,6 +780,7 @@ async function viewStudents(p) {
           <td>${todayDone || '—'}</td>
           <td>${st.week?.d || 0} <span class="muted">· ${st.week?.days || 0} дн.</span>${activityStrip(st)}</td>
           ${hw ? `<td class="${d >= hw.goal ? 'ok' : overdue ? 'late' : ''}">${d}/${hw.goal}</td>` : '<td>—</td>'}
+          ${hasCourse ? (cd => `<td class="nowrap ${cd.n && cd.onTime === cd.n ? 'ok' : cd.onTime < cd.n ? 'late' : ''}">${cd.n ? `${cd.onTime}/${cd.n} в срок` : '—'}</td>`)(courseDone(st)) : ''}
           <td>${acc === null ? '—' : `<span class="${acc < 60 ? 'late' : ''}">${acc}%</span>`}</td>
           <td>${st.streak || 0}</td>
           <td>${st.mastered}/${st.total}</td>
@@ -898,6 +907,144 @@ function studentCard(p, s, hw) {
   };
 }
 
+// ---------- курс ----------
+
+// Курс хранится в самом наборе (p.course) и уходит ученикам обычной публикацией.
+// Урок: видео по ссылке, конспект (простой текст), тема тренажёра, дата открытия, ДЗ со сроком
+const iso = d => new Date(d * 864e5).toISOString().slice(0, 10);
+const course = p => (p.course ||= { lessons: [], lives: [] });
+
+function viewCourse(p) {
+  const c = p.course || { lessons: [], lives: [] };
+  const tTitle = id => p.topics.find(t => t.id === id)?.title;
+  const box = shell(p, 'course', `
+    <section class="panel">
+      <h2>Уроки</h2>
+      <p class="muted">Урок — это видео (Kinescope, VK Видео, Rutube), конспект и тема тренажёра. ДЗ «решить N карточек с точностью от X% к сроку» засчитывается само. Ученики увидят курс после публикации.</p>
+      ${c.lessons.map((l, i) => `<div class="course-row" data-i="${i}">
+        <span class="les-n">${i + 1}</span>
+        <span class="course-row-main"><b>${esc(l.title)}</b>
+          <small>${l.open ? `откроется ${dueText(l.open)}` : 'открыт сразу'}${l.topic ? ` · ${esc(tTitle(l.topic) || 'тема удалена')}` : ''}${l.video ? ' · видео' : ''}</small>
+          <small>${l.hw ? `ДЗ: ${plural(l.hw.goal, 'карточка', 'карточки', 'карточек')} от ${l.hw.acc}% до ${dueText(l.hw.due)}` : 'без ДЗ'}</small></span>
+        <span class="card-row-actions">
+          <button class="btn small" data-a="up" aria-label="Выше" ${i ? '' : 'disabled'}>↑</button>
+          <button class="btn small" data-a="down" aria-label="Ниже" ${i < c.lessons.length - 1 ? '' : 'disabled'}>↓</button>
+          <button class="btn small" data-a="edit">Изменить</button>
+          <button class="btn small danger" data-a="del" aria-label="Удалить">✕</button></span>
+      </div>`).join('') || '<p class="muted">Уроков пока нет.</p>'}
+      <button class="btn primary" id="les-add">+ Урок</button>
+    </section>
+    <section class="panel">
+      <h2>Эфиры</h2>
+      <p class="muted">Время и ссылка на Телемост или Kinescope. Ученик добавит эфир в календарь с напоминанием за 15 минут. После эфира вставьте ссылку на запись.</p>
+      ${c.lives.map((v, i) => `<div class="course-row" data-v="${i}">
+        <span class="course-row-main"><b>${esc(v.title)}</b><small>${whenText(v.at)}${v.rec ? ' · есть запись' : ''}</small></span>
+        <span class="card-row-actions"><button class="btn small" data-a="edit">Изменить</button><button class="btn small danger" data-a="del" aria-label="Удалить">✕</button></span>
+      </div>`).join('') || '<p class="muted">Эфиров пока нет.</p>'}
+      <button class="btn" id="live-add">+ Эфир</button>
+    </section>
+    ${isPublished(p) || !c.lessons.length ? '' : `<p class="muted">Курс изменился — <a href="#/p/${p.id}/publish">обновите у учеников</a>.</p>`}`);
+  box.querySelector('#les-add').onclick = () => lessonDialog(p, null);
+  box.querySelector('#live-add').onclick = () => liveDialog(p, null);
+  box.onclick = e => {
+    const b = e.target.closest('[data-a]'), row = b?.closest('.course-row');
+    if (!row) return;
+    const a = b.dataset.a;
+    if (row.dataset.v !== undefined) {
+      const i = +row.dataset.v;
+      if (a === 'edit') liveDialog(p, i);
+      if (a === 'del' && confirm('Удалить эфир?')) { c.lives.splice(i, 1); touch(p); route(); }
+      return;
+    }
+    const i = +row.dataset.i, j = a === 'up' ? i - 1 : a === 'down' ? i + 1 : -1;
+    if (a === 'edit') lessonDialog(p, i);
+    if (a === 'del' && confirm(`Удалить урок «${c.lessons[i].title}»?`)) { c.lessons.splice(i, 1); touch(p); route(); }
+    if (j >= 0 && j < c.lessons.length) { [c.lessons[i], c.lessons[j]] = [c.lessons[j], c.lessons[i]]; touch(p); route(); }
+  };
+}
+
+// Окно урока. Поля — не внутри <label> (на iOS в таких не печатается)
+function lessonDialog(p, index) {
+  const l = index === null ? { title: '', video: '', notes: '', topic: null, open: null, hw: null } : course(p).lessons[index];
+  const topics = p.topics.filter(t => p.cards.some(c => c.t === t.id));
+  const { box, close } = modal(`
+    <h3>${index === null ? 'Новый урок' : 'Урок'}</h3>
+    <div class="field"><label for="les-title">Название</label><input id="les-title" maxlength="120" value="${esc(l.title)}" placeholder="Например: Причастный оборот"></div>
+    <div class="field"><label for="les-video">Ссылка на видео</label><input id="les-video" type="url" inputmode="url" value="${esc(l.video)}" placeholder="https://kinescope.io/…"></div>
+    <p class="muted small-note field-note les-video-hint"></p>
+    <div class="field"><label for="les-notes">Конспект (увидит ученик под видео)</label><textarea id="les-notes" rows="6" maxlength="20000" placeholder="Правило, примеры, формулы в ⟦ ⟧">${esc(l.notes)}</textarea></div>
+    <div class="grid2">
+      <div class="field"><label for="les-topic">Тема тренажёра</label><select id="les-topic"><option value="">Без тренажёра</option>${topics.map(t =>
+        `<option value="${esc(t.id)}" ${t.id === l.topic ? 'selected' : ''}>${esc(t.title)} · ${p.cards.filter(c => c.t === t.id).length}</option>`).join('')}</select></div>
+      <div class="field"><label for="les-open">Откроется</label><input id="les-open" type="date" value="${esc(l.open || '')}"></div>
+    </div>
+    <h3>ДЗ</h3>
+    <p class="muted small-note field-note">Оставьте «сколько карточек» пустым — урок будет без ДЗ.</p>
+    <div class="grid3">
+      <div class="field"><label for="les-goal">Сколько карточек</label><input id="les-goal" type="number" inputmode="numeric" min="1" max="200" value="${l.hw?.goal ?? ''}" placeholder="20"></div>
+      <div class="field"><label for="les-acc">Точность от, %</label><input id="les-acc" type="number" inputmode="numeric" min="0" max="100" value="${l.hw?.acc ?? 70}"></div>
+      <div class="field"><label for="les-due">Срок</label><input id="les-due" type="date" value="${esc(l.hw?.due || iso(day() + 7))}"></div>
+    </div>
+    <div class="row"><button class="btn primary" id="les-save">Сохранить</button><button class="btn ghost" id="les-cancel">Отмена</button></div>`);
+  const $ = s => box.querySelector(s);
+  // Подсказка: встроится ли видео в урок или будет кнопкой
+  const hint = () => {
+    const v = $('#les-video').value.trim(), html = v ? videoEmbed(v) : '';
+    $('.les-video-hint').textContent = !v ? 'Kinescope, VK Видео и Rutube встроятся в урок, другие сайты — кнопкой «Открыть видео».'
+      : html.includes('<iframe') ? 'Видео встроится в урок.' : html ? 'Этот сайт не встраивается — у ученика будет кнопка «Открыть видео».' : 'Нужна ссылка, которая начинается с https://';
+  };
+  hint();
+  $('#les-video').oninput = hint;
+  $('#les-cancel').onclick = close;
+  $('#les-save').onclick = () => {
+    const title = $('#les-title').value.trim(), video = $('#les-video').value.trim(), goalRaw = $('#les-goal').value.trim();
+    if (!title) return toast('Назовите урок');
+    if (video && !videoEmbed(video)) return toast('Ссылка на видео должна начинаться с https://');
+    let hw = null;
+    if (goalRaw) {
+      const goal = Number(goalRaw), acc = Number($('#les-acc').value), due = $('#les-due').value;
+      if (!Number.isInteger(goal) || goal < 1 || goal > 200) return toast('Сколько карточек — от 1 до 200');
+      if (!Number.isInteger(acc) || acc < 0 || acc > 100) return toast('Точность — от 0 до 100%');
+      if (!due) return toast('Укажите срок ДЗ');
+      hw = { goal, acc, due };
+    }
+    const data = { title, video, notes: $('#les-notes').value.trim(), topic: $('#les-topic').value || null, open: $('#les-open').value || null, hw };
+    if (index === null) course(p).lessons.push({ id: 'l' + uid(8), ...data });
+    else Object.assign(course(p).lessons[index], data);
+    touch(p);
+    close();
+    route();
+  };
+}
+
+// Окно эфира: время вводится по часам репетитора, хранится в UTC (ISO) — у ученика покажется по его часам
+function liveDialog(p, index) {
+  const v = index === null ? { title: '', at: '', url: '', rec: '' } : course(p).lives[index];
+  const pad = n => String(n).padStart(2, '0');
+  const local = at => { const d = new Date(at); return at && !isNaN(d) ? `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}` : ''; };
+  const { box, close } = modal(`
+    <h3>${index === null ? 'Новый эфир' : 'Эфир'}</h3>
+    <div class="field"><label for="live-title">Название</label><input id="live-title" maxlength="120" value="${esc(v.title)}" placeholder="Разбор ДЗ и вопросы"></div>
+    <div class="field"><label for="live-at">Дата и время</label><input id="live-at" type="datetime-local" value="${local(v.at)}"></div>
+    <div class="field"><label for="live-url">Ссылка на эфир (Телемост, Kinescope)</label><input id="live-url" type="url" inputmode="url" value="${esc(v.url)}" placeholder="https://telemost.yandex.ru/…"></div>
+    <div class="field"><label for="live-rec">Ссылка на запись (после эфира)</label><input id="live-rec" type="url" inputmode="url" value="${esc(v.rec)}" placeholder="https://kinescope.io/…"></div>
+    <div class="row"><button class="btn primary" id="live-save">Сохранить</button><button class="btn ghost" id="live-cancel">Отмена</button></div>`);
+  const $ = s => box.querySelector(s);
+  $('#live-cancel').onclick = close;
+  $('#live-save').onclick = () => {
+    const title = $('#live-title').value.trim(), at = new Date($('#live-at').value), url = $('#live-url').value.trim(), rec = $('#live-rec').value.trim();
+    if (!title) return toast('Назовите эфир');
+    if (!$('#live-at').value || isNaN(at)) return toast('Укажите дату и время');
+    if ([url, rec].some(u => u && !/^https:\/\/\S+$/i.test(u))) return toast('Ссылки должны начинаться с https://');
+    const data = { title, at: at.toISOString(), url, rec };
+    if (index === null) course(p).lives.push({ id: 'v' + uid(8), ...data });
+    else Object.assign(course(p).lives[index], data);
+    touch(p);
+    close();
+    route();
+  };
+}
+
 // ---------- настройки и публикация ----------
 
 function viewSettings(p) {
@@ -950,6 +1097,7 @@ function viewSettings(p) {
     p.topics = p.topics.filter(x => x !== t);
     p.cards = p.cards.filter(c => c.t !== t.id);
     p.theory = p.theory.filter(l => l.topic !== t.id);
+    p.course?.lessons.forEach(l => { if (l.topic === t.id) l.topic = null; }); // урок остаётся, без тренажёра
     touch(p);
     route();
   });
@@ -1019,7 +1167,8 @@ function viewPublish(p) {
     try {
       const { edited, published, ...data } = p;
       // Пустые темы (например, созданные и брошенные в редакторе) ученику не нужны
-      data.topics = p.topics.filter(t => p.cards.some(c => c.t === t.id) || p.theory.some(l => l.topic === t.id));
+      // Темы уроков курса тоже нужны: по ним считается ДЗ
+      data.topics = p.topics.filter(t => p.cards.some(c => c.t === t.id) || p.theory.some(l => l.topic === t.id) || p.course?.lessons?.some(l => l.topic === t.id));
       await api(`/packs/${p.id}`, { method: 'PUT', body: data, key: db.keys[p.id] });
       p.published = Date.now();
       p.edited = Math.min(p.edited, p.published);
@@ -1041,7 +1190,7 @@ function route() {
   if (kind === 'new') { history.replaceState(null, '', `#/p/${newPack()}/add`); return route(); }
   const p = kind === 'p' && db.packs[id];
   if (!p) { document.documentElement.style.removeProperty('--accent'); return viewList(); }
-  ({ cards: viewCards, add: viewAdd, students: viewStudents, settings: viewSettings, publish: viewPublish }[tab] || viewCards)(p);
+  ({ cards: viewCards, add: viewAdd, course: viewCourse, students: viewStudents, settings: viewSettings, publish: viewPublish }[tab] || viewCards)(p);
   document.documentElement.style.setProperty('--accent', p.color);
 }
 

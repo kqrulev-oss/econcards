@@ -419,9 +419,12 @@ export function parentReportText(prog, hw, L, p) {
   const week = [...a.arr.slice(shift), ...Array(shift).fill(0)].slice(-7);
   const k = week.filter(n => n > 0).length, n = week.reduce((s, x) => s + (Number(x) || 0), 0);
   const d = hw ? (st.hw?.id === hw.id ? Math.max(0, Math.floor(st.hw.d) || 0) : 0) : 0;
+  // ДЗ курса (уроки внутри набора) считает телефон ученика: только целые, onTime ≤ n — как в studio courseDone
+  const cn = Math.max(0, Math.floor(st.course?.n) || 0), ct = Math.min(cn, Math.max(0, Math.floor(st.course?.onTime) || 0));
   if (!k) {
     return `${name} на этой неделе не занимался(ась) в тренажёре «${title}».${a.last !== null ? ` Последнее занятие — ${dateOf(a.last)}.` : ''}`
-      + (hw ? `\nЗадание репетитора «${hw.text}» до ${dueText(hw.due)}: сделано ${d} из ${hw.goal}.` : '') + (tutor ? `\n\n${tutor}` : '');
+      + (hw ? `\nЗадание репетитора «${hw.text}» до ${dueText(hw.due)}: сделано ${d} из ${hw.goal}.` : '')
+      + (cn ? `\nДЗ курса: ${ct} из ${cn} в срок.` : '') + (tutor ? `\n\n${tutor}` : '');
   }
   const acc = st.week?.d ? Math.round(st.week.ok / st.week.d * 100) : 0;
   const weak = Array.isArray(st.weak) ? st.weak.slice(0, 3).map(w => cut(w?.t, 60)).filter(Boolean) : null;
@@ -429,8 +432,9 @@ export function parentReportText(prog, hw, L, p) {
     `${name} — тренажёр «${title}», последние 7 дней:`,
     `• занимался(ась) ${days(k)} из 7, решено ${plural(n, 'задание', 'задания', 'заданий')};`,
     `• точность ${acc}%${trend(st)}, серия без пропусков — ${days(a.streak)};`,
-    `• освоено ${st.mastered || 0} из ${st.total || 0} карточек курса${hw ? ';' : '.'}`,
-    ...(hw ? [`• задание репетитора «${hw.text}» до ${dueText(hw.due)}: сделано ${d} из ${hw.goal}${d >= hw.goal ? ' — выполнено' : ''}.`] : []),
+    `• освоено ${st.mastered || 0} из ${st.total || 0} карточек курса${hw || cn ? ';' : '.'}`,
+    ...(hw ? [`• задание репетитора «${hw.text}» до ${dueText(hw.due)}: сделано ${d} из ${hw.goal}${d >= hw.goal ? ' — выполнено' : ''}${cn ? ';' : '.'}`] : []),
+    ...(cn ? [`• ДЗ курса: ${ct} из ${cn} в срок.`] : []),
     // Старые версии приложения не присылают слабые темы — строку тогда не пишем, чтобы не соврать
     ...(weak ? [weak.length ? `Что подтягиваем на занятиях: ${weak.join(', ')}.` : 'Слабых тем сейчас нет — держим темп.'] : []),
     tutor ? `\n${tutor}` : '',

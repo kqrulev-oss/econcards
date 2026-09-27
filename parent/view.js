@@ -1,6 +1,6 @@
 // Раздел родителя в личном кабинете: дети, их прогресс по наборам,
 // привязка по коду и оплата доступа к библиотеке.
-import { api, loadPack, esc, day, plural, toast } from '../lib.js';
+import { api, loadPack, esc, day, plural, toast, courseStats } from '../lib.js';
 import { payDialog, daysLeft, dateRu } from '../account.js';
 const packs = new Map(); // ref → набор (кэш)
 
@@ -39,7 +39,9 @@ export function stats(prog, pack) {
     .sort((a, b) => a.acc - b.acc).slice(0, 3);
   const mastered = Object.values(prog.cards || {}).filter(s => s.b >= 3).length;
   const acc = w => w.n ? Math.round(w.ok / w.n * 100) : null;
-  return { streak, days7, strip, weeks, last, weak, mastered, total: pack?.limited?.total || pack?.cards.length || 0, week, acc7: acc(week), accPrev: acc(prev), acc };
+  // ДЗ курса — та же функция, что у ученика в сводке и в студии
+  const course = pack?.course ? courseStats(prog.les, pack.course, t) : null;
+  return { streak, days7, strip, weeks, last, weak, mastered, course, total: pack?.limited?.total || pack?.cards.length || 0, week, acc7: acc(week), accPrev: acc(prev), acc };
 }
 
 const ago = d => d === null ? 'ещё не занимался' : d === day() ? 'занимался сегодня' : d === day() - 1 ? 'занимался вчера' : `занимался ${plural(day() - d, 'день', 'дня', 'дней')} назад`;
@@ -65,6 +67,7 @@ function packBlock(s, pack) {
       <h2>Что подтягивать</h2>
       ${s.weak.length ? `<ul class="kid-weak">${s.weak.map(w => `<li><span>${esc(w.title.replace(/^\d+\.\s*/, ''))}</span><b>${w.acc}%</b></li>`).join('')}</ul>`
         : '<p class="muted">Явно слабых тем нет — хороший знак.</p>'}
+      ${s.course?.n ? `<p class="kid-course${s.course.onTime < s.course.n ? ' mid' : ''}"><span>ДЗ курса</span><b>${s.course.onTime} из ${s.course.n} в срок</b></p>` : ''}
       <p class="muted small-note">Освоено ${s.mastered} из ${s.total} карточек · решено ${plural(s.week.n, 'карточка', 'карточки', 'карточек')} за неделю</p>
     </section>`;
 }

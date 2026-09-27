@@ -984,3 +984,78 @@ input:focus, select:focus, textarea:focus { outline: 3px solid var(--accent); ou
 .finish .tg-note { margin-top: -8px; }
 /* Время в панели календаря: .row > input сжимал поле до «07» на 360–375 px — теперь кнопка переносится */
 .row > .time-input { flex: none; }
+
+/* ---------- курс (уроки внутри набора) ----------
+   .course-card — карточка «Курс» на главной ученика, .les-row — урок в ленте #/course,
+   .lesson-step — шаг урока (видео → конспект → тренажёр), .video-frame — плеер 16:9,
+   .live-row — эфир, .course-row — урок/эфир во вкладке «Курс» студии, .kid-course — строка у родителя. */
+.course-card { display: grid; gap: 12px; border-left-width: 12px; border-left-color: var(--sun); }
+.course-card > * { margin: 0; }
+.course-card > .row { justify-content: space-between; }
+.course-card > .row b { font: 800 15px/1.35 var(--display); }
+.course-card > .btn { width: 100%; margin: 0; }
+@media (min-width: 600px) { .course-card > .btn { justify-self: start; width: auto; min-width: 240px; } }
+.course-next { display: grid; gap: 6px; justify-items: start; font-weight: 700; }
+.course-next b { font-weight: 800; overflow-wrap: anywhere; }
+.course-next .pill { white-space: normal; }
+.course-all { display: inline-flex; align-items: center; gap: 4px; justify-self: start; min-height: 44px; }
+@media (prefers-color-scheme: dark) { .course-all { color: #B7AEFF; } } /* как ссылки в тексте: цвет набора на тёмном не читается */
+.les-n {
+  display: inline-grid; place-items: center; width: 32px; height: 32px; flex: none; border-radius: 10px;
+  background: var(--accent); color: #fff; border: 2px solid var(--ink); font: 800 14px var(--display);
+}
+.les-row {
+  display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 10px;
+  background: var(--surface); color: var(--text); border: var(--bw) solid var(--ink); border-radius: 18px;
+  padding: 12px 14px; margin-bottom: 10px; box-shadow: 0 4px 0 var(--ink); font-weight: 700;
+}
+.les-row .topic-title { font-weight: 800; min-width: 0; overflow-wrap: anywhere; }
+.les-row.locked { box-shadow: none; border-style: dashed; }
+.les-row.locked .les-n { background: var(--line); color: var(--muted); }
+@media (max-width: 480px) {
+  .les-row { grid-template-columns: auto 1fr; }
+  .les-row .pill { grid-column: 2; justify-self: start; white-space: normal; }
+}
+.lesson-step h2 { display: flex; align-items: center; gap: 10px; }
+.lesson-step h2 .les-n { width: 28px; height: 28px; font-size: 13px; }
+.lesson-step > .btn { margin: 0; }
+.video-frame {
+  position: relative; aspect-ratio: 16 / 9; overflow: hidden; background: var(--ink);
+  border: var(--bw) solid var(--ink); border-radius: var(--radius); box-shadow: var(--shadow);
+}
+.video-frame iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+.les-notes { padding: 16px 20px; overflow-wrap: anywhere; }
+.les-train { display: grid; gap: 10px; margin: 0; }
+.les-train > * { margin: 0; }
+.les-train .goal .bar { height: 14px; background: var(--line); border: 2px solid var(--ink); }
+.les-train .goal .bar i { background: var(--accent); border-radius: 0; }
+.les-train .goal b { font-family: var(--display); }
+.les-train.ok .goal .bar i { background: var(--ok-fill); }
+.les-train .btn svg { fill: currentColor; stroke: none; }
+.les-hw-note { font-weight: 700; color: var(--muted); font-size: 14px; }
+@media (min-width: 600px) { .les-train > .btn { justify-self: start; min-width: 240px; } }
+.live-row {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px;
+  background: var(--surface); border: var(--bw) solid var(--ink); border-radius: 18px; padding: 12px 14px; margin-bottom: 10px; box-shadow: 0 4px 0 var(--ink);
+}
+.live-row > div:first-child { display: grid; min-width: 0; }
+.live-row b { font-weight: 800; overflow-wrap: anywhere; }
+.live-row .muted { font-size: 14px; font-weight: 700; }
+.course-row {
+  display: grid; grid-template-columns: auto 1fr auto; gap: 10px; align-items: center;
+  background: var(--bg); border: 2px solid var(--line); border-radius: 16px; padding: 10px 12px; margin-bottom: 8px;
+}
+.course-row-main { display: grid; min-width: 0; }
+.course-row-main b { overflow-wrap: anywhere; }
+.course-row:not(:has(.les-n)) { grid-template-columns: 1fr auto; }
+@media (max-width: 600px) {
+  .course-row { grid-template-columns: auto 1fr; }
+  .course-row:not(:has(.les-n)) { grid-template-columns: 1fr; }
+  .course-row .card-row-actions { grid-column: 1 / -1; justify-content: flex-end; }
+}
+.field-note { margin: -6px 0 14px; }
+.grid3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 0 12px; }
+.kid-course { display: flex; justify-content: space-between; gap: 10px; margin: 14px 0 0; padding: 10px 14px; background: var(--ok-bg); border-radius: 14px; font-weight: 700; }
+.kid-course b { color: var(--ok); }
+.kid-course.mid { background: var(--mid-bg); }
+.kid-course.mid b { color: var(--mid); }
