@@ -3008,7 +3008,7 @@ def solve_txt(r, kind, body):
         return f'Решите уравнение {body}.'
     if kind == 'sys':
         return f'Решите систему уравнений {body}.'
-    return f'Решите неравенство {body}.
+    return f'Решите неравенство {body}.'
 
 
 def _roots(expr, cond=None):
@@ -3027,8 +3027,9 @@ def _roots(expr, cond=None):
        kim=kim(20, K20, kes=['2.3', '3.1']))
 def gen_og20_cubic_group(r):
     a = r.choice([x for x in range(-9, 10) if x != 0])
-    b = r.randint(1, 9)
-    if abs(a) == b:
+    b = r.randint(1, 6)
+    # числа того же масштаба, что в банке, но не его наборы: при a > 0 берём b ≥ 5 и небольшое a
+    if abs(a) == b or (a > 0 and (b < 5 or a > 5)):
         return None
     if r.random() < 0.5:
         eq = f'{poly([1, a, 0, 0])} = {poly([b * b, a * b * b])}'
@@ -3062,7 +3063,9 @@ def gen_og20_sqrt_domain(r):
         return None
     left = r.random() < 0.5            # √(c − x): x ≤ c;  иначе √(x − c): x ≥ c
     if left:
-        c = r.randint(r1, r2 - 1)
+        c = r.randint(max(r1, 1), r2 - 1) if r2 - 1 >= max(r1, 1) else None
+        if c is None:
+            return None
         ok = [x for x in (r1, r2) if x <= c]
         rad = f'√({c} − x)' if c >= 0 else f'√(−{-c} − x)'
     else:
@@ -3071,7 +3074,7 @@ def gen_og20_sqrt_domain(r):
         rad = f'√(x − {c})' if c >= 0 else f'√(x + {-c})'
     ans = sum(ok)
     q = solve_txt(r, 'eq', f'{poly([1, -s_, pr])} + {rad} = {rad}') + ' ' + ask_sum(r)
-    e = f'x² {"−" if s_ > 0 else "+"} {abs(s_)}x {"−" if pr > 0 else "+"} {abs(pr)} = 0 → x = {r1} или x = {r2}; с учётом области определения корня остаётся {", ".join(map(str, ok))}.'
+    e = f'{poly([1, -s_, pr])} = 0 → x = {tnum(r1)} или x = {tnum(r2)}; с учётом области определения корня остаётся {", ".join(tnum(x) for x in ok)}.'
 
     def chk():
         radx = (c - X) if left else (X - c)
@@ -3091,6 +3094,8 @@ def gen_og20_ineq_sqrt(r):
     a = r.randint(-9, 9)
     b = r.choice([x for x in range(2, 60) if int(math.isqrt(x)) ** 2 != x])
     strict = r.random() < 0.7
+    if strict and a > 0 and b < 12:     # такие наборы есть в банке
+        return None
     sign = '<' if strict else '≤'
     xa = f'x − {a}' if a > 0 else (f'x + {-a}' if a < 0 else 'x')
     left = f'({xa})²' if a != 0 else 'x²'
@@ -3118,7 +3123,7 @@ def gen_og20_ineq_sqrt(r):
        kim=kim(20, K20, kes=['3.2']))
 def gen_og20_ineq_const(r):
     a = r.randint(-9, 9)
-    k, c = r.randint(2, 20), r.randint(1, 12)
+    k, c = r.randint(2, 9), r.randint(1, 12)
     xa = f'x − {a}' if a > 0 else (f'x + {-a}' if a < 0 else 'x')
     sq = f'({xa})²' if a != 0 else 'x²'
     if r.random() < 0.5:
@@ -3142,25 +3147,37 @@ def _sys_ask(r):
 @proto('og20-system-sub', 'oge', 20, 'Система «квадратное и линейное с одинаковой правой частью»: подстановка',
        invariant='Обе строки выражают y; приравниваем правые (левые) части и решаем квадратное уравнение относительно x, затем находим y.',
        varies='Коэффициенты, порядок записи, вид связи (y = …, … = y).',
-       answer_rule='ax² − bx = ax − b ⇔ (x − 1)(ax − b) = 0; решения (1; a − b) и (b/a; …).',
+       answer_rule='ax² + px = cx + d ⇒ ax² + (p − c)x − d = 0; для каждого корня x находим y = cx + d.',
        fipi=r'решите систему уравнений \{ \d* ?x 2 [−+] \d* ?x = y , \d* ?x [−+] \d+ = y',
        mistakes=['теряют одно из решений', 'находят только x, не найдя y'],
        kim=kim(20, K20, kes=['3.1']))
 def gen_og20_system_sub(r):
     a = r.randint(1, 6)
-    b = r.choice([x for x in range(-9, 10) if x != 0 and x != a])
-    xs = [F(1), F(b, a)]
-    if not all(nice(x, 2) for x in xs):
+    x1 = r.choice([x for x in range(-4, 5) if x != 0])
+    m = r.choice([x for x in range(-12, 13) if x != 0])
+    x2 = F(m, a)
+    if x2 == x1 or not nice(x2, 2) or abs(x2) > 4:
         return None
-    sols = [(x, a * x - b) for x in xs]
+    c = r.choice([x for x in range(-9, 10) if x != 0])
+    if c in (a, 2 * a):                  # в банке правая часть — ax − b или 2(ax − b); берём другие наборы
+        return None
+    pq = c - a * (x1 + x2)               # a x² + pq·x = y,  c x + d = y
+    d = -a * x1 * x2
+    if pq.denominator != 1 or d.denominator != 1 or pq == 0 or d == 0 or abs(d) > 20 or abs(pq) > 15:
+        return None
+    pq, d = int(pq), int(d)
+    sols = [(F(x1), c * F(x1) + d), (x2, c * x2 + d)]
     tot = sum(x + y for x, y in sols)
-    q = solve_txt(r, 'sys', f'{{ {poly([a, -b, 0])} = y, {lin(a, -b)} = y }}') + ' ' + _sys_ask(r)
-    e = f'{poly([a, -b, 0])} = {lin(a, -b)} → {poly([a, -(a + b), b])} = 0 → x = 1 или x = {tnum(F(b, a))}; решения: ' + '; '.join(f'({tnum(x)}; {tnum(y)})' for x, y in sols) + '.'
+    if not nice(tot, 2) or abs(tot) > 60:
+        return None
+    q = solve_txt(r, 'sys', f'{{ {poly([a, pq, 0])} = y, {lin(c, d)} = y }}') + ' ' + _sys_ask(r)
+    e = (f'{poly([a, pq, 0])} = {lin(c, d)} → {poly([a, pq - c, -d])} = 0 → x = {tnum(sols[0][0])} или x = {tnum(sols[1][0])}; решения: '
+         + '; '.join(f'({tnum(x)}; {tnum(y)})' for x, y in sols) + '.')
 
     def chk():
         Y = sp.Symbol('y')
-        ss = sp.solve([a * X ** 2 - b * X - Y, a * X - b - Y], [X, Y], dict=True)
-        return len(ss) == 2 and same(num(tot), sum(d[X] + d[Y] for d in ss))
+        ss = sp.solve([a * X ** 2 + pq * X - Y, c * X + d - Y], [X, Y], dict=True)
+        return len(ss) == 2 and same(num(tot), sum(dd[X] + dd[Y] for dd in ss))
     return pcard(q, num(tot), e=e), chk
 
 
@@ -3175,6 +3192,8 @@ def gen_og20_system_elim(r):
     a, b = r.randint(1, 6), r.randint(1, 6)
     t = r.randint(1, 4)
     y0 = r.randint(-9, 9)
+    if y0 == 0 or (y0 > 0 and t < 3):   # в банке y > 0 и x² ≤ 4
+        return None
     p_ = a * t * t + y0
     q_ = b * t * t - y0
     q = solve_txt(r, 'sys', f'{{ {poly([a, 0, 0])} + y = {tnum(p_)}, {poly([b, 0, 0])} − y = {tnum(q_)} }}') + ' ' + \
@@ -3201,16 +3220,25 @@ def gen_og20_system_homog(r):
     k = r.randint(2, 5)
     yv = r.randint(1, 6)
     C = A * k * k + B * yv * yv
-    q = solve_txt(r, 'sys', f'{{ {poly([A, 0, 0])} + {poly([B, 0, 0], "y")} = {C}, {poly([k * A, 0, 0])} + {poly([k * B, 0, 0], "y")} = {C}x }}') + ' ' + \
-        pick(r, 'В ответ — число решений.', 'В ответ — сумма x всех решений.')
-    ans = 2 if 'число' in q else 2 * k
-    e = f'Левая часть второго уравнения в {k} раза больше левой части первого: {k}·{C} = {C}x, x = {k}; тогда y² = {yv * yv}, y = ±{yv}.'
+    sg = r.choice([1, -1])               # x = k (справа Cx) или x = −k (справа −Cx)
+    if sg == 1 and C <= 61:              # небольшие наборы с x > 0 есть в банке — их не повторяем
+        return None
+    if C > 150:
+        return None
+    x0 = sg * k
+    rhs = f'{C}x' if sg == 1 else f'−{C}x'
+    ask = r.choice(['sumx', 'maxy'])
+    q = solve_txt(r, 'sys', f'{{ {poly([A, 0, 0])} + {poly([B, 0, 0], "y")} = {C}, {poly([k * A, 0, 0])} + {poly([k * B, 0, 0], "y")} = {rhs} }}') + ' ' + \
+        ('В ответ — сумма x всех решений.' if ask == 'sumx' else 'В ответ — наибольшее значение y среди всех решений.')
+    ans = 2 * x0 if ask == 'sumx' else yv
+    e = (f'Левая часть второго уравнения {raz(k)} больше левой части первого: {k}·{C} = {rhs}, x = {tnum(x0)}; '
+         f'тогда y² = {yv * yv}, y = ±{yv}. Решения: ({tnum(x0)}; {yv}), ({tnum(x0)}; −{yv}).')
 
     def chk():
         Y = sp.Symbol('y')
-        ss = sp.solve([A * X ** 2 + B * Y ** 2 - C, k * A * X ** 2 + k * B * Y ** 2 - C * X], [X, Y], dict=True)
+        ss = sp.solve([A * X ** 2 + B * Y ** 2 - C, k * A * X ** 2 + k * B * Y ** 2 - sg * C * X], [X, Y], dict=True)
         ss = [d for d in ss if d[X].is_real and d[Y].is_real]
-        return ans == (len(ss) if 'число' in q else sum(d[X] for d in ss))
+        return len(ss) == 2 and ans == (sum(d[X] for d in ss) if ask == 'sumx' else max(d[Y] for d in ss))
     return pcard(q, num(ans), e=e), chk
 
 
@@ -3227,8 +3255,8 @@ def gen_og20_eq_factor(r):
     # (x − a)(x + b) − c = (x − r1)(x − r2): b − a = −(r1 + r2), −ab − c = r1 r2
     a = b + r1 + r2
     c = -a * b - r1 * r2
-    if c <= 0 or -b in (r1, r2):
-        return None
+    if c <= 0 or -b in (r1, r2) or (b > 0 and a >= 0) or c > 60:
+        return None                     # (b > 0, a ≥ 0) — наборы банка; их не повторяем
     xa = 'x' if a == 0 else (f'(x − {a})' if a > 0 else f'(x + {-a})')
     sq = poly([1, 2 * b, b * b])
     xb = f'x + {b}' if b > 0 else f'x − {-b}'
@@ -3293,7 +3321,7 @@ def gen_og20_eq_sub_biquad(r):
             s_ = math.isqrt(t)
             xs |= {c + s_, c - s_}
     ans = sum(xs)
-    e = f'Замена t = {xc}²: t² {"+" if p_ >= 0 else "−"} {abs(p_)}t {"+" if q_ >= 0 else "−"} {abs(q_)} = 0 → t = {t1}, t = {t2}; t ≥ 0; корни: {", ".join(map(str, sorted(xs)))}.'
+    e = f'Замена t = {xc}²: {poly([1, p_, q_], "t")} = 0 → t = {tnum(t1)}, t = {tnum(t2)}; t ≥ 0; корни: {", ".join(tnum(x) for x in sorted(xs))}.'
     return pcard(q, num(ans), e=e), lambda: same(num(ans), sum(_roots((X - c) ** 4 + p_ * (X - c) ** 2 + q_)))
 
 
@@ -3309,6 +3337,8 @@ def gen_og20_eq_sum_squares(r):
     rr = r.choice([a, -a])
     s_ = r.choice([x for x in range(-10, 11) if x not in (a, -a)])
     p_, q_ = -(rr + s_), rr * s_
+    if q_ <= 0:                          # второй трёхчлен с положительным свободным членом (в банке — отрицательный)
+        return None
     q = solve_txt(r, 'eq', f'({poly([1, 0, -a * a])})² + ({poly([1, p_, q_])})² = 0') + ' ' + 'В ответ — его корень.'
     e = f'Оба выражения равны нулю: x = ±{a} и x ∈ {{{rr}; {s_}}}; общий корень {rr}.'
     return pcard(q, num(rr), e=e), lambda: _roots((X ** 2 - a * a) ** 2 + (X ** 2 + p_ * X + q_) ** 2) == [rr]
@@ -3325,7 +3355,7 @@ def gen_og20_eq_recip(r):
     c = r.choice([0, 0, 1, -1, 2, -2, 3])
     t1, t2 = r.sample([-10, -5, -4, -2, -1, 1, 2, 4, 5, 10, 8, -8], 2)
     p_, q_ = -(t1 + t2), t1 * t2         # t² + p t + q = 0
-    if p_ == 0:
+    if p_ == 0 or (c >= 0 and q_ < 0):   # при c ≥ 0 корни t одного знака — не как в наборах банка
         return None
     den = 'x' if c == 0 else (f'(x − {c})' if c > 0 else f'(x + {-c})')
     sq = 'x²' if c == 0 else f'{den}²'
@@ -3418,8 +3448,9 @@ def gen_og21_train_pass(r):
        mistakes=['вычитают проценты воды из массы', 'составляют пропорцию по воде, а не по сухому веществу'],
        kim=kim(21, K21))
 def gen_og21_drying(r):
-    what = pick(r, ('Свежие грибы', 'сушёные', 'грибов'), ('Виноград', 'изюм', 'винограда'), ('Свежие абрикосы', 'курага', 'абрикосов'),
-                ('Свежескошенная трава', 'сено', 'травы'), ('Свежие яблоки', 'сушёные яблоки', 'яблок'))
+    what = pick(r, ('Свежие грибы', 'сушёные', 'свежих грибов', 'сушёных грибов'), ('Виноград', 'изюм', 'винограда', 'изюма'),
+                ('Свежие абрикосы', 'курага', 'свежих абрикосов', 'кураги'), ('Свежескошенная трава', 'сено', 'травы', 'сена'),
+                ('Свежие яблоки', 'сушёные яблоки', 'свежих яблок', 'сушёных яблок'))
     p_ = r.choice([70, 75, 80, 82, 84, 85, 86, 88, 90, 92])
     q_ = r.choice([10, 12, 14, 15, 16, 18, 20, 22, 25, 28])
     dry_frac = F(100 - p_, 100 - q_)
@@ -3429,7 +3460,7 @@ def gen_og21_drying(r):
         if not nice(fresh, 1) or fresh > 3000:
             return None
         q = (f'{what[0]} содерж{"ит" if what[0] in ("Виноград", "Свежескошенная трава") else "ат"} {p_}% воды, а {what[1]} — {q_}%. '
-             f'Сколько килограммов {what[2]} нужно, чтобы получить {dried} кг продукта «{what[1]}»?')
+             f'Сколько килограммов {what[2]} нужно, чтобы получить {dried} кг {what[3]}?')
         ans = fresh
         chk = lambda: same(num(ans), sp.Rational(dried) * (100 - q_) / (100 - p_))
     else:
@@ -3438,7 +3469,7 @@ def gen_og21_drying(r):
         if not nice(dried, 2):
             return None
         q = (f'{what[0]} содерж{"ит" if what[0] in ("Виноград", "Свежескошенная трава") else "ат"} {p_}% воды, а {what[1]} — {q_}%. '
-             f'Сколько килограммов продукта «{what[1]}» получится из {fresh} кг {what[2]}?')
+             f'Сколько килограммов {what[3]} получится из {fresh} кг {what[2]}?')
         ans = dried
         chk = lambda: same(num(ans), sp.solve(sp.Eq(sp.Symbol('m') * (100 - q_), fresh * (100 - p_)), sp.Symbol('m'))[0])
     return pcard(q, num(ans), e=f'Сухое вещество: {100 - p_}% свежей массы = {100 - q_}% сухой массы.'), chk
@@ -3485,7 +3516,7 @@ _RACE = [(v, d, v * (v + d) * dt // d, dt) for v in range(5, 111) for d in range
 def gen_og21_two_racers(r):
     who, lim_ = pick(r, (('Два велосипедиста', 'велосипедиста'), 35), (('Два автомобиля', 'автомобиля'), 110),
                      (('Два лыжника', 'лыжника'), 20), (('Два мотоциклиста', 'мотоциклиста'), 100))
-    v, d, S, dt = r.choice([x for x in _RACE if x[0] + x[1] <= lim_ and x[0] >= lim_ // 4])
+    v, d, S, dt = r.choice([x for x in _RACE if x[0] + x[1] <= lim_ and x[0] >= lim_ // 4 and x[2] <= 15 * x[0]])
     ask_slow = r.random() < 0.6
     q = pick(r, f'{who[0]} стартуют одновременно, им предстоит преодолеть {S} км. Скорость одного из них на {d} {KMH} выше, и он приходит к финишу на {dt} {plural(dt, "час", "часа", "часов")} раньше другого. '
                 f'С какой скоростью ехал {"опоздавший" if ask_slow else "победитель"}? Ответ дайте в {KMH}.',
@@ -3513,16 +3544,16 @@ def gen_og21_work_rate(r):
     ask_fast = r.random() < 0.5
     ans = x + d if ask_fast else x
     if s_ == 0:
-        q = (f'Двум токарям поручили изготовить по {N} одинаковых деталей. Первый токарь выпускает в час на {d} {plural(d, "деталь", "детали", "деталей")} больше второго, поэтому справился с работой на {dt} {plural(dt, "час", "часа", "часов")} раньше. '
+        q = (f'Каждому из двух токарей поручили изготовить партию из {N} {plural(N, "детали", "деталей", "деталей")}. Первый токарь выпускает в час на {d} {plural(d, "деталь", "детали", "деталей")} больше второго, поэтому справился с работой на {dt} {plural(dt, "час", "часа", "часов")} раньше. '
              f'Найдите часовую выработку {"первого" if ask_fast else "второго"} токаря (деталей в час).')
     elif s_ == 1:
         q = (f'Цистерну объёмом {N} литров можно наполнить одним из двух насосов. Второй насос подаёт в минуту на {d} {plural(d, "литр", "литра", "литров")} больше первого и наполняет цистерну на {dt} {plural(dt, "минуту", "минуты", "минут")} быстрее. '
              f'Сколько литров в минуту подаёт {"второй" if ask_fast else "первый"} насос?')
     elif s_ == 2:
-        q = (f'Один принтер печатает за минуту на {d} {plural(d, "страницу", "страницы", "страниц")} больше другого, поэтому тираж в {N} страниц он печатает на {dt} {plural(dt, "минуту", "минуты", "минут")} быстрее. '
+        q = (f'Один принтер печатает за минуту на {d} {plural(d, "страницу", "страницы", "страниц")} больше другого, поэтому тираж в {N} {plural(N, "страницу", "страницы", "страниц")} он печатает на {dt} {plural(dt, "минуту", "минуты", "минут")} быстрее. '
              f'Сколько страниц в минуту печатает {"более быстрый" if ask_fast else "более медленный"} принтер?')
     else:
-        q = (f'Оператор колл-центра Анна обрабатывает за час на {d} {plural(d, "заявку", "заявки", "заявок")} больше, чем Борис, и на обработку {N} заявок ей нужно на {dt} {plural(dt, "час", "часа", "часов")} меньше, чем ему. '
+        q = (f'Оператор колл-центра Анна обрабатывает за час на {d} {plural(d, "заявку", "заявки", "заявок")} больше, чем Борис, и на обработку {N} {plural(N, "заявки", "заявок", "заявок")} ей нужно на {dt} {plural(dt, "час", "часа", "часов")} меньше, чем ему. '
              f'Сколько заявок в час обрабатывает {"Анна" if ask_fast else "Борис"}?')
     Xs = sp.Symbol('x')
     return pcard(q, num(ans), e=f'{N}/x − {N}/(x + {d}) = {dt} → x = {x}.'), lambda: _pos(sp.solve(sp.Eq(N / Xs - N / (Xs + d), dt), Xs)) == [x]
@@ -3541,7 +3572,7 @@ _RET = [(v, d, v * (v + d) * t // d, t) for v in range(6, 101) for d in range(2,
        kim=kim(21, K21))
 def gen_og21_return_stop(r):
     who, lim_ = pick(r, (('Велосипедист', 'велосипедиста'), 30), (('Автомобилист', 'автомобилиста'), 100), (('Мотоциклист', 'мотоциклиста'), 90), (('Турист на мопеде', 'туриста'), 45))
-    v, d, S, t = r.choice([x for x in _RET if x[0] + x[1] <= lim_ and x[0] >= lim_ // 4])
+    v, d, S, t = r.choice([x for x in _RET if x[0] + x[1] <= lim_ and x[0] >= lim_ // 4 and x[2] <= 10 * x[0] and x[3] <= 5])
     ask_back = r.random() < 0.3
     ans = v + d if ask_back else v
     q = (f'{who[0]} проехал {S} км из посёлка в город с постоянной скоростью. На следующий день он поехал обратно со скоростью на {d} {KMH} больше, '
@@ -3742,7 +3773,7 @@ def gen_og21_avg_half(r):
     if not nice(avg, 1):
         return None
     who = pick(r, 'Автомобиль', 'Мотоциклист', 'Велосипедист', 'Катер')
-    if who == 'Велосипедист' and max(v1, v2) > 40:
+    if (who == 'Велосипедист' and max(v1, v2) > 40) or (who == 'Катер' and max(v1, v2) > 50):
         return None
     verb = {'Автомобиль': 'проехал', 'Мотоциклист': 'проехал', 'Велосипедист': 'проехал', 'Катер': 'прошёл'}[who]
     q = pick(r, f'Половину маршрута {who.lower()} {verb} при скорости {v1} {KMH}, оставшуюся половину — при скорости {v2} {KMH}. Найдите среднюю скорость на всём маршруте. Ответ дайте в {KMH}.',
@@ -3781,18 +3812,21 @@ def gen_og21_half_equal(r):
 def gen_og21_meeting_stop(r):
     v1, v2 = r.randint(6, 20), r.randint(6, 20)
     t = r.choice([F(1, 2), F(1, 3), F(1, 4), F(2, 3), F(1, 5), F(3, 4), F(1, 6)])
-    T = F(r.randint(3, 24), 2)
+    T = F(r.randint(3, 12), 2)
     S = v1 * (T - t) + v2 * T
     if S.denominator != 1 or T <= t:
         return None
-    who, pl = pick(r, (('велосипедиста', 'велосипедист'), 'Из двух сёл'), (('лыжника', 'лыжник'), 'Из двух турбаз'), (('всадника', 'всадник'), 'Из двух станиц'), (('туриста на велосипеде', 'первый турист'), 'Из двух городов'))
+    who, pl = pick(r, (('велосипедиста', 'выехали', 'ехал', 'выехал'), 'Из двух сёл'), (('лыжника', 'вышли', 'шёл', 'вышел'), 'Из двух турбаз'),
+                   (('всадника', 'выехали', 'ехал', 'выехал'), 'Из двух станиц'), (('туриста на велосипедах', 'выехали', 'ехал', 'выехал'), 'Из двух посёлков'))
+    if who[0] == 'лыжника' and max(v1, v2) > 15:
+        return None
     mins = int(t * 60)
     ask2 = r.random() < 0.5
     ans = v2 * T if ask2 else v1 * (T - t)
     if not nice(ans, 1):
         return None
-    q = (f'{pl}, расстояние между которыми {S} км, одновременно навстречу друг другу выехали два {who[0]}. Первый ехал со скоростью {v1} {KMH} и по дороге сделал остановку на {mins} минут, '
-         f'второй ехал без остановок со скоростью {v2} {KMH}. Найдите расстояние от места встречи до пункта, из которого выехал {"второй" if ask2 else "первый"}. Ответ дайте в километрах.')
+    q = (f'{pl}, расстояние между которыми {S} км, одновременно навстречу друг другу {who[1]} два {who[0]}. Первый {who[2]} со скоростью {v1} {KMH} и по дороге сделал остановку на {mins} минут, '
+         f'второй {who[2]} без остановок со скоростью {v2} {KMH}. Найдите расстояние от места встречи до пункта, из которого {who[3]} {"второй" if ask2 else "первый"}. Ответ дайте в километрах.')
     Tt = sp.Symbol('T')
     return pcard(q, num(ans), e=f'{v1}(T − {ftxt(t)}) + {v2}T = {S} → T = {ftxt(T)} ч.'), \
         lambda: (lambda Tv: same(num(ans), v2 * Tv if ask2 else v1 * (Tv - R(t))))(sp.solve(sp.Eq(v1 * (Tt - R(t)) + v2 * Tt, S), Tt)[0])
@@ -3806,7 +3840,7 @@ def gen_og21_meeting_stop(r):
 # формулами (вершины, концы кусков, асимптоты), проверка — заново через sympy: решает f(x) = m на каждом куске
 # и перебирает m в особых точках и между ними.
 
-K22 = ('«Постройте график функции …» и вопрос о числе общих точек с прямой y = m (y = kx) своими словами; '
+K22 = ('как в КИМ: «Постройте график функции … Определите, при каких значениях m прямая y = m имеет с графиком ровно … общие точки»; '
        'для автопроверки — одно число (сумма найденных значений, наибольшее значение и т. п.)')
 INF = float('inf')
 
@@ -4022,15 +4056,54 @@ def _fmt_dom(dom):
     return f'{tnum(lo)} {"≤" if lc else "<"} x {"≤" if hc else "<"} {tnum(hi)}'
 
 
-NQ = {0: ('не имеет с графиком ни одной общей точки', 'не пересекается с графиком'), 1: ('имеет с графиком ровно одну общую точку', 'пересекает график ровно в одной точке'),
+NQ = {0: ('не имеет с графиком общих точек', 'не пересекается с графиком'), 1: ('имеет с графиком ровно одну общую точку', 'пересекает график ровно в одной точке'),
       2: ('имеет с графиком ровно две общие точки', 'пересекает график ровно в двух точках'), 3: ('имеет с графиком ровно три общие точки', 'пересекает график ровно в трёх точках')}
 
 
 def _q22(r, ftxt_, n, ask, line='y = m'):
-    intro = pick(r, f'Дана функция {ftxt_}. Постройте её график.', f'Изобразите график функции {ftxt_}.', f'Начертите график функции {ftxt_}.')
-    cond = pick(r, f'Найдите все значения параметра m, для которых горизонтальная прямая {line} {NQ[n][1]}.',
-                f'Выясните, для каких m горизонтальная прямая {line} {NQ[n][1]}.')
+    # как в КИМ: «Постройте график функции … Определите, при каких значениях m прямая y = m имеет с графиком …»
+    intro = f'Постройте график функции {ftxt_}.'
+    cond = pick(r, f'Определите, при каких значениях m прямая {line} {NQ[n][0]}.',
+                f'Найдите все значения m, при которых прямая {line} {NQ[n][0]}.')
     return f'{intro} {cond} В ответ запишите {ask}.'
+
+
+def _txt_expr(t):
+    """Текст формулы из условия → sympy-выражение (независимо от внутренних «кусков»)."""
+    from sympy.parsing.sympy_parser import parse_expr, standard_transformations, implicit_multiplication_application
+    import re as _re
+    t = t.replace('−', '-').replace('·', '*').replace('²', '**2').replace('³', '**3')
+    t = _re.sub(r'(\d),(\d)', r'\1.\2', t)
+    while '|' in t:
+        t = _re.sub(r'\|([^|]*)\|', r'Abs(\1)', t, count=1)
+    t = _re.sub(r'([\w).])Abs', r'\1*Abs', t)
+    return parse_expr(t, local_dict={'x': X, 'Abs': sp.Abs}, transformations=standard_transformations + (implicit_multiplication_application,))
+
+
+def _txt_ok(ftxt_, pieces, holes):
+    """Проверка текста условия: формула, как она напечатана, совпадает с функцией, по которой считался ответ."""
+    body = ftxt_.split('=', 1)[1].strip()
+    if body.startswith('{'):
+        parts = []
+        for chunk in body.strip('{} ').split(';'):
+            ex, cond = chunk.split(' при ')
+            cond = cond.strip().replace('−', '-').replace('≤', '<=').replace('≥', '>=')
+            parts.append((_txt_expr(ex), cond))
+    else:
+        parts = [(_txt_expr(body), 'True')]
+    for x in (-7.3, -4.6, -2.7, -1.35, -0.55, 0.45, 1.3, 2.35, 3.7, 6.1, 8.9):
+        if any(abs(x - h) < 1e-9 for h in holes):
+            continue
+        own = [pc for pc, dom in pieces if _in(dom, x)]
+        txt = [ex for ex, cond in parts if eval(cond, {'x': x})]
+        if len(own) != 1 or len(txt) != 1:
+            return False
+        try:
+            if abs(float(txt[0].subs(X, sp.Float(x))) - _piece_val(own[0], x)) > 1e-6:
+                return False
+        except (TypeError, ZeroDivisionError):
+            return False
+    return True
 
 
 def _p22_card(r, pieces, holes, ftxt_, ns=(1, 2, 3, 0)):
@@ -4046,7 +4119,7 @@ def _p22_card(r, pieces, holes, ftxt_, ns=(1, 2, 3, 0)):
         def chk(n=n, ask=ask, val=val):
             pts, ivs = _sym_mset(pieces, holes, n)
             a = _sym_answer(ask, pts, ivs)
-            return a is not None and same(num(val), a)
+            return a is not None and same(num(val), a) and _txt_ok(ftxt_, pieces, holes)
         return pcard(q, num(val), e=f'Особые значения m: {", ".join(tnum(F(c).limit_denominator(1000)) if finite(F(c).limit_denominator(1000)) else "…" for c in _crit_m(pieces, holes))}.'), chk
     return None
 
@@ -4158,7 +4231,7 @@ def gen_og22_abs_shift(r):
     pieces = [(right, (h, INF, True, False)), (left, (-INF, h, False, False))]
     xh = f'x − {h}' if h > 0 else (f'x + {-h}' if h < 0 else 'x')
     first = f'{"−" if a < 0 else ""}{abs(a) if abs(a) != 1 else ""}|{xh}|'
-    rest = (' + ' + poly(tri)) if tri[0] > 0 else (' − ' + poly([-t for t in tri]))
+    rest = (' + ' + poly(tri)) if tri[0] > 0 else (' − ' + poly(tri)[1:])     # poly(tri) начинается с «−»
     ftxt_ = f'y = {first}{rest}'
     return _p22_card(r, pieces, [], ftxt_, ns=(3, 2, 1))
 
@@ -4211,8 +4284,8 @@ def gen_og22_abs_quad(r):
     pieces = [([float(t) for t in tri], (-INF, x1, False, True)), ([float(t) for t in neg], (x1, x2, False, False)), ([float(t) for t in tri], (x2, INF, True, False))]
     ftxt_ = f'y = |{poly(tri)}|'
     if r.random() < 0.3:
-        q = pick(r, f'Дана функция {ftxt_}. Постройте её график и выясните, сколько точек пересечения, самое большее, бывает у него с горизонтальной прямой.',
-                 f'Изобразите график функции {ftxt_}. Сколько общих точек, самое большее, может быть у него с горизонтальной прямой?')
+        q = pick(r, f'Постройте график функции {ftxt_}. Какое наибольшее число общих точек может иметь этот график с прямой, параллельной оси абсцисс?',
+                 f'Постройте график функции {ftxt_}. Какое наибольшее число общих точек может быть у этого графика с прямой, параллельной оси абсцисс?')
         return pcard(q, '4', e=f'При 0 < m < {tnum(yv)} прямая y = m пересекает график в четырёх точках.'), \
             lambda: max(_sym_count([(tri, (-INF, x1, False, True)), (neg, (x1, x2, False, False)), (tri, (x2, INF, True, False))], [], m) for m in (R(yv) / 2, R(yv), R(yv) + 1, 0)) == 4
     return _p22_card(r, pieces, [], ftxt_, ns=(3,))
@@ -4270,8 +4343,8 @@ def gen_og22_line_kx(r):
                 if len(xs) == 1:
                     ok.append(kk)
             return same(num(val), max(ok) if ask.startswith('наиб') else min(ok))
-    q = pick(r, f'Дана функция {ftxt_}. Постройте её график и найдите все значения k, для которых прямая y = kx пересекает этот график ровно в одной точке. В ответ запишите {ask}.',
-             f'Изобразите график функции {ftxt_}. Выясните, для каких k у прямой y = kx и графика ровно одна общая точка. В ответ запишите {ask}.')
+    q = pick(r, f'Постройте график функции {ftxt_}. Определите, при каких значениях k прямая y = kx имеет с графиком ровно одну общую точку. В ответ запишите {ask}.',
+             f'Постройте график функции {ftxt_}. Найдите все значения k, при которых прямая y = kx имеет с графиком ровно одну общую точку. В ответ запишите {ask}.')
     return pcard(q, num(val), e='Сократите дробь, отметьте выколотую точку; рассмотрите касание и прохождение через выколотую точку.'), chk
 
 
@@ -4292,8 +4365,8 @@ def gen_og22_abs_frac(r):
         ftxt_ = f'y = {half}(|x/{at} − {at}/x| + x/{at} + {at}/x)'
         ask = r.choice(['наибольшее из таких значений m', 'сумму квадратов всех таких значений m'])
         val = F(c) if ask.startswith('наиб') else 2 * F(c) ** 2
-        q = pick(r, f'Дана функция {ftxt_}. Постройте её график и найдите все значения m, для которых горизонтальная прямая y = m пересекает график ровно в одной точке. В ответ запишите {ask}.',
-                 f'Изобразите график функции {ftxt_}. Выясните, для каких m у прямой y = m и графика ровно одна общая точка. В ответ запишите {ask}.')
+        q = pick(r, f'Постройте график функции {ftxt_}. Определите, при каких значениях m прямая y = m имеет с графиком ровно одну общую точку. В ответ запишите {ask}.',
+                 f'Постройте график функции {ftxt_}. Найдите все значения m, при которых прямая y = m имеет с графиком ровно одну общую точку. В ответ запишите {ask}.')
 
         def chk():
             # независимо: считаем нули f(x) − m на рациональной сетке (с точками ±a) по исходной формуле с модулем
@@ -4317,8 +4390,8 @@ def gen_og22_abs_frac(r):
         return None
     ask = r.choice(['наибольшее из таких значений k', 'наименьшее из таких значений k'])
     val = val if ask.startswith('наиб') else -val
-    q = pick(r, f'Дана функция {ftxt_}. Постройте её график и найдите все значения k, для которых прямая y = kx не пересекает этот график. В ответ запишите {ask}.',
-             f'Изобразите график функции {ftxt_}. Выясните, для каких k у прямой y = kx и графика нет ни одной общей точки. В ответ запишите {ask}.')
+    q = pick(r, f'Постройте график функции {ftxt_}. Определите, при каких значениях k прямая y = kx не имеет с графиком общих точек. В ответ запишите {ask}.',
+             f'Постройте график функции {ftxt_}. Найдите все значения k, при которых прямая y = kx не имеет с графиком общих точек. В ответ запишите {ask}.')
 
     def chk():
         f = (sp.Abs(X) - R(t)) / (R(t) * sp.Abs(X) - X ** 2)

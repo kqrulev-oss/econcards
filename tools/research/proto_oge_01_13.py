@@ -51,8 +51,13 @@ UNSUP = {c: str(i) for i, c in enumerate(SUPS)} | {'⁻': '-'}
 
 
 def sup(n):
-    """Показатель степени верхним индексом: sup(-3) → '⁻³'."""
+    """Показатель степени верхним индексом: sup(-3) → '⁻³' (только для разборов)."""
     return str(n).translate(SUP)
+
+
+def xp(n):
+    """Показатель степени в условии: разметка сайта ^{…} внутри ⟦ ⟧ → <sup>; xp(-3) → '^{−3}'."""
+    return '^{' + tnum(n) + '}'
 
 
 def parse(txt):
@@ -89,7 +94,7 @@ def fixed_opts(items, right):
     return o, str(right + 1)
 
 
-ASK = ('Найдите значение числового выражения', 'Вычислите значение числового выражения')
+ASK = ('Найдите значение выражения',)  # инструкция КИМ ОГЭ №6, №8
 LET = 'АБВГ'
 
 
@@ -203,7 +208,7 @@ DEN = [2, 4, 5, 8, 10, 20, 25, 3, 6, 9, 12, 15, 7, 14, 16, 40]
 
 
 def _expr_card(r, ex, val, e):
-    q = f'{pick(r, *ASK)} {ex}.'
+    q = f'{pick(r, *ASK)} ⟦{ex}⟧.'
     return pcard(q, num(val), e=e), lambda: same(num(val), parse(ex))
 
 
@@ -243,18 +248,19 @@ def gen_og06_frac_addsub(r):
 
 @proto('og06-frac-muldiv', 'oge', 6, 'Произведение или частное обыкновенных дробей',
        invariant='Одно действие: умножение или деление двух обыкновенных дробей (правильных или неправильных).',
-       varies='Числители и знаменатели (до 25), знак действия.',
+       varies='Числители (до 20) и знаменатели (до 12), знак действия; без тривиального ответа 1.',
        answer_rule='Умножаем числители и знаменатели (при делении — на перевёрнутую дробь), сокращаем, переводим в десятичную.',
        fipi=r'значение выражения\s+\d+\s+\d+\s*[·⋅:]\s*\d+\s+\d+\s*\.',
        mistakes=['при делении не переворачивают делитель', 'делят числитель на числитель и знаменатель на знаменатель с ошибкой'], kim=K6)
 def gen_og06_frac_muldiv(r):
-    a = F(r.randint(1, 24), r.randint(2, 16))
-    b = F(r.randint(1, 24), r.randint(2, 16))
-    if a.denominator == 1 or b.denominator == 1 or a.numerator > 25 or b.numerator > 40:
+    # масштаб банка: 7/6 · 9/5, 4/5 : 2/7, 15/4 · 6/5 — числители до 20, знаменатели до 12
+    a = F(r.randint(1, 20), r.randint(2, 12))
+    b = F(r.randint(1, 20), r.randint(2, 12))
+    if a.denominator == 1 or b.denominator == 1:
         return None
     op = r.choice(['·', ':'])
     val = a * b if op == '·' else a / b
-    if not nice(val, 2) or val.denominator == 1 and r.random() < 0.6:
+    if not nice(val, 2) or val == 1 or a * b == 1 or a == b or val.denominator == 1 and r.random() < 0.6:
         return None
     ex = f'{fr(a)} {op} {fr(b)}'
     return _expr_card(r, ex, val, f'{ex} = {fr(val)} = {tnum(val)}.')
@@ -262,14 +268,15 @@ def gen_og06_frac_muldiv(r):
 
 @proto('og06-dec-addsub', 'oge', 6, 'Сумма или разность десятичных дробей',
        invariant='Одно действие с десятичными дробями (десятые): a ± b, ответ может быть отрицательным.',
-       varies='Числа (одна-две цифры до запятой), знак действия.',
+       varies='Числа (одна цифра до запятой и одна после, как в банке), знак действия.',
        answer_rule='Записываем разряд под разрядом; если вычитаемое больше, результат отрицательный.',
        fipi=r'значение выражения\s+\d+,\d\s*[+−-]\s*\d+,\d\s*\.',
        mistakes=['ошибка в знаке при a < b', 'сдвиг разрядов'], kim=K6)
 def gen_og06_dec_addsub(r):
-    a = F(r.randint(11, 199), 10)
-    b = F(r.randint(11, 199), 10)
-    if a.denominator == 1 or b.denominator == 1 or a < 10 and b < 10:
+    # масштаб банка: 8,4 + 3,7; 4,9 − 9,4 — одна цифра до запятой, одна после
+    a = F(r.randint(11, 99), 10)
+    b = F(r.randint(11, 99), 10)
+    if a.denominator == 1 or b.denominator == 1:
         return None
     op = r.choice('+−')
     val = a + b if op == '+' else a - b
@@ -281,17 +288,16 @@ def gen_og06_dec_addsub(r):
 
 @proto('og06-dec-mul', 'oge', 6, 'Произведение десятичных дробей',
        invariant='Умножение двух десятичных дробей (десятые, сотые) «в столбик».',
-       varies='Множители (в т. ч. меньше 1 или больше 10).',
+       varies='Множители — десятичные дроби вида 8,9 и 4,3 (одна цифра до и после запятой).',
        answer_rule='Перемножаем как натуральные числа и отделяем столько знаков, сколько их у множителей вместе.',
        fipi=r'значение выражения\s+\d+,\d\s*[·⋅]\s*\d+,\d\s*\.',
        mistakes=['отделяют неверное число знаков после запятой'], kim=K6)
 def gen_og06_dec_mul(r):
-    a = F(r.randint(2, 9), 10) if r.random() < 0.35 else F(r.randint(101, 250), 10)
+    # масштаб банка: 8,9 · 4,3; 6,7 · 5,5
+    a = F(r.randint(11, 99), 10)
     b = F(r.randint(11, 99), 10)
     if a.denominator == 1 or b.denominator == 1:
         return None
-    if r.random() < 0.5:
-        a, b = b, a
     val = a * b
     ex = f'{tnum(a)} · {tnum(b)}'
     return _expr_card(r, ex, val, f'{ex} = {tnum(val)}.')
@@ -304,14 +310,15 @@ def gen_og06_dec_mul(r):
        fipi=r'значение выражения\s+\d+,\d\s+\d+,\d\s*\.',
        mistakes=['переносят запятую только в делителе'], kim=K6)
 def gen_og06_dec_div(r):
-    b = F(r.randint(2, 99), 10)
-    val = F(r.randint(2, 40)) if r.random() < 0.7 else F(r.randint(11, 99), 10)
+    # масштаб банка: 9,6 / 1,6; 8,2 / 4,1 — десятые, частное целое или с одним знаком
+    b = F(r.randint(11, 99), 10)
+    val = F(r.randint(2, 9)) if r.random() < 0.75 else F(r.randint(11, 49), 10)
     a = b * val
-    if b.denominator == 1 or not nice(a, 2) or a.denominator == 1 or a > 150:
+    if b.denominator == 1 or not nice(a, 1) or a.denominator == 1 or a >= 100:
         return None
     ex = f'{tnum(a)} : {tnum(b)}'
     q = f'{pick(r, *ASK)} ⟦{tnum(a)} / {tnum(b)}⟧.'
-    return pcard(q, num(val), e=f'{tnum(a)} : {tnum(b)} = {tnum(a * 10 ** 2)} : {tnum(b * 10 ** 2)} = {tnum(val)}.'), lambda: same(num(val), parse(ex))
+    return pcard(q, num(val), e=f'{tnum(a)} : {tnum(b)} = {tnum(a * 10)} : {tnum(b * 10)} = {tnum(val)}.'), lambda: same(num(val), parse(ex))
 
 
 @proto('og06-frac-reciprocal', 'oge', 6, 'Единица, делённая на сумму дробей',
@@ -339,15 +346,18 @@ def gen_og06_frac_reciprocal(r):
 # ================================================================ №7 — числа на координатной прямой
 
 K7 = K(minutes=2, kes=['1.4', '6.1'], kt=[3], answer='цифра варианта',
-       style='Выбор одного из вариантов «1) … 4)», в ответ — номер (как в КИМ ОГЭ №7)')
-TAIL7 = ('В ответе укажите номер правильного варианта.', 'Запишите в ответ номер выбранного варианта.', '')
+       style='Вопрос КИМ ОГЭ №7 («Какая из точек … соответствует числу …?», «Между какими соседними целыми числами '
+             'заключено число …?», «Какое из чисел принадлежит отрезку …?», «Какая из разностей … отрицательна?»), '
+             'варианты 1)–4), в ответ — номер; дроби записаны как 55/19')
+TAIL7 = ('',)  # варианты — кнопки 1)–4), отдельная приписка «укажите номер» не нужна
 SUB = str.maketrans('0123456789', '₀₁₂₃₄₅₆₇₈₉')
 
 
 def ufr(p, q):
-    """Дробь одним знаком: ⁵⁵⁄₁₉ (числитель верхним, знаменатель нижним индексом)."""
+    """Обыкновенная дробь в условии и вариантах: 55/19 (крупно и читаемо на телефоне; индексные
+    глифы ⁵⁵⁄₁₉ мельчат и берутся из запасного шрифта)."""
     s = '−' if p * q < 0 else ''
-    return s + str(abs(p)).translate(SUP) + '⁄' + str(abs(q)).translate(SUB)
+    return f'{s}{abs(p)}/{abs(q)}'
 
 
 def _q7(r, q):
@@ -425,9 +435,8 @@ def gen_og07_point_which(r):
         e = f'{k}² = {k * k} < {nn} < {(k + 1) ** 2} = {k + 1}², √{nn} ≈ {approx(t)} — это точка {letter}.'
     right = vals.index(m)
     o, a = fixed_opts(items, right)
-    q = _q7(r, pick(r, f'Какое из чисел, приведённых в вариантах ответа, изображено на координатной прямой точкой {letter}?',
-                    f'На рисунке точкой {letter} показано одно из чисел, записанных в вариантах ответа. Какое именно?',
-                    f'Определите, какому из предложенных чисел соответствует точка {letter} на координатной прямой.'))
+    q = _q7(r, pick(r, f'Какое из чисел, приведённых ниже, отмечено на координатной прямой точкой {letter}?',
+                    f'Какое из данных чисел изображено на координатной прямой точкой {letter}?'))
     pos = R(t)
     return pcard(q, a, e=e, k='one', o=o, svg=svg), lambda: min(range(4), key=lambda i: abs(sp.N(vv[i] - pos))) == right and \
         abs(sp.N(vv[right] - pos)) < 0.01
@@ -474,9 +483,8 @@ def gen_og07_point_number(r):
     right = pts.index(v)
     svg = _int_line(lo, hi, [(p, names[i]) for i, p in enumerate(pts)])
     o, a = fixed_opts([f'точка {c}' for c in names], right)
-    q = _q7(r, pick(r, f'Какая из отмеченных на рисунке точек A, B, C, D изображает число {txt}?',
-                    f'Число {txt} изображено на координатной прямой одной из точек A, B, C, D. Укажите эту точку.',
-                    f'Где на координатной прямой находится число {txt}? Выберите нужную точку из A, B, C, D.'))
+    q = _q7(r, pick(r, f'Какая из точек A, B, C, D, отмеченных на координатной прямой, соответствует числу {txt}?',
+                    f'Какая из отмеченных на координатной прямой точек A, B, C, D изображает число {txt}?'))
     e = f'{txt} ≈ {approx(v)}: между {tnum(base)} и {tnum(base + 1)}, {"ближе к " + tnum(base + 1) if fracp > 0.5 else "ближе к " + tnum(base)} — это точка {names[right]}.'
     pos = [R(p) for p in pts]
     return pcard(q, a, e=e, k='one', o=o, svg=svg), lambda: min(range(4), key=lambda i: abs(sp.N(pos[i] - val))) == right
@@ -509,8 +517,7 @@ def gen_og07_decimals_points(r):
     svg = svg_numline(-1, 12, ticks=(), labels=(), points=[(xs[i], names[i]) for i in range(4)])
     o, a = fixed_opts([f'точка {c}' for c in names], right)
     lst = '; '.join(tnum(x) for x in listed)
-    q = _q7(r, pick(r, f'Точки A, B, C и D, изображённые на координатной прямой, соответствуют числам {lst} (в каком-то порядке). Какая точка соответствует числу {tnum(target)}?',
-                    f'Числа {lst} изображены на координатной прямой точками A, B, C и D, но порядок неизвестен. Какой точкой изображено число {tnum(target)}?'))
+    q = _q7(r, f'Точки A, B, C и D на координатной прямой соответствуют числам {lst}. Какая из точек соответствует числу {tnum(target)}?')
     e = f'По возрастанию: {" < ".join(tnum(x) for x in nums)}. Число {tnum(target)} — {right + 1}-е слева, это точка {names[right]}.'
     return pcard(q, a, e=e, k='one', o=o, svg=svg), lambda: sorted(listed, key=lambda z: R(z)).index(target) == right
 
@@ -532,8 +539,7 @@ def gen_og07_sqrt_estimate(r):
         items_v = sorted([k] + r.sample(wrong, 3))
         items = [f'{s} и {s + 1}' for s in items_v]
         o, a = fixed_opts(items, items_v.index(k))
-        q = _q7(r, pick(r, f'Укажите два соседних целых числа, между которыми расположено число √{nn}.',
-                        f'Число √{nn} лежит между двумя последовательными натуральными числами. Какими?'))
+        q = _q7(r, f'Между какими соседними целыми числами заключено число √{nn}?')
         e = f'{k}² = {k * k} < {nn} < {(k + 1) ** 2} = {k + 1}², значит {k} < √{nn} < {k + 1}.'
         return pcard(q, a, e=e, k='one', o=o), lambda: sp.floor(sp.sqrt(nn)) == items_v[int(a) - 1]
     k = r.randint(3, 12)
@@ -546,9 +552,7 @@ def gen_og07_sqrt_estimate(r):
         return None
     items = [f'√{x}' for x in vals]
     o, a = fixed_opts(items, vals.index(nn))
-    q = _q7(r, pick(r, f'Какое из чисел лежит на отрезке [{k}; {k + 1}]?',
-                    f'Укажите число, которое больше {k}, но меньше {k + 1}.',
-                    f'Какое из данных чисел находится между {k} и {k + 1}?'))
+    q = _q7(r, pick(r, f'Какое из чисел принадлежит отрезку [{k}; {k + 1}]?', f'Какое из чисел принадлежит промежутку [{k}; {k + 1}]?'))
     e = f'{k} = √{k * k}, {k + 1} = √{(k + 1) ** 2}; между ними только √{nn}.'
     return pcard(q, a, e=e, k='one', o=o), lambda: sum(bool(k < sp.sqrt(x) < k + 1) for x in vals) == 1 and bool(k < sp.sqrt(vals[int(a) - 1]) < k + 1)
 
@@ -574,7 +578,7 @@ def gen_og07_frac_interval(r):
         starts = sorted(r.sample(starts, 3) + [k])
         items = [f'[{tnum(F(s, 10))}; {tnum(F(s + 1, 10))}]' for s in starts]
         o, a = fixed_opts(items, starts.index(k))
-        q = _q7(r, pick(r, f'Какой из промежутков содержит число {ufr(m, d)}?', f'Укажите промежуток, в котором лежит число {ufr(m, d)}.'))
+        q = _q7(r, f'Какому из данных промежутков принадлежит число {ufr(m, d)}?')
         e = f'{ufr(m, d)} = {m} : {d} ≈ {approx(v, 3)}.'
         return pcard(q, a, e=e, k='one', o=o), lambda: F(starts[int(a) - 1], 10) <= v <= F(starts[int(a) - 1] + 1, 10)
     if kind == 1:
@@ -586,7 +590,7 @@ def gen_og07_frac_interval(r):
         m = r.choice(good)
         vals = sorted([m] + r.sample(bad, 3))
         o, a = fixed_opts([ufr(x, d) for x in vals], vals.index(m))
-        q = _q7(r, pick(r, f'Какое из чисел лежит на отрезке [{k}; {k + 1}]?', f'Укажите число, заключённое между {k} и {k + 1}.'))
+        q = _q7(r, f'Какое из чисел принадлежит отрезку [{k}; {k + 1}]?')
         e = f'{k} = {ufr(k * d, d)}, {k + 1} = {ufr((k + 1) * d, d)}; подходит {ufr(m, d)}.'
         return pcard(q, a, e=e, k='one', o=o), lambda: sum(bool(k <= sp.Rational(x, d) <= k + 1) for x in vals) == 1 and \
             bool(k <= sp.Rational(vals[int(a) - 1], d) <= k + 1)
@@ -597,7 +601,7 @@ def gen_og07_frac_interval(r):
     wrong = [s for s in (k - 2, k - 1, k + 1, k + 2) if s > 0]
     items_v = sorted([k] + r.sample(wrong, 3))
     o, a = fixed_opts([f'{s} и {s + 1}' for s in items_v], items_v.index(k))
-    q = _q7(r, pick(r, f'Между какими соседними целыми числами находится число {ufr(m, d)}?', f'Число {ufr(m, d)} заключено между двумя последовательными целыми числами. Какими?'))
+    q = _q7(r, f'Между какими соседними целыми числами заключено число {ufr(m, d)}?')
     e = f'{ufr(m, d)} = {k} {ufr(m - k * d, d)}, значит {k} < {ufr(m, d)} < {k + 1}.'
     return pcard(q, a, e=e, k='one', o=o), lambda: sp.floor(sp.Rational(m, d)) == items_v[int(a) - 1]
 
@@ -624,7 +628,7 @@ def gen_og07_between_fracs(r):
     if len(opts_v) < 4 or any(a_ < x < b_ for x in opts_v if x != target) or opts_v[0] <= 0:
         return None
     o, a = fixed_opts([tnum(x) for x in opts_v], opts_v.index(target))
-    q = _q7(r, pick(r, f'Какое из чисел больше {ufr(p1, d1)}, но меньше {ufr(p2, d2)}?', f'Какое из следующих чисел лежит между {ufr(p1, d1)} и {ufr(p2, d2)}?'))
+    q = _q7(r, f'Какое из чисел заключено между {ufr(p1, d1)} и {ufr(p2, d2)}?')
     e = f'{ufr(p1, d1)} ≈ {approx(a_, 3)}, {ufr(p2, d2)} ≈ {approx(b_, 3)}; между ними {tnum(target)}.'
     return pcard(q, a, e=e, k='one', o=o), lambda: bool(sp.Rational(p1, d1) < R(target) < sp.Rational(p2, d2)) and \
         sum(bool(sp.Rational(p1, d1) < R(x) < sp.Rational(p2, d2)) for x in opts_v) == 1
@@ -666,9 +670,7 @@ def gen_og07_point_statement(r):
     o, a = opts(r, [c[0] for c in ch], 0)
     svg = _int_line(k - 1, k + 2, [(aval, v)])
     word = 'верно' if want_true else 'неверно'
-    q = _q7(r, pick(r, f'На рисунке изображена координатная прямая, на которой отмечено число {v}. Какое из приведённых ниже неравенств для этого числа {word}?',
-                    f'Положение числа {v} показано точкой на координатной прямой. Выберите среди предложенных неравенств то, которое {word}.',
-                    f'Пользуясь рисунком, где отмечено число {v}, определите, какое из следующих неравенств {word}.'))
+    q = _q7(r, f'Число {v} отмечено на координатной прямой. Какое из приведённых неравенств для него {word}?')
     e = f'По рисунку {tnum(k)} < {v} < {tnum(k + 1)}. Проверяем знаки разностей: {word} «{ch[0][0]}».'
     rel = parse(ch[0][0].replace(' > ', '>').replace(' < ', '<'))
     S = sp.Symbol(v)
@@ -722,9 +724,7 @@ def gen_og07_two_points(r):
     o, a = opts(r, [c[0] for c in ch], 0)
     svg = _int_line(lo, hi, [(av, na), (bv, nb)])
     word = 'верно' if want_true else 'неверно'
-    q = _q7(r, pick(r, f'Числа {na} и {nb} изображены точками на координатной прямой (см. рисунок). Выберите утверждение, которое {word}.',
-                    f'По расположению чисел {na} и {nb} на координатной прямой определите, какое из утверждений {word}.',
-                    f'На рисунке показано, где на координатной прямой находятся числа {na} и {nb}. Какое из следующих соотношений {word}?'))
+    q = _q7(r, f'Числа {na} и {nb} отмечены на координатной прямой. Какое из приведённых утверждений {word}?')
     e = f'По рисунку {tnum(ka)} < {na} < {tnum(ka + 1)}, {tnum(kb)} < {nb} < {tnum(kb + 1)}; {word}: «{ch[0][0]}».'
     f0 = ch[0][2]
 
@@ -763,8 +763,7 @@ def gen_og07_three_diff(r):
     svg = svg_numline(lo, hi, ticks=[pos[0] - 1 + i for i in range(hi - lo + 1)], labels=[(0, '0')] if lo < 0 < hi else [],
                       points=[(val[n], n) for n in names])
     word = 'отрицательна' if want_neg else 'положительна'
-    q = _q7(r, pick(r, f'Числа {", ".join(names[:2])} и {names[2]} отмечены на координатной прямой. Выберите разность, которая {word}.',
-                    f'На рисунке изображены числа {names[0]}, {names[1]} и {names[2]}. Определите, какая из приведённых разностей {word}.'))
+    q = _q7(r, f'Числа {names[0]}, {names[1]} и {names[2]} отмечены на координатной прямой. Какая из приведённых разностей {word}?')
     x, y = g
     e = f'На рисунке {x} {"левее" if want_neg else "правее"} {y}, поэтому {x} − {y} {"< 0" if want_neg else "> 0"}.'
     return pcard(q, a, e=e, k='one', o=o, svg=svg), lambda: sum(bool((R(val[p]) - R(val[s]) < 0) == want_neg) for p, s in ch) == 1 and \
@@ -773,8 +772,8 @@ def gen_og07_three_diff(r):
 
 # ================================================================ №8 — степени, корни, преобразования
 
-K8 = K(minutes=3, kes=['2.2', '2.5', '1.4'], kt=[4], style='«Найдите значение выражения …» с формулой; ответ — число')
-K8a = K(minutes=4, kes=['2.1', '2.3', '2.4'], kt=[4], style='«Найдите значение выражения … при a = …»: сначала упростить, затем подставить')
+K8 = K(minutes=3, kes=['2.2', '2.5', '1.4'], kt=[4], style='«Найдите значение выражения …» (инструкция КИМ), степени — верхним индексом через разметку ^{…}; ответ — число')
+K8a = K(minutes=4, kes=['2.1', '2.3', '2.5'], kt=[4], style='«Найдите значение выражения … при a = …»: сначала упростить, затем подставить')
 
 
 def _pw(b, e):
@@ -782,14 +781,20 @@ def _pw(b, e):
     return f'{b}{sup(e)}'
 
 
+def caret(s):
+    """Показатели-индексы → разметка ^{…} (внутри ⟦ ⟧ сайт рисует настоящий верхний индекс
+    основным шрифтом формулы; глифы ⁴–⁹ в Nunito отсутствуют и берутся из запасного шрифта)."""
+    return re.sub('[' + SUPS + '⁻]+', lambda m: '^{' + ''.join(UNSUP[c] for c in m.group(0)).replace('-', '−') + '}', s)
+
+
 def _f8(r, ex, val, e):
-    q = f'{pick(r, *ASK)} ⟦{ex}⟧.'
+    q = f'{pick(r, *ASK)} ⟦{caret(ex)}⟧.'
     return pcard(q, num(val), e=e), lambda: same(num(val), parse(ex))
 
 
 @proto('og08-pow-base', 'oge', 8, 'Степени с одинаковым числовым основанием',
        invariant='Числовое выражение из степеней одного основания (целые показатели, в т. ч. отрицательные): умножение, деление, степень степени.',
-       varies='Основание (в т. ч. дробь 1/2, 1/3), показатели, запись (частное через «:» или дробью).',
+       varies='Основание (в т. ч. дробь 1/2, 1/3), показатели (в основном двузначные, как 2^{−11} и 2^{26} в банке), запись частного через «:» или дробью.',
        answer_rule='Складываем/вычитаем/умножаем показатели, затем вычисляем одну небольшую степень.',
        fipi=r'значение выражения\s+\(?\s*(\d+)\s*[−-]?\s*\d+\s*\)?\s*[−-]?\s*\d*\s*[·⋅]?\s*\(?\s*\1\s+[−-]?\s*\d+|значение выражения\s+\d\s+\d+\s+\d+\s*\.$',
        mistakes=['перемножают показатели вместо сложения', 'ошибка со знаком отрицательного показателя'], maxdec=4, kim=K8)
@@ -800,24 +805,24 @@ def gen_og08_pow_base(r):
         target = -target
     kind = r.randrange(4)
     if kind == 0:
-        m = r.choice([x for x in range(-13, 20) if x not in (0, 1, -1)])
-        n = r.choice([x for x in range(-13, 20) if x not in (0, 1, -1)])
+        m = r.choice([x for x in range(-19, 20) if abs(x) > 7])
+        n = r.choice([x for x in range(-19, 20) if abs(x) > 7])
         k = m + n - target
-        if k in (0, 1, -1) or abs(k) > 25:
+        if k in (0, 1, -1) or abs(k) > 30 or m + n == 0:
             return None
         ex = pick(r, f'{_pw(b, m)} · {_pw(b, n)} : {_pw(b, k)}', f'({_pw(b, m)} · {_pw(b, n)}) / {_pw(b, k)}')
         e = f'Показатель: {tnum(m)} + {par(n)} − {par(k)} = {tnum(target)}.'
     elif kind == 1:
-        m, n = r.choice([-9, -7, -5, -4, -3, 3, 4, 5, 7, 9]), r.choice([-3, -2, 2, 3, 4])
+        m, n = r.choice([-15, -14, -13, -12, 12, 13, 14, 15]), r.choice([-3, -2, 2, 3])
         k = target - m * n
-        if k in (0, 1, -1) or abs(k) > 30:
+        if k in (0, 1, -1) or abs(k) > 48:
             return None
         ex = f'({_pw(b, m)}){sup(n)} · {_pw(b, k)}'
         e = f'Показатель: {tnum(m)}·{par(n)} + {par(k)} = {tnum(target)}.'
     elif kind == 2:
-        m, n = r.choice([-9, -7, -5, -4, -3, 3, 4, 5, 7, 9]), r.choice([-3, -2, 2, 3, 4])
+        m, n = r.choice([-15, -14, -13, -12, 12, 13, 14, 15]), r.choice([-3, -2, 2, 3])
         k = m * n - target
-        if k in (0, 1, -1) or abs(k) > 30:
+        if k in (0, 1, -1) or abs(k) > 48:
             return None
         ex = pick(r, f'({_pw(b, m)}){sup(n)} : {_pw(b, k)}', f'({_pw(b, m)}){sup(n)} / {_pw(b, k)}')
         e = f'Показатель: {tnum(m)}·{par(n)} − {par(k)} = {tnum(target)}.'
@@ -839,13 +844,13 @@ def gen_og08_pow_base(r):
 
 @proto('og08-pow-var', 'oge', 8, 'Степени с буквой: упростить и подставить',
        invariant='Выражение с буквой из степеней одного основания; упростить по свойствам степени и подставить значение.',
-       varies='Буква, показатели (в т. ч. отрицательные), вид (произведение, частное, степень степени), значение переменной.',
+       varies='Буква, показатели (в т. ч. отрицательные), вид (произведение, частное, степень степени), значение переменной (натуральное 2–7, как в банке).',
        answer_rule='Приводим к виду aᵏ и подставляем число.',
        fipi=r'при\s+[a-zх]\s*=\s*[−-]?\s*\d+\s*\.?\s*$',
        mistakes=['подставляют до упрощения и ошибаются в вычислениях', 'путают степень степени и произведение'], maxdec=4, kim=K8)
 def gen_og08_pow_var(r):
-    v = r.choice(['b', 'x', 'c', 'y', 'm', 'p', 'a'])
-    target = r.choice([-2, -1, 2, 3, 1, 4])
+    v = r.choice(['b', 'c', 'x', 'y', 'm', 'p'])  # в банке почти всегда a — берём другие буквы
+    target = r.choice([2, 2, 3, 3, 4, 1])
     m, n = r.choice([-9, -7, -6, -5, -4, -3, 3, 4, 5, 6, 7, 8, 9, 11, 13]), r.choice([-3, -2, 2, 3, 4, 7, 12, 17])
     kind = r.randrange(3)
     if kind == 0:
@@ -865,11 +870,11 @@ def gen_og08_pow_var(r):
         if k in (0, 1) or abs(k) > 30:
             return None
         ex = pick(r, f'({v}{sup(m)}){sup(n)} : {v}{sup(k)}', f'({v}{sup(m)}){sup(n)} / {v}{sup(k)}')
-    val_x = r.choice([2, 3, 4, 5, 6, 7, 10, -2, -3, F(1, 2), F(1, 3), F(1, 5)])
+    val_x = r.choice([2, 3, 4, 5, 6, 7])  # масштаб банка: при a = 2 … 7, ответ — небольшая степень
     val = F(val_x) ** target
     if not nice(val, 3) or abs(val) > 1000:
         return None
-    q = f'{pick(r, "Найдите значение выражения", "Вычислите значение выражения", "Упростите выражение и найдите его значение:")} {ex} при {v} = {fr(val_x)}.'
+    q = f'{pick(r, *ASK)} ⟦{caret(ex)}⟧ при {v} = {fr(val_x)}.'
     e = f'Упрощаем: {v}{sup(target) if target != 1 else ""}; при {v} = {fr(val_x)} получаем {tnum(val)}.'
     sym = sp.Symbol(v)
     return pcard(q, num(val), e=e), lambda: same(num(val), parse(ex).subs(sym, R(val_x)))
@@ -877,16 +882,17 @@ def gen_og08_pow_var(r):
 
 @proto('og08-pow-mixed', 'oge', 8, 'Степени с разными основаниями',
        invariant='Произведение степеней разных оснований и степень их произведения: (ab)ⁿ = aⁿbⁿ; сокращаем одинаковые степени.',
-       varies='Основания (в т. ч. 10 = 2·5, 30 = 3·10), показатели, место составного основания.',
+       varies='Основания (18 = 2·9, 33 = 3·11, 36 = 4·9 …), показатели, место составного основания.',
        answer_rule='Раскладываем составное основание на множители и сокращаем.',
        fipi=r'значение выражения\s+(\(\s*\d+\s*⋅\s*\d+\s*\)\s*\d+\s+\d+\s+\d+\s*⋅\s*\d+\s+\d+|\d+\s+\d+\s*⋅\s*\d+\s+\d+\s+\d+\s+\d+|\d+\s+\d+\s+\d+\s+\d+\s*⋅\s*\d+\s+\d+)\s*\.',
        mistakes=['перемножают основания и складывают показатели одновременно'], maxdec=4, kim=K8)
 def gen_og08_pow_mixed(r):
-    a, b = r.choice([(2, 3), (2, 5), (3, 5), (2, 7), (3, 7), (4, 5), (3, 10), (6, 11), (5, 7), (2, 9), (4, 7)])
+    # пары оснований того же масштаба, что в банке (6, 15, 21, 30, 44 …), но не совпадающие с ним
+    a, b = r.choice([(2, 9), (3, 11), (2, 13), (4, 9), (5, 11), (7, 8), (3, 13), (6, 7), (8, 9), (7, 11)])
     if r.random() < 0.5:
         a, b = b, a
     ab = a * b
-    n = r.randint(4, 14)
+    n = r.randint(7, 14)
     kind = r.randrange(3)
     if kind == 0:
         p, q_ = n + r.choice([0, 1, 2]), n + r.choice([0, 1, 2])
@@ -909,29 +915,27 @@ def gen_og08_pow_mixed(r):
 
 @proto('og08-pow-two-vars', 'oge', 8, 'Степени двух букв: упростить и подставить (в т. ч. корень)',
        invariant='aᵖ·(bᵠ)ʳ/(ab)ˢ: после упрощения остаётся произведение небольших степеней; подставляем значения (b может быть корнем).',
-       varies='Показатели, значения букв (целые, √2, √3).',
+       varies='Показатели, значения букв (a — натуральное, b = √n; как в банке, b часто сокращается полностью).',
        answer_rule='Собираем показатели при a и при b, затем подставляем; (√k)² = k.',
        fipi=r'\(\s*[a-z]\s*[·⋅]\s*[a-z]\s*\).{0,40}при\s+[a-z]\s*=.{0,20}и\s+[a-z]\s*=',
        mistakes=['забывают возвести в степень второй множитель', 'ошибка с (√2)⁴'], kim=K8)
 def gen_og08_pow_two_vars(r):
-    va, vb = r.choice([('a', 'b'), ('x', 'y'), ('m', 'n'), ('p', 'q')])
+    va, vb = r.choice([('x', 'y'), ('m', 'n'), ('p', 'q'), ('c', 'd')])
     s_ = r.randint(9, 25)
-    ea, eb = r.choice([1, 2, 3, 4]), r.choice([0, 2, 4])
+    ea, eb = r.choice([1, 2, 2, 3]), r.choice([0, 0, 2])  # как в банке: b = √n часто сокращается полностью
     q_ = r.choice([2, 3, 4, 5])
     if (s_ + eb) % q_:
         return None
     rr = (s_ + eb) // q_
     p = s_ + ea
-    A = r.choice([2, 3, 5, -2])
-    B = r.choice([2, 3, 5])
-    if eb == 0:
-        return None
+    A = r.choice([2, 3, 4, 5, 6, 7])
+    B = r.choice([2, 3, 5, 6, 7])
     val = F(A) ** ea * F(B) ** (eb // 2)
     ex = f'{va}{sup(p)} · ({vb}{sup(q_)}){sup(rr)} / ({va}{vb}){sup(s_)}'
-    if abs(val) > 2000:
+    if abs(val) > 1000:
         return None
-    q = f'{pick(r, "Найдите значение выражения", "Вычислите значение выражения")} {ex} при {va} = {tnum(A)} и {vb} = √{B}.'
-    e = f'Упрощаем: {va}{sup(ea) if ea > 1 else ""}·{vb}{sup(eb)}; подставляем: {tnum(val)}.'
+    q = f'{pick(r, *ASK)} ⟦{caret(ex)}⟧ при {va} = {tnum(A)} и {vb} = √{B}.'
+    e = (f'Упрощаем: {va}{sup(ea) if ea > 1 else ""}' + (f'·{vb}{sup(eb)}' if eb else '') + f'; подставляем: {tnum(val)}.')
     S = {sp.Symbol(va): A, sp.Symbol(vb): sp.sqrt(B)}
     return pcard(q, num(val), e=e), lambda: same(num(val), sp.simplify(parse(ex).subs(S)))
 
@@ -1062,11 +1066,15 @@ def gen_og08_sqrt_conj(r):
        fipi=r'\(\s*√\s*\(\s*\d+\s*\)\s*[+−-]\s*\d+\s*\)\s*2\s*[+−-]\s*\d+\s*√',
        mistakes=['забывают удвоенное произведение', '(√a − b)² считают как a − b²'], kim=K8)
 def gen_og08_sqrt_binom(r):
-    a = r.choice([x for x in range(2, 60) if math.isqrt(x) ** 2 != x])
-    b = r.randint(1, 9)
+    b = r.randint(2, 9)
     sgn = r.choice('+−')
+    if r.random() < 0.5:  # (b ± √a)² ∓ 2b√a
+        a = r.choice([x for x in range(2, 60) if math.isqrt(x) ** 2 != x])
+        ex = f'({b} {sgn} √{a})² {"−" if sgn == "+" else "+"} {2 * b}√{a}'
+    else:  # (√a ± b)² ∓ 2b√a
+        a = r.choice([x for x in range(20, 60) if math.isqrt(x) ** 2 != x])
+        ex = f'(√{a} {sgn} {b})² {"−" if sgn == "+" else "+"} {2 * b}√{a}'
     val = a + b * b
-    ex = f'(√{a} {sgn} {b})² {"−" if sgn == "+" else "+"} {2 * b}√{a}'
     return _f8(r, ex, val, f'(√{a} {sgn} {b})² = {a} {sgn} {2 * b}√{a} + {b * b}; остаётся {a} + {b * b} = {val}.')
 
 
@@ -1095,9 +1103,9 @@ def gen_og08_sqrt_distrib(r):
        fipi=r'значение выражения\s+\d+\s+\d+\s*\+\s*√\s*\(\s*\d+\s*\)\s*\+\s*\d+\s+\d+\s*[−-]\s*√',
        mistakes=['складывают знаменатели', 'ошибка в знаке a² − b'], kim=K8)
 def gen_og08_sqrt_recip(r):
-    a = r.randint(3, 9)
-    b = r.choice([x for x in range(6, a * a + 30) if math.isqrt(x) ** 2 != x and x != a * a])
-    c = r.choice([2, 3, 4, 5, 6])
+    a = r.randint(4, 9)
+    b = r.choice([x for x in range(11, a * a + 30) if math.isqrt(x) ** 2 != x and x != a * a])
+    c = r.choice([x for x in (2, 3, 4, 5, 6) if x != a])
     D = a * a - b
     val = F(2 * a * c, D)
     if not nice(val, 2) or abs(D) > 40:
@@ -1113,7 +1121,7 @@ def gen_og08_sqrt_recip(r):
        fipi=r'√\s*\(\s*\d*\s*[a-z]\s*2\s*[+−-]\s*\d+\s*[a-z]\s*[a-z]\s*\+\s*\d*\s*[a-z]\s*2\s*\)',
        mistakes=['забывают модуль (ответ отрицательный)', 'подставляют без свёртки и ошибаются в дробях'], kim=K8a)
 def gen_og08_sqrt_poly(r):
-    va, vb = r.choice([('a', 'b'), ('x', 'y'), ('m', 'n'), ('p', 'q'), ('c', 'd')])
+    va, vb = r.choice([('x', 'y'), ('m', 'n'), ('p', 'q'), ('c', 'd')])
     k = r.choice([2, 3, 4, 5])
     first_k = r.random() < 0.35
     sg = r.choice([1, -1])
@@ -1133,9 +1141,9 @@ def gen_og08_sqrt_poly(r):
     if av == 0 or av.denominator > 60:
         return None
     val = abs(target)
-    show = lambda x: mixed(x) if x > 1 and x.denominator > 1 and r.random() < 0.6 else fr(x)
+    show = lambda x: (('−' if x < 0 else '') + mixed(abs(x))) if abs(x) > 1 and x.denominator > 1 else fr(x)
     ex = f'√({inner})'
-    q = f'{pick(r, "Найдите значение выражения", "Вычислите значение выражения")} {ex} при {va} = {show(av)} и {vb} = {show(bv)}.'
+    q = f'{pick(r, *ASK)} ⟦{caret(ex)}⟧ при {va} = {show(av)} и {vb} = {show(bv)}.'
     e = f'√({inner}) = {form}; подставляем: |{tnum(target)}| = {val}.'
     S = {sp.Symbol(va): R(av), sp.Symbol(vb): R(bv)}
     return pcard(q, num(val), e=e), lambda: same(num(val), parse(ex).subs(S))
@@ -1158,18 +1166,20 @@ def gen_og08_sqrt_mono(r):
             return None
         cs = fr(c) if c.denominator == 1 else f'{fr(c)} ·'
         ex = f'√({cs}{vx}{sup(m)}{vy}{sup(n)})' if c.denominator == 1 else f'√({fr(c)} · {vx}{sup(m)}{vy}{sup(n)})'
-        q = f'{pick(r, "Найдите значение выражения", "Вычислите значение выражения")} {ex} при {vx} = {X0} и {vy} = {Y0}.'
+        q = f'{pick(r, *ASK)} ⟦{caret(ex)}⟧ при {vx} = {X0} и {vy} = {Y0}.'
         S = {sp.Symbol(vx): X0, sp.Symbol(vy): Y0}
         e = f'√({fr(c)}·{vx}{sup(m)}{vy}{sup(n)}) = {fr(F(math.isqrt(c.numerator), math.isqrt(c.denominator)))}·{vx}{sup(m // 2)}·{vy}{sup(n // 2)} = {tnum(val)}.'.replace('¹', '')
     else:
-        v = r.choice(['a', 'b', 'x', 'c'])
+        v = r.choice(['b', 'c', 'm', 'p', 'y'])
         p_, q2 = r.choice([2, 4, 6, 8, 10]), r.choice([2, 4, 6])
+        if p_ + q2 < 8:
+            return None
         A = r.choice([2, 3, -2, -3, 5])
         val = abs(A) ** ((p_ + q2) // 2)
         if val > 5000:
             return None
         ex = pick(r, f'√({v}{sup(p_)} · (−{v}){sup(q2)})', f'√((−{v}){sup(q2)} · {v}{sup(p_)})')
-        q = f'{pick(r, "Найдите значение выражения", "Вычислите значение выражения")} {ex} при {v} = {tnum(A)}.'
+        q = f'{pick(r, *ASK)} ⟦{caret(ex)}⟧ при {v} = {tnum(A)}.'
         S = {sp.Symbol(v): A}
         e = f'(−{v}){sup(q2)} = {v}{sup(q2)}, поэтому корень равен |{v}{sup((p_ + q2) // 2)}| = {val}.'
     return pcard(q, num(val), e=e), lambda: same(num(val), sp.simplify(parse(ex).subs(S)))

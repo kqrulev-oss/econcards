@@ -528,7 +528,9 @@ def num_roots(f, lo, hi, n=6000, conds=()):
             x0 = a if da else b
             v0 = val(x0)
             # на границе ОДЗ корень возможен, только если граница задана нестрогим условием (корень чётной степени)
-            if v0 is not None and abs(v0) < 1e-9 and val.bad(b if da else a) <= {'nonneg'}:
+            # и если в самой граничной точке не обращается в нуль знаменатель (условие «≠ 0»)
+            nz0 = any(k_ == 'nz' and abs(complex(sp.N(ex.subs(X, x0)))) < 1e-6 for ex, k_ in conds)
+            if v0 is not None and abs(v0) < 1e-9 and val.bad(b if da else a) <= {'nonneg'} and not nz0:
                 cand.append((x0, x0))
     for i in range(n + 1):
         v = vs[i]
@@ -583,6 +585,8 @@ def num_roots(f, lo, hi, n=6000, conds=()):
             near = [val.bad(x0 - dlt) if val(x0 - dlt) is None else set(), val.bad(x0 + dlt) if val(x0 + dlt) is None else set()]
             if any(k_ - {'nonneg'} for k_ in near):
                 v0 = None
+        if v0 is not None and any(k_ == 'nz' and abs(complex(sp.N(ex.subs(X, x0)))) < 1e-6 for ex, k_ in conds):
+            v0 = None                   # предел в точке, где знаменатель обращается в нуль, — не корень
         if v0 is not None and abs(v0) < tol and lo - 1e-9 <= x0 <= hi + 1e-9:
             if all(abs(x0 - q) > 1e-7 for q in roots):
                 roots.append(x0)
@@ -1595,7 +1599,7 @@ def ask16(r, sat, seg=10):
         return 'В ответ запишите наименьшее целое решение неравенства.', min(S), S
     if k == 'max':
         return 'В ответ запишите наибольшее целое решение неравенства.', max(S), S
-    return (f'В ответ запишите количество целых решений неравенства, принадлежащих отрезку [−{seg}; {seg}].',
+    return (f'В ответ запишите число целых x из отрезка [−{seg}; {seg}], удовлетворяющих неравенству.',
             len(inseg), inseg)
 
 
@@ -2382,6 +2386,10 @@ def card19(r, obj, cond, sat, sat_chk, e):
     return pcard(q, num(ans), e), lambda: check19(ask, ans, sat_chk)
 
 
+def rad_txt(R2):
+    return str(math.isqrt(R2)) if math.isqrt(R2) ** 2 == R2 else f'√{R2}'
+
+
 def real_roots_of(expr, var):
     """Различные действительные корни многочлена (sympy, точно)."""
     P = sp.Poly(sp.expand(expr), var)
@@ -2686,10 +2694,6 @@ def gen_ep19_circle_lines(r):
        fipi=r'уравнение \|? ?x 2 \+ a 2 [−+] \d* ?x [−+] \d* ?a \|? = \|? ?\d* ?x|a 2 [+−] a x − 2 x 2 .*\| x \||x 2 \+ a 2 [+−] x [+−] \d+ a = \|',
        mistakes=['забывают условие H ≥ 0', 'считают совпавшие корни дважды', 'теряют случай касания'],
        kim=kim(K19, 'Как в КИМ: «|x² + a² − 6x + 4a| = 2x − 2a имеет четыре различных корня».', kes=['2.10']))
-def rad_txt(R2):
-    return str(math.isqrt(R2)) if math.isqrt(R2) ** 2 == R2 else f'√{R2}'
-
-
 def gen_ep19_abs_quad(r):
     p, q = r.choice([-6, -4, -2, 2, 4, 6, -1, 1, -3, 3]), r.choice([-7, -6, -4, -2, 2, 4, 6, 7, -3, 3])
     rx, sa = r.choice([1, 2, 3, 7, -2, -7]), r.choice([1, 2, -1, -2, -3, 3])
@@ -4860,7 +4864,7 @@ def gen_ep18_trap_perp(r):
     val = h if ask == 'h' else d1 * d2 / 2
     if not nice(val, 2):
         return None
-    head = pick(r, f'Сумма оснований трапеции равна {tnum(s)}, а её диагонали равны {tnum(d1)} и {tnum(d2)}.',
+    head = pick(r, f'Диагонали трапеции равны {tnum(d1)} и {tnum(d2)}, а сумма её оснований равна {tnum(s)}.',
                 f'Диагонали трапеции равны {tnum(d1)} и {tnum(d2)}, а сумма длин её оснований равна {tnum(s)}.')
     q = (f'{head}\nа) Докажите, что диагонали этой трапеции перпендикулярны.\n'
          f'б) Найдите {"высоту" if ask == "h" else "площадь"} трапеции.\n{ASK18[""]}')
