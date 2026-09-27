@@ -3432,7 +3432,9 @@ TASK20 = ('1) Составьте электронный баланс, запис
 def _solution20(sch):
     kl, kr = sch['k']
     eq = eq_text((sch['lhs'], sch['rhs'], kl, kr))
-    return (f'Электронный баланс: {_half_from(sch, "red")} (окисление); {_half_from(sch, "ox")} (восстановление). '
+    hr, ho = _half_from(sch, "red"), _half_from(sch, "ox")
+    m1, m2 = multipliers(e_of(hr), e_of(ho))
+    return (f'Электронный баланс: {hr} (окисление, множитель {m1}); {ho} (восстановление, множитель {m2}). '
             f'Уравнение: {eq}. Восстановитель — {disp(sch["red"][0])} ({sch["red"][1]} в степени окисления '
             f'{sch["red"][2]:+d}), окислитель — {disp(sch["ox"][0])} ({sch["ox"][1]} в степени окисления '
             f'{sch["ox"][2]:+d}).').replace('+0)', '0)')
