@@ -169,6 +169,7 @@ export function renderLanding(root, library) {
       </article>
     </div>
     <p class="ld-price-note">Оплата картой или через СБП, без автосписаний. <a href="offer.html">Оферта</a> · <a href="privacy.html">Персональные данные</a></p>
+    <p class="ld-price-note"><b>Как получить доступ:</b> всё работает онлайн, доставки нет. После оплаты доступ открывается сразу в вашем аккаунте на сайте — на оплаченный срок (1 или 3 месяца). Чек самозанятого формируется автоматически. Если доступ не открылся — вернём деньги.</p>
   </section>
 
   <section class="ld-faq" id="faq">
@@ -176,8 +177,9 @@ export function renderLanding(root, library) {
     <details><summary>Какие предметы подходят?</summary><p>Любые, где есть правила, термины и&nbsp;задачи: тренажёр собирается из&nbsp;ваших материалов. Готовая библиотека: ЕГЭ по&nbsp;русскому языку (все задания), профильная математика (все 19 заданий) и&nbsp;олимпиадная экономика.</p></details>
     <details><summary>А&nbsp;если ИИ ошибётся в&nbsp;карточке?</summary><p>Каждую карточку вы видите до&nbsp;того, как она попадёт к&nbsp;ученикам, и&nbsp;можете исправить или убрать. Без вашего подтверждения ничего не&nbsp;публикуется.</p></details>
     <details><summary>Сколько времени это займёт у&nbsp;ученика?</summary><p>10&nbsp;минут в&nbsp;день. Новые карточки приходят понемногу, старые — на&nbsp;повторение по&nbsp;графику, который подстраивается под ученика.</p></details>
-    <details><summary>Что видят родители?</summary><p>Короткий текст: сколько дней занимался, сколько решил, точность и&nbsp;что подтягиваете на&nbsp;занятиях. Вы копируете его и&nbsp;отправляете сами.</p></details>
-    <details><summary>Какие данные учеников хранятся?</summary><p>Только имя, которое ученик ввёл сам, и&nbsp;статистика занятий. Ни&nbsp;телефонов, ни&nbsp;почты.</p></details>
+    <details><summary>Что видят родители?</summary><p>В&nbsp;кабинете родителя — дни занятий, точность по&nbsp;неделям и&nbsp;темы, которые стоит подтянуть. Ответы и&nbsp;ошибки ребёнка родитель не&nbsp;видит. Репетитор может и&nbsp;сам отправить короткий отчёт.</p></details>
+    <details><summary>Какие данные хранятся?</summary><p>Имя и&nbsp;статистика занятий. Если вы входите в&nbsp;аккаунт — ещё то, что нужно для входа: Telegram или адрес почты. Телефоны не&nbsp;собираем. Подробнее — в&nbsp;<a href="privacy.html">политике обработки данных</a>.</p></details>
+    <details><summary>Как вернуть деньги?</summary><p>В&nbsp;течение 7&nbsp;дней после оплаты напишите на&nbsp;kqrulev@yandex.ru или в&nbsp;Telegram — вернём за&nbsp;неиспользованные дни. Если доступ не&nbsp;открылся по&nbsp;нашей вине — вернём всё. Условия — в&nbsp;<a href="offer.html">оферте</a>.</p></details>
   </section>
 
   <section class="ld-final"><span class="ld-final-card" aria-hidden="true"><span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 2 3 7 7 3-7 3-3 7-3-7-7-3 7-3z"/></svg></span> Ваша следующая карточка</span>
@@ -197,6 +199,8 @@ export function renderLanding(root, library) {
       <a href="login.html?role=parent">Я родитель — посмотреть прогресс ребёнка</a>
     </div>
     <p class="ld-copy">Между уроками · тренажёр для учеников репетитора · <a href="${TG}" target="_blank" rel="noopener">Telegram @trwqxp</a></p>
+    <p class="ld-copy ld-legal">Исполнитель: Курулев Кирилл Дмитриевич, самозанятый (налог на профессиональный доход), ИНН&nbsp;631220042532 ·
+      <a href="mailto:kqrulev@yandex.ru">kqrulev@yandex.ru</a> · <a href="offer.html">Оферта</a> · <a href="privacy.html">Персональные данные</a></p>
   </footer>`;
 
   const join = () => {
