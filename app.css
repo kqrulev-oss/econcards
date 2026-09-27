@@ -638,6 +638,7 @@ input:focus, select:focus, textarea:focus { outline: 3px solid var(--accent); ou
 .ld-student a { font-size: 14px; }
 .ld-copy { color: var(--muted); font-size: 13px; font-weight: 700; margin-top: 28px; }
 .ld-copy a { color: inherit; text-decoration: underline; }
+.ld-legal { margin-top: 8px; font-weight: 600; line-height: 1.5; }
 
 /* ---------- лендинг: иллюстрированный первый экран ---------- */
 :root { --ld-sticker-fill: #FF5A36; --ld-on-color: #1B1440; --ld-white: #FFFFFF; --ld-link: #5B3DF5; }
