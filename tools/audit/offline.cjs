@@ -97,10 +97,14 @@ function netSwitch(port) {
     sw.set(true);
     const check = async (label, url, expect) => {
       const r = await S(`ОФЛАЙН: ${label}`, () => page.goto(BASE + url, { timeout: 15000 }));
-      const html = await page.evaluate(() => ({ title: document.title, offline: /Нет связи|нет связи|Нет интернета|офлайн/i.test(document.body.innerText || ''), landing: !!document.querySelector('.ld-hero, .landing, [class^="ld-"]'), text: (document.body.innerText || '').replace(/\s+/g, ' ').trim().slice(0, 100) })).catch(() => ({}));
+      // Страница «Нет связи» (offline.html) — по заголовку; главная — по первому экрану лендинга
+      const html = await page.evaluate(() => ({ title: document.title, offlinePage: /^Нет связи/.test(document.title), offline: /Нет связи|нет связи|Нет интернета|офлайн/i.test(document.body.innerText || ''), landing: !!document.querySelector('.ld-hero'), text: (document.body.innerText || '').replace(/\s+/g, ' ').trim().slice(0, 100) })).catch(() => ({}));
       r.expect = expect; r.page = html;
       const landingInstead = html.landing && !/^\/(\?|$)/.test(url);
-      r.verdict = r.blank ? 'пустой экран' : r.loading ? 'вечная загрузка' : landingInstead ? 'главная вместо страницы' : expect === 'offline' && !html.offline && !r.fail ? 'нет сообщения «Нет связи»' : r.fail && !html.offline ? 'не открылась' : 'ok';
+      r.verdict = r.blank ? 'пустой экран' : r.loading ? 'вечная загрузка' : landingInstead ? 'главная вместо страницы'
+        : expect === 'offline' && !html.offline && !r.fail ? 'нет сообщения «Нет связи»'
+        : expect === 'page' && html.offlinePage ? '«Нет связи» вместо сохранённой страницы'
+        : r.fail && !html.offline ? 'не открылась' : 'ok';
       return r;
     };
     await check('главная', '/?about', 'page');
@@ -110,9 +114,9 @@ function netSwitch(port) {
       r.verdict = r.fail ? 'занятие не открылось' : 'ok';
     }
     await check('задание 4', '/?p=ege-rus#/topic/task-4', mode === 'visited' ? 'page' : 'offline');
-    await check('студия', '/studio/', mode === 'visited' ? 'page' : 'offline');
-    await check('вход', '/login.html', mode === 'visited' ? 'page' : 'offline');
-    await check('кабинет', '/cabinet/', mode === 'visited' ? 'page' : 'offline');
+    await check('студия', '/studio/', 'page'); // заранее в кэше
+    await check('вход', '/login.html', 'page');
+    await check('кабинет', '/cabinet/', 'page');
     await check('оферта (не открывали)', '/offer.html', 'offline');
     await check('политика (не открывали)', '/privacy.html', 'offline');
     await check('неизвестный тренажёр', '/?t=zzzz1234', 'any');
