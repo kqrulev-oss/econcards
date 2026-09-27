@@ -105,6 +105,63 @@ export const dueDay = due => { const [y, m, d] = String(due).split('-').map(Numb
 const WD = ['вс', 'пн', 'вт', 'ср', 'чт', 'пт', 'сб'];
 const MON = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'];
 export const dueText = due => { const t = new Date(dueDay(due) * 864e5); return `${WD[t.getUTCDay()]}, ${t.getUTCDate()} ${MON[t.getUTCMonth()]}`; };
+// Время эфира (ISO) по часам ученика: «сб, 3 октября, 18:00»
+export const whenText = iso => {
+  const t = new Date(iso);
+  return `${WD[t.getDay()]}, ${t.getDate()} ${MON[t.getMonth()]}, ${String(t.getHours()).padStart(2, '0')}:${String(t.getMinutes()).padStart(2, '0')}`;
+};
+
+// ---------- курс ----------
+
+// Видео урока: iframe только трёх сервисов, и src собирается из разобранного id — сам адрес
+// в страницу не попадает. Любая другая https-ссылка — кнопкой, всё прочее не показываем
+export function videoEmbed(url) {
+  let u;
+  try { u = new URL(String(url ?? '').trim()); } catch { return ''; }
+  if (u.protocol !== 'https:' || u.username || u.password || u.port) return '';
+  const host = u.hostname.replace(/^(www|m)\./, ''), path = u.pathname;
+  let src = null, m;
+  if (host === 'kinescope.io' && (m = path.match(/^\/(?:embed\/)?([A-Za-z0-9]{6,40})\/?$/))) src = `https://kinescope.io/embed/${m[1]}`;
+  else if (host === 'rutube.ru' && (m = path.match(/^\/(?:video|play\/embed)\/([0-9a-f]{32})\/?$/))) src = `https://rutube.ru/play/embed/${m[1]}`;
+  else if (host === 'vk.com' || host === 'vkvideo.ru') {
+    const q = u.searchParams;
+    if ((m = path.match(/^\/video(-?\d{1,20})_(\d{1,20})\/?$/))) src = `https://vk.com/video_ext.php?oid=${m[1]}&id=${m[2]}`;
+    else if (path === '/video_ext.php' && /^-?\d{1,20}$/.test(q.get('oid')) && /^\d{1,20}$/.test(q.get('id'))) {
+      src = `https://vk.com/video_ext.php?oid=${q.get('oid')}&id=${q.get('id')}`;
+      if (/^[0-9a-f]{1,40}$/i.test(q.get('hash') || '')) src += `&hash=${q.get('hash')}`;
+    }
+  }
+  if (src) return `<div class="video-frame"><iframe src="${src}" title="Видео урока" allow="autoplay; fullscreen; picture-in-picture; encrypted-media" allowfullscreen loading="lazy" referrerpolicy="origin"></iframe></div>`;
+  return `<a class="btn" href="${esc(u.href)}" target="_blank" rel="noopener">Открыть видео</a>`;
+}
+
+// ДЗ курса для отчётов: n — уроки с ДЗ, у которых срок прошёл или ДЗ уже сделано; done — сделано;
+// onTime — сделано не позже срока. les — prog.les ученика ({ id: { d, ok, at } }, at — номер дня)
+export function courseStats(les, course, today) {
+  const r = { n: 0, done: 0, onTime: 0 };
+  for (const l of course?.lessons || []) {
+    if (!l.hw?.due) continue;
+    const at = les?.[l.id]?.at, end = dueDay(l.hw.due);
+    if (!at && today <= end) continue;
+    r.n++;
+    if (at) { r.done++; if (at <= end) r.onTime++; }
+  }
+  return r;
+}
+
+// ДЗ урока с двух устройств: у урока берём, где решено больше (вместе с его точностью),
+// а день выполнения — самый ранний
+export function mergeLes(a = {}, b = {}) {
+  const out = {};
+  for (const id of new Set([...Object.keys(a), ...Object.keys(b)])) {
+    const x = a[id], y = b[id];
+    const best = !x ? y : !y ? x : (y.d > x.d ? y : x);
+    const at = [x?.at, y?.at].filter(Boolean);
+    out[id] = { d: best.d || 0, ok: best.ok || 0, ...(at.length && { at: Math.min(...at) }) };
+  }
+  return out;
+}
+
 export const uid = (n = 8) => Array.from(crypto.getRandomValues(new Uint8Array(n)), b => 'abcdefghijkmnpqrstuvwxyz23456789'[b % 32]).join('');
 export const plural = (n, one, few, many) => {
   const m10 = n % 10, m100 = n % 100;

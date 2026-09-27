@@ -263,7 +263,7 @@ async function childrenOf(env, parent) {
     const list = await env.DB.list({ prefix: `progress:${id}:` });
     const packs = await Promise.all(list.keys.map(async k => {
       const p = await env.DB.get(k.name, 'json');
-      return p && { ref: k.name.slice(`progress:${id}:`.length), cards: p.cards, log: p.log, saved: p.saved };
+      return p && { ref: k.name.slice(`progress:${id}:`.length), cards: p.cards, log: p.log, les: p.les, saved: p.saved };
     }));
     return { id, name: child.name || 'Ученик', packs: packs.filter(Boolean), plans: child.plans || {} };
   })).then(r => r.filter(Boolean));

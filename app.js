@@ -1,6 +1,6 @@
 // Приложение ученика: ежедневное занятие по интервальному повторению,
 // темы с теорией, работа над ошибками и отправка прогресса репетитору.
-import { store, api, apiBase, loadPack, loadLibrary, renderCard, esc, safeHtml, text, day, dueDay, dueText, uid, plural, el, toast, modal } from './lib.js';
+import { store, api, apiBase, loadPack, loadLibrary, renderCard, esc, safeHtml, text, day, dueDay, dueText, whenText, uid, plural, el, toast, modal, videoEmbed, courseStats, mergeLes } from './lib.js';
 import { renderLanding } from './landing.js';
 import { signedIn, account, loginDialog, logout, addRole, finishRedirectLogin, finishPayment, payDialog, planOf, TG_ICON } from './account.js';
 
@@ -53,7 +53,8 @@ function mergeProg(a, b) {
   // sid из облака — репетитор видит одного ученика, с какого бы устройства тот ни занимался.
   // Сменился sid — сервер этого ученика ещё не видел с этого устройства: сводку отправить заново
   const sid = b.sid || a.sid, moved = sid !== a.sid;
-  return { ...a, cards, log, errs, hw, sid, name: a.name || b.name, variants: a.variants || b.variants,
+  const les = a.les || b.les ? { les: mergeLes(a.les, b.les) } : {};
+  return { ...a, cards, log, errs, hw, ...les, sid, name: a.name || b.name, variants: a.variants || b.variants,
     synced: moved ? 0 : a.synced, syncedN: moved ? -1 : a.syncedN };
 }
 
@@ -66,7 +67,7 @@ async function pullProg() {
     store.set(progKey(), prog);
     // Обратно в облако — только если здесь есть ответы, которых там нет: иначе каждое
     // открытие тренажёра стоило бы записи
-    if (JSON.stringify([prog.cards, prog.log]) !== JSON.stringify([remote?.cards || {}, remote?.log || {}])) await pushProg();
+    if (JSON.stringify([prog.cards, prog.log, prog.les]) !== JSON.stringify([remote?.cards || {}, remote?.log || {}, remote?.les])) await pushProg();
     else { progDirty = false; clearTimeout(progTimer); progTimer = null; }
     return !!remote;
   } catch { return false; }
@@ -104,6 +105,14 @@ function grade(card, score) {
   // Задание: каждый ответ по его теме (и повтор ошибки тоже), в том числе после срока
   const hw = pack.hw;
   if (hw && prog.hw?.id === hw.id && (!hw.topic || card.t === hw.topic) && prog.hw.d < hw.goal) prog.hw.d++;
+  // ДЗ уроков курса: ответы по теме открытого урока, пока обе нормы не выполнены (at — день выполнения)
+  for (const l of lessons()) {
+    if (!l.hw || !lesOpen(l) || (l.topic && card.t !== l.topic) || prog.les?.[l.id]?.at) continue;
+    const r = (prog.les ||= {})[l.id] ||= { d: 0, ok: 0 };
+    r.d++;
+    r.ok += score;
+    if (r.d >= l.hw.goal && r.ok / r.d * 100 >= l.hw.acc) r.at = t;
+  }
   save();
 }
 
@@ -142,22 +151,23 @@ function shuffle(a) {
   return a;
 }
 
+// Задание (репетитора или урока курса): сначала пора повторить, потом новые без дневной нормы,
+// потом начатые — давно не виденные первыми. Так норму можно добрать, даже если новых карточек нет
+function hwQueue(topic, left) {
+  const hp = pack.cards.filter(c => !topic || c.t === topic);
+  const due = dueCards(hp), seen = new Set(due);
+  const fresh = hp.filter(c => !prog.cards[c.id]);
+  const rest = hp.filter(c => prog.cards[c.id] && !seen.has(c)).sort((a, b) => (prog.cards[a.id].last || 0) - (prog.cards[b.id].last || 0));
+  return [...due, ...(topic ? fresh : shuffle(fresh)), ...rest].slice(0, Math.max(0, Math.min(SESSION, left)));
+}
+
 function buildQueue(mode, tid, pid) {
   const pool = pack.cards.filter(c => (!tid || c.t === tid) && (!pid || c.p === pid));
   if (mode === 'errors') {
     const byId = Object.fromEntries(pack.cards.map(c => [c.id, c]));
     return prog.errs.map(id => byId[id]).filter(c => c && (!tid || c.t === tid) && (!pid || c.p === pid)).slice(0, SESSION);
   }
-  if (mode === 'hw') {
-    // Задание: сначала пора повторить, потом новые без дневной нормы, потом начатые — давно не виденные первыми
-    const hw = pack.hw;
-    if (!hw) return [];
-    const hp = pack.cards.filter(c => !hw.topic || c.t === hw.topic);
-    const due = dueCards(hp), seen = new Set(due);
-    const fresh = hp.filter(c => !prog.cards[c.id]);
-    const rest = hp.filter(c => prog.cards[c.id] && !seen.has(c)).sort((a, b) => (prog.cards[a.id].last || 0) - (prog.cards[b.id].last || 0));
-    return [...due, ...(hw.topic ? fresh : shuffle(fresh)), ...rest].slice(0, Math.max(0, Math.min(SESSION, hw.goal - hwD())));
-  }
+  if (mode === 'hw') return pack.hw ? hwQueue(pack.hw.topic, pack.hw.goal - hwD()) : [];
   const due = dueCards(pool).slice(0, SESSION);
   const newToday = prog.log[day()]?.n || 0;
   const newLimit = tid ? 10 : Math.max(0, (pack.daily || NEW_DEFAULT) - newToday);
@@ -204,6 +214,7 @@ function summary() {
     topics, errs: prog.errs.slice(0, 15),
     // Для бота: он не читает сам набор, а напоминания считает по местному времени ученика
     tz: -new Date().getTimezoneOffset(), ...(prog.hw && { hw: prog.hw }),
+    ...(lessons().length && { course: courseStats(prog.les, pack.course, t) }),
     title: (pack.title || '').slice(0, 80), tutor: (pack.tutor || '').slice(0, 80), weak,
   };
 }
@@ -348,6 +359,128 @@ function startHw() {
   toast(hwD() < pack.hw.goal ? 'Здесь пока нечего повторять' : 'Задание уже выполнено');
 }
 
+// ---------- курс ----------
+
+// Курс лежит в наборе (pack.course): уроки по порядку и эфиры. Выполнение ДЗ считает grade()
+const LIVE_MS = 2 * 3600e3; // эфир считаем идущим ещё 2 часа после начала
+const lessons = () => pack.course?.lessons || [];
+const lives = () => (pack.course?.lives || []).slice().sort((a, b) => Date.parse(a.at) - Date.parse(b.at));
+const lesOpen = l => !l.open || dueDay(l.open) <= day();
+const lesRec = l => prog.les?.[l.id] || { d: 0, ok: 0 };
+const lesDone = l => !!lesRec(l).at;
+const lesNum = l => lessons().indexOf(l) + 1;
+// Ссылки эфира вписывает репетитор — в страницу попадает только https
+const httpsUrl = u => { try { const x = new URL(u); return x.protocol === 'https:' ? x.href : ''; } catch { return ''; } };
+
+// ДЗ не сделано — очередь как у задания (норму можно добрать и повторами); точность ниже нормы —
+// ещё 10 карточек. Урок без ДЗ — обычная тренировка темы
+function lesQueue(l) {
+  const r = lesRec(l);
+  if (l.hw && !r.at) return hwQueue(l.topic, r.d >= l.hw.goal ? 10 : l.hw.goal - r.d);
+  return l.topic ? buildQueue('topic', l.topic) : buildQueue('daily');
+}
+
+// Тон и подпись урока — как у задания репетитора на главной
+function lesState(l) {
+  const r = lesRec(l), L = day();
+  if (!l.hw) return r.at ? ['ok', 'Пройден'] : ['', 'Без ДЗ'];
+  const end = dueDay(l.hw.due);
+  return r.at ? (r.at <= end ? ['ok', 'ДЗ выполнено'] : ['mid', 'ДЗ сдано после срока'])
+    : L > end ? ['bad', 'Срок прошёл'] : L === end ? ['mid', 'Сегодня последний день'] : ['', 'ДЗ до ' + dueText(l.hw.due)];
+}
+
+function lesHwBar(l) {
+  const r = lesRec(l), d = Math.min(r.d, l.hw.goal), acc = r.d ? Math.round(r.ok / r.d * 100) : null;
+  return `<div class="goal"><span>ДЗ</span><span class="bar"><i style="width:${Math.round(d / l.hw.goal * 100)}%"></i></span><b>${d}/${l.hw.goal}</b></div>
+    <p class="les-hw-note">${d} из ${l.hw.goal} · точность ${acc === null ? '—' : acc + '%'} (нужно от ${l.hw.acc}%) · срок ${dueText(l.hw.due)}</p>`;
+}
+
+function liveIcs(v) {
+  const url = httpsUrl(v.url) || packLink();
+  icsEvent({ start: new Date(v.at), durationMin: 60, summary: `Эфир: ${v.title}`, desc: `${pack.title}. Ссылка: ${url}`, url, alarmMin: 15, utc: true, file: 'efir.ics' });
+  toast('Откроется календарь — подтвердите эфир');
+}
+
+// Карточка курса на главной: ближайший эфир (в течение суток) или следующий урок
+function courseCard() {
+  if (!lessons().length && !pack.course?.lives?.length) return '';
+  const now = Date.now();
+  const live = lives().find(v => Date.parse(v.at) + LIVE_MS > now && Date.parse(v.at) - now < 864e5);
+  const next = lessons().find(l => lesOpen(l) && !lesDone(l));
+  const soon = lessons().find(l => !lesOpen(l));
+  let body;
+  if (live) {
+    const url = httpsUrl(live.url);
+    body = `<div class="course-next"><span class="pill mid">${Date.parse(live.at) <= now ? 'Эфир идёт' : 'Эфир'}</span><b>${esc(live.title)}</b><span class="muted">${whenText(live.at)}</span></div>
+      ${url ? `<a class="btn primary" href="${esc(url)}" target="_blank" rel="noopener">Подключиться</a>` : ''}`;
+  } else if (next) {
+    const [tone, when] = lesState(next);
+    body = `<div class="course-next"><span class="pill${tone ? ' ' + tone : ''}">${when}</span><b>Урок ${lesNum(next)}. ${esc(next.title)}</b></div>
+      <a class="btn primary" href="#/c/${encodeURIComponent(next.id)}">Открыть</a>`;
+  } else {
+    body = `<p class="course-next">${lessons().length ? 'Все открытые уроки пройдены.' : 'Скоро здесь появятся уроки.'}${soon ? ` Следующий откроется ${dueText(soon.open)}.` : ''}</p>`;
+  }
+  return `<section class="panel course-card">
+      <div class="row"><b>Курс</b><span class="muted">${lessons().filter(lesDone).length} из ${lessons().length} уроков</span></div>
+      ${body}
+      <a class="course-all" href="#/course">Все уроки ${ICON.chevron}</a>
+    </section>`;
+}
+
+// Лента курса: сейчас — открытые и не пройденные, скоро — ещё закрытые, пройдено, эфиры
+function viewCourse() {
+  const ls = lessons(), now = Date.now();
+  const row = l => {
+    const [tone, when] = lesOpen(l) ? lesState(l) : ['', 'откроется ' + dueText(l.open)];
+    const inner = `<span class="les-n">${lesNum(l)}</span><span class="topic-title">${esc(l.title)}</span><span class="pill${tone ? ' ' + tone : ''}">${when}</span>`;
+    return lesOpen(l) ? `<a class="les-row" href="#/c/${encodeURIComponent(l.id)}">${inner}</a>` : `<div class="les-row locked">${inner}</div>`;
+  };
+  const group = (title, items) => items.length ? `<section class="topics"><h2>${title}</h2>${items.map(row).join('')}</section>` : '';
+  const lv = lives(), next = lv.filter(v => Date.parse(v.at) + LIVE_MS > now), old = lv.filter(v => Date.parse(v.at) + LIVE_MS <= now).reverse();
+  const liveRow = v => {
+    const url = httpsUrl(v.url), rec = httpsUrl(v.rec), past = Date.parse(v.at) + LIVE_MS <= now;
+    return `<div class="live-row"><div><b>${esc(v.title)}</b><span class="muted">${whenText(v.at)}</span></div>
+      <div class="row">${past ? (rec ? `<a class="btn" href="${esc(rec)}" target="_blank" rel="noopener">Запись</a>` : '<span class="muted small-note">Запись появится позже</span>')
+        : `${url ? `<a class="btn primary" href="${esc(url)}" target="_blank" rel="noopener">Подключиться</a>` : ''}<button class="btn" data-ics="${esc(v.id)}">В календарь</button>`}</div></div>`;
+  };
+  $app.innerHTML = `
+    <header class="top"><a class="back" href="#/" aria-label="Назад">←</a><div><div class="brand-by">${esc(pack.title)}</div><div class="brand-title">Курс</div></div></header>
+    ${group('Сейчас', ls.filter(l => lesOpen(l) && !lesDone(l)))}
+    ${group('Скоро', ls.filter(l => !lesOpen(l)))}
+    ${group('Пройдено', ls.filter(l => lesOpen(l) && lesDone(l)))}
+    ${lv.length ? `<section class="topics"><h2>Эфиры</h2>${[...next, ...old].map(liveRow).join('')}</section>` : ''}
+    ${ls.length || lv.length ? '' : '<p class="panel empty">Уроков пока нет.</p>'}`;
+  $app.querySelectorAll('[data-ics]').forEach(b => b.onclick = () => liveIcs(lv.find(v => v.id === b.dataset.ics)));
+  window.scrollTo(0, 0);
+}
+
+// Урок по шагам: видео → конспект → тренажёр с ДЗ
+function viewCourseLesson(id) {
+  const l = lessons().find(x => x.id === id);
+  if (!l) return go('#/course');
+  const head = `<header class="top"><a class="back" href="#/course" aria-label="Назад">←</a><div><div class="brand-by">Урок ${lesNum(l)}</div><div class="brand-title">${esc(l.title)}</div></div></header>`;
+  if (!lesOpen(l)) {
+    $app.innerHTML = `${head}<p class="panel empty">Урок откроется ${dueText(l.open)}.</p>`;
+    return;
+  }
+  // Урок без ДЗ пройден, когда его открыли
+  if (!l.hw && !lesRec(l).at) { (prog.les ||= {})[l.id] = { d: 0, ok: 0, at: day() }; save(); }
+  const hasCards = pack.cards.some(c => !l.topic || c.t === l.topic);
+  const steps = [
+    l.video && videoEmbed(l.video) ? ['Видео', videoEmbed(l.video)] : null,
+    l.notes ? ['Конспект', `<div class="lesson les-notes">${text(l.notes)}</div>`] : null,
+    hasCards && (l.hw || l.topic) ? ['Тренажёр', `<div class="panel les-train${l.hw && lesDone(l) ? ' ok' : ''}">
+      ${l.hw ? lesHwBar(l) : '<p class="les-hw-note">Закрепите тему карточками — они вернутся на повторение, когда начнут забываться.</p>'}
+      <button class="btn primary" id="train">${ICON.play}Закрепить в тренажёре</button></div>`] : null,
+  ].filter(Boolean);
+  $app.innerHTML = `${head}
+    ${steps.map(([t, html], i) => `<section class="lesson-step"><h2><span class="les-n">${i + 1}</span>${t}</h2>${html}</section>`).join('')}
+    ${steps.length ? '' : '<p class="panel empty">В уроке пока ничего нет.</p>'}`;
+  $app.querySelector('#train')?.addEventListener('click', () =>
+    startSession(lesQueue(l), `Урок ${lesNum(l)}. ${l.title}`, '#/c/' + encodeURIComponent(l.id), { les: l.id }));
+  window.scrollTo(0, 0);
+}
+
 function viewHome() {
   const t = day();
   const queue = buildQueue('daily');
@@ -379,6 +512,7 @@ function viewHome() {
       <div><b>Цель дня</b><span>${goalText}</span></div>
     </section>
     ${hwCard()}
+    ${courseCard()}
     ${doneToday
       ? '<p class="hero-done">На сегодня всё. Возвращайся завтра — карточки придут, когда начнёшь их забывать.</p>'
       : `<button class="btn cta big" id="go">${ICON.play}${today.d ? 'Продолжить' : 'Заниматься'} · ${Math.max(3, Math.round(queue.length * 0.6))} мин</button>
@@ -526,7 +660,7 @@ function viewLesson(lid) {
 
 const PRAISE = ['Верно!', 'Точно!', 'Отлично!', 'Так держать!', 'В точку!'];
 
-function startSession(queue, title, back = '#/', { variant = false, hw = false } = {}) {
+function startSession(queue, title, back = '#/', { variant = false, hw = false, les = null } = {}) {
   if (!queue.length) return toast('Здесь пока нечего повторять');
   const q = queue.slice();
   const requeued = new Set();
@@ -534,6 +668,7 @@ function startSession(queue, title, back = '#/', { variant = false, hw = false }
   const started = Date.now();
   const streakBefore = streak();
   const hwBefore = hwD();
+  const lesson = les && lessons().find(l => l.id === les), lesBefore = lesson && lesDone(lesson);
   const missed = new Map();
   const results = [];
   const leave = () => { location.hash = back; route(); };
@@ -584,9 +719,13 @@ function startSession(queue, title, back = '#/', { variant = false, hw = false }
     const goal = pack.hw?.goal, d = Math.min(hwD(), goal);
     if (goal && d >= goal && (hw || hwBefore < goal)) [icon, head] = [ICON.star, 'Задание выполнено!'];
     else if (goal && hw) head = `Задание: ${d} из ${goal}`;
-    // После задания «Ещё» продолжает задание, пока оно не сделано
+    // ДЗ урока курса: так же — выполнено только что или сколько сделано
+    if (lesson?.hw && lesDone(lesson) && !lesBefore) [icon, head] = [ICON.star, 'ДЗ урока выполнено!'];
+    else if (lesson?.hw && !lesDone(lesson)) head = `ДЗ урока: ${Math.min(lesRec(lesson).d, lesson.hw.goal)} из ${lesson.hw.goal}`;
+    // После задания «Ещё» продолжает задание, пока оно не сделано; после урока — ДЗ урока
     const hwMore = hw ? buildQueue('hw') : [];
-    const more = hwMore.length ? hwMore : back === '#/' ? buildQueue('daily') : [];
+    const lesMore = lesson?.hw && !lesDone(lesson) ? lesQueue(lesson) : [];
+    const more = hwMore.length ? hwMore : lesMore.length ? lesMore : back === '#/' ? buildQueue('daily') : [];
     const wrong = [...missed.values()];
     // Telegram: предлагаем, пока не включён, и не чаще раза в сутки после нажатия
     const tg = tgState();
@@ -612,7 +751,7 @@ function startSession(queue, title, back = '#/', { variant = false, hw = false }
         <button class="btn primary big" id="done">Готово</button>
       </section>`;
     $app.querySelector('#done').onclick = leave;
-    $app.querySelector('#more')?.addEventListener('click', () => startSession(more, title, back, { hw: hwMore.length > 0 }));
+    $app.querySelector('#more')?.addEventListener('click', () => startSession(more, title, back, { hw: hwMore.length > 0, les: lesMore.length ? les : null }));
     $app.querySelector('#remind')?.addEventListener('click', e => { addReminder(store.get('zd-remind-time', '19:00')); e.target.remove(); });
     // Ссылка открывается сама (target=_blank); убираем кнопку уже после перехода
     $app.querySelector('#tg')?.addEventListener('click', () => {
@@ -655,31 +794,37 @@ function packLink() {
   return ref.startsWith('t:') ? `${base}?t=${encodeURIComponent(ref.slice(2))}` : `${base}?p=${encodeURIComponent(ref)}`;
 }
 
+// Событие календаря: utc — точный момент (эфир), иначе местное время без пояса (ежедневное
+// напоминание остаётся в 19:00 и после переезда в другой часовой пояс)
+function icsEvent({ start, durationMin, rrule, summary, desc, url, alarmMin = 0, utc = false, file }) {
+  const pad = n => String(n).padStart(2, '0');
+  const local = d => `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}T${pad(d.getHours())}${pad(d.getMinutes())}00`;
+  const stamp = d => d.toISOString().replace(/[-:]/g, '').replace(/\.\d+/, '');
+  const icsText = s => s.replace(/[\\;,]/g, m => '\\' + m).replace(/\n/g, '\\n');
+  const title = icsText(summary);
+  const ics = [
+    'BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Между уроками//RU', 'CALSCALE:GREGORIAN',
+    'BEGIN:VEVENT', `UID:${uid(12)}@mezhdu-urokami`, `DTSTAMP:${stamp(new Date())}`, `DTSTART:${utc ? stamp(start) : local(start)}`, `DURATION:PT${durationMin}M`,
+    ...(rrule ? [`RRULE:${rrule}`] : []), `SUMMARY:${title}`, `URL:${url}`,
+    `DESCRIPTION:${icsText(desc)}`,
+    'BEGIN:VALARM', 'ACTION:DISPLAY', `TRIGGER:${alarmMin ? `-PT${alarmMin}M` : 'PT0M'}`, `DESCRIPTION:${title}`, 'END:VALARM',
+    'END:VEVENT', 'END:VCALENDAR', '',
+  ].join('\r\n');
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([ics], { type: 'text/calendar;charset=utf-8' }));
+  a.download = file;
+  document.body.append(a);
+  a.click();
+  a.remove();
+}
+
 function addReminder(time) {
   const [hh, mm] = time.split(':').map(Number);
   const start = new Date();
   start.setHours(hh, mm, 0, 0);
   if (start < new Date()) start.setDate(start.getDate() + 1);
-  const pad = n => String(n).padStart(2, '0');
-  const local = d => `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}T${pad(d.getHours())}${pad(d.getMinutes())}00`;
-  const utc = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d+/, '');
-  const icsText = s => s.replace(/[\\;,]/g, m => '\\' + m).replace(/\n/g, '\\n');
   const link = packLink();
-  const title = icsText(`10 минут: ${pack.title}`);
-  const ics = [
-    'BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Между уроками//RU', 'CALSCALE:GREGORIAN',
-    'BEGIN:VEVENT', `UID:${uid(12)}@mezhdu-urokami`, `DTSTAMP:${utc}`, `DTSTART:${local(start)}`, 'DURATION:PT10M',
-    'RRULE:FREQ=DAILY', `SUMMARY:${title}`, `URL:${link}`,
-    `DESCRIPTION:${icsText('Карточки на сегодня ждут: ' + link)}`,
-    'BEGIN:VALARM', 'ACTION:DISPLAY', 'TRIGGER:PT0M', `DESCRIPTION:${title}`, 'END:VALARM',
-    'END:VEVENT', 'END:VCALENDAR', '',
-  ].join('\r\n');
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(new Blob([ics], { type: 'text/calendar;charset=utf-8' }));
-  a.download = 'napominanie.ics';
-  document.body.append(a);
-  a.click();
-  a.remove();
+  icsEvent({ start, durationMin: 10, rrule: 'FREQ=DAILY', summary: `10 минут: ${pack.title}`, desc: 'Карточки на сегодня ждут: ' + link, url: link, file: 'napominanie.ics' });
   store.set('zd-remind:' + ref, time);
   toast(`Откроется календарь — подтвердите событие на ${time}`);
 }
@@ -878,6 +1023,8 @@ function route() {
   if (view === 'library') return viewLibrary();
   if (view === 'topic') return viewTopic(arg);
   if (view === 'lesson') return viewLesson(arg);
+  if (view === 'course') return viewCourse();
+  if (view === 'c') return viewCourseLesson(arg);
   if (view === 'me') return viewMe();
   viewHome();
 }
