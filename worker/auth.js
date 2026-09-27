@@ -415,6 +415,15 @@ export async function handleAuth(req, env, parts) {
         return { children: await childrenOf(env, acct) };
       }
     }
+    // Список тренажёров ученика (для личного кабинета): журнал по дням и сколько карточек начато
+    if (b === 'progress' && !c && m === 'GET') {
+      const list = await env.DB.list({ prefix: `progress:${acct.id}:` });
+      const items = await Promise.all(list.keys.map(async k => {
+        const p = await env.DB.get(k.name, 'json');
+        return p && { ref: k.name.slice(`progress:${acct.id}:`.length), log: p.log || {}, started: Object.keys(p.cards || {}).length, saved: p.saved || 0 };
+      }));
+      return { items: items.filter(Boolean).sort((x, y) => y.saved - x.saved) };
+    }
     if (b === 'progress' && c) {
       const k = `progress:${acct.id}:${refKey(decodeURIComponent(c))}`;
       if (m === 'GET') return (await env.DB.get(k, 'json')) || null;
