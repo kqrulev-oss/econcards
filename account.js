@@ -110,8 +110,22 @@ export function wipeLocal() {
 // Без связи проверить нельзя — тогда считаем, что несохранённое есть
 export async function unsyncedLocal() {
   const left = { studio: false, prog: [] };
-  const st = store.get('zd-studio', null);
-  if (store.get('zd-studio-dirty', null) && Object.keys(st?.packs || {}).length) left.studio = true;
+  const st = store.get('zd-studio', null) || {};
+  const lp = st.packs || {}, lk = st.keys || {}, ld = st.deleted || {};
+  if (Object.keys(lp).length || Object.keys(lk).length || Object.keys(ld).length) {
+    if (store.get('zd-studio-dirty', null)) left.studio = true;
+    else {
+      // Метка ставится не всегда (правки гостя до входа, неудачная первая отправка) — сверяем с облаком:
+      // каждый тренажёр, ключ ученика и удаление должны быть там и не старее здешних
+      try {
+        const r = (await api('/me/studio')) || {};
+        const rp = r.packs || {}, rk = r.keys || {}, rd = r.deleted || {};
+        left.studio = Object.entries(lp).some(([id, p]) => (rp[id]?.edited || 0) < (p?.edited || 0) && (rd[id] || 0) < (p?.edited || 0))
+          || Object.entries(lk).some(([id, k]) => rk[id] !== k)
+          || Object.entries(ld).some(([id, t]) => (rd[id] || 0) < t);
+      } catch { left.studio = true; }
+    }
+  }
   const more = (a, b) => Object.entries(a.cards || {}).some(([id, s]) => (s?.n || 0) > (b?.cards?.[id]?.n || 0) || !b?.cards?.[id])
     || Object.entries(a.log || {}).some(([d, l]) => (l?.d || 0) > (b?.log?.[d]?.d || 0));
   await Promise.all(ownKeys().filter(k => k.startsWith('zd-prog:')).map(async k => {
@@ -152,7 +166,9 @@ export async function signOut() {
   }
   const what = [left.studio && 'изменения тренажёров', left.prog.length && `ответы в ${left.prog.length > 1 ? `${left.prog.length} тренажёрах` : 'тренажёре'}`].filter(Boolean).join(' и ');
   return new Promise(done => {
-    let result = { out: false, wiped: false };
+    // Выбрали «выйти» — ответ отдаём, только когда окно сняло свою запись истории: иначе её
+    // отложенный history.back() отменит переход на другую страницу, который сделает вызывающий
+    let picked = false;
     const { box, close } = modal(`<h3>Выйти из аккаунта?</h3>
       <p>В этом браузере есть ${what}, которых нет в облаке — их не получилось сохранить (нет связи или вход закончился).</p>
       <p class="muted">Скачайте копию — её можно открыть в студии через «Импорт из файла». Или оставьте всё в этом браузере, если компьютер ваш.</p>
@@ -160,14 +176,15 @@ export async function signOut() {
         <button class="btn primary" id="so-copy">Скачать копию и выйти</button>
         <button class="btn" id="so-keep">Выйти, оставить в браузере</button>
         <button class="btn ghost" id="so-stay">Не выходить</button>
-      </div>`, { onClose: () => done(result) });
+      </div>`, { onClose: () => { if (!picked) done({ out: false, wiped: false }); } });
     const go = async wipe => {
+      picked = true;
       box.querySelectorAll('button').forEach(b => { b.disabled = true; });
       if (wipe) downloadBackup();
       await logout();
       if (wipe) wipeLocal();
-      result = { out: true, wiped: wipe };
-      close();
+      await close();
+      done({ out: true, wiped: wipe });
     };
     box.querySelector('#so-copy').onclick = () => { go(true); };
     box.querySelector('#so-keep').onclick = () => { go(false); };

@@ -645,7 +645,7 @@ def sample_pack(key, pack, tids, per_topic=SAMPLE_PER_TOPIC):
     theory = [l for l in pack['theory'] if l['topic'] in tids]
     return {
         'id': f'sample-{key}', 'title': pack['title'], 'subject': pack['subject'],
-        'desc': f'Пример тренажёра: {len(tids)} темы по {per_topic} карточек с теорией',
+        'desc': f'Пример тренажёра: {len(tids)} темы, {len(cards)} карточек с теорией',
         'color': pack['color'], 'topics': topics, 'theory': theory, 'cards': cards,
     }
 
@@ -666,7 +666,8 @@ def derived(packs=None):
         write_json(f'{pid}.free.json', free)
         print(f'packs/{pid}.free.json: {free["limited"]["shown"]} из {free["limited"]["total"]} карточек')
     for key, (src, tids) in SAMPLES.items():
-        s = sample_pack(key, packs[src], tids)
+        # Пример публичный (его видит любой гость) — только из бесплатной части библиотеки
+        s = sample_pack(key, trim_library(packs[src]), tids)
         write_json(f'{s["id"]}.json', s)
         print(f'packs/{s["id"]}.json: {len(s["cards"])} карточек в {len(s["topics"])} темах, теория {len(s["theory"])}')
 

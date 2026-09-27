@@ -201,6 +201,32 @@ const readJson = async (req, max) => {
   try { return JSON.parse(t); } catch { throw new HttpError(400, 'Некорректный запрос.'); }
 };
 
+// Сводку ученика присылают без входа — любой, кто знает код тренажёра. Её показывают студия
+// репетитора и бот, поэтому храним и отдаём только ожидаемые поля: числа — числами, строки —
+// обрезанными, id — по шаблону (иначе строка с разметкой вместо числа — чужой код у репетитора)
+const N = x => (Number.isFinite(+x) ? +x : 0);
+const dayOk = o => ({ d: N(o?.d), ok: N(o?.ok) });
+const ID = /^[\w.-]{1,60}$/;
+function cleanStats(s) {
+  if (!s || typeof s !== 'object') return null;
+  const list = x => (Array.isArray(x) ? x : []);
+  const topics = {};
+  for (const [k, v] of Object.entries(s.topics && typeof s.topics === 'object' ? s.topics : {}).slice(0, 500)) {
+    if (ID.test(k) && v && typeof v === 'object') topics[k] = { s: N(v.s), m: N(v.m), acc: v.acc === null ? null : N(v.acc) };
+  }
+  return {
+    last: N(s.last), streak: N(s.streak), today: dayOk(s.today), week: { ...dayOk(s.week), days: N(s.week?.days) },
+    days: list(s.days).slice(0, 14).map(N), day: N(s.day), weeks: list(s.weeks).slice(0, 8).map(dayOk),
+    total: N(s.total), started: N(s.started), mastered: N(s.mastered), topics,
+    errs: list(s.errs).filter(x => typeof x === 'string' && ID.test(x)).slice(0, 15), tz: N(s.tz),
+    ...(s.hw && typeof s.hw === 'object' && typeof s.hw.id === 'string' && ID.test(s.hw.id) && { hw: { id: s.hw.id, d: N(s.hw.d) } }),
+    ...(s.course && typeof s.course === 'object' && { course: { n: N(s.course.n), done: N(s.course.done), onTime: N(s.course.onTime) } }),
+    weak: list(s.weak).slice(0, 3).map(w => ({ t: cut(w?.t, 60), a: N(w?.a) })),
+    title: cut(s.title, 80), tutor: cut(s.tutor, 80),
+  };
+}
+const cleanProg = r => r && typeof r === 'object' && ({ sid: cut(r.sid, 20), name: cut(r.name, 80), stats: cleanStats(r.stats), at: N(r.at), ...(typeof r.acct === 'string' && { acct: r.acct }) });
+
 // If-None-Match: список через запятую; слабый W/"…" тоже подходит (Cloudflare ослабляет ETag при сжатии)
 const etagMatch = (header, etag) => !!header && !!etag && (header.trim() === '*'
   || header.split(',').some(t => t.trim().replace(/^W\//, '') === etag.replace(/^W\//, '')));
@@ -303,7 +329,8 @@ async function handle(req, env, ctx) {
     const pk = await env.DB.getWithMetadata(`pack:${id}`, { type: 'stream' });
     pk.value?.cancel?.().catch?.(() => {});
     if (!pk.value) throw new HttpError(404, 'Набор не найден.');
-    const { sid, name, stats } = await readJson(req, MAX_STATS);
+    const { sid, name, stats: raw } = await readJson(req, MAX_STATS);
+    const stats = cleanStats(raw);
     if (!/^[a-z0-9]{6,20}$/.test(sid || '') || !name) throw new HttpError(400, 'Нет имени ученика.');
     // Название и репетитора бот пишет родителю от своего имени — только из набора, не от ученика
     // (запрос без входа: иначе любой, кто знает sid, подписал бы отчёт своим текстом)
@@ -363,7 +390,8 @@ async function handle(req, env, ctx) {
     do {
       const list = await env.DB.list({ prefix: `prog:${id}:`, cursor });
       const rows = await Promise.all(list.keys.map(k => env.DB.get(k.name)));
-      rows.forEach(r => r && students.push(JSON.parse(r)));
+      // Записи, сохранённые до проверки полей, — тоже через cleanProg
+      rows.forEach(r => { const x = r && cleanProg(JSON.parse(r)); if (x) students.push(x); });
       cursor = list.list_complete ? null : list.cursor;
     } while (cursor);
     return progressFlags(env, id, students);

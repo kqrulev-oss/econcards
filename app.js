@@ -1271,6 +1271,17 @@ async function init() {
   await openPack();
 }
 
+// Числа, которые задаёт репетитор (номер и баллы задания, цель и точность ДЗ), — только числами:
+// шаблоны вставляют их как есть, и строка с разметкой в тренажёре стала бы чужим кодом у ученика
+function numbersOnly(p) {
+  const num = x => (x === undefined || x === null || x === '' || !Number.isFinite(+x) ? undefined : +x);
+  for (const tp of p.topics || []) { if ('n' in tp) tp.n = num(tp.n); if ('pts' in tp) tp.pts = num(tp.pts) ?? 1; }
+  for (const l of p.course?.lessons || []) if (l.hw) { l.hw.goal = num(l.hw.goal) ?? 0; l.hw.acc = num(l.hw.acc) ?? 0; }
+  if (p.hw) p.hw.goal = num(p.hw.goal) ?? 0;
+  if (p.limited) { p.limited.shown = num(p.limited.shown) ?? 0; p.limited.total = num(p.limited.total) ?? 0; }
+  return p;
+}
+
 const packGone = err => err.status === 404 || /не найден/i.test(err.message || '');
 // Нет сети: fetch не дошёл (TypeError — библиотека через service worker), api() без ответа (status 0)
 const packOffline = err => err.status === 0 || err instanceof TypeError || /нет связи/i.test(err.message || '') || navigator.onLine === false;
@@ -1292,6 +1303,7 @@ async function openPack(retry = false) {
       return route(); // экран ошибки (packError), а не главная сайта
     }
   }
+  numbersOnly(pack);
   topicsById = Object.fromEntries(pack.topics.map(t => [t.id, t]));
   // Недавние (и «/» → последний тренажёр) — только то, что открыл сам ученик, не просмотр репетитора
   if (!preview) store.set('zd-recent', [{ ref, title: pack.title, tutor: pack.tutor }, ...store.get('zd-recent', []).filter(r => r.ref !== ref)].slice(0, 5));

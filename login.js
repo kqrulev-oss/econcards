@@ -26,8 +26,16 @@ const ROLES = {
 };
 
 let role = ROLES[params.get('role')] ? params.get('role') : 'tutor';
-// Вернуться можно только внутрь сайта
-const safeNext = n => (n && !/^[a-z]+:|^\/\/|\.\./i.test(n) ? n : null);
+// Вернуться можно только на страницу этого сайта. Адрес разбираем так же, как браузер:
+// «java<TAB>script:», «\» вместо «/», «//чужой-сайт», «..» — отсекаются (иначе ?next= — чужой код
+// на нашем адресе и кража входа, а вошедшего человека сюда уводит сразу, без нажатия)
+const safeNext = n => {
+  if (!n || /[\u0000-\u001f\u007f\\]|\.\./.test(n)) return null;
+  try {
+    const u = new URL(n, location.href);
+    return u.origin === location.origin && /^https?:$/.test(u.protocol) ? n : null;
+  } catch { return null; }
+};
 const asked = () => safeNext(params.get('next')) || safeNext(sessionStorage.getItem('zd-login-next'));
 if (safeNext(params.get('next'))) sessionStorage.setItem('zd-login-next', params.get('next'));
 // Пришли из студии или тренажёра — роль понятна, возвращаем туда. Иначе — в кабинет.

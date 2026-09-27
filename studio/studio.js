@@ -1,6 +1,6 @@
 // Студия репетитора: собрать набор из своих материалов (через ИИ) или из
 // библиотеки, опубликовать ссылку для учеников и смотреть их прогресс.
-import { signedIn, account, loginDialog, signOut, refreshAccount, accountFresh, addRole, finishRedirectLogin, finishPayment, payDialog, planOf, daysLeft, dateRu, TG_ICON, openLink } from '../account.js';
+import { signedIn, session, account, loginDialog, signOut, refreshAccount, accountFresh, addRole, finishRedirectLogin, finishPayment, payDialog, planOf, daysLeft, dateRu, TG_ICON, openLink } from '../account.js';
 import { store, api, apiBase, ai, loadPack, loadLibrary, renderCard, esc, text, day, uid, plural, el, toast, modal, dueDay, dueText, whenText, videoEmbed, KIND_NAMES } from '../lib.js';
 
 const $app = document.getElementById('app');
@@ -27,6 +27,12 @@ let cloudReady = !signedIn(); // облачная копия получена (�
 let cloudFailed = false;
 let cloudTimer;
 const DIRTY = 'zd-studio-dirty'; // есть правки, которых ещё нет в облаке (account.js смотрит при выходе)
+// Чьи тренажёры в этом браузере: после входа другим аккаунтом (общий компьютер, человек вышел,
+// оставив данные, или его сессия закончилась) чужие тренажёры и ключи учеников в своё облако
+// не берём — откладываем в zd-stash-studio до его входа (выход другого человека их не стирает)
+const OWNER = 'zd-studio-owner', STASH = 'zd-stash-studio';
+const hasData = s => !!(Object.keys(s.packs || {}).length || Object.keys(s.keys || {}).length);
+const EMPTY = () => ({ packs: {}, keys: {}, deleted: {} });
 
 const persist = () => {
   store.set('zd-studio', db);
@@ -85,9 +91,28 @@ const syncCloud = () => (syncing ||= doSync().finally(() => { syncing = null; })
 async function doSync() {
   const wasReady = cloudReady;
   if (!signedIn()) { cloudReady = true; if (!wasReady) dataChanged(); return; }
+  const token = session()?.token, me = account()?.id;
   try {
     const remote = (await api('/me/studio')) || {};
+    // Пока ждали облако, вышли или вошли другим аккаунтом — облачное в этот браузер не пишем
+    if (session()?.token !== token) return;
     const before = studioSig(db);
+    let moved = false;
+    if (me) {
+      const owner = store.get(OWNER, null), stash = store.get(STASH, null) || {};
+      if (owner && owner !== me && hasData(db)) {
+        stash[owner] = mergeStudio(stash[owner] || EMPTY(), db);
+        db = EMPTY();
+        draft = null;
+        store.set(DIRTY, null); // несохранённые правки — того аккаунта, не этого
+        moved = true;
+      }
+      // Свои тренажёры, отложенные, пока здесь работал другой аккаунт, — возвращаем
+      if (stash[me]) { db = mergeStudio(db, stash[me]); delete stash[me]; }
+      store.set(STASH, Object.keys(stash).length ? stash : null);
+      store.set(OWNER, me);
+      if (moved) { store.set('zd-studio', db); notice('stash', 'Тренажёры другого аккаунта убраны из этой студии — они вернутся, когда он снова войдёт в этом браузере.', 'Понятно', () => {}); }
+    }
     db = mergeStudio(db, remote);
     const now = studioSig(db);
     if (now !== before) store.set('zd-studio', db);
@@ -267,10 +292,9 @@ function newPack(id = uid(8)) {
 // если облако успело заменить его своей копией, правка на открытом экране всё равно не теряется
 function keep(p) {
   if (db.packs[p.id] !== p) db.packs[p.id] = p;
-  if (p === draft) {
-    db.keys[p.id] ||= draftKey;
-    draft = null;
-  }
+  // Ключ — у каждого тренажёра: черновик могли заменить новым (пример ещё грузился, а нажали «+ Создать»)
+  db.keys[p.id] ||= p === draft ? draftKey : uid(24);
+  if (p === draft) draft = null;
 }
 
 // Готовые наборы (packs/*.json) — один раз за открытие страницы
@@ -1719,5 +1743,7 @@ async function init() {
   const before = JSON.stringify(account());
   await Promise.all([syncCloud(), accountFresh() && !done ? null : refreshAccount()]);
   if (JSON.stringify(account()) !== before && !shown.pack && !busy()) route();
-  if (signedIn() && tabStore.get(PUB_AFTER)) await publishAfterLogin();
+  // Публикация после входа — только если вход завершился именно сейчас (возврат от Яндекса/VK/Google,
+  // Telegram в этой вкладке). Метка от брошенного входа не должна публиковать потом, при другом входе
+  if (tabStore.get(PUB_AFTER)) { if (done) await publishAfterLogin(); else tabStore.set(PUB_AFTER, null); }
 }

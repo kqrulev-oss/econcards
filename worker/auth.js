@@ -270,6 +270,18 @@ function parentSum(s) {
   };
 }
 
+// Журнал по дням и ДЗ уроков пишет сам ученик: родителю отдаём только числа (иначе строка
+// с разметкой вместо числа попала бы в кабинет родителя)
+const num = x => (Number.isFinite(+x) ? +x : 0);
+function cleanDays(o) {
+  const out = {};
+  if (!o || typeof o !== 'object') return out;
+  for (const [k, v] of Object.entries(o).slice(0, 2000)) {
+    if (/^[\w.-]{1,60}$/.test(k) && v && typeof v === 'object') out[k] = { d: num(v.d), ok: num(v.ok), ...(v.n !== undefined && { n: num(v.n) }), ...(v.at !== undefined && { at: num(v.at) }) };
+  }
+  return out;
+}
+
 /* Родителю по каждому набору ребёнка — небольшая сводка: журнал по дням, ДЗ уроков, сколько
    карточек освоено и sum (название, слабые темы, размер набора, сроки ДЗ курса). Сами наборы
    кабинету не нужны. Прогресс, сохранённый до sum, отдаём с карточками — слабые темы кабинет
@@ -284,7 +296,7 @@ async function childrenOf(env, parent) {
       const p = await env.DB.get(k.name, 'json');
       if (!p) return null;
       const cards = p.cards && typeof p.cards === 'object' ? p.cards : {};
-      const out = { ref: k.name.slice(`progress:${id}:`.length), log: p.log || {}, les: p.les, saved: p.saved,
+      const out = { ref: k.name.slice(`progress:${id}:`.length), log: cleanDays(p.log), les: cleanDays(p.les), saved: num(p.saved),
         mastered: Object.values(cards).filter(x => x?.b >= 3).length };
       return p.sum && typeof p.sum === 'object' ? { ...out, sum: parentSum(p.sum) } : { ...out, cards };
     }));
