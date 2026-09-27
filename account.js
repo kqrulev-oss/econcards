@@ -1,4 +1,4 @@
-// Аккаунт: вход (Telegram, почта, дальше — Яндекс, VK, Google), сессия и выход.
+// Аккаунт: вход (Telegram, почта, Яндекс ID, VK ID, Google), сессия и выход.
 // Один модуль для студии, приложения ученика и кабинета родителя.
 import { store, api, esc, toast, modal } from './lib.js';
 
@@ -28,12 +28,37 @@ export async function addRole(role) {
   try { setSession({ ...session(), account: await api('/me/role', { method: 'POST', body: { role } }) }); } catch { /* не критично */ }
 }
 
+// Возврат от Яндекса/VK/Google: адрес вида …#login=<ticket>. Вызывается при старте
+// страницы; вернёт аккаунт, если вход только что завершился, и роль, ради которой входили.
+export async function finishRedirectLogin() {
+  const m = /^#login(_error)?=([a-z0-9]+)$/.exec(location.hash);
+  if (!m) return null;
+  const after = sessionStorage.getItem('zd-login-after') || '';
+  const role = sessionStorage.getItem('zd-login-role') || '';
+  sessionStorage.removeItem('zd-login-after');
+  sessionStorage.removeItem('zd-login-role');
+  history.replaceState(null, '', location.pathname + location.search + after);
+  if (m[1]) { toast(m[2] === 'cancelled' ? 'Вход отменён' : 'Не получилось войти. Попробуйте ещё раз.'); return null; }
+  try {
+    const res = await api('/auth/ticket', { method: 'POST', body: { ticket: m[2] } });
+    setSession({ token: res.token, account: res.account });
+    toast(`Вы вошли${res.account.name ? ': ' + res.account.name : ''}`);
+    return { account: res.account, role };
+  } catch (err) { toast(err.message); return null; }
+}
+
+const OAUTH_WAYS = [
+  ['yandex', 'Яндекс ID', '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 20V4h-2a4 4 0 0 0 0 8h2M12 12l-4 8"/></svg>'],
+  ['vk', 'VK ID', '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7c1 6 4 10 9 10h1v-4c2 0 3 2 4 4h3c-1-3-3-5-4-6 1-1 3-3 3-4h-3c-1 2-2 3-3 3V7h-3v7c-2-1-4-4-4-7z"/></svg>'],
+  ['google', 'Google', '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.3-5.6M20 12h-8"/></svg>'],
+];
+
 const TG_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 4L3 11l6 2 2 6 3-4 5 4z"/><path d="M9 13l8-6"/></svg>';
 const MAIL_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="M4 7l8 6 8-6"/></svg>';
 
 /* Окно входа. onDone(account) вызывается после успешного входа.
    why — одна строка, зачем входить (своя для репетитора, ученика, родителя). */
-export async function loginDialog({ why = '', onDone } = {}) {
+export async function loginDialog({ why = '', onDone, role = '' } = {}) {
   let providers = { tg: true };
   try { providers = await api('/auth/providers'); } catch { /* офлайн: покажем Telegram, ошибка будет при нажатии */ }
   const { box, close } = modal(`
@@ -42,6 +67,8 @@ export async function loginDialog({ why = '', onDone } = {}) {
     <div class="login-ways">
       ${providers.tg ? `<button class="btn big login-tg" data-way="tg">${TG_ICON}Через Telegram</button>` : ''}
       ${providers.email ? `<button class="btn big" data-way="email">${MAIL_ICON}Код на почту</button>` : ''}
+      ${OAUTH_WAYS.filter(([id]) => providers[id]).map(([id, label, icon]) =>
+        `<button class="btn big login-${id}" data-oauth="${id}">${icon}${label}</button>`).join('')}
     </div>
     <div class="login-step"></div>
     <p class="muted small-note">Входя, вы соглашаетесь с <a href="${new URL('privacy.html', import.meta.url)}" target="_blank" rel="noopener">политикой обработки данных</a>.</p>`);
@@ -81,6 +108,17 @@ export async function loginDialog({ why = '', onDone } = {}) {
       e.currentTarget.disabled = false;
     }
   });
+
+  // Яндекс, VK, Google: уходим к провайдеру и возвращаемся на эту же страницу
+  box.querySelectorAll('[data-oauth]').forEach(btn => btn.addEventListener('click', async () => {
+    btn.disabled = true;
+    try {
+      const { url } = await api(`/auth/oauth/${btn.dataset.oauth}`, { method: 'POST', body: { back: location.href.split('#')[0] } });
+      sessionStorage.setItem('zd-login-after', location.hash);
+      sessionStorage.setItem('zd-login-role', role);
+      location.href = url;
+    } catch (err) { toast(err.message); btn.disabled = false; }
+  }));
 
   box.querySelector('[data-way=email]')?.addEventListener('click', () => {
     step.innerHTML = `

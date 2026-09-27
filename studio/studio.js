@@ -1,6 +1,6 @@
 // Студия репетитора: собрать набор из своих материалов (через ИИ) или из
 // библиотеки, опубликовать ссылку для учеников и смотреть их прогресс.
-import { signedIn, account, loginDialog, logout, refreshAccount, addRole } from '../account.js';
+import { signedIn, account, loginDialog, logout, refreshAccount, addRole, finishRedirectLogin } from '../account.js';
 import { store, api, apiBase, ai, loadPack, loadLibrary, renderCard, esc, text, day, uid, plural, el, toast, modal, KIND_NAMES } from '../lib.js';
 
 const $app = document.getElementById('app');
@@ -70,6 +70,7 @@ function accountBar() {
 
 function bindAccount(root) {
   root.querySelector('#login')?.addEventListener('click', () => loginDialog({
+    role: 'tutor',
     why: 'Тренажёры, ключи и ученики сохранятся в аккаунте — не пропадут при очистке браузера и откроются с любого устройства.',
     onDone: async () => { await addRole('tutor'); setCloud('saving'); await syncCloud(); },
   }));
@@ -870,4 +871,7 @@ window.addEventListener('hashchange', route);
 // Правки из соседней вкладки студии
 window.addEventListener('storage', e => { if (e.key === 'zd-studio') { db = { deleted: {}, ...store.get('zd-studio', db) }; route(); } });
 route();
-syncCloud();
+finishRedirectLogin().then(async done => {
+  if (done) { await addRole('tutor'); setCloud('saving'); }
+  syncCloud();
+});

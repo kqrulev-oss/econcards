@@ -104,6 +104,19 @@ ChatGPT, правки руками), бот сам отдаёт Claude на пр
 - **Код на почту** — нужны секреты `RESEND_KEY` (resend.com → API Keys) и
   `EMAIL_FROM` (например `Между уроками <login@ваш-домен.ru>`). Resend отправляет
   письма только с подтверждённого домена, поэтому включается после покупки домена.
-- **Яндекс ID, VK ID, Google** — следующий этап.
+- **Яндекс ID** — oauth.yandex.ru → «Создать приложение» → платформа «Веб-сервисы»,
+  Redirect URI `https://<адрес>/auth/yandex/callback`, доступы: «Доступ к логину, имени
+  и фамилии», «Доступ к адресу электронной почты». Секреты `YANDEX_ID` (ClientID) и
+  `YANDEX_SECRET` (Client secret).
+- **VK ID** — id.vk.com/business → «Создать приложение» → тип «Web», доверенный
+  Redirect URL `https://<адрес>/auth/vk/callback`, базовый домен — адрес сайта.
+  Секрет `VK_ID` (ID приложения); секретный ключ не нужен (OAuth 2.1 с PKCE).
+- **Google** — console.cloud.google.com → APIs & Services → OAuth consent screen
+  (External), затем Credentials → Create OAuth client ID → Web application,
+  Authorized redirect URI `https://<адрес>/auth/google/callback`. Секреты `GOOGLE_ID`
+  и `GOOGLE_SECRET`.
+
+Если вы уже вошли одним способом и входите другим, способ привязывается к тому же
+аккаунту. Возврат от провайдера идёт только на адрес этого сайта.
 
 Способ входа появляется на сайте, только когда заданы его секреты (`GET /auth/providers`).
