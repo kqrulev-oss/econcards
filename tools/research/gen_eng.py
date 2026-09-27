@@ -583,7 +583,8 @@ def gen_wf(rng, _i=[0]):
     ex = f'{base} → {ans}: {", ".join(affs)}. Формат: {exam}.'
     if fam:
         ex += ' Не путать с: ' + ', '.join(fam) + '.'
-    c = card('eng-wf', 'text', q, [ans], ex)
+    alts = [ans] + ([ans.replace('ise', 'ize')] if '-ise' in affs else [])  # -ise/-ize: оба написания верны
+    c = card('eng-wf', 'text', q, alts, ex)
     c['exam'] = exam  # служебное поле прототипа: к какому экзамену относится аффикс
     return c, {'base': base, 'affs': affs, 'ans': ans}
 
