@@ -491,7 +491,7 @@ function startSession(queue, title, back = '#/', { variant = false } = {}) {
     $app.querySelector('#done').onclick = leave;
     $app.querySelector('#more')?.addEventListener('click', () => startSession(more, title, back));
     $app.querySelector('#remind')?.addEventListener('click', e => { addReminder(store.get('zd-remind-time', '19:00')); e.target.remove(); });
-    sync(true);
+    sync(true).then(() => { if (progDirty && signedIn()) pushProg(); }); // урок окончен — прогресс в облако сразу
   };
   const finishVariant = () => {
     const tasks = results.map(({ card, score }) => {
@@ -515,7 +515,7 @@ function startSession(queue, title, back = '#/', { variant = false } = {}) {
         <button class="btn primary big" id="done">Готово</button>
       </section>`;
     $app.querySelector('#done').onclick = leave;
-    sync(true);
+    sync(true).then(() => { if (progDirty && signedIn()) pushProg(); }); // урок окончен — прогресс в облако сразу
   };
   next();
 }
@@ -596,7 +596,7 @@ function viewMe() {
     why: 'Прогресс, серия и ошибки сохранятся в аккаунте.',
     onDone: async () => { await addRole('student'); await pullProg(); sync(true); if (pack.limited) location.reload(); else viewMe(); },
   }));
-  $app.querySelector('#logout')?.addEventListener('click', async () => { await logout(); viewMe(); });
+  $app.querySelector('#logout')?.addEventListener('click', async () => { if (progDirty && prog) await pushProg(); await logout(); viewMe(); });
   $app.querySelector('#pcode')?.addEventListener('click', async () => {
     try {
       const { code } = await api('/me/parent-code', { method: 'POST' });

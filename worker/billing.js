@@ -124,23 +124,25 @@ async function applyPayment(env, id) {
     await tellOwner(env, `⚠️ Платёж ${id}: сумма ${pay.amount?.value} ${pay.amount?.currency}, ожидалось ${want} ₽. Доступ не выдан — проверьте в кабинете ЮKassa.`);
     return { status: 'amount_mismatch' };
   }
+  // paid:<id> — отметка «всё сделано», пишется последней. Если что-то упало на полпути,
+  // повтор уведомления доделает остальное, а продление по history.pay второй раз не случится
+  if (await env.DB.get(`paid:${id}`)) return { status: 'succeeded', already: true };
   const res = await extend(env, meta.acct, meta.product, 30 * Number(meta.months), `ЮKassa ${id}${meta.promo ? ' · ' + meta.promo : ''}`, id);
   // Не продлилось (аккаунт не найден, KV недоступен) — ошибка: ЮKassa повторит уведомление
   if (!res) throw new AuthError(500, 'Не удалось продлить доступ.');
-  if (res.already) return { status: 'succeeded', already: true };
-  await env.DB.put(`paid:${id}`, JSON.stringify({ at: Date.now(), ...meta, amount: pay.amount.value, test: !!pay.test }));
   if (meta.promo) await markUsed(env, meta.promo, meta.payer || meta.acct);
   // Владельцу — уведомление в Telegram: с 29.12.2025 чек самозанятого оформляется
   // вручную в «Мой налог», поэтому здесь всё, что нужно для чека и чтобы его отправить
   const payer = meta.payer && meta.payer !== meta.acct ? await getAccount(env, meta.payer) : res.acct;
   const tg = (payer?.idents || []).find(i => i.startsWith('tg:'))?.slice(3);
   await tellOwner(env, [
-    `💰 Оплата ${pay.amount.value} ₽${pay.test ? ' (тестовая)' : ''} · ${NAMES[meta.product]} на ${meta.months} мес.`,
+    `💰 Оплата ${pay.amount.value} ₽${pay.test ? ' (тестовая)' : ''} · ${NAMES[meta.product]} на ${meta.months} мес. · платёж ${id}`,
     `Кто: ${res.acct.name || res.acct.id}${payer !== res.acct ? ` (платил ${payer?.name || meta.payer})` : ''}`,
     `Чек: ${meta.email || payer?.email || (tg ? `Telegram tg://user?id=${tg}` : 'контакта нет — спросите в поддержке')}`,
     'Оформите чек в «Мой налог» → «Новая продажа» и отправьте покупателю.',
   ].join('\n'));
-  return { status: 'succeeded' };
+  await env.DB.put(`paid:${id}`, JSON.stringify({ at: Date.now(), ...meta, amount: pay.amount.value, test: !!pay.test }));
+  return { status: 'succeeded', ...(res.already ? { already: true } : {}) };
 }
 
 function safeBack(back, origin) {

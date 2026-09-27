@@ -371,9 +371,10 @@ export async function handleAuth(req, env, parts) {
       if (!q.code) return Response.redirect(`${saved.back}#login_error=cancelled`, 302);
       try {
         const prof = await OAUTH[b].profile(env, { ...q, verifier: saved.verifier, redirect: `${url.origin}/auth/${b}/callback` });
-        const res = await login(env, b, prof.sub, prof, saved.link ? await getAccount(env, saved.link) : null);
+        // Вход и привязку делаем только после проверки bind (в /auth/ticket): иначе чужая
+        // ссылка «привязать Яндекс» привязала бы Яндекс жертвы к аккаунту злоумышленника
         const ticket = randomId(32);
-        await env.DB.put(`ticket:${ticket}`, JSON.stringify({ res, bind: saved.bind }), { expirationTtl: 120 });
+        await env.DB.put(`ticket:${ticket}`, JSON.stringify({ p: b, prof, link: saved.link, bind: saved.bind }), { expirationTtl: 120 });
         return Response.redirect(`${saved.back}#login=${ticket}`, 302);
       } catch (err) {
         console.error('oauth callback', b, err?.message);
@@ -388,7 +389,8 @@ export async function handleAuth(req, env, parts) {
       if (!saved) throw new AuthError(410, 'Вход устарел. Попробуйте ещё раз.');
       if (!saved.bind || saved.bind !== bind) throw new AuthError(403, 'Вход начат в другом браузере. Начните его заново здесь.');
       await env.DB.delete(`ticket:${ticket}`);
-      return saved.res;
+      if (!OAUTH[saved.p] || !saved.prof?.sub) throw new AuthError(410, 'Вход устарел. Попробуйте ещё раз.');
+      return login(env, saved.p, saved.prof.sub, saved.prof, saved.link ? await getAccount(env, saved.link) : null);
     }
 
     if (b === 'logout' && m === 'POST') {
