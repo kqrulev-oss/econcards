@@ -74,6 +74,11 @@ const aiText = s => text(String(s || '')
   .replace(/^\s*[*-]\s+/gm, '• '))
   .replace(/\*\*(.+?)\*\*/g, '<b>$1</b>');
 export const day = (d = new Date()) => Math.floor((d - d.getTimezoneOffset() * 60000) / 86400000);
+// Срок задания 'YYYY-MM-DD' → номер дня (тот же счёт, что day()) и подпись «сб, 3 октября»
+export const dueDay = due => { const [y, m, d] = String(due).split('-').map(Number); return Date.UTC(y, m - 1, d) / 864e5; };
+const WD = ['вс', 'пн', 'вт', 'ср', 'чт', 'пт', 'сб'];
+const MON = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'];
+export const dueText = due => { const t = new Date(dueDay(due) * 864e5); return `${WD[t.getUTCDay()]}, ${t.getUTCDate()} ${MON[t.getUTCMonth()]}`; };
 export const uid = (n = 8) => Array.from(crypto.getRandomValues(new Uint8Array(n)), b => 'abcdefghijkmnpqrstuvwxyz23456789'[b % 32]).join('');
 export const plural = (n, one, few, many) => {
   const m10 = n % 10, m100 = n % 100;

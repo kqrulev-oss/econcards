@@ -10,3 +10,7 @@ binding = "DB"
 
 [vars]
 DAILY_LIMIT = "60"
+
+# Бот: напоминания и отчёты (worker/notify.js), раз в 5 минут
+[triggers]
+crons = ["*/5 * * * *"]

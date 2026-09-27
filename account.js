@@ -71,7 +71,12 @@ const OAUTH_WAYS = [
   ['google', 'Google', '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.3-5.6M20 12h-8"/></svg>'],
 ];
 
-const TG_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 4L3 11l6 2 2 6 3-4 5 4z"/><path d="M9 13l8-6"/></svg>';
+export const TG_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 4L3 11l6 2 2 6 3-4 5 4z"/><path d="M9 13l8-6"/></svg>';
+// Открыть ссылку (t.me) в новой вкладке, а если браузер не дал — здесь же
+export function openLink(url) {
+  const w = window.open(url, '_blank');
+  if (w) w.opener = null; else location.href = url;
+}
 const MAIL_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="M4 7l8 6 8-6"/></svg>';
 
 /* Окно входа. onDone(account) вызывается после успешного входа.
