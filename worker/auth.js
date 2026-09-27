@@ -3,7 +3,7 @@
    ------------------------------------------------------------
    POST /auth/tg/start            ссылка на бота с одноразовым кодом входа
    GET  /auth/tg/poll?nonce=      ждём, пока человек нажмёт «Start» в боте
-   POST /auth/email/start         код на почту (Resend: RESEND_KEY, EMAIL_FROM)
+   POST /auth/email/start         код на почту (SMTP_USER/SMTP_PASS — ящик Яндекса, или Resend)
    POST /auth/email/verify        проверка кода
    GET  /auth/providers           какие способы входа включены
    POST /auth/oauth/:p            ссылка на вход через Яндекс ID, VK ID или Google
@@ -20,6 +20,8 @@
    KV: acct:<id>, ident:<provider>:<sub> → id, sess:<token> → id,
        tgauth:<nonce>, mailcode:<email>, studio:<id>, progress:<id>:<ref>
    ============================================================ */
+
+import { sendSmtp } from './smtp.js';
 
 export class AuthError extends Error {
   constructor(status, message) { super(message); this.status = status; }
@@ -150,13 +152,27 @@ export async function confirmTelegram(env, nonce, from) {
 
 // ---------- почта ----------
 
+const smtpOn = env => !!(env.SMTP_USER && env.SMTP_PASS);
+
 async function sendMail(env, to, code) {
+  const subject = `Код входа: ${code}`;
+  const text = `Ваш код для входа в «Между уроками»: ${code}\n\nОн действует 10 минут. Если вы не запрашивали код — просто удалите письмо.`;
+  // Пока нет своего домена — письмо уходит с ящика на Яндекс Почте (SMTP, пароль приложения)
+  if (smtpOn(env)) {
+    try {
+      await sendSmtp({ host: env.SMTP_HOST || 'smtp.yandex.ru', port: env.SMTP_PORT || 465, user: String(env.SMTP_USER).trim(),
+        pass: String(env.SMTP_PASS).replace(/\s+/g, ''), name: 'Между уроками', to, subject, text }, env.SMTP_CONNECT);
+    } catch (err) {
+      console.error('smtp', err?.message);
+      throw new AuthError(502, 'Не получилось отправить письмо. Попробуйте позже или войдите другим способом.');
+    }
+    return;
+  }
   const r = await fetch('https://api.resend.com/emails', {
     method: 'POST',
     headers: { Authorization: `Bearer ${String(env.RESEND_KEY).trim()}`, 'Content-Type': 'application/json', 'User-Agent': 'mezhdu-urokami/1.0' },
     body: JSON.stringify({
-      from: env.EMAIL_FROM, to, subject: `Код входа: ${code}`,
-      text: `Ваш код для входа в «Между уроками»: ${code}\n\nОн действует 10 минут. Если вы не запрашивали код — просто удалите письмо.`,
+      from: env.EMAIL_FROM, to, subject, text,
     }),
   });
   if (!r.ok) {
@@ -265,7 +281,7 @@ const refKey = ref => {
 export function providers(env) {
   return {
     tg: !!env.TG_TOKEN,
-    email: !!(env.RESEND_KEY && env.EMAIL_FROM),
+    email: !!(env.RESEND_KEY && env.EMAIL_FROM) || smtpOn(env),
     yandex: !!OAUTH.yandex.on(env),
     vk: !!OAUTH.vk.on(env),
     google: !!OAUTH.google.on(env),
