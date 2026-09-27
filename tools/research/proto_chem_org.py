@@ -2577,3 +2577,314 @@ def g15_one(rng):
     ans = [right.index(r['rhs'][0]) for r in rs]
     return match_card('ch-ege-15-one-substance', rng, q, lt, rt, ans, '; '.join(rx_eq(r) for r in rs) + '.',
                       {'f': f, 'left': [list(sig(r)) for r in rs], 'right': right}, eqs=[eqt(r) for r in rs])
+
+
+# ================================================================= задания 16 и 32: генетическая связь (граф превращений)
+
+KES16 = ['3.20']
+EDGE_RX = [r for r in RX if _ok_rx(r) and SUB[r['lhs'][0]]['cls'] not in ('ацетиленид',)
+           and SUB[r['rhs'][0]]['cls'] not in ('ацетиленид', 'соль амина') and SUB[r['lhs'][0]]['hom'] != 'дипептиды'
+           and SUB[r['rhs'][0]]['hom'] != 'дипептиды' and r['rhs'][0] != r['lhs'][0]]
+OUT = defaultdict(list)
+for _r in EDGE_RX:
+    OUT[_r['lhs'][0]].append(_r)
+
+
+def edge_db(a, b, label=None):
+    """Есть ли в базе одностадийное превращение a → b (при необходимости — с данной подписью реагента)."""
+    for r in D.REACTIONS:
+        if r['lhs'][0] == a and r['rhs'][0] == b and (label is None or sig_label(dict(r, k=None)) == label):
+            return True
+    return False
+
+
+def _walk(rng, n, start=None, allow=None):
+    """Случайная цепочка из n превращений без повторов веществ."""
+    for _ in range(60):
+        a = start or rng.choice(sorted(OUT))
+        path, seen = [], {a}
+        cur = a
+        for _ in range(n):
+            opts_ = [r for r in OUT.get(cur, []) if r['rhs'][0] not in seen and (allow is None or allow(r))]
+            if not opts_:
+                break
+            r = rng.choice(opts_)
+            path.append(r)
+            cur = r['rhs'][0]
+            seen.add(cur)
+        if len(path) == n:
+            return path
+    raise Retry
+
+
+XY = ['X', 'Y']
+TWO16 = 'пять вариантов, ответ — две цифры: номер вещества X и номер вещества Y (порядок важен)'
+
+
+def _solve16_rg(p):
+    a, b, c = p['chain']
+    out = {}
+    for key, (x, y) in zip(XY, ((a, b), (b, c))):
+        good = [n for n, L in enumerate(p['right']) if edge_db(x, y, L)]
+        out[key] = str(good[0] + 1)
+    return out
+
+
+@proto('ch-ege-16-reagents', 'ЕГЭ', 16, 'Схема A →X→ B →Y→ C: определить реагенты X и Y',
+       invariant='по исходному веществу и продукту каждой стадии подобрать реагент (генетическая связь классов)',
+       varies='цепочки из двух стадий по базе (≈ 800 превращений), пять реагентов (три лишних — реагенты соседних '
+              'превращений)',
+       answer_rule='для каждой стадии найти единственный реагент, дающий нужный продукт',
+       mistakes=['CuO окисляет спирт до альдегида, а KMnO₄ (H⁺) — до кислоты', 'водный и спиртовой раствор щёлочи',
+                 'Ag₂O (NH₃) и Cu(OH)₂ окисляют альдегид, но не спирт'],
+       solve=_solve16_rg, kind='dict', kes=KES16,
+       fidelity=fid(TWO16, 'П', 3, 'демо 2027 №16: C₂H₄ →X→ C₂H₅OH →Y→ CH₃CHO (H₂O/H⁺, CuO); банк: CH₂Br–CH₂Br → C₂H₂ → '
+                                   'CH₃CHO', 'реагенты с похожим действием на соседнюю стадию', KES16, SC1))
+def g16_reagents(rng):
+    r1, r2 = _walk(rng, 2)
+    a, b, c = r1['lhs'][0], r1['rhs'][0], r2['rhs'][0]
+    l1, l2 = sig_label(r1), sig_label(r2)
+    if l1 == l2 or a == c:
+        raise Retry
+    pool = sorted({sig_label(r) for r in OUT.get(a, []) + OUT.get(b, []) + rng.sample(EDGE_RX, 20)} - {l1, l2})
+    if len(pool) < 3:
+        raise Retry
+    right = [l1, l2] + rng.sample(pool, 3)
+    rng.shuffle(right)
+    for x, y in ((a, b), (b, c)):
+        if sum(any(r['lhs'][0] == x and r['rhs'][0] == y and sig_label(r) == L for r in RX) for L in right) != 1:
+            raise Retry
+    disp = lambda f: eqv(f) if rng.random() < 0.6 else nm(f)
+    q = (f'Задана схема превращений веществ: {disp(a)} —X→ {disp(b)} —Y→ {disp(c)}.\n'
+         'Определите, какие из указанных веществ являются веществами X и Y.\n'
+         'Запишите в таблицу номера выбранных веществ под соответствующими буквами.')
+    e = f'{rx_eq(r1)}; {rx_eq(r2)}.'
+    return match_card('ch-ege-16-reagents', rng, q, ['вещество X', 'вещество Y'], right,
+                      [right.index(l1), right.index(l2)], e, {'chain': [a, b, c], 'right': right},
+                      eqs=[eqt(r1), eqt(r2)], lids=XY)
+
+
+def _solve16_mid(p):
+    chain = p['chain']
+    out = {}
+    for key, (x, y) in zip(XY, ((chain[0], chain[2]), (chain[2], chain[4]))):
+        good = [n for n, f in enumerate(p['right']) if edge_db(x, f) and edge_db(f, y)]
+        out[key] = str(good[0] + 1)
+    return out
+
+
+@proto('ch-ege-16-intermediates', 'ЕГЭ', 16, 'Схема A → X → B → Y → C: определить промежуточные вещества',
+       invariant='найти вещество, которое можно получить из предыдущего и превратить в следующее за одну стадию',
+       varies='цепочки из четырёх стадий по базе, пять веществ (три лишних — получаются только из одного соседа)',
+       answer_rule='проверить для кандидата обе стадии: «из предыдущего» и «в следующее»',
+       mistakes=['выбрано вещество, которое получается из A, но не превращается в B', 'пропущено изменение углеродного '
+                                                                                   'скелета (Вюрц, декарбоксилирование)'],
+       solve=_solve16_mid, kind='dict', kes=KES16,
+       fidelity=fid(TWO16, 'П', 3, 'банк №16: CH₄ → X → CH₃CHO → Y → CH₃COOCH₃; бромэтан → X → этаналь → Y → метилацетат',
+                    'кандидаты, связанные только с одним из соседей', KES16, SC1))
+def g16_mid(rng):
+    path = _walk(rng, 4)
+    chain = [path[0]['lhs'][0]] + [r['rhs'][0] for r in path]
+    x, y = chain[1], chain[3]
+    cand = set()
+    for f in (chain[0], chain[2]):
+        cand.update(r['rhs'][0] for r in OUT.get(f, []))
+    cand.update(r['lhs'][0] for r in EDGE_RX if r['rhs'][0] in (chain[2], chain[4]))
+    cand -= set(chain)
+    bad = [f for f in cand if not ((edge_db(chain[0], f) and edge_db(f, chain[2])) or
+                                   (edge_db(chain[2], f) and edge_db(f, chain[4])))]
+    if len(bad) < 3:
+        raise Retry
+    right = [x, y] + rng.sample(sorted(bad), 3)
+    rng.shuffle(right)
+    for s_, t_ in ((chain[0], chain[2]), (chain[2], chain[4])):
+        if sum(edge_db(s_, f) and edge_db(f, t_) for f in right) != 1:
+            raise Retry
+    names = [nm(f, rng) for f in right]
+    if len(set(names)) < 5:
+        raise Retry
+    q = (f'Задана схема превращений веществ: {nm(chain[0])} → X → {nm(chain[2])} → Y → {nm(chain[4])}.\n'
+         'Определите, какие из указанных веществ являются веществами X и Y.\n'
+         'Запишите в таблицу номера выбранных веществ под соответствующими буквами.')
+    e = '; '.join(rx_eq(r) for r in path) + '.'
+    return match_card('ch-ege-16-intermediates', rng, q, ['вещество X', 'вещество Y'], names,
+                      [right.index(x), right.index(y)], e, {'chain': chain, 'right': right},
+                      eqs=[eqt(r) for r in path], lids=XY)
+
+
+def _solve16_ends(p):
+    b = p['b']
+    out = {}
+    good_x = [n for n, f in enumerate(p['right']) if edge_db(f, b, p['l1'])]
+    good_y = [n for n, f in enumerate(p['right']) if edge_db(b, f, p['l2'])]
+    out['X'] = str(good_x[0] + 1)
+    out['Y'] = str(good_y[0] + 1)
+    return out
+
+
+@proto('ch-ege-16-start-end', 'ЕГЭ', 16, 'Схема X →(реагент)→ B →(реагент)→ Y: исходное вещество и продукт',
+       invariant='по реагентам на стрелках восстановить исходное вещество и продукт второй стадии',
+       varies='цепочки из двух стадий, реагенты с условиями на стрелках, пять кандидатов',
+       answer_rule='X — вещество, которое данным реагентом превращается в B; Y — продукт реакции B со вторым реагентом',
+       mistakes=['перепутаны прямое и обратное направление стадии', 'не учтены условия (t, катализатор, среда)'],
+       solve=_solve16_ends, kind='dict', kes=KES16,
+       fidelity=fid(TWO16, 'П', 3, 'банк №16: X →(Cl₂)→ … →(водн. NaOH)→ Y; X →(Zn)→ этилен →(KMnO₄, H₂O)→ Y',
+                    'кандидаты, реагирующие с тем же реагентом, но с другим продуктом', KES16, SC1))
+def g16_ends(rng):
+    r1, r2 = _walk(rng, 2)
+    x, b, y = r1['lhs'][0], r1['rhs'][0], r2['rhs'][0]
+    l1, l2 = sig_label(r1), sig_label(r2)
+    cand = {r['lhs'][0] for r in EDGE_RX if sig_label(r) == l1} | {r['rhs'][0] for r in EDGE_RX if sig_label(r) == l2}
+    cand |= {g for g in ORG if brutto(g) in (brutto(x), brutto(y)) and g not in _POOL10_SKIP}
+    cand -= {x, b, y}
+    bad = [f for f in cand if not edge_db(f, b, l1) and not edge_db(b, f, l2) and f in SUB and SUB[f].get('org')]
+    if len(bad) < 3:
+        raise Retry
+    right = [x, y] + rng.sample(sorted(bad), 3)
+    rng.shuffle(right)
+    if sum(edge_db(f, b, l1) for f in right) != 1 or sum(edge_db(b, f, l2) for f in right) != 1:
+        raise Retry
+    names = [nm(f, rng) for f in right]
+    if len(set(names)) < 5 or not l1 or not l2:
+        raise Retry
+    q = (f'Задана схема превращений веществ: X —({l1})→ {nm(b)} —({l2})→ Y.\n'
+         'Определите, какие из указанных веществ являются веществами X и Y.\n'
+         'Запишите в таблицу номера выбранных веществ под соответствующими буквами.')
+    return match_card('ch-ege-16-start-end', rng, q, ['вещество X', 'вещество Y'], names, [right.index(x),
+                                                                                           right.index(y)],
+                      f'{rx_eq(r1)}; {rx_eq(r2)}.', {'b': b, 'l1': l1, 'l2': l2, 'right': right},
+                      eqs=[eqt(r1), eqt(r2)], lids=XY)
+
+
+# -------- 32: цепочка из пяти превращений (проверяемый шаг: вещества X₁–X₄)
+KES32 = ['3.20', '3.4', '3.5', '3.6', '3.7', '3.8', '3.9', '3.10', '3.11', '3.12', '3.13', '3.14', '3.15', '3.16']
+XL = ['X₁', 'X₂', 'X₃', 'X₄']
+THEMES32 = {
+    'hc': ('углеводороды и галогенпроизводные', lambda f: SUB[f]['cls'] in HC_CLS),
+    'o': ('кислородсодержащие соединения', lambda f: SUB[f]['cls'] in O_CLS | HC_CLS),
+    'ar': ('производные бензола', lambda f: 'C6H' in f or 'c1ccccc1' in SMI.get(f, '')),
+    'n': ('азотсодержащие соединения', lambda f: True),
+}
+
+
+def _solve32(p):
+    """Прогон цепочки заново: из известного начала по подписям реагентов (однозначный продукт каждой стадии)."""
+    cur = p['start']
+    got = []
+    for L in p['labels']:
+        nxt = {r['rhs'][0] for r in D.REACTIONS if r['lhs'][0] == cur and sig_label(dict(r, k=None)) == L}
+        cur = sorted(nxt)[0]
+        got.append(cur)
+    out = {}
+    for i in range(4):
+        out[XL[i]] = str(p['right'].index(got[i]) + 1)
+    return out
+
+
+def _gen32(pid, rng, theme):
+    name, ok = THEMES32[theme]
+    path = _walk(rng, 5, allow=lambda r: ok(r['rhs'][0]) and ok(r['lhs'][0]))
+    chain = [path[0]['lhs'][0]] + [r['rhs'][0] for r in path]
+    if theme == 'n' and not any('N' in parse_formula(f) for f in chain):
+        raise Retry
+    if theme == 'o' and sum(SUB[f]['cls'] in O_CLS for f in chain) < 3:
+        raise Retry
+    if theme == 'ar' and not all(ok(f) for f in chain):
+        raise Retry
+    labels = [sig_label(r) for r in path]
+    # каждая стадия должна давать единственный продукт при данной подписи реагента
+    for r, L in zip(path, labels):
+        if len({x['rhs'][0] for x in RX if x['lhs'][0] == r['lhs'][0] and sig_label(x) == L}) != 1 or not L:
+            raise Retry
+    xs = chain[1:5]
+    conf = set()
+    for f in xs:
+        conf.update(g for g in ORG if (brutto(g) == brutto(f) or SUB[g]['hom'] == SUB[f]['hom']) and g not in chain
+                    and g not in _POOL10_SKIP and parse_formula(g).get('C', 0) <= 10)
+    if len(conf) < 2:
+        raise Retry
+    right = xs + rng.sample(sorted(conf), 2)
+    rng.shuffle(right)
+    rt = [vw(f) for f in right]
+    if len(set(rt)) < 6:
+        raise Retry
+    arrows = ''.join(f' —({L})→ ' + (XL[i] if i < 4 else eqv(chain[5])) for i, L in enumerate(labels))
+    q = ('Напишите уравнения реакций, с помощью которых можно осуществить следующие превращения:\n'
+         f'{eqv(chain[0])}{arrows}\n'
+         'При написании уравнений реакций указывайте преимущественно образующиеся продукты, используйте структурные '
+         'формулы органических веществ.\n'
+         'Проверка в тренажёре: установите, какие вещества зашифрованы как X₁–X₄ (выберите их структурные формулы).')
+    e = ' '.join(f'{i + 1}) {rx_eq(r)} ({cond_ru(r.get("cond", "")) or "без особых условий"});'
+                 for i, r in enumerate(path))
+    return match_card(pid, rng, q, XL, rt, [right.index(f) for f in xs], e,
+                      {'start': chain[0], 'labels': labels, 'right': right}, eqs=[eqt(r) for r in path], lids=XL)
+
+
+FID32 = dict(answer_format='в КИМ — развёрнутый ответ (5 уравнений, до 5 баллов: по 1 баллу за уравнение); в тренажёре '
+                          'проверяется ключевой шаг — вещества X₁–X₄ (соответствие, четыре цифры)',
+             style='«Напишите уравнения реакций, с помощью которых можно осуществить следующие превращения…» — как в КИМ',
+             level='В', time_min=10, scale='цепочки из 5 стадий школьной органики с реагентами и условиями над стрелками, '
+                                           'как в банке №32 (демо 2027: C₃H₄ → … → [Ag(NH₃)₂]OH → … CH₃Cl)',
+             trap='условия определяют продукт (водн./спирт. щёлочь, t < / > 140 °C, среда окисления KMnO₄)',
+             kes=KES32, score='5 баллов (по 1 за каждое верное уравнение)')
+
+
+@proto('ch-ege-32-chain-hydrocarbons', 'ЕГЭ', 32, 'Цепочка превращений: углеводороды и галогенпроизводные',
+       invariant='пять последовательных стадий; вещество каждой стадии определяется реагентом и условиями',
+       varies='цепочки по базе (алканы, алкены, алкины, арены, галогенпроизводные), зашифрованные вещества X₁–X₄',
+       answer_rule='идти по цепочке слева направо, записывая продукт каждой стадии; все уравнения уравнены',
+       mistakes=['дегидрогалогенирование по Зайцеву', 'Вюрц удваивает радикал', 'гидрирование на Pd — до алкена'],
+       solve=_solve32, kind='dict', kes=KES32, fidelity=FID32)
+def g32_hc(rng):
+    return _gen32('ch-ege-32-chain-hydrocarbons', rng, 'hc')
+
+
+@proto('ch-ege-32-chain-oxygen', 'ЕГЭ', 32, 'Цепочка превращений: кислородсодержащие соединения',
+       invariant='пять стадий с участием спиртов, альдегидов, кислот, эфиров, солей',
+       varies='цепочки по базе, зашифрованные вещества X₁–X₄',
+       answer_rule='окисление/восстановление, этерификация/гидролиз, декарбоксилирование — по реагентам на стрелках',
+       mistakes=['в щелочной среде кислота существует в виде соли', 'CuO окисляет спирт до альдегида'],
+       solve=_solve32, kind='dict', kes=KES32, fidelity=FID32)
+def g32_o(rng):
+    return _gen32('ch-ege-32-chain-oxygen', rng, 'o')
+
+
+@proto('ch-ege-32-chain-aromatic', 'ЕГЭ', 32, 'Цепочка превращений: производные бензола',
+       invariant='пять стадий с участием аренов, галогенаренов, фенола, бензойной кислоты, анилина',
+       varies='цепочки по базе, зашифрованные вещества X₁–X₄',
+       answer_rule='учитывать место атаки (кольцо/цепь) и среду окисления гомологов бензола',
+       mistakes=['свет — замещение в боковой цепи, FeCl₃ — в кольце', 'в нейтральной среде KMnO₄ даёт бензоат калия'],
+       solve=_solve32, kind='dict', kes=KES32, fidelity=FID32)
+def g32_ar(rng):
+    return _gen32('ch-ege-32-chain-aromatic', rng, 'ar')
+
+
+@proto('ch-ege-32-chain-nitrogen', 'ЕГЭ', 32, 'Цепочка превращений с азотсодержащими веществами',
+       invariant='пять стадий, среди продуктов — амины, соли аминов, аминокислоты, нитросоединения',
+       varies='цепочки по базе, зашифрованные вещества X₁–X₄',
+       answer_rule='амин + кислота → соль, соль амина + щёлочь → амин; галогенкислота + NH₃ → аминокислота',
+       mistakes=['в кислой среде восстановление нитробензола даёт соль фениламмония', 'аминокислота с HCl — соль'],
+       solve=_solve32, kind='dict', kes=KES32, fidelity=FID32)
+def g32_n(rng):
+    return _gen32('ch-ege-32-chain-nitrogen', rng, 'n')
+
+
+recipe('ch-ege-32-full-answer', 'ЕГЭ', 32, 'Цепочка превращений — полный развёрнутый ответ (5 уравнений)',
+       invariant='записать пять уравнений со структурными формулами и условиями; ионы/комплексы ([Ag(NH₃)₂]OH) и ОВР '
+                 'с KMnO₄/K₂Cr₂O₇ — с коэффициентами',
+       varies='цепочка (из генераторов ch-ege-32-chain-*), часть веществ дана формулами, часть — зашифрована',
+       answer_rule='каждое уравнение — 1 балл: верные продукты, условия, коэффициенты',
+       mistakes=['не уравнены ОВР с перманганатом', 'вместо структурных формул — молекулярные'],
+       kind='llm', how='берём цепочку из ch-ege-32-chain-* (5 реакций базы с уравнениями); ИИ формулирует условие в стиле '
+                       'КИМ (часть веществ открыта, часть — X₁…X₄) и эталон с уравнениями из базы',
+       check='эталонные уравнения — из базы (коэффициенты проверены balance); ответ ученика сверяется поэлементно ИИ '
+             'по критериям ФИПИ (1 балл за уравнение)',
+       capacity=2000, example={'q': 'Напишите уравнения реакций, с помощью которых можно осуществить превращения: '
+                                    'бромэтан —(KOH, спирт., t°)→ X₁ —(H₂O, H⁺)→ X₂ —(CuO, t°)→ X₃ —(Ag₂O, NH₃)→ X₄ '
+                                    '—(C₂H₅OH, H₂SO₄)→ этилацетат',
+                               'a': '1) C₂H₅Br + KOH → C₂H₄ + KBr + H₂O; 2) C₂H₄ + H₂O → C₂H₅OH; 3) C₂H₅OH + CuO → '
+                                    'CH₃CHO + Cu + H₂O; 4) CH₃CHO + Ag₂O → CH₃COOH + 2Ag; 5) CH₃COOH + C₂H₅OH ⇄ '
+                                    'CH₃COOC₂H₅ + H₂O',
+                               'e': 'Каждая стадия определяется реагентом и условиями; 5 баллов за 5 верных уравнений.'},
+       why='развёрнутый ответ (запись уравнений) автоматически проверяется только через эталон и ИИ', kes=KES32,
+       fidelity=dict(FID32, answer_format='развёрнутый ответ: 5 уравнений реакций, как в КИМ 2027'))

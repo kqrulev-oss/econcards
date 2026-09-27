@@ -103,7 +103,9 @@ def W(xs, dec):
         x = Fr(x)
         if x <= 0:
             continue
-        out.append(fmt(x, dec))
+        v = fmt(x, dec)
+        if v != '0':
+            out.append(v)
     return out
 
 
@@ -487,6 +489,8 @@ def g26_hydrate(rng):
         mh = Fr(rng.choice(range(5, 101)))
         water = Fr(rng.choice(range(50, 501, 5)))
         x = mh * Ma / Mh / (mh + water) * 100
+        if x < 2:
+            raise Retry
         ans = rnd(x, dec)
         q = rng.choice([f'{cap(acc)} ({pretty(hyd)}) массой {mh} г растворили в {water} г воды. Рассчитайте массовую '
                         f'долю {aname} в образовавшемся растворе.',
@@ -649,7 +653,7 @@ def _g27_q(rng, pid, by_set):
     f, st = pick(rng, parts)
     if f == 'O2' and rng.random() < 0.6:
         raise Retry
-    bys = [b for b in by_set if b != 'V' or st == G]
+    bys = [b for b in by_set if b != 'V' or (st == G and f != 'H2O')]
     if not bys:
         raise Retry
     by = pick(rng, bys)
@@ -730,7 +734,7 @@ def g27_inv(rng):
     r = pick(rng, D.THERMO)
     f, st = pick(rng, list(zip(r['lhs'] + r['rhs'], r['st'])))
     k = coef(r['lhs'], r['rhs'])[f]
-    by = rng.choice(['V', 'V', 'm', 'n']) if st == G else rng.choice(['m', 'm', 'n'])
+    by = rng.choice(['V', 'V', 'm', 'n']) if st == G and f != 'H2O' else rng.choice(['m', 'm', 'n'])
     n = Fr(rng.choice(range(1, 81)), rng.choice([10, 20, 4]))
     Q = abs(r['q']) * n / k
     if not nice(Q, 1) or Q < 2:
@@ -740,10 +744,14 @@ def g27_inv(rng):
     ans = rnd(val, dec)
     eq, eqt = therm_eq(r)
     past = 'выделилось' if r['q'] > 0 else 'поглотилось'
-    role = ('вступившей в реакцию' if gnd(f) == 'f' else 'вступившего в реакцию') if f in r['lhs'] \
-        else pp_sh('образовавш', gnd(f))
-    what = {'V': f'объём (н.у.) {gen(f)}, {role}', 'm': f'массу {gen(f)}, {role}',
-            'n': f'количество вещества {gen(f)} (моль), {role}'}[by]
+    if f in r['lhs']:
+        role = 'вступившей в реакцию' if gnd(f) == 'f' else 'вступившего в реакцию'
+        what = {'V': f'объём (н.у.) {gen(f)}, {role}', 'm': f'массу {gen(f)}, {role}',
+                'n': f'количество вещества {gen(f)} (моль), {role}'}[by]
+    else:
+        role = pp_sh('образовавш', gnd(f))
+        what = {'V': f'объём (н.у.) {role} {gen(f)}', 'm': f'массу {role} {gen(f)}',
+                'n': f'количество вещества {role} {gen(f)} (моль)'}[by]
     q = rng.choice([f'Реакция протекает по термохимическому уравнению\n{eq}\nВ результате {past} {ru(Q)} кДж теплоты. '
                     f'Рассчитайте {what}.',
                     f'Известно, что при протекании реакции\n{eq}\n{past} {ru(Q)} кДж теплоты. Определите {what}.'])
@@ -778,7 +786,7 @@ def g27_qeq(rng):
     if f == 'O2':
         raise Retry
     k = coef(lhs, rhs)[f]
-    by = 'V' if st == G and rng.random() < 0.5 else 'm'
+    by = 'V' if st == G and f != 'H2O' and rng.random() < 0.5 else 'm'
     n = Fr(rng.choice(range(1, 41)), rng.choice([10, 20, 40]))
     val = n * (VM if by == 'V' else M(f))
     if not nice(val, 2):
@@ -788,7 +796,7 @@ def g27_qeq(rng):
         raise Retry
     ans = fmt(Fr(abs(r['q'])), 0)
     kl, kr = balance(lhs, rhs)
-    scheme = pretty(eq_str(lhs, rhs, kl, kr, '=')) + (' + Q' if r['q'] > 0 else ' − Q')
+    scheme = therm_eq(r)[0].rsplit(' + ' if r['q'] > 0 else ' − ', 1)[0] + (' + Q' if r['q'] > 0 else ' − Q')
     amount = f'{ru(val)} л (н.у.) {gen(f)}' if by == 'V' else f'{ru(val)} г {gen(f)}'
     past = 'выделилось' if r['q'] > 0 else 'поглотилось'
     act = f'образовании {amount}' if f in rhs else (f'разложении {amount}' if len(lhs) == 1 else f'вступлении в реакцию {amount}')
@@ -1196,6 +1204,24 @@ SIMPLE28 = [  # (lhs, rhs, название процесса)
 ]
 
 
+PREP_W = {'растворение': 'растворении', 'разложение': 'разложении', 'прокаливание': 'прокаливании', 'обжиг': 'обжиге',
+          'восстановление': 'восстановлении', 'нейтрализация': 'нейтрализации', 'взаимодействие': 'взаимодействии',
+          'поглощение': 'поглощении', 'гидролиз': 'гидролизе', 'действие': 'действии', 'сгорание': 'сгорании',
+          'термическое': 'термическом', 'каталитическое': 'каталитическом', 'полная': 'полной', 'полное': 'полном',
+          'алюмотермическое': 'алюмотермическом'}
+
+
+def _prep(proc):
+    w = proc.split(' ')
+    out = []
+    for i, x in enumerate(w):
+        if x in PREP_W and (i == 0 or w[i - 1] in PREP_W):
+            out.append(PREP_W[x])
+        else:
+            out.append(x)
+    return ' '.join(out)
+
+
 @proto('ch-ege-28-simple', 'ЕГЭ', 28, 'Масса, объём или количество вещества по уравнению (без примесей и выхода)',
        invariant='n(дано) = m/M или V/22,4; n(искомое) = n·k(иск.)/k(дано); ответ m, V или n',
        varies='реакция (разложение, металл + кислота, нейтрализация, горение, восстановление), дано и искомое — любой '
@@ -1222,9 +1248,13 @@ def g28_simple(rng):
     given = {'n': f'{ru(v)} моль', 'm': f'{ru(v)} г', 'V': f'{ru(v)} л (н.у.)'}[gby]
     role_g = 'израсходовано' if g in lhs else 'получено'
     want = {'V': f'объём (н.у.) {gen(f)}', 'm': f'массу {gen(f)}', 'n': f'количество вещества {gen(f)} (моль)'}[fby]
-    role_f = pp_sh('вступивш', gnd(f)) + ' в реакцию' if f in lhs else pp_sh('образовавш', gnd(f))
-    q = rng.choice([f'Протекает {proc}. Известно, что {role_g} {given} {gen(g)}. Рассчитайте {want}, {role_f}.',
-                    f'В ходе процесса «{proc}» {role_g} {given} {gen(g)}. Определите {want}.'])
+    if f in lhs:
+        want = want + ', ' + pp_sh('вступивш', gnd(f)) + ' в реакцию'
+    else:
+        want = {'V': f'объём (н.у.) {pp_sh("образовавш", gnd(f))} {gen(f)}', 'm': f'массу {pp_sh("образовавш", gnd(f))} {gen(f)}',
+                'n': f'количество вещества {pp_sh("образовавш", gnd(f))} {gen(f)} (моль)'}[fby]
+    q = rng.choice([f'При {_prep(proc)} {role_g} {given} {gen(g)}. Рассчитайте {want}.',
+                    f'Определите {want}, если при {_prep(proc)} {role_g} {given} {gen(g)}.'])
     q += ' ' + tail(dec)
     eqs, eq = eqp(lhs, rhs)
     e = f'{eqs}; n({pretty(g)}) = {ru(n)} моль; n({pretty(f)}) = {ru(n)}·{k[f]}/{k[g]} = {fmt(n * k[f] / k[g], 4)} моль ⇒ {ans}.'
