@@ -18,7 +18,7 @@
    ============================================================ */
 
 import { handleBot } from './bot.js';
-import { handleAuth, sessionAccount } from './auth.js';
+import { handleAuth, sessionAccount, parentCode } from './auth.js';
 
 // «-latest» — псевдонимы Google на актуальную модель: конкретные версии
 // закрывают для новых ключей (так случилось с gemini-2.5-flash)
@@ -242,9 +242,21 @@ async function handle(req, env) {
     if (!await env.DB.get(`owner:${id}`)) throw new HttpError(404, 'Набор не найден.');
     const { sid, name, stats } = await readJson(req, MAX_STATS);
     if (!/^[a-z0-9]{6,20}$/.test(sid || '') || !name) throw new HttpError(400, 'Нет имени ученика.');
-    await env.DB.put(`prog:${id}:${sid}`, JSON.stringify({ sid, name: cut(name, 80), stats, at: Date.now() }),
+    // Ученик вошёл в аккаунт — запоминаем, чтобы репетитор мог выдать код для родителя
+    const acct = await sessionAccount(env, req);
+    await env.DB.put(`prog:${id}:${sid}`, JSON.stringify({ sid, name: cut(name, 80), stats, at: Date.now(), acct: acct?.id }),
       { expirationTtl: 60 * 60 * 24 * 180 });
     return { ok: true };
+  }
+
+  // Репетитор выдаёт код для родителя ученика, который вошёл в аккаунт
+  if (parts[2] === 'parent-code' && req.method === 'POST') {
+    await requireOwner(env, id, req);
+    const { sid } = await readJson(req, 1000);
+    const rec = /^[a-z0-9]{6,20}$/.test(sid || '') && await env.DB.get(`prog:${id}:${sid}`, 'json');
+    if (!rec) throw new HttpError(404, 'Ученик не найден.');
+    if (!rec.acct) throw new HttpError(400, 'Ученик ещё не вошёл в аккаунт. Попросите его: Профиль → «Войти» — и код появится.');
+    return parentCode(env, rec.acct);
   }
 
   if (parts[2] === 'progress' && req.method === 'GET') {

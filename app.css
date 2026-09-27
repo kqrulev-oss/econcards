@@ -794,3 +794,21 @@ input:focus, select:focus, textarea:focus { outline: 3px solid var(--accent); ou
 .login-yandex { background: #FC3F1D; color: #fff; }
 .login-vk { background: #0077FF; color: #fff; }
 .login-google { background: var(--surface); }
+
+/* ---------- кабинет родителя ---------- */
+.kid { margin: 18px 0 28px; }
+.kid-head { display: flex; align-items: center; gap: 12px; margin: 10px 0; }
+.kid-head h1 { flex: 1; margin: 0; font: 800 22px/1.2 var(--display); }
+.kid-pack-head { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; margin-bottom: 12px; flex-wrap: wrap; }
+.kid-pack-head b { font: 800 16px var(--display); }
+.kid-pack h2 { margin: 18px 0 8px; }
+.kid-weak { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.kid-weak li { display: flex; justify-content: space-between; gap: 10px; padding: 10px 14px; background: var(--bad-bg); border-radius: 14px; font-weight: 700; }
+.kid-weak b { color: var(--bad); }
+.trend { font: 800 12px var(--display); }
+.trend.up { color: var(--ok); }
+.trend.down { color: var(--bad); }
+.parent-steps { display: grid; gap: 10px; padding: 0; margin: 18px 0; list-style: none; counter-reset: s; }
+.parent-steps li { counter-increment: s; display: grid; grid-template-columns: 40px 1fr; gap: 0 12px; align-items: center; background: var(--surface); border: var(--bw) solid var(--ink); border-radius: 18px; padding: 14px; box-shadow: 0 4px 0 var(--ink); font-weight: 600; }
+.parent-steps li::before { content: counter(s); grid-row: span 2; display: grid; place-items: center; width: 40px; height: 40px; border-radius: 12px; background: var(--accent); color: #fff; font: 800 16px var(--display); }
+.code-big { font: 800 40px/1 var(--display); letter-spacing: .12em; text-align: center; padding: 18px; margin: 12px 0; background: var(--surface); border: var(--bw) dashed var(--ink); border-radius: 20px; user-select: all; }

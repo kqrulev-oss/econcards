@@ -1,6 +1,6 @@
 // Приложение ученика: ежедневное занятие по интервальному повторению,
 // темы с теорией, работа над ошибками и отправка прогресса репетитору.
-import { store, api, apiBase, loadPack, loadLibrary, renderCard, esc, text, day, uid, plural, el, toast } from './lib.js';
+import { store, api, apiBase, loadPack, loadLibrary, renderCard, esc, text, day, uid, plural, el, toast, modal } from './lib.js';
 import { renderLanding } from './landing.js';
 import { signedIn, account, loginDialog, logout, addRole, finishRedirectLogin } from './account.js';
 
@@ -531,7 +531,7 @@ function viewMe() {
       <h2>Аккаунт</h2>
       ${signedIn()
         ? `<p>Вы вошли как <b>${esc(a?.name || a?.email || 'ученик')}</b>. Прогресс сохраняется в аккаунте — можно заниматься с телефона и компьютера.</p>
-           <button class="btn" id="logout">Выйти</button>`
+           <div class="row"><button class="btn" id="pcode">Код для родителя</button><button class="btn" id="logout">Выйти</button></div>`
         : `<p class="muted">Войдите, чтобы прогресс не потерялся и был доступен на любом устройстве.</p>
            <button class="btn primary" id="login">Войти</button>`}
     </section>
@@ -563,6 +563,15 @@ function viewMe() {
     onDone: async () => { await addRole('student'); await pullProg(); sync(true); viewMe(); },
   }));
   $app.querySelector('#logout')?.addEventListener('click', async () => { await logout(); viewMe(); });
+  $app.querySelector('#pcode')?.addEventListener('click', async () => {
+    try {
+      const { code } = await api('/me/parent-code', { method: 'POST' });
+      const where = new URL('parent/', location.href.split('#')[0].split('?')[0]).href;
+      modal(`<h3>Код для родителя</h3><div class="code-big">${esc(code)}</div>
+        <p>Родитель открывает <b>${esc(where)}</b>, входит и вводит этот код. Код действует сутки и подходит один раз.</p>
+        <p class="muted">Родитель будет видеть дни занятий, точность и темы, которые стоит подтянуть.</p>`);
+    } catch (err) { toast(err.message); }
+  });
   $app.querySelector('#save').onclick = () => {
     const name = $app.querySelector('#name')?.value.trim();
     if (name !== undefined) prog.name = name;
