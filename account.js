@@ -3,6 +3,7 @@
 import { store, api, esc, toast, modal } from './lib.js';
 
 const KEY = 'zd-session';
+const PENDING = 'zd-tg-pending'; // незавершённый вход через Telegram
 export const session = () => store.get(KEY, null);
 export const signedIn = () => !!session()?.token;
 export const account = () => session()?.account || null;
@@ -31,6 +32,16 @@ export async function addRole(role) {
 // Возврат от Яндекса/VK/Google: адрес вида …#login=<ticket>. Вызывается при старте
 // страницы; вернёт аккаунт, если вход только что завершился, и роль, ради которой входили.
 export async function finishRedirectLogin() {
+  // Вернулись из Telegram, а страница перезагрузилась — продолжаем ждать подтверждения
+  const pend = store.get(PENDING, null);
+  if (pend && !signedIn() && Date.now() - pend.at < 600e3) {
+    loginDialog({ role: pend.role, resume: pend, onDone: async () => {
+      if (pend.role) await addRole(pend.role);
+      if (pend.after) location.hash = pend.after;
+      location.reload();
+    } });
+    return null;
+  }
   const m = /^#login(_error)?=([a-z0-9]+)$/.exec(location.hash);
   if (!m) return null;
   const after = sessionStorage.getItem('zd-login-after') || '';
@@ -58,7 +69,7 @@ const MAIL_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5"
 
 /* Окно входа. onDone(account) вызывается после успешного входа.
    why — одна строка, зачем входить (своя для репетитора, ученика, родителя). */
-export async function loginDialog({ why = '', onDone, role = '' } = {}) {
+export async function loginDialog({ why = '', onDone, role = '', resume = null } = {}) {
   let providers = { tg: true };
   try { providers = await api('/auth/providers'); } catch { /* офлайн: покажем Telegram, ошибка будет при нажатии */ }
   const { box, close } = modal(`
@@ -84,28 +95,48 @@ export async function loginDialog({ why = '', onDone, role = '' } = {}) {
     onDone?.(res.account);
   };
 
+  // Telegram: код входа запоминаем, чтобы вход продолжился, даже если браузер
+  // открыл Telegram в этой же вкладке и страница перезагрузилась
+  const waitTelegram = async (nonce, link) => {
+    const cmd = `/start login_${nonce}`;
+    box.querySelector('.login-ways').hidden = true; // выбран Telegram — остальные способы не отвлекают
+    step.innerHTML = `
+      <a class="btn primary big" id="tg-open" href="${esc(link)}" target="_blank" rel="noopener">Открыть Telegram</a>
+      <p class="muted center">Нажмите в боте «Start» — вход произойдёт сам. <span class="login-wait">Жду подтверждения…</span></p>
+      <p class="muted small-note">Не открылось? Найдите бота <b>@${esc(link.split('/')[3].split('?')[0])}</b> и отправьте ему: <code class="tg-cmd">${esc(cmd)}</code> <button class="link-btn" id="tg-copy">скопировать</button></p>`;
+    step.querySelector('#tg-open').addEventListener('click', ev => {
+      ev.preventDefault();
+      // Новая вкладка заблокирована (частый случай на iPhone/iPad) — открываем здесь же
+      if (!window.open(link, '_blank', 'noopener')) location.href = link;
+    });
+    step.querySelector('#tg-copy').addEventListener('click', () => navigator.clipboard?.writeText(cmd).then(() => toast('Скопировано')));
+    const started = Date.now();
+    while (!stop && Date.now() - started < 600e3) {
+      await new Promise(ok => setTimeout(ok, 2000));
+      if (stop) return;
+      try {
+        const r = await api(`/auth/tg/poll?nonce=${nonce}`);
+        if (r.token) { store.set(PENDING, null); return finish(r); }
+      } catch (err) {
+        store.set(PENDING, null);
+        step.innerHTML = `<p class="muted">${esc(err.message)}</p>`;
+        return;
+      }
+    }
+  };
+
+  if (resume) waitTelegram(resume.nonce, resume.link);
+
   box.querySelector('[data-way=tg]')?.addEventListener('click', async e => {
-    e.currentTarget.disabled = true;
+    const btn = e.currentTarget;
+    btn.disabled = true;
     try {
       const { nonce, link } = await api('/auth/tg/start', { method: 'POST' });
-      step.innerHTML = `
-        <a class="btn primary big" href="${esc(link)}" target="_blank" rel="noopener">Открыть Telegram</a>
-        <p class="muted center">Нажмите в боте «Start» — вход произойдёт сам. <span class="login-wait">Жду подтверждения…</span></p>`;
-      const started = Date.now();
-      while (!stop && Date.now() - started < 600e3) {
-        await new Promise(ok => setTimeout(ok, 2000));
-        if (stop) return;
-        try {
-          const r = await api(`/auth/tg/poll?nonce=${nonce}`);
-          if (r.token) return finish(r);
-        } catch (err) {
-          step.innerHTML = `<p class="muted">${esc(err.message)}</p>`;
-          return;
-        }
-      }
+      store.set(PENDING, { nonce, link, role, at: Date.now(), after: location.hash });
+      waitTelegram(nonce, link);
     } catch (err) {
       step.innerHTML = `<p class="muted">${esc(err.message)}</p>`;
-      e.currentTarget.disabled = false;
+      btn.disabled = false;
     }
   });
 
