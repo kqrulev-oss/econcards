@@ -323,7 +323,8 @@ def g_e4_word(rng):
 
 def inflect_like(form, lemma_from, lemma_to):
     """Поставить lemma_to в ту же форму, в которой стоит form (слово от lemma_from)."""
-    ps = [p for p in MORPH.parse(form.lower()) if yo(p.normal_form) == yo(lemma_from)]
+    ps = [p for p in MORPH.parse(form.lower()) if yo(p.normal_form) == yo(lemma_from)] or \
+        [p for p in MORPH.parse(form.lower()) if p.tag.POS in ('PRTF', 'ADJF')]
     if not ps:
         return None
     src = ps[0]
@@ -352,7 +353,10 @@ def paronym_ctx():
                     DROPPED.append(('paronyms', s, 'нет выделенного слова'))
                     continue
                 w = m.group(0).lower()
-                if not known(w) or not any(yo(p.normal_form) == yo(lem) for p in MORPH.parse(w)):
+                same = any(yo(p.normal_form) == yo(lem) for p in MORPH.parse(w)) or any(
+                    (r := p.inflect({'masc', 'sing', 'nomn'})) and yo(r.word) == yo(lem)
+                    for p in MORPH.parse(w) if p.tag.POS in ('PRTF', 'ADJF'))  # причастие-прилагательное
+                if not known(w) or not same:
                     DROPPED.append(('paronyms', w, f'не форма слова {lem}'))
                     continue
                 out.append((gi, lem, s, w))
