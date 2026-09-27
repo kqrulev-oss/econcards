@@ -3466,6 +3466,16 @@ def roles_calc(lhs, rhs):
 S20_ROLES = [s for s in S20 if s['ox'][0] != s['red'][0]]
 
 
+def _steps20_e(p):
+    h = _halves_calc(p['lhs'], p['rhs'])
+    return [e_of(h['red']), e_of(h['ox'])]
+
+
+def _steps20_mult(p):
+    h = _halves_calc(p['lhs'], p['rhs'])
+    return list(multipliers(e_of(h['red']), e_of(h['ox'])))
+
+
 def _solve20_roles(p):
     oxs, reds = roles_calc(p['lhs'], p['rhs'])
     if len(oxs) != 1 or len(reds) != 1:
@@ -3524,16 +3534,6 @@ def _halves_calc(lhs, rhs):
     return res
 
 
-def _steps20_e(p):
-    h = _halves_calc(p['lhs'], p['rhs'])
-    return [e_of(h['red']), e_of(h['ox'])]
-
-
-def _steps20_mult(p):
-    h = _halves_calc(p['lhs'], p['rhs'])
-    return list(multipliers(e_of(h['red']), e_of(h['ox'])))
-
-
 def _solve20_halves(p):
     h = _halves_calc(p['lhs'], p['rhs'])
     try:
@@ -3543,6 +3543,17 @@ def _solve20_halves(p):
 
 
 S20_HALF = [s for s in S20_ROLES if s['red'][1] != s['ox'][1] or s['red'][2] != s['ox'][3]]
+
+
+def _wrong_halves(h, n_atoms):
+    """Отвлекающие записи процесса: неверное число электронов (в т. ч. без учёта индекса) и неверный знак."""
+    m = re.match(r'^(.*) ([+−]) (\d+)ē → (.*)$', h)
+    e = int(m.group(3))
+    counts = {e // 2} if n_atoms == 2 and e % 2 == 0 else {e * 2}
+    counts |= {e + 1, e - 1}
+    out = [f'{m.group(1)} {m.group(2)} {k}ē → {m.group(4)}' for k in sorted(counts) if k > 0 and k != e]
+    out.append(f'{m.group(1)} {"+" if m.group(2) == "−" else "−"} {e}ē → {m.group(4)}')
+    return out
 
 
 @proto('ch-oge-20-electron-balance', 'ОГЭ', 20, 'ОВР (электронный баланс): уравнения процессов окисления и восстановления',
@@ -3555,17 +3566,6 @@ S20_HALF = [s for s in S20_ROLES if s['red'][1] != s['ox'][1] or s['red'][2] != 
        solve=_solve20_halves, kind='param', kes=['5.3'], solve_steps=_steps20_mult,
        fidelity=_F20('уравнения процессов (соответствие) + множители баланса',
                      'элемент 1 критериев (электронный баланс: процессы и множители) полностью'))
-def _wrong_halves(h, n_atoms):
-    """Отвлекающие записи процесса: неверное число электронов (в т. ч. без учёта индекса) и неверный знак."""
-    m = re.match(r'^(.*) ([+−]) (\d+)ē → (.*)$', h)
-    e = int(m.group(3))
-    counts = {e // 2} if n_atoms == 2 and e % 2 == 0 else {e * 2}
-    counts |= {e + 1, e - 1}
-    out = [f'{m.group(1)} {m.group(2)} {k}ē → {m.group(4)}' for k in sorted(counts) if k > 0 and k != e]
-    out.append(f'{m.group(1)} {"+" if m.group(2) == "−" else "−"} {e}ē → {m.group(4)}')
-    return out
-
-
 def g20_halves(rng):
     sch = rng.choice(S20_HALF)
     hr, ho = _half_from(sch, 'red'), _half_from(sch, 'ox')
@@ -3837,12 +3837,12 @@ def _solve21x(p):
     return ids_of(good)[0] if len(good) == 1 else f'подходят {good}'
 
 
-_F21 = lambda step: F('развёрнутый ответ (3 балла: по баллу за каждое уравнение); в тренажёре — шаг: ' + step,
+_F21 = lambda step, cov='': F('развёрнутый ответ (3 балла: по баллу за каждое уравнение); в тренажёре — шаг: ' + step,
                      'условие — как в демоверсии 2027 №21 и банке: «Дана схема превращений: … Напишите молекулярные '
                      'уравнения реакций…»', 'В', 17, 'цепочки из четырёх веществ одного элемента, как в банке: '
                      'Li2O → X → LiCl → LiNO3, Fe → X → Fe(OH)3 → Fe(NO3)3, S → X → Na2SO3 → CaSO3',
                      'вещество X, которое получается из предыдущего, но не даёт следующее', ['4.12'],
-                     '3 балла по критериям; шаг проверяется автоматически')
+                     '3 балла по критериям (по баллу за уравнение); покрыто: ' + cov)
 
 
 @proto('ch-oge-21-find-x', 'ОГЭ', 21, 'Цепочка превращений: какое вещество может быть X',
@@ -3851,7 +3851,9 @@ _F21 = lambda step: F('развёрнутый ответ (3 балла: по б�
               'место X в цепочке',
        answer_rule='X должен получаться из предыдущего вещества одной реакцией и сам давать следующее',
        mistakes=['выбирают вещество, которое не получается из предыдущего', 'нарушают степень окисления (Fe2+ / Fe3+)'],
-       solve=_solve21x, kind='dict', kes=['4.12'], fidelity=_F21('определить вещество X (один ответ из четырёх)'))
+       solve=_solve21x, kind='dict', kes=['4.12'],
+       fidelity=_F21('определить вещество X (один ответ из четырёх; X — единственное подходящее вещество базы)',
+                     'предпосылка к трём уравнениям (отдельного балла нет)'))
 def g21_x(rng):
     chain, el = _chain21(rng)
     pos = 1 if rng.random() < 0.7 else 2
@@ -3883,6 +3885,28 @@ def g21_x(rng):
     return pcard('ch-oge-21-find-x', q, a, e, k='one', o=o, eqs=eqs, p={'chain': chain, 'pos': pos, 'items': items})
 
 
+def _stage_eqs(a, b, rg):
+    """Все разные уравнения стадии a → b данным реагентом (по всей базе)."""
+    out = set()
+    for r in _by_reagent().get(a, []):
+        if b not in r['rhs']:
+            continue
+        rest = [x for x in r['lhs'] if x not in (a, 'H2O')]
+        if (rg == T21 and len(r['lhs']) == 1) or (rest == [rg]) or (rg == 'H2O' and not rest and len(r['lhs']) > 1):
+            out.add((tuple(r['lhs']), tuple(r['rhs'])))
+    return out
+
+
+def _steps21(p):
+    ch, res = p['chain'], []
+    for i in range(3):
+        rg = p['reag'][int(p['ans'][LET[i]]) - 1]
+        (lhs, rhs), = _stage_eqs(ch[i], ch[i + 1], rg)
+        kl, kr = balance(list(lhs), list(rhs))
+        res.append(sum(kl) + sum(kr))
+    return res
+
+
 def _solve21r(p):
     ch = p['chain']
     a = {}
@@ -3900,7 +3924,9 @@ def _solve21r(p):
        answer_rule='реагент выбирают по классу превращения: основание → соль — кислота; соль → нерастворимое основание — '
                    'щёлочь; хлорид → нитрат — AgNO3; нерастворимый гидроксид → оксид — нагревание …',
        mistakes=['для замены аниона берут кислоту вместо соли серебра/бария', 'нерастворимое основание «получают» водой'],
-       solve=_solve21r, kind='dict', kes=['4.12'], fidelity=_F21('реагент для каждой стадии (соответствие 3 → 5)'))
+       solve=_solve21r, kind='dict', kes=['4.12'], solve_steps=_steps21,
+       fidelity=_F21('реагент для каждой стадии (соответствие 3 → 5) + сумма коэффициентов каждого уравнения',
+                     'три элемента критериев (по уравнению на стадию): реагент и коэффициенты каждого уравнения'))
 def g21_reag(rng):
     chain, el = _chain21(rng)
     E = edges21()
@@ -3933,7 +3959,12 @@ def g21_reag(rng):
                 break
     e = 'Уравнения: ' + '; '.join(f'{LET[i]}) {eq_text(eq)}' for i, eq in enumerate(eqs)) + '. Ответ: ' + \
         ''.join(a[x] for x in LET[:3]) + '.'
-    return pcard('ch-oge-21-reagents', q, a, e, k='match', o=o, eqs=eqs, p={'chain': chain, 'reag': reag})
+    steps = None
+    uniq = [_stage_eqs(chain[i], chain[i + 1], pick[i]) for i in range(3)]
+    if all(len(u) == 1 for u in uniq) and len(eqs) == 3:
+        steps = [(f'сумма коэффициентов в уравнении стадии {i + 1}', sum(eqs[i][2]) + sum(eqs[i][3])) for i in range(3)]
+    return pcard('ch-oge-21-reagents', q, a, e, k='match', o=o, eqs=eqs, p={'chain': chain, 'reag': reag, 'ans': a},
+                 steps=steps)
 
 
 # ================================================================= 23. Реальный эксперимент: определение веществ в склянках
@@ -4045,12 +4076,12 @@ def _solve23_reag(p):
     return ids_of(list(vp[0]))
 
 
-_F23 = lambda step: F('практическое задание (5 баллов: выбор реактивов, два ионных уравнения, признаки, вывод); в тренажёре — '
+_F23 = lambda step, cov='': F('практическое задание (5 баллов: выбор реактивов, два ионных уравнения, признаки, вывод); в тренажёре — '
                      'шаг: ' + step, 'условие — как в демоверсии 2027 №23 («Для проведения эксперимента выданы склянки '
                      '№ 1 и № 2 …»)', 'В', 30, 'пары веществ и реактивы как в банке: HCl и CaCl2 (Zn, AgNO3, KOH), MgCl2 и '
                      'BaCl2 (HCl, NaOH, H2SO4), K3PO4 и ZnSO4 (NaOH, MgCl2, NH4Cl)',
                      'реактив, дающий одинаковый признак с обоими веществами', ['1.6', '4.9', '4.10', '5.5'],
-                     '5 баллов по критериям; шаг проверяется автоматически')
+                     '5 баллов по критериям; покрыто: ' + cov)
 
 
 @proto('ch-oge-23-choose-reagents', 'ОГЭ', 23, 'Реальный эксперимент: выбор двух реактивов для определения веществ в склянках',
@@ -4060,7 +4091,8 @@ _F23 = lambda step: F('практическое задание (5 баллов: 
        answer_rule='реактив подходит, если с «своим» веществом даёт осадок/газ, а с другим — нет видимых изменений',
        mistakes=['берут реактив, дающий одинаковый осадок с обоими веществами (AgNO3 с двумя хлоридами)',
                  'берут реактив, реакция с которым идёт без видимых признаков (нейтрализация)'],
-       solve=_solve23_reag, kind='dict', kes=['1.6', '4.9', '4.10'], fidelity=_F23('выбор двух реактивов из трёх'))
+       solve=_solve23_reag, kind='dict', kes=['1.6', '4.9', '4.10'],
+       fidelity=_F23('выбор двух реактивов из трёх', 'пункт 1 (выбор реактивов), предпосылка к К1–К3'))
 def g23_reag(rng):
     s1, s2, reag, a, b = _gen23_setup(rng)
     q = stem23(s1, s2, reag) + '\n\nПроверьте себя: выберите два реактива, необходимые для определения веществ.'
@@ -4092,7 +4124,8 @@ ALL_SIGNS23 = sorted({x for v in EXTRA_SIGNS.values() for x in v} - {'выдел
        varies='вещества, реактивы, сочетания (включая сочетание без видимых изменений)',
        answer_rule='признак — по продуктам ионного обмена: цвет осадка, газ и его запах, отсутствие изменений',
        mistakes=['цвет осадка гидроксида железа', 'запах газа', 'нейтрализация «с признаком»'],
-       solve=_solve23_signs, kind='dict', kes=['1.6', '4.9', '4.10'], fidelity=_F23('признаки реакций (таблица наблюдений)'))
+       solve=_solve23_signs, kind='dict', kes=['1.6', '4.9', '4.10'],
+       fidelity=_F23('признаки реакций (таблица наблюдений)', 'К2: признаки реакций в таблице'))
 def g23_signs(rng):
     s1, s2, reag, a, b = _gen23_setup(rng)
     combos = [(s1, a), (s2, b), rng.choice([(s1, b), (s2, a)])]
@@ -4115,6 +4148,14 @@ def g23_signs(rng):
                  p={'left': [list(c) for c in combos], 'signs': right})
 
 
+def _steps23(p):
+    out = []
+    for s_, r in p['left']:
+        l_, r_ = net_ionic_db(s_, r)
+        out.append(sum(l_.values()) + sum(r_.values()))
+    return out
+
+
 def _solve23_ionic(p):
     a = {}
     for i, (s, r) in enumerate(p['left']):
@@ -4132,7 +4173,9 @@ def _solve23_ionic(p):
        varies='вещества, реактивы, уравнения (осадок, газ)',
        answer_rule='в сокращённом уравнении — только ионы, образующие осадок/газ/воду, и сам этот продукт',
        mistakes=['записывают ионы-наблюдатели', 'выбирают уравнение для другого вещества'],
-       solve=_solve23_ionic, kind='param', kes=['5.5'], fidelity=_F23('сокращённые ионные уравнения (пункты 2, 3)'))
+       solve=_solve23_ionic, kind='param', kes=['5.5'], solve_steps=_steps23,
+       fidelity=_F23('сокращённые ионные уравнения (пункты 2, 3) + сумма их коэффициентов',
+                     'часть К1: сокращённые ионные уравнения обеих реакций (молекулярное и полное — в пояснении)'))
 def g23_ionic(rng):
     s1, s2, reag, a, b = _gen23_setup(rng, need_single_event=True)
     t1 = _target(*next(iter(_ion_events(s1, a))))
@@ -4149,5 +4192,7 @@ def g23_ionic(rng):
     eqs = [x for x in (_eq_of(s1, a), _eq_of(s2, b)) if x]
     e = (f'А) {name(s1)} + {name(a)}: {ionic_eq_text(t1)}. Б) {name(s2)} + {name(b)}: {ionic_eq_text(t2)}. '
          f'Ответ: {ans["А"]}{ans["Б"]}.')
+    steps = [(f'сумма коэффициентов в сокращённом ионном уравнении для {gen(x)}', sum(t[0].values()) + sum(t[1].values()))
+             for x, t in ((s1, t1), (s2, t2))]
     return pcard('ch-oge-23-ionic', q, ans, e, k='match', o=o, eqs=eqs,
-                 p={'left': [[s1, a], [s2, b]], 'eqs': [[t[0], t[1]] for t in eqs_t]})
+                 p={'left': [[s1, a], [s2, b]], 'eqs': [[t[0], t[1]] for t in eqs_t]}, steps=steps)
