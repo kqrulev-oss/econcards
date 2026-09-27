@@ -8332,8 +8332,13 @@ def gen_eb18_inequalities(r):
             else:
                 want = sp.Interval.open(a, b)
             pts = [a - 1, a - F(1, 2), a, a + F(1, 3), F(a + b, 2), b - F(1, 3), b, b + F(1, 2), b + 2]
+            ineq = sp.sympify(syms[L_], locals={'x': x, 'sp': sp, 'log': sp.log})
             for t in pts:
-                if (R(t) in sol) != (R(t) in want):
+                try:
+                    got = bool(sp.simplify(ineq.subs(x, R(t))))
+                except TypeError:
+                    got = False   # вне области определения
+                if got != (R(t) in want):
                     return False
         return True
     return c, chk
@@ -8381,6 +8386,8 @@ def gen_eb18_number_line(r):
         n = r.choice(list(rng))
         v = fv(n)
         if not lo + 0.15 < v < hi - 0.15 or any(abs(v - c_[1]) < 0.45 for c_ in chosen) or abs(v - round(v)) < 0.08:
+            continue
+        if '/' in fmt and math.gcd(n, int(fmt.split('/')[1])) != 1:
             continue
         if any(fmt == c_[0][0] for c_ in chosen) and r.random() < 0.7:
             continue
