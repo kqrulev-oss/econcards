@@ -1023,6 +1023,8 @@ def seq_card(pid, rng, props):
             raise Retry
         triple = rng.sample(yes, 3)
         two = rng.sample(no, 2)
+    if prop == 'acid_ox' and all(E[x]['kind'] == 'm' for x in triple):
+        raise Retry   # для металлов спрашиваем об осно́вном характере (прототип base)
     if prop == 'radius' and {'Al', 'Ga'} <= set(triple):
         raise Retry   # по школьному правилу Al < Ga, а реальный радиус Ga меньше (d-сжатие)
     if dp is None:
@@ -1667,6 +1669,9 @@ HCOONa|формиат натрия|ip|ion||e
 C6H5ONa|фенолят натрия|ipn|ion||e
 CH3COOK|ацетат калия|ipn|ion||e
 CH3NH3Cl|хлорид метиламмония|ipd|ion||e
+CH3NH3Br|бромид метиламмония|ipd|ion||e
+Cu(NH3)4SO4|сульфат тетраамминмеди(II)|ipd|ion||e
+KAl(OH)4|тетрагидроксоалюминат калия|ipd|ion||e
 SCl2|хлорид серы(II)|p|mol||e
 CH2Cl2|дихлорметан|p|mol||e
 CH3Cl|хлорметан|p|mol||e
@@ -1698,7 +1703,7 @@ for _ln in _SUBS.strip().splitlines():
     SUBS.append(dict(f=_f, name=_nm, bonds=set(_b), lat=_lat, hb=_hb == 'hb', lvl=_lv, key=_f + ':' + _nm))
 SUBK = {s['key']: s for s in SUBS}
 # формулы с неоднозначной школьной трактовкой донорно-акцепторной связи (N→O, O₃) — в прототип «д/а» не берём
-DA_AMBIG = {'HNO3', 'NaNO3', 'KNO3', 'NH4NO3', 'O3', 'NO', 'SO3', 'P2O5', 'H3PO4', 'H2SO4', 'Na2SO4', 'K2SO4', 'KHSO4',
+DA_AMBIG = {'HNO3', 'NaNO3', 'KNO3', 'O3', 'NO', 'SO3', 'P2O5', 'H3PO4', 'H2SO4', 'Na2SO4', 'K2SO4', 'KHSO4',
             'K3PO4', 'Na3PO4', 'KMnO4', 'KClO3'}
 
 
@@ -1706,7 +1711,7 @@ def sub_view(s, names):
     """Как вещество показано в перечне: по названию (ЕГЭ, как в демоверсии) или по формуле."""
     if names:
         return s['name']
-    f = pretty(s['f'])
+    f = {'Cu(NH3)4SO4': '[Cu(NH₃)₄]SO₄', 'KAl(OH)4': 'K[Al(OH)₄]'}.get(s['f']) or pretty(s['f'])
     if s['f'] in ('C', 'S8', 'P4', 'B', 'Si'):
         return f'{f} ({s["name"]})' if s['f'] in ('C', 'P4') else f
     return f
@@ -1725,7 +1730,7 @@ def solve_bonds(f):
     mets = [el for el in comp if _metal_el(el)]
     if len(mets) == len(comp):
         return {'m'}
-    ammon = 'NH4' in f or 'NH3Cl' in f
+    ammon = 'NH4' in f or 'CH3NH3' in f
     ionic = bool(mets) or ammon
     b = set()
     nm = {el: n for el, n in comp.items() if not _metal_el(el)}
@@ -1751,8 +1756,8 @@ def solve_bonds(f):
                 b.add('n')
             if set(comp) == {'H', 'O'} and comp['O'] >= 2:
                 b.add('n')
-    if ammon or f == 'CO':
-        b.add('d')
+    if ammon or f == 'CO' or '(NH3)' in f or 'Al(OH)4' in f:
+        b.add('d')    # NH₄⁺, RNH₃⁺, CO; комплексы [Cu(NH₃)₄]²⁺, [Al(OH)₄]⁻
     return b
 
 
@@ -1813,7 +1818,7 @@ def list_card(pid, rng, pool, pred, q, p_extra, explain=sub_desc, names=None, k=
     names = (rng.random() < 0.5) if names is None else names
     view = [sub_view(s, names) for s in items]
     ans = ids_of(items, pred)
-    if sum('NH4' in items[int(i) - 1]['f'] for i in ans) > 1:
+    if sum('NH4' in items[int(i) - 1]['f'] or 'CH3NH3' in items[int(i) - 1]['f'] for i in ans) > 1:
         raise Retry   # две соли аммония в ответе — тривиальная пара
     tail = tail or rng.choice(['Запишите номера выбранных ответов.', 'Запишите в поле ответа номера выбранных веществ.'])
     q = kim_list(q)
@@ -1842,6 +1847,8 @@ def bond_q(rng, b, exam):
                            f'Отметьте два вещества перечня, в состав которых входят атомы (ионы), соединённые {ins} '
                            f'связью.'])
     acc = {'i': 'ионную', 'p': 'ковалентную полярную', 'n': 'ковалентную неполярную', 'm': 'металлическую'}[b]
+    if b == 'm':
+        return f'Из предложенного перечня выберите два вещества с {ins} связью.'
     return rng.choice([f'Из предложенного перечня выберите два вещества с {ins} связью.',
                        f'Из предложенного перечня выберите два вещества, содержащие {acc} химическую связь.'])
 
@@ -2676,10 +2683,10 @@ def g_o3_oxides(rng):
 K_OGE4 = ['1.3']
 # (формула, элемент, степень окисления) — данные генератора; solve считает заново из электронейтральности
 OXD = """
-N: NH3 -3; NH4Cl -3; Li3N -3; Mg3N2 -3; Ca3N2 -3; N2O 1; NO 2; N2O3 3; HNO2 3; NaNO2 3; KNO2 3; NO2 4; N2O5 5; HNO3 5; KNO3 5; Ca(NO3)2 5; N2 0; (NH4)2SO4 -3; NH4NO2? ; N2H4 -2; NH2OH -1
+N: NH3 -3; NH4Cl -3; NH4Br -3; (NH4)3PO4 -3; Li3N -3; Mg3N2 -3; Ca3N2 -3; N2O 1; NO 2; N2O3 3; HNO2 3; NaNO2 3; KNO2 3; NO2 4; N2O5 5; HNO3 5; KNO3 5; Ca(NO3)2 5; N2 0; (NH4)2SO4 -3; NH4NO2? ; N2H4 -2; NH2OH -1
 S: H2S -2; Na2S -2; K2S -2; Al2S3 -2; SO2 4; Na2SO3 4; H2SO3 4; K2SO3 4; SO3 6; H2SO4 6; Na2SO4 6; CaSO4 6; SF6 6; S8 0; NaHSO3 4; KHSO4 6
 Cl: HCl -1; NaCl -1; CaCl2 -1; Cl2 0; Cl2O 1; HClO 1; NaClO 1; HClO2 3; NaClO2 3; KClO3 5; HClO3 5; Cl2O7 7; HClO4 7; KClO4 7; ClO2 4
-P: PH3 -3; Ca3P2 -3; Na3P -3; Mg3P2 -3; PH4I -3; P2O3 3; H3PO3 3; PCl3 3; P2O5 5; H3PO4 5; Na3PO4 5; Ca3(PO4)2 5; PCl5 5; K2HPO4 5; (NH4)2HPO4 5; NaH2PO4 5; P4 0
+P: PH3 -3; PH4Cl -3; Ca3P2 -3; Na3P -3; Mg3P2 -3; PH4I -3; P2O3 3; H3PO3 3; PCl3 3; P2O5 5; H3PO4 5; Na3PO4 5; Ca3(PO4)2 5; PCl5 5; K2HPO4 5; (NH4)2HPO4 5; NaH2PO4 5; P4 0
 C: CH4 -4; Al4C3 -4; Be2C -4; CaC2 -1; CO 2; CO2 4; H2CO3 4; Na2CO3 4; CaCO3 4; CCl4 4; NaHCO3 4; Ca(HCO3)2 4; (NH4)2CO3 4; HCOOH 2; CH3OH -2; CH2O 0; CS2? 
 Mn: MnO 2; MnCl2 2; MnSO4 2; Mn(OH)2 2; Mn2O3 3; MnO2 4; K2MnO4 6; KMnO4 7; Mn2O7 7; NaMnO4 7
 Cr: CrO 2; CrCl2 2; Cr2O3 3; Cr(OH)3 3; CrCl3 3; Cr2(SO4)3 3; NaCrO2 3; K3Cr(OH)6 3; CrO3 6; K2CrO4 6; K2Cr2O7 6; Na2CrO4 6
@@ -2772,12 +2779,15 @@ def _solve_ox_match(p):
 
 
 def ox_match_card(pid, rng, elems, names=False):
-    el = rng.choice(elems)
+    onium = 'N' in elems and rng.random() < 0.3     # как в демо 2027: соль аммония/фосфония (PH₄I, NH₄Cl)
+    el = rng.choice(['N', 'P']) if onium else rng.choice(elems)
     rows = OX_DATA[el]
     vals = sorted({v for _, v in rows})
     if len(vals) < 3:
         raise Retry
     picked = rng.sample(rows, 3)
+    if onium and not any(('NH4' in f or 'PH4' in f) for f, _ in picked):
+        raise Retry
     need = sorted({v for _, v in picked})
     skel = lambda f: tuple(sorted((k, n) for k, n in parse_formula(f).items()
                                   if k not in ('Li', 'Na', 'K', 'Mg', 'Ca', 'Ba', 'Al')))
