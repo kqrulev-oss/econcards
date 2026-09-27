@@ -323,6 +323,8 @@ def answer_str(c):
         return ''.join(sorted(a))
     if c['k'] == 'match':
         return ''.join(a[x['id']] for x in c['o']['left'])
+    if c['k'] == 'pm':
+        return a[0] + a[1]  # как в бланке: «2,60,2»
     return a
 
 
@@ -382,6 +384,15 @@ def check_card(c, m):
         R = {x['id'] for x in c['o']['right']}
         if set(c['a']) != set(L) or not set(c['a'].values()) <= R:
             errs.append('match: соответствие не покрывает левый столбец')
+    elif k == 'pm':  # ЕГЭ-физика 19: значение и погрешность, два числа (в бланке пишутся слитно)
+        a = c['a']
+        if not (isinstance(a, list) and len(a) == 2 and all(re.fullmatch(r'-?\d+(,\d+)?', str(x)) for x in a)):
+            errs.append(f'pm: ответ должен быть [значение, погрешность]: {a!r}')
+        else:
+            dv = len(a[0].split(',')[1]) if ',' in a[0] else 0
+            dd = len(a[1].split(',')[1]) if ',' in a[1] else 0
+            if dv != dd:
+                errs.append(f'pm: у значения и погрешности разное число знаков после запятой: {a}')
     else:
         errs.append(f'неизвестный вид карточки {k}')
     g = c.get('gen', {})

@@ -2794,6 +2794,8 @@ def _obs_one(r, a, b):
                                                      and SUBS[x].get('sub') == 'металл') and x not in r['rhs']]
     sign = r.get('sign', '')
     out = []
+    if any(SUBS.get(x, {}).get('sol') == 'м' for x in r['rhs'] if x not in lhs):
+        return None
     if prec:
         cols = {_prec_color(x) for x in prec}
         if None in cols or len(cols) > 1:
@@ -2814,6 +2816,8 @@ def _obs_one(r, a, b):
         else:
             return None
     if not out:
+        if is_redox(r) and not sign:
+            return None
         if 'обесцвеч' in sign:
             return 'обесцвечивание раствора'
         for key in ('становится', 'окраск', 'окраш', 'буреет', 'желтеет', 'синего раствора'):
@@ -3033,3 +3037,535 @@ def g_24d(rng):
     return card(pid, q, ans, e, k='match', o=match_opts([f'{lab(a)} и {lab(b)}' for a, b, _ in chosen],
                                                         [lab(r) for r in reag]),
                 p={'pairs': [[a, b] for a, b, _ in chosen], 'reag': reag})
+
+
+# ================================================================= 6. «Две пробирки»: признаки реакций
+
+def cat6(a, la, b, lb):
+    v = reacts(a, la, b, lb)
+    if v is False:
+        return 'нет реакции'
+    if v is not True:
+        return None
+    o = obs_c(a, la, b, lb)
+    if o is None:
+        return None
+    if o.startswith('растворение'):
+        return 'растворение и газ' if 'газа' in o else 'растворение'
+    if o.startswith('образование') and 'газа' in o:
+        return 'осадок и газ'
+    if o.startswith('образование'):
+        return 'осадок'
+    if o.startswith('выделение'):
+        return 'газ'
+    if o.startswith('видимые'):
+        return 'без видимых признаков'
+    return 'окраска'
+
+
+_OUT6 = {'осадок': ['выпал осадок', 'наблюдали образование осадка'],
+         'газ': ['выделился газ', 'наблюдали выделение газа'],
+         'растворение': ['наблюдали растворение осадка'],
+         'без видимых признаков': ['протекала реакция, которая не сопровождалась видимыми признаками'],
+         'осадок и газ': ['выпал осадок и выделился газ']}
+S6 = [x for x in U24 if SUBS[x].get('sol') == 'р' and SUBS[x]['cls'] in ('соль', 'кислота', 'основание')]
+P6 = [x for x in U24 if SUBS[x]['cls'] in ('соль', 'кислота', 'основание', 'оксид', 'амфотерный гидроксид')
+      and x != 'H2O']
+PREC6 = ['Zn(OH)2', 'Al(OH)3', 'Cu(OH)2', 'Fe(OH)3', 'Mg(OH)2', 'CaCO3', 'BaCO3', 'Cr(OH)3', 'Fe(OH)2']
+
+
+def _solve_6k(p):
+    S = p['S']
+    ans = {}
+    for letter, want in (('X', p['c1']), ('Y', p['c2'])):
+        hits = [str(j + 1) for j, o in enumerate(p['opts']) if cat6(S, _lab24(S), o, _lab24(o)) == want]
+        if len(hits) != 1:
+            return {'err': letter}
+        ans[letter] = hits[0]
+    return ans
+
+
+@proto('ch-ege-06-two-tubes', 'ЕГЭ', 6, 'Две пробирки с раствором (осадком) вещества: какие X и Y дали указанные признаки',
+       invariant='для каждого вещества перечня предсказать результат реакции с исходным веществом (осадок, газ, '
+                 'растворение осадка, реакция без видимых признаков, нет реакции)',
+       varies='исходное вещество (соль, кислота, щёлочь, осадок гидроксида/карбоната), пять реагентов, пара признаков',
+       answer_rule='X — единственное вещество перечня, дающее первый признак; Y — второй',
+       mistakes=['считают, что любая реакция обмена даёт осадок', 'не учитывают растворимость продуктов по таблице',
+                 'амфотерный гидроксид растворяется и в кислоте, и в щёлочи'],
+       solve=lambda p: _solve_6k_roles(p), kind='dict', kes=['2.2', '2.3', '1.9'],
+       fidelity=FID(6, trap='в перечне есть вещества, реагирующие без видимых признаков или дающие другой признак',
+                    scale='исходное вещество + 5 реагентов, две буквы — как демоверсия 2027 (сульфид натрия: осадок/газ) '
+                          'и ~74 задания банка (КЭС 1.9, 2.2, 2.3)', kes=['2.2', '2.3', '1.9'],
+                    fmt_='две цифры под буквами X, Y',
+                    style='«Даны две пробирки с раствором… В одну из них добавили раствор вещества X, а в другую – '
+                          'раствор вещества Y… Из предложенного перечня выберите вещества X и Y…»'))
+def g_6k(rng):
+    pid = 'ch-ege-06-two-tubes'
+    prec = rng.random() < 0.25
+    S = rng.choice(PREC6 if prec else S6)
+    table = {}
+    for o in P6:
+        if o == S:
+            continue
+        c = cat6(S, _lab24(S), o, _lab24(o))
+        if c:
+            table[o] = c
+    by = {}
+    for o, c in table.items():
+        by.setdefault(c, []).append(o)
+    wanted = [c for c in by if c in _OUT6 and c != 'нет реакции']
+    if len(wanted) < 2 and not (prec and len(by.get('растворение', [])) >= 2):
+        raise Retry
+    if prec and len(by.get('растворение', [])) >= 2 and rng.random() < 0.6:
+        c1 = c2 = 'растворение'
+        X, Y = rng.sample(by['растворение'], 2)
+        # X — кислота, Y — щёлочь/иной сильный электролит
+        if SUBS[X]['cls'] != 'кислота':
+            X, Y = Y, X
+        if SUBS[X]['cls'] != 'кислота' or SUBS[Y]['cls'] == 'кислота':
+            raise Retry
+        others = [o for o, c in table.items() if c != 'растворение' and o not in (X, Y)]
+        if len(others) < 3:
+            raise Retry
+        items = shuffled(rng, [X, Y] + rng.sample(others, 3))
+        ans = {'X': str(items.index(X) + 1), 'Y': str(items.index(Y) + 1)}
+        q = (f'Даны две пробирки с осадком {gen(S)}. В одну из них добавили раствор кислоты X, а в другую – раствор '
+             f'вещества Y, не являющегося кислотой. В результате в каждой из пробирок наблюдали растворение осадка. '
+             f'Из предложенного перечня выберите вещества X и Y, которые могут вступать в описанные реакции. '
+             f'Запишите в таблицу номера выбранных веществ под соответствующими буквами.')
+        p = {'S': S, 'c1': 'растворение', 'c2': 'растворение', 'opts': items, 'roles': True}
+    else:
+        c1, c2 = rng.sample(wanted, 2)
+        X, Y = rng.choice(by[c1]), rng.choice(by[c2])
+        others = [o for o, c in table.items() if c not in (c1, c2)]
+        if len(others) < 3:
+            raise Retry
+        items = shuffled(rng, [X, Y] + rng.sample(others, 3))
+        ans = {'X': str(items.index(X) + 1), 'Y': str(items.index(Y) + 1)}
+        what = 'осадком' if prec else 'раствором'
+        q = (f'Даны две пробирки с {what} {gen(S)}. В одну из них добавили раствор вещества X, а в другую – '
+             f'раствор вещества Y. В результате в пробирке с веществом X {rng.choice(_OUT6[c1])}, а в пробирке с '
+             f'веществом Y {rng.choice(_OUT6[c2])}. Из предложенного перечня выберите вещества X и Y, которые могут '
+             f'вступать в описанные реакции. Запишите в таблицу номера выбранных веществ под соответствующими буквами.')
+        p = {'S': S, 'c1': c1, 'c2': c2, 'opts': items}
+    by_name = rng.random() < 0.6
+    txt = [ru(x) if by_name else F(x) for x in items]
+    rx = lambda o: [r for r in pos_rx(S, _lab24(S), o, _lab24(o)) if r.get('aq')][0]
+    e = f'X: {eq_text(rx(X)["lhs"], rx(X)["rhs"])}; Y: {eq_text(rx(Y)["lhs"], rx(Y)["rhs"])}.'
+    return card(pid, q, ans, e, k='match', o=match_opts(['X', 'Y'], txt, lids='XY'), p=p)
+
+
+def _solve_6k_roles(p):
+    if p.get('roles'):
+        S = p['S']
+        xs = [str(j + 1) for j, o in enumerate(p['opts']) if SUBS[o]['cls'] == 'кислота' and
+              cat6(S, _lab24(S), o, _lab24(o)) == 'растворение']
+        ys = [str(j + 1) for j, o in enumerate(p['opts']) if SUBS[o]['cls'] != 'кислота' and
+              cat6(S, _lab24(S), o, _lab24(o)) == 'растворение']
+        if len(xs) != 1 or len(ys) != 1:
+            return {'err': 1}
+        return {'X': xs[0], 'Y': ys[0]}
+    return _solve_6k(p)
+
+
+def _solve_6u(p):
+    R1 = p['R1']
+    good = []
+    for x in p['opts']:
+        if cat6(x, _lab24(x), R1, _lab24(R1)) != p['c1']:
+            continue
+        for y in p['opts']:
+            if y != x and cat6(x, _lab24(x), y, _lab24(y)) == p['c2']:
+                good.append((x, y))
+    if len(good) != 1:
+        return {'err': len(good)}
+    x, y = good[0]
+    return {'X': str(p['opts'].index(x) + 1), 'Y': str(p['opts'].index(y) + 1)}
+
+
+@proto('ch-ege-06-unknown', 'ЕГЭ', 6, 'Две пробирки с раствором неизвестного вещества X: реакция с известным реагентом и с Y',
+       invariant='подобрать вещество X по признаку реакции с названным реагентом и вещество Y по второму признаку',
+       varies='известный реагент (хлорид бария, гидроксид калия, соляная кислота, нитрат серебра…), пара признаков',
+       answer_rule='единственная пара (X, Y) из перечня, для которой выполняются оба описанных наблюдения',
+       mistakes=['проверяют только одну пробирку', 'не учитывают, что X должен реагировать и с реагентом, и с Y'],
+       solve=_solve_6u, kind='dict', kes=['2.2', '2.3', '1.9'],
+       fidelity=FID(6, trap='несколько веществ дают первый признак, но только одно из них реагирует со вторым '
+                             'нужным образом', scale='как задания банка «Даны две пробирки с раствором вещества X. В одну '
+                             'из них добавили раствор хлорида бария…»', kes=['2.2', '2.3', '1.9'],
+                    fmt_='две цифры под буквами X, Y'))
+def g_6u(rng):
+    pid = 'ch-ege-06-unknown'
+    R1 = rng.choice(['BaCl2', 'KOH', 'NaOH', 'HCl', 'AgNO3', 'H2SO4', 'Ba(OH)2', 'Na2CO3', 'NH3·H2O', 'K3PO4'])
+    for _ in range(30):
+        items = rng.sample([x for x in S6 if x != R1], 5)
+        c1s = {x: cat6(x, _lab24(x), R1, _lab24(R1)) for x in items}
+        if None in c1s.values():
+            continue
+        cands = [x for x in items if c1s[x] in ('осадок', 'газ')]
+        if not cands:
+            continue
+        X = rng.choice(cands)
+        c1 = c1s[X]
+        pairs = {}
+        ok = True
+        for x in items:
+            if c1s[x] != c1:
+                continue
+            for y in items:
+                if y == x:
+                    continue
+                c = cat6(x, _lab24(x), y, _lab24(y))
+                if c is None:
+                    ok = False
+                pairs[(x, y)] = c
+        if not ok:
+            continue
+        c2s = [c for (x, y), c in pairs.items() if x == X and c in ('осадок', 'газ', 'без видимых признаков')]
+        if not c2s:
+            continue
+        c2 = rng.choice(c2s)
+        good = [k for k, c in pairs.items() if c == c2]
+        if len(good) == 1:
+            X, Y = good[0]
+            break
+    else:
+        raise Retry
+    ans = {'X': str(items.index(X) + 1), 'Y': str(items.index(Y) + 1)}
+    q = (f'Даны две пробирки с раствором вещества X. В одну из них добавили раствор {gen(R1)}, при этом '
+         f'{rng.choice(_OUT6[c1])}. В другую пробирку добавили раствор вещества Y, при этом '
+         f'{rng.choice(_OUT6[c2])}. Из предложенного перечня выберите вещества X и Y, которые могут вступать в '
+         f'описанные реакции. Запишите в таблицу номера выбранных веществ под соответствующими буквами.')
+    q = q.replace('при этом протекала', 'при этом протекала')
+    by_name = rng.random() < 0.6
+    txt = [ru(x) if by_name else F(x) for x in items]
+    rx = lambda a, b: [r for r in pos_rx(a, _lab24(a), b, _lab24(b)) if r.get('aq')][0]
+    e = f'{eq_text(rx(X, R1)["lhs"], rx(X, R1)["rhs"])}; {eq_text(rx(X, Y)["lhs"], rx(X, Y)["rhs"])}.'
+    return card(pid, q, ans, e, k='match', o=match_opts(['X', 'Y'], txt, lids='XY'),
+                p={'R1': R1, 'c1': c1, 'c2': c2, 'opts': items})
+
+
+_ROLE6 = {'соль': 'соли', 'кислота': 'кислоты', 'основание': 'основания'}
+
+
+def _role6(f):
+    c = SUBS[f]['cls']
+    if f in I.ALKALIS:
+        return 'щёлочи'
+    return _ROLE6.get(c)
+
+
+def _solve_6i(p):
+    target = (frozenset(tuple(x) for x in p['net'][0]), frozenset(tuple(x) for x in p['net'][1]))
+    good = []
+    for x in p['opts']:
+        for y in p['opts']:
+            if x == y or _role6(x) != p['rx'] or _role6(y) != p['ry']:
+                continue
+            for r in pos_rx(x, _lab24(x), y, _lab24(y)):
+                nk = net_key(r)
+                if nk and (frozenset((k, v) for k, v in nk[0]), frozenset((k, v) for k, v in nk[1])) == target:
+                    good.append((x, y))
+    good = list(dict.fromkeys(good))
+    if len(good) != 1:
+        return {'err': len(good)}
+    x, y = good[0]
+    return {'X': str(p['opts'].index(x) + 1), 'Y': str(p['opts'].index(y) + 1)}
+
+
+IONIC6 = [r for r in RX if r.get('aq') and not is_redox(r) and net_key(r) and len(set(r['lhs']) - {'H2O'}) == 2]
+
+
+@proto('ch-ege-06-ionic', 'ЕГЭ', 6, 'Вещества X и Y по сокращённому ионному уравнению их реакции',
+       invariant='по сокращённому ионному уравнению восстановить сильные электролиты, дающие эти ионы, и проверить, '
+                 'что остальные ионы — «зрители»',
+       varies='ионное уравнение (осадок, газ, вода, кислая соль, комплекс), классы X и Y, пять веществ',
+       answer_rule='X и Y — растворимые сильные электролиты, при сливании которых остаётся именно это уравнение',
+       mistakes=['берут нерастворимое вещество или слабый электролит как источник иона',
+                 'не учитывают второй осадок (Ba(OH)₂ + CuSO₄)', 'путают роли X (соль) и Y (кислота)'],
+       solve=_solve_6i, kind='dict', kes=['1.9', '2.2', '2.3'],
+       fidelity=FID(6, trap='вещество, дающее нужный ион, но образующее второй осадок/газ или являющееся слабым '
+                             'электролитом', scale='как задания банка «…произошла реакция, которую описывает сокращённое '
+                             'ионное уравнение H₂PO₄⁻ + 2OH⁻ = PO₄³⁻ + 2H₂O…»', kes=['1.9', '2.2', '2.3'],
+                    fmt_='две цифры под буквами X, Y'))
+def g_6i(rng):
+    pid = 'ch-ege-06-ionic'
+    r = rng.choice(IONIC6)
+    L = [x for x in dict.fromkeys(r['lhs']) if x != 'H2O']
+    X, Y = L if rng.random() < 0.5 else L[::-1]
+    rx_, ry_ = _role6(X), _role6(Y)
+    if not rx_ or not ry_ or rx_ == ry_ or FORM_OF(r, X) == 'конц.' or FORM_OF(r, Y) == 'конц.':
+        raise Retry
+    if len(pos_rx(X, _lab24(X), Y, _lab24(Y))) != 1:
+        raise Retry
+    nk = net_key(r)
+    pool = [x for x in S6 + ['H3PO4', 'CH3COOH', 'H2S', 'NH3·H2O', 'CaCO3', 'Cu(OH)2', 'Fe(OH)3', 'BaSO4']
+            if x in SUBS and x not in (X, Y)]
+    same_role = [x for x in pool if _role6(x) in (rx_, ry_)]
+    for _ in range(40):
+        dis = rng.sample(same_role, 3)
+        items = shuffled(rng, [X, Y] + dis)
+        good, bad = [], False
+        for x in items:
+            for y in items:
+                if x == y or _role6(x) != rx_ or _role6(y) != ry_:
+                    continue
+                v = reacts(x, _lab24(x), y, _lab24(y))
+                if v is None:
+                    bad = True
+                for rr in pos_rx(x, _lab24(x), y, _lab24(y)):
+                    if net_key(rr) == nk:
+                        good.append((x, y))
+        if not bad and list(dict.fromkeys(good)) == [(X, Y)]:
+            break
+    else:
+        raise Retry
+    full, net = ionic(r)
+    ans = {'X': str(items.index(X) + 1), 'Y': str(items.index(Y) + 1)}
+    q = (f'В пробирку с раствором {rx_} X добавили раствор {ry_} Y. В результате произошла реакция, которую описывает '
+         f'сокращённое ионное уравнение {ion_text(net)}. Из предложенного перечня выберите вещества X и Y, которые '
+         f'могут вступать в описанную реакцию. Запишите в таблицу номера выбранных веществ под соответствующими '
+         f'буквами.')
+    by_name = rng.random() < 0.6
+    txt = [ru(x) if by_name else F(x) for x in items]
+    e = f'{eq_text(r["lhs"], r["rhs"])}; полное ионное: {ion_text(full)}.'
+    netj = [[list(k) + [v] for k, v in side.items()] for side in net]
+    return card(pid, q, ans, e, k='match', o=match_opts(['X', 'Y'], txt, lids='XY'),
+                p={'net': [[[tuple(k), v] for k, v in side.items()] for side in net], 'rx': rx_, 'ry': ry_,
+                   'opts': items}, eqs=[(r['lhs'], r['rhs'], *r['k'])])
+
+
+# ================================================================= 30. Реакции ионного обмена (из перечня)
+
+EXCH30 = [r for r in RX if r.get('aq') and not is_redox(r) and len(set(r['lhs']) - {'H2O'}) == 2 and net_key(r)
+          and not any(FORM_OF(r, x) == 'конц.' for x in r['lhs']) and 'совместный гидролиз' not in r.get('tags', [])]
+
+
+def cond30(r):
+    """Набор признаков реакции ионного обмена: осадок, газ, слабый электролит без газа и осадка."""
+    lhs = set(r['lhs'])
+    prod = [x for x in r['rhs'] if x not in lhs]
+    prec = any(SUBS.get(x, {}).get('sol') == 'н' for x in prod)
+    gas = any(x in I.GASES for x in prod)
+    weak = any(x == 'H2O' or x in ('CH3COOH', 'HNO2', 'HF', 'NH3·H2O', 'H3PO4', 'H2S') for x in r['rhs'] if x not in lhs)
+    acid_salt = any(SUBS.get(x, {}).get('sub') == 'кислая соль' for x in r['rhs'] if x not in lhs)
+    out = set()
+    if prec:
+        out.add('осадок')
+    if gas:
+        out.add('газ')
+    if (weak or acid_salt) and not prec and not gas:
+        out.add('слабый')
+    return out
+
+
+_C30 = {'осадок': 'образованием осадка', 'газ': 'выделением газа',
+        'слабый': 'образованием слабого электролита, а выделения газа и образования осадка не происходит'}
+POOL30 = [x for x in S6 + ['NH3·H2O', 'CH3COOH', 'H3PO4', 'H2S', 'NaHCO3', 'KHSO4', 'NaH2PO4', 'Na2HPO4',
+                           'KHCO3', 'NaHSO4', 'CaCO3', 'Cu(OH)2', 'Fe(OH)3', 'Mg(OH)2', 'Al(OH)3', 'Zn(OH)2']
+          if x in SUBS]
+POOL30 = list(dict.fromkeys(POOL30))
+
+
+def _pairs30(items):
+    res = {}
+    for i, a in enumerate(items):
+        for b in items[i + 1:]:
+            v = reacts(a, _lab24(a), b, _lab24(b))
+            rs = [r for r in pos_rx(a, _lab24(a), b, _lab24(b)) if r in EXCH30]
+            res[(a, b)] = (v, rs)
+    return res
+
+
+def _solve_30c(p):
+    items = p['items']
+    want = p['cond']
+    good = set()
+    for i, a in enumerate(items):
+        for b in items[i + 1:]:
+            for r in RX:
+                if set(r['lhs']) - {'H2O'} == {a, b} and r in EXCH30 and want in cond30(r):
+                    good.add((a, b))
+    if len(good) != 1:
+        return ['err']
+    a, b = good.pop()
+    return sorted([str(items.index(a) + 1), str(items.index(b) + 1)])
+
+
+LIST_HEAD = 'Для выполнения задания используйте следующий перечень веществ: {}. Допустимо использование водных ' \
+            'растворов веществ.'
+
+
+@proto('ch-ege-30-choose', 'ЕГЭ', 30, 'Перечень из шести веществ: выбрать пару для реакции ионного обмена с заданным признаком',
+       invariant='перебрать пары веществ перечня, оставить реакции ионного обмена и выбрать ту, что даёт требуемый '
+                 'признак (осадок, газ, слабый электролит без газа и осадка)',
+       varies='перечень из шести веществ (соли, кислоты, щёлочи, кислые соли), требуемый признак',
+       answer_rule='два номера веществ, реакция ионного обмена между которыми соответствует условию; в КИМ далее '
+                   'записывают молекулярное, полное и сокращённое ионные уравнения',
+       mistakes=['выбирают пару, где идёт ОВР, а не обмен', 'выбирают пару без признаков реакции обмена',
+                 'не замечают, что вместе с водой выделяется газ'],
+       solve=_solve_30c, kind='dict', kes=['1.9'],
+       fidelity=FID(30, trap='в перечне несколько возможных реакций обмена, но условию отвечает одна',
+                    scale='шесть веществ, как в демоверсии 2027 (нитрит калия, сульфит калия, дихромат калия, серная '
+                          'кислота, иодид калия, гидросульфат аммония) и 69 заданиях банка',
+                    kes=['1.9'], fmt_='в КИМ — развёрнутый ответ; в тренажёре — два номера веществ',
+                    style='«Из предложенного перечня выберите два вещества, реакция ионного обмена между которыми…»'))
+def g_30c(rng):
+    pid = 'ch-ege-30-choose'
+    r = rng.choice(EXCH30)
+    a, b = [x for x in dict.fromkeys(r['lhs']) if x != 'H2O']
+    cs = cond30(r)
+    if not cs or a not in POOL30 and b not in POOL30:
+        raise Retry
+    want = rng.choice(sorted(cs))
+    for _ in range(40):
+        others = rng.sample([x for x in POOL30 if x not in (a, b)], 4)
+        items = shuffled(rng, [a, b] + others)
+        pr = _pairs30(items)
+        if any(v is None for v, _ in pr.values()):
+            continue
+        good = [k for k, (v, rs) in pr.items() if any(want in cond30(x) for x in rs)]
+        n_exch = sum(1 for v, rs in pr.values() if rs)
+        if good == [(x, y) for x, y in pr if {x, y} == {a, b}] and n_exch >= 2:
+            break
+    else:
+        raise Retry
+    ans = sorted([str(items.index(a) + 1), str(items.index(b) + 1)])
+    names = [ru(x) for x in items]
+    q = (LIST_HEAD.format(', '.join(names)) + f' Из предложенного перечня выберите два вещества, реакция ионного '
+         f'обмена между которыми протекает с {_C30[want]}. Запишите номера выбранных веществ.')
+    full, net = ionic(r)
+    e = (f'{eq_text(r["lhs"], r["rhs"])}; полное ионное: {ion_text(full)}; сокращённое: {ion_text(net)}.')
+    return card(pid, q, ans, e, k='many', o=opts(names, ids='123456'), p={'items': items, 'cond': want},
+                eqs=[(r['lhs'], r['rhs'], *r['k'])])
+
+
+def _net_variants(r, rng):
+    """Неверные «сокращённые» уравнения: ионы вместо осадка/слабого электролита, не та стехиометрия."""
+    full, net = ionic(r)
+    L, Rr = dict(net[0]), dict(net[1])
+    out = []
+    # 1) молекула реагента записана ионами (если это нерастворимое/слабое вещество)
+    for (kind, fo, q), v in list(L.items()):
+        if kind == 'mol' and fo in SUBS:
+            d = STRONG_DISS.get(fo)
+            io = SUBS[fo].get('ion')
+            if io and not io.get('cplx'):
+                cf, cq = I.CAT[io['cat']][0], I.CAT[io['cat']][1]
+                af, aq = I.AN[io['an']][0], I.AN[io['an']][1]
+                nc, na = io['n']
+                L2 = {k: x for k, x in L.items() if k != (kind, fo, q)}
+                L2[('ion', cf, cq)] = L2.get(('ion', cf, cq), 0) + nc * v
+                L2[('ion', af, -aq)] = L2.get(('ion', af, -aq), 0) + na * v
+                out.append((L2, Rr))
+    # 2) неверный коэффициент у первого иона
+    for key in list(L)[:2]:
+        if L[key] == 1:
+            L2 = dict(L)
+            L2[key] = 2
+            out.append((L2, Rr))
+        else:
+            L2 = dict(L)
+            L2[key] = 1
+            out.append((L2, Rr))
+    # 3) продукт-осадок записан ионами (реакция «не идёт»)
+    for (kind, fo, q), v in list(Rr.items()):
+        if kind == 'mol' and fo not in ('H2O',) and fo in SUBS and SUBS[fo].get('sol') == 'н':
+            out.append((L, {('mol', 'H2O', 0): 1} if False else {k: x for k, x in Rr.items() if k != (kind, fo, q)}
+                        | {('ion', fo, 0): v}))
+    # 4) газ + вода записаны кислотой
+    if ('mol', 'CO2', 0) in Rr and ('mol', 'H2O', 0) in Rr:
+        R2 = {k: x for k, x in Rr.items() if k not in (('mol', 'CO2', 0), ('mol', 'H2O', 0))}
+        R2[('mol', 'H2CO3', 0)] = Rr[('mol', 'CO2', 0)]
+        out.append((L, R2))
+    if ('mol', 'SO2', 0) in Rr and ('mol', 'H2O', 0) in Rr:
+        R2 = {k: x for k, x in Rr.items() if k not in (('mol', 'SO2', 0), ('mol', 'H2O', 0))}
+        R2[('mol', 'H2SO3', 0)] = Rr[('mol', 'SO2', 0)]
+        out.append((L, R2))
+    rng.shuffle(out)
+    return [x for x in out if all(k[2] != 0 or k[0] == 'mol' for side in x for k in side)]
+
+
+def _solve_30n(p):
+    r = RX_BY_ID[p['rid']]
+    x = ionic(r)
+    t = ion_text(x[1])
+    hits = [str(i + 1) for i, o in enumerate(p['opts']) if o == t]
+    return hits[0] if len(hits) == 1 else 'err'
+
+
+@proto('ch-ege-30-net-ionic', 'ЕГЭ', 30, 'Сокращённое ионное уравнение реакции ионного обмена между растворами двух веществ',
+       invariant='записать сильные растворимые электролиты ионами, осадки, газы, слабые электролиты — молекулами, '
+                 'сократить ионы-«зрители» и общий множитель',
+       varies='пары веществ (соли, кислоты, щёлочи, кислые соли, нерастворимые основания и карбонаты)',
+       answer_rule='одно верное сокращённое ионное уравнение из четырёх',
+       mistakes=['CaCO₃, Cu(OH)₂, CH₃COOH записывают ионами', 'не сокращают коэффициенты',
+                 'пишут H₂CO₃ вместо CO₂ + H₂O', 'HSO₄⁻ оставляют целым'],
+       solve=_solve_30n, kind='dict', kes=['1.9'],
+       fidelity=FID(30, trap='дистракторы — типичные ошибки записи ионного уравнения', scale='реакции ионного обмена '
+                              'того же набора веществ, что в заданиях 30 банка', kes=['1.9'],
+                    fmt_='в КИМ — часть развёрнутого ответа; в тренажёре — выбор одного уравнения из четырёх',
+                    score='в КИМ 2 балла за задание 30; здесь — проверяемый шаг, 1 балл'))
+def g_30n(rng):
+    pid = 'ch-ege-30-net-ionic'
+    r = rng.choice(EXCH30)
+    full, net = ionic(r)
+    true = ion_text(net)
+    wrong = []
+    for L2, R2 in _net_variants(r, rng):
+        t = ion_text((L2, R2))
+        if t != true and t not in wrong:
+            wrong.append(t)
+    if len(wrong) < 2:
+        raise Retry
+    # добавим чужое уравнение с общим ионом
+    other = [x for x in EXCH30 if x is not r and set(x['lhs']) & set(r['lhs'])]
+    for x in shuffled(rng, other):
+        t = ion_text(ionic(x)[1])
+        if t != true and t not in wrong:
+            wrong.append(t)
+            break
+    items = shuffled(rng, [true] + wrong[:3])
+    a, b = [x for x in dict.fromkeys(r['lhs']) if x != 'H2O']
+    cnd = r.get('cond', '')
+    cnd_t = f' ({cnd})' if cnd and ('избыт' in cnd or 'недостат' in cnd) else ''
+    q = (f'Выберите сокращённое ионное уравнение реакции ионного обмена между {ins(a).replace("ом ", "ом ")} и '
+         f'{ins(b)}{cnd_t}.').replace('между ', 'между ')
+    q = f'Какое сокращённое ионное уравнение соответствует реакции между растворами веществ {F(a)} и {F(b)}{cnd_t}?'
+    e = f'{eq_text(r["lhs"], r["rhs"])}; полное ионное: {ion_text(full)}; сокращённое: {true}.'
+    return card(pid, q, str(items.index(true) + 1), e, k='one', o=opts(items), p={'rid': r['rid'], 'opts': items},
+                eqs=[(r['lhs'], r['rhs'], *r['k'])])
+
+
+def _solve_30s(p):
+    x = ionic(RX_BY_ID[p['rid']])
+    return str(sum(x[1][0].values()) + sum(x[1][1].values()))
+
+
+@proto('ch-ege-30-sum', 'ЕГЭ', 30, 'Сумма коэффициентов в сокращённом ионном уравнении',
+       invariant='составить полное и сокращённое ионные уравнения и сложить коэффициенты сокращённого',
+       varies='пары веществ, реакции ионного обмена с осадком, газом, водой, кислыми солями',
+       answer_rule='сумма всех коэффициентов сокращённого ионного уравнения (коэффициент 1 тоже учитывается)',
+       mistakes=['суммируют коэффициенты полного или молекулярного уравнения', 'забывают коэффициенты 1',
+                 'не сокращают общий множитель'],
+       solve=_solve_30s, kind='dict', kes=['1.9'],
+       fidelity=FID(30, trap='молекулярное и полное ионное уравнения дают другие суммы', scale='реакции ионного обмена '
+                              'заданий 30 банка', kes=['1.9'], fmt_='целое число',
+                    score='в КИМ 2 балла за задание 30; здесь — проверяемый шаг, 1 балл'))
+def g_30s(rng):
+    pid = 'ch-ege-30-sum'
+    r = rng.choice(EXCH30)
+    full, net = ionic(r)
+    s_net = sum(net[0].values()) + sum(net[1].values())
+    s_full = sum(full[0].values()) + sum(full[1].values())
+    s_mol = sum(r['k'][0]) + sum(r['k'][1])
+    if s_full == s_net:
+        raise Retry
+    a, b = [x for x in dict.fromkeys(r['lhs']) if x != 'H2O']
+    cnd = r.get('cond', '')
+    cnd_t = f' ({cnd})' if cnd and ('избыт' in cnd or 'недостат' in cnd) else ''
+    q = (f'Составьте молекулярное, полное и сокращённое ионные уравнения реакции между растворами {gen(a)} и '
+         f'{gen(b)}{cnd_t}. В ответ запишите сумму коэффициентов в сокращённом ионном уравнении.')
+    q = q.replace('растворами ', 'растворами ')
+    e = f'{eq_text(r["lhs"], r["rhs"])}; сокращённое: {ion_text(net)} — сумма {s_net}.'
+    return card(pid, q, str(s_net), e, k='num', p={'rid': r['rid']}, wrong=[str(s_full), str(s_mol), str(s_net + 1)],
+                eqs=[(r['lhs'], r['rhs'], *r['k'])])

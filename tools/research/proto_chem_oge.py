@@ -995,7 +995,8 @@ def g7_same(rng):
     a = ids_of([items.index(f) for f in two])
     q = rng.choice(['Из предложенного перечня веществ выберите {x}.']
                    ).format(x=PLUR7[c]) + ' Запишите номера выбранных ответов.'
-    e = f'{disp(two[0])} и {disp(two[1])} — {c}. ' + '; '.join(f'{disp(f)} — {_cls_word(f)}' for f in dist) + '.'
+    e = f'{disp(two[0])} и {disp(two[1])} относятся к одному классу: {c}. ' + \
+        '; '.join(f'{disp(f)} — {_cls_word(f)}' for f in dist) + f'. Ответ: {"".join(a)}.'
     return pcard('ch-oge-07-same-class', q, a, e, k='many', o=o, p={'items': items, 'c': c})
 
 
@@ -2485,13 +2486,25 @@ def _providers(ion_key, is_anion):
     return out
 
 
+_BYLHS = None
+
+
+def _by_lhs():
+    global _BYLHS
+    if _BYLHS is None:
+        _BYLHS = {}
+        for x in chemdb.load()['reactions']:
+            _BYLHS.setdefault(frozenset(x['lhs']), []).append(x)
+    return _BYLHS
+
+
 def net_ionic_db(a, b):
     """solve: найти реакцию заново по реагентам в базе, записать полное ионное уравнение (сильные растворимые
     электролиты — на ионы) и сократить одинаковые ионы. Возвращает (левая часть, правая часть) или None."""
     ps = products_db([a, b], '')
     if ps is None:
         return None
-    r = [x for x in chemdb.load()['reactions'] if frozenset(x['rhs']) == ps and set(x['lhs']) == {a, b}]
+    r = [x for x in _by_lhs().get(frozenset((a, b)), []) if frozenset(x['rhs']) == ps]
     if not r:
         return None
     r = r[0]
@@ -3332,6 +3345,20 @@ KI + Cu(NO3)2 = CuI + I2 + KNO3 | KI:I:-1>0 | Cu(NO3)2:Cu:2>1
 MnO2 + KClO3 + KOH = K2MnO4 + KCl + H2O | MnO2:Mn:4>6 | KClO3:Cl:5>-1
 Br2 + KI = KBr + I2 | KI:I:-1>0 | Br2:Br:0>-1
 Cl2 + KBr = KCl + Br2 | KBr:Br:-1>0 | Cl2:Cl:0>-1
+Zn + HNO3 = Zn(NO3)2 + NO2 + H2O | Zn:Zn:0>2 | HNO3:N:5>4
+Mg + HNO3 = Mg(NO3)2 + NO2 + H2O | Mg:Mg:0>2 | HNO3:N:5>4
+Fe + HNO3 = Fe(NO3)3 + NO2 + H2O | Fe:Fe:0>3 | HNO3:N:5>4
+Na + H2O = NaOH + H2 | Na:Na:0>1 | H2O:H:1>0
+Ca + H2O = Ca(OH)2 + H2 | Ca:Ca:0>2 | H2O:H:1>0
+KI + H2SO4 = I2 + H2S + K2SO4 + H2O | KI:I:-1>0 | H2SO4:S:6>-2
+KBr + H2SO4 = Br2 + SO2 + K2SO4 + H2O | KBr:Br:-1>0 | H2SO4:S:6>4
+NaI + H2SO4 = I2 + H2S + Na2SO4 + H2O | NaI:I:-1>0 | H2SO4:S:6>-2
+CuS + O2 = CuO + SO2 | CuS:S:-2>4 | O2:O:0>-2
+SO2 + KMnO4 + H2O = MnSO4 + K2SO4 + H2SO4 | SO2:S:4>6 | KMnO4:Mn:7>2
+Na2SO3 + KMnO4 + H2SO4 = Na2SO4 + MnSO4 + K2SO4 + H2O | Na2SO3:S:4>6 | KMnO4:Mn:7>2
+K2SO3 + K2Cr2O7 + H2SO4 = K2SO4 + Cr2(SO4)3 + H2O | K2SO3:S:4>6 | K2Cr2O7:Cr:6>3
+H2S + KMnO4 + H2SO4 = S + MnSO4 + K2SO4 + H2O | H2S:S:-2>0 | KMnO4:Mn:7>2
+H2S + K2Cr2O7 + H2SO4 = S + Cr2(SO4)3 + K2SO4 + H2O | H2S:S:-2>0 | K2Cr2O7:Cr:6>3
 """
 
 
@@ -3682,10 +3709,23 @@ def edges21(which='all'):
     return _E21[which]
 
 
+_BYREAG = None
+
+
+def _by_reagent():
+    global _BYREAG
+    if _BYREAG is None:
+        _BYREAG = {}
+        for x in chemdb.load()['reactions']:
+            for f in set(x['lhs']):
+                _BYREAG.setdefault(f, []).append(x)
+    return _BYREAG
+
+
 def can21(a, b, reagent=None):
     """solve: можно ли получить b из a (при необходимости — указанным реагентом): поиск реакции заново по базе."""
-    for r in chemdb.load()['reactions']:
-        if a in r['lhs'] and b in r['rhs'] and 'электролиз' not in (r.get('cond') or '') + ' '.join(r.get('type', [])):
+    for r in _by_reagent().get(a, []):
+        if b in r['rhs'] and 'электролиз' not in (r.get('cond') or '') + ' '.join(r.get('type', [])):
             rest = [x for x in r['lhs'] if x not in (a, 'H2O')]
             if len(r['lhs']) == 1:
                 rg = T21
