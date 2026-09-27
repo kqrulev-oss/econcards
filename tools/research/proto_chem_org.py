@@ -1995,9 +1995,13 @@ def g13_hp(rng):
     med = {'NaOH': 'в присутствии гидроксида натрия', 'KOH': 'в присутствии гидроксида калия',
            'HCl': 'в присутствии соляной кислоты'}.get(r['lhs'][1] if len(r['lhs']) > 1 else '', 'в кислой среде')
     if r['lhs'][1:2] == ['H2O'] and 'OH-' in r.get('cond', ''):
-        med = 'водой при нагревании (катализатор — кислота)'
-    shown = vw(sub) if rng.random() < 0.5 else nm(sub, rng)
-    q = q_many('два', 'вещества', f'которые образуются при гидролизе вещества {shown} {med}')
+        med = 'в кислой среде'
+    g_ = gen(nm(sub, rng))
+    if rng.random() < 0.5 or g_.startswith('вещества «'):
+        what = f'которые образуются при гидролизе соединения {vw(sub)} {med}'
+    else:
+        what = f'которые образуются при гидролизе {g_} {med}'
+    q = q_many('два', 'вещества', what)
     return many_card('ch-ege-13-hydrolysis-products', q, names, [items.index(x) for x in prods], rx_eq(r) + '.',
                      {'lhs': r['lhs'], 'cond': r.get('cond', ''), 'items': items}, eqs=[eqt(r)])
 
