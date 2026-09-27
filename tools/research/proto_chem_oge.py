@@ -3321,8 +3321,6 @@ CuS + HNO3 = CuSO4 + NO2 + H2O | CuS:S:-2>6 | HNO3:N:5>4
 K2S + HNO3 = K2SO4 + NO + H2O | K2S:S:-2>6 | HNO3:N:5>2
 ZnS + O2 = ZnO + SO2 | ZnS:S:-2>4 | O2:O:0>-2
 Mg + CO2 = MgO + C | Mg:Mg:0>2 | CO2:C:4>0
-Al + NaOH + H2O = Na(Al(OH)4) + H2 | Al:Al:0>3 | H2O:H:1>0
-Si + NaOH + H2O = Na2SiO3 + H2 | Si:Si:0>4 | H2O:H:1>0
 Cr(OH)3 + Cl2 + KOH = K2CrO4 + KCl + H2O | Cr(OH)3:Cr:3>6 | Cl2:Cl:0>-1
 H2O2 + KI + H2SO4 = I2 + K2SO4 + H2O | KI:I:-1>0 | H2O2:O:-1>-2
 HNO2 + HI = I2 + NO + H2O | HI:I:-1>0 | HNO2:N:3>2
@@ -3381,10 +3379,8 @@ def scheme_str(sch):
     return ' + '.join(disp(x) for x in sch['lhs']) + ' → ' + ' + '.join(disp(x) for x in sch['rhs'])
 
 
-INTRO20 = 'Для предложенной схемы реакции\n{s}\n'
-TASK20 = ('1) запишите уравнения процессов окисления и восстановления, составьте электронный баланс;\n'
-          '2) на основании электронного баланса определите коэффициенты и запишите молекулярное уравнение реакции;\n'
-          '3) запишите в отдельной строчке(-ах) формулы вещества/частицы окислителя и восстановителя; укажите, какое(-ая) '
+INTRO20 = 'Используя метод электронного баланса, расставьте коэффициенты в схеме реакции\n{s}\n'
+TASK20 = ('Запишите в отдельной(-ых) строчке(-ах) формулы вещества/частицы окислителя и восстановителя. Укажите, какое(-ая) '
           'из этих веществ/частиц является окислителем, а какое(-ая) – восстановителем.')
 
 
@@ -3451,9 +3447,8 @@ def g20_roles(rng):
     items = shuffled(rng, list(dict.fromkeys(sch['lhs'] + sch['rhs'])))
     o = match_opts(['окислитель', 'восстановитель'], [disp(f) for f in items])
     a = {'А': str(items.index(sch['ox'][0]) + 1), 'Б': str(items.index(sch['red'][0]) + 1)}
-    q = (INTRO20.format(s=scheme_str(sch)) + TASK20 + '\n\nДля самопроверки шага 3 установите соответствие между ролью '
-         'вещества в реакции и его формулой: к каждой позиции, обозначенной буквой, подберите соответствующую позицию, '
-         'обозначенную цифрой.')
+    q = (INTRO20.format(s=scheme_str(sch)) + TASK20 + '\n\nПроверьте себя: установите соответствие между ролью вещества '
+         'в этой реакции и его формулой.')
     kl, kr = sch['k']
     return pcard('ch-oge-20-roles', q, a, _solution20(sch), k='match', o=o, eq=(sch['lhs'], sch['rhs'], kl, kr),
                  p={'lhs': sch['lhs'], 'rhs': sch['rhs'], 'items': items})
@@ -3514,9 +3509,8 @@ def g20_halves(rng):
     items = shuffled(rng, [hr, ho] + rng.sample(sorted(wrong), 2))
     o = match_opts(['процесс окисления', 'процесс восстановления'], items)
     a = {'А': str(items.index(hr) + 1), 'Б': str(items.index(ho) + 1)}
-    q = (INTRO20.format(s=scheme_str(sch)) + TASK20 + '\n\nДля самопроверки шага 1 установите соответствие между '
-         'процессом и его уравнением: к каждой позиции, обозначенной буквой, подберите соответствующую позицию, '
-         'обозначенную цифрой.')
+    q = (INTRO20.format(s=scheme_str(sch)) + TASK20 + '\n\nПроверьте себя: установите соответствие между процессом '
+         'и его электронным уравнением (первый шаг электронного баланса).')
     kl, kr = sch['k']
     return pcard('ch-oge-20-electron-balance', q, a, _solution20(sch), k='match', o=o, eq=(sch['lhs'], sch['rhs'], kl, kr),
                  p={'lhs': sch['lhs'], 'rhs': sch['rhs'], 'items': items})
@@ -3524,39 +3518,43 @@ def g20_halves(rng):
 
 def coef_by_electrons(lhs, rhs):
     """solve: коэффициенты методом электронного баланса и последующего подбора по атомам (без общего решения системы).
-    1) из процессов окисления/восстановления — множители для восстановителя и продукта восстановления;
-    2) остальные коэффициенты — по одному элементу, встречающемуся у единственного неизвестного вещества."""
+    1) для каждого процесса берём вещество, в котором считаем электроны: реагент, если весь элемент в нём меняет
+       степень окисления, иначе — продукт с новой степенью окисления (кислота-среда, HCl → Cl2 + MnCl2);
+    2) множители баланса — их коэффициенты; 3) остальные — по элементу, встречающемуся у единственного неизвестного."""
     oxs, reds = roles_calc(lhs, rhs)
     if len(oxs) != 1 or len(reds) != 1:
         raise ValueError('роли')
-    red, ox = reds[0], oxs[0]
-    # электроны на формульную единицу восстановителя и продукта восстановления
-    e_red = 0
-    Rst = {}
+    rstates = {}
     for f in rhs:
         for e, sts in ox_states(f).items():
-            Rst.setdefault(e, []).append((f, sts))
-    for e, sts in ox_states(red).items():
-        for x in sts:
-            ups = [y for f, ss in Rst.get(e, []) for y in ss if y > x]
-            if ups:
-                e_red += parse_formula(red)[e] * (max(ups) - x)
-    prod = None
-    for e, sts in ox_states(ox).items():
-        x = sts[0]
-        for f, ss in Rst.get(e, []):
-            for y in ss:
-                if y < x and f != red:
-                    prod = (f, e, parse_formula(f)[e] * (x - y) if len(ss) == 1 else (x - y))
-    if prod is None or e_red == 0:
-        raise ValueError('нет продукта восстановления')
+            rstates.setdefault(e, set()).update(sts)
+
+    def carrier(sp, up):
+        for e, sts in ox_states(sp).items():
+            x = sts[0]
+            new = [y for y in rstates.get(e, ()) if (y > x if up else y < x)]
+            if not new or (e in ('H', 'O') and not _is_simple(sp) and sp != 'H2O2' and not any(
+                    _is_simple(f) and e in parse_formula(f) for f in rhs)):
+                continue
+            y = new[0]
+            if x not in rstates[e]:                        # элемент целиком меняет степень окисления
+                return sp, parse_formula(sp)[e] * abs(y - x)
+            prods = [f for f in rhs if e in parse_formula(f) and y in ox_states(f)[e]]
+            if len(prods) != 1:
+                raise ValueError('несколько продуктов')
+            return prods[0], parse_formula(prods[0])[e] * abs(y - x)
+        raise ValueError('нет процесса')
+    a, ea = carrier(reds[0], True)
+    b, eb = carrier(oxs[0], False)
+    if a == b:
+        raise ValueError('общий продукт')
     species = lhs + rhs
-    coef = {red: Fr(prod[2]), prod[0]: Fr(e_red)}
+    coef = {a: Fr(eb), b: Fr(ea)}
     for _ in range(20):
         if len(coef) == len(species):
             break
         progress = False
-        for el in {e for f in species for e in parse_formula(f)}:
+        for el in sorted({e for f in species for e in parse_formula(f)}):
             unk = [f for f in species if el in parse_formula(f) and f not in coef]
             if len(unk) != 1:
                 continue
@@ -3564,7 +3562,7 @@ def coef_by_electrons(lhs, rhs):
             left = sum(coef[f] * parse_formula(f)[el] for f in lhs if f in coef and el in parse_formula(f))
             right = sum(coef[f] * parse_formula(f)[el] for f in rhs if f in coef and el in parse_formula(f))
             val = (left - right) if u in rhs else (right - left)
-            coef[u] = val / parse_formula(u)[el]
+            coef[u] = Fr(val) / parse_formula(u)[el]
             progress = True
         if not progress:
             raise ValueError('не подобрать')
@@ -3615,7 +3613,7 @@ def g20_coef(rng):
     sch = rng.choice(S20_COEF)
     kl, kr = sch['k']
     ans = ''.join(str(x) for x in list(kl) + list(kr))
-    q = (INTRO20.format(s=scheme_str(sch)) + TASK20 + '\n\nДля самопроверки шага 2 запишите в ответ коэффициенты уравнения '
+    q = (INTRO20.format(s=scheme_str(sch)) + TASK20 + '\n\nПроверьте себя: запишите в ответ полученные коэффициенты '
          'по порядку следования веществ в схеме (цифры подряд, коэффициент 1 тоже записывается).')
     wrong = []
     ks = list(kl) + list(kr)
@@ -3625,3 +3623,216 @@ def g20_coef(rng):
         wrong.append(''.join(map(str, w)))
     return pcard('ch-oge-20-coefficients', q, ans, _solution20(sch), k='num', eq=(sch['lhs'], sch['rhs'], kl, kr),
                  p={'lhs': sch['lhs'], 'rhs': sch['rhs']}, wrong=wrong[:3])
+
+
+# ================================================================= 21. Цепочка превращений (шаги развёрнутого ответа)
+
+REAG21 = ['H2O', 'O2', 'H2', 'Cl2', 'HCl', 'H2SO4', 'HNO3', 'H3PO4', 'NaOH', 'KOH', 'Ca(OH)2', 'Ba(OH)2', 'AgNO3', 'BaCl2',
+          'Ba(NO3)2', 'Na2CO3', 'K2CO3', 'Na2SO4', 'K2SO4', 'CO2', 'SO2', 'SO3', 'C', 'CO', 'Na2S', 'H2S', 'Na3PO4',
+          'K3PO4', 'NH3', 'CaCl2', 'Fe', 'Zn', 'Mg', 'Al', 'Cu', 'CuSO4', 'CuCl2', 'Na2SiO3', 'Ca(NO3)2', 'N2', 'S',
+          'FeCl2', 'NaCl', 'KCl']
+NODE21 = sorted(f for f, r in SUB.items() if r.get('cls') in ('оксид', 'основание', 'амфотерный гидроксид', 'кислота', 'соль',
+                                                              'простое вещество', 'водородное соединение')
+                and f not in EXOTIC and f not in ('Na2O2', 'KO2', 'Fe3O4', 'NH3·H2O', 'H2O', 'O2', 'H2', 'CH3COOH',
+                                                  'H2O2', 'Hg', 'HgO', 'Ag2O', 'NaAlO2', 'KAlO2', 'Na2ZnO2', 'K2ZnO2',
+                                                  'Ca(AlO2)2', 'SiO', 'Cu2O', 'O3', 'HClO', 'KClO3', 'NaClO', 'Ca(ClO)2',
+                                                  'KMnO4', 'K2MnO4', 'MnO2', 'I2', 'HI')
+                and all(e in {'H', 'O', 'N', 'C', 'S', 'P', 'Si', 'Cl', 'Li', 'Na', 'K', 'Mg', 'Ca', 'Ba', 'Al', 'Zn', 'Fe',
+                              'Cu', 'Ag'} for e in parse_formula(f)))
+T21 = 'нагревание'
+
+
+def _edges21():
+    """Переходы A → B по всей базе: A среди реагентов, B среди продуктов, остальные реагенты — из списка REAG21."""
+    edges = {}
+    for r in chemdb.load()['reactions']:
+        if 'электролиз' in (r.get('cond') or '') or 'электролиз' in ' '.join(r.get('type', [])):
+            continue
+        L = r['lhs']
+        for A in L:
+            if A not in NODE21:
+                continue
+            others = [x for x in L if x != A]
+            if len(L) == 1:
+                rg = T21
+            else:
+                rest = [x for x in others if x != 'H2O']
+                if len(rest) > 1 or any(x not in REAG21 for x in rest):
+                    continue
+                rg = rest[0] if rest else 'H2O'
+            for B in r['rhs']:
+                if B in NODE21 and B != A and (set(parse_formula(A)) & set(parse_formula(B))) - {'H', 'O'}:
+                    edges.setdefault((A, B), set()).add(rg)
+    return edges
+
+
+_E21 = None
+
+
+def edges21():
+    global _E21
+    if _E21 is None:
+        _E21 = _edges21()
+    return _E21
+
+
+def can21(a, b, reagent=None):
+    """solve: можно ли получить b из a (при необходимости — указанным реагентом): поиск реакции заново по базе."""
+    for r in chemdb.load()['reactions']:
+        if a in r['lhs'] and b in r['rhs'] and 'электролиз' not in (r.get('cond') or '') + ' '.join(r.get('type', [])):
+            rest = [x for x in r['lhs'] if x not in (a, 'H2O')]
+            if len(r['lhs']) == 1:
+                rg = T21
+            elif len(rest) == 1 and rest[0] in REAG21:
+                rg = rest[0]
+            elif not rest:
+                rg = 'H2O'
+            else:
+                continue
+            if reagent is None or rg == reagent:
+                return True
+    return False
+
+
+def _key_el(a, b):
+    return (set(parse_formula(a)) & set(parse_formula(b))) - {'H', 'O'}
+
+
+def char_el(f):
+    """«Главный» элемент вещества: металл катиона (N для NH4+), элемент оксида, центральный атом кислоты."""
+    if f in SALT:
+        c = SALT[f][0]
+        return 'N' if c == 'NH4' else MET_OF[c]
+    els = [e for e in parse_formula(f) if e not in ('H', 'O')]
+    if not els:
+        return None
+    ms = [e for e in els if e in METALS_ALL]
+    if ms:
+        return ms[0]
+    if f.startswith('(NH4)') or f.startswith('NH4'):
+        return 'N'
+    return els[0] if len(els) == 1 else [e for e in els if e not in ('Cl', 'Br', 'I', 'F')][0]
+
+
+def _chain21(rng):
+    E = edges21()
+    out_ = {}
+    for (a, b) in E:
+        out_.setdefault(a, []).append(b)
+    starts = [a for a in out_ if char_el(a)]
+    for _ in range(200):
+        a = rng.choice(starts)
+        el = char_el(a)
+        chain = [a]
+        for _step in range(3):
+            nxt = [b for b in out_.get(chain[-1], []) if b not in chain and el in parse_formula(b)]
+            if not nxt:
+                break
+            chain.append(rng.choice(nxt))
+        if len(chain) == 4:
+            return chain, el
+    raise Retry
+
+
+INTRO21 = 'Дана схема превращений:\n{s}\nНапишите молекулярные уравнения реакций, с помощью которых можно осуществить указанные превращения.'
+
+
+def _solve21x(p):
+    ch, pos = p['chain'], p['pos']
+    good = [i for i, x in enumerate(p['items']) if can21(ch[pos - 1], x) and can21(x, ch[pos + 1])]
+    return ids_of(good)[0] if len(good) == 1 else f'подходят {good}'
+
+
+_F21 = lambda step: F('развёрнутый ответ (3 балла: по баллу за каждое уравнение); в тренажёре — шаг: ' + step,
+                     'условие — как в демоверсии 2027 №21 и банке: «Дана схема превращений: … Напишите молекулярные '
+                     'уравнения реакций…»', 'В', 17, 'цепочки из четырёх веществ одного элемента, как в банке: '
+                     'Li2O → X → LiCl → LiNO3, Fe → X → Fe(OH)3 → Fe(NO3)3, S → X → Na2SO3 → CaSO3',
+                     'вещество X, которое получается из предыдущего, но не даёт следующее', ['4.12'],
+                     '3 балла по критериям; шаг проверяется автоматически')
+
+
+@proto('ch-oge-21-find-x', 'ОГЭ', 21, 'Цепочка превращений: какое вещество может быть X',
+       invariant='схема из четырёх веществ одного элемента с неизвестным X; выбрать X из четырёх формул',
+       varies='элемент и цепочка (металлы, их оксиды, гидроксиды, соли; неметаллы S, C, N, P, Si и их соединения), '
+              'место X в цепочке',
+       answer_rule='X должен получаться из предыдущего вещества одной реакцией и сам давать следующее',
+       mistakes=['выбирают вещество, которое не получается из предыдущего', 'нарушают степень окисления (Fe2+ / Fe3+)'],
+       solve=_solve21x, kind='dict', kes=['4.12'], fidelity=_F21('определить вещество X (один ответ из четырёх)'))
+def g21_x(rng):
+    chain, el = _chain21(rng)
+    pos = 1 if rng.random() < 0.7 else 2
+    x = chain[pos]
+    E = edges21()
+    cands = [f for f in NODE21 if el in parse_formula(f) and f not in chain and
+             not ((chain[pos - 1], f) in E and (f, chain[pos + 1]) in E)]
+    if len(cands) < 3:
+        raise Retry
+    near = [f for f in cands if (chain[pos - 1], f) in E or (f, chain[pos + 1]) in E]
+    dist = rng.sample(near, min(2, len(near)))
+    dist += rng.sample([f for f in cands if f not in dist], 3 - len(dist))
+    items = shuffled(rng, [x] + dist)
+    shown = [disp(f) if i != pos else 'X' for i, f in enumerate(chain)]
+    q = INTRO21.format(s=' → '.join(shown)) + '\n\nПроверьте себя: какое из приведённых веществ может быть веществом X?'
+    o = opts([disp(f) for f in items])
+    a = str(items.index(x) + 1)
+    rg = [sorted(E[(chain[i], chain[i + 1])])[0] for i in range(3)]
+    eqs = []
+    for i in range(3):
+        for r in chemdb.load()['reactions']:
+            if chain[i] in r['lhs'] and chain[i + 1] in r['rhs'] and (rg[i] == T21 and len(r['lhs']) == 1 or rg[i] in r['lhs']):
+                eqs.append((r['lhs'], r['rhs'], r['k'][0], r['k'][1]))
+                break
+    e = f'X — {disp(x)}. Уравнения: ' + '; '.join(f'{i + 1}) {eq_text(eq)}' for i, eq in enumerate(eqs)) + '.'
+    return pcard('ch-oge-21-find-x', q, a, e, k='one', o=o, eqs=eqs, p={'chain': chain, 'pos': pos, 'items': items})
+
+
+def _solve21r(p):
+    ch = p['chain']
+    a = {}
+    for i in range(3):
+        good = [j for j, r in enumerate(p['reag']) if can21(ch[i], ch[i + 1], r)]
+        if len(good) != 1:
+            return f'переход {i}: {good}'
+        a[LET[i]] = str(good[0] + 1)
+    return a
+
+
+@proto('ch-oge-21-reagents', 'ОГЭ', 21, 'Цепочка превращений: реагент для каждой стадии',
+       invariant='схема из четырёх веществ; для каждого превращения выбрать реагент (или нагревание) из пяти вариантов',
+       varies='цепочка и реагенты (кислоты, щёлочи, соли, кислород, вода, нагревание …)',
+       answer_rule='реагент выбирают по классу превращения: основание → соль — кислота; соль → нерастворимое основание — '
+                   'щёлочь; хлорид → нитрат — AgNO3; нерастворимый гидроксид → оксид — нагревание …',
+       mistakes=['для замены аниона берут кислоту вместо соли серебра/бария', 'нерастворимое основание «получают» водой'],
+       solve=_solve21r, kind='dict', kes=['4.12'], fidelity=_F21('реагент для каждой стадии (соответствие 3 → 5)'))
+def g21_reag(rng):
+    chain, el = _chain21(rng)
+    E = edges21()
+    pools = [sorted(E[(chain[i], chain[i + 1])]) for i in range(3)]
+    for _ in range(30):
+        pick = [rng.choice(p) for p in pools]
+        if len(set(pick)) < 3:
+            continue
+        # каждый выбранный реагент подходит только к «своему» переходу
+        if any(pick[j] in E[(chain[i], chain[i + 1])] for i in range(3) for j in range(3) if i != j):
+            continue
+        extra = [r for r in REAG21 + [T21] if r not in pick and all(r not in E[(chain[i], chain[i + 1])] for i in range(3))]
+        dist = rng.sample(extra, 2)
+        break
+    else:
+        raise Retry
+    reag = shuffled(rng, pick + dist)
+    shown = ' → '.join(disp(f) for f in chain)
+    q = INTRO21.format(s=shown) + ('\n\nПроверьте себя: установите соответствие между превращением и реагентом (условием), '
+                                   'с помощью которого его можно осуществить.')
+    left = [f'{disp(chain[i])} → {disp(chain[i + 1])}' for i in range(3)]
+    o = match_opts(left, [r if r == T21 else disp(r) for r in reag])
+    a = {LET[i]: str(reag.index(pick[i]) + 1) for i in range(3)}
+    eqs = []
+    for i in range(3):
+        for r in chemdb.load()['reactions']:
+            if chain[i] in r['lhs'] and chain[i + 1] in r['rhs'] and ((pick[i] == T21 and len(r['lhs']) == 1) or pick[i] in r['lhs']):
+                eqs.append((r['lhs'], r['rhs'], r['k'][0], r['k'][1]))
+                break
+    e = 'Уравнения: ' + '; '.join(f'{LET[i]}) {eq_text(eq)}' for i, eq in enumerate(eqs)) + '. Ответ: ' + \
+        ''.join(a[x] for x in LET[:3]) + '.'
+    return pcard('ch-oge-21-reagents', q, a, e, k='match', o=o, eqs=eqs, p={'chain': chain, 'reag': reag})

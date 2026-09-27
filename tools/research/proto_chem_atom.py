@@ -707,7 +707,11 @@ def g_ion(rng):
                     f'Для каких двух элементов ряда {who}, образуемые в соединениях, {cond}?'])
     lines = []
     for s in items:
-        if s in ION_POOL:
+        if s in ION_POOL and sign < 0 and ion_q(s) > 0:
+            lines.append(f'{s} — металл, анионов не образует')
+        elif s in ION_POOL and sign > 0 and ion_q(s) < 0:
+            lines.append(f'{s} — неметалл, простых катионов не образует')
+        elif s in ION_POOL:
             lines.append(f'{ion_str(s)} — {E[s]["Z"] - ion_q(s)} e')
         else:
             lines.append(f'{s} — d-элемент, его ионы не имеют конфигурации благородного газа')
@@ -734,9 +738,13 @@ def counts(sym, q=0):
 
 
 def particle_name(sym, q):
+    """Частица словами, как в КИМ: «атом неона», «катион натрия», «катион железа(III)», «анион серы»."""
     if q == 0:
         return f'атом {E[sym]["gen"]}'
-    return f'{"катион" if q > 0 else "анион"} {ion_str(sym, q)}'
+    if q > 0:
+        pos = [x for x in E[sym]['ox'] if x > 0]
+        return f'катион {E[sym]["gen"]}' + (f'({ROMAN[q]})' if len(pos) > 1 else '')
+    return f'анион {E[sym]["gen"]}'
 
 
 def _solve_sublevel(p):
@@ -779,15 +787,11 @@ def g_sublevel(rng):
         if mode == 'ref':
             pool = [s for s in pool if not (s == ref[0] and ref[1] == 0)]
             f = lambda s: counts(s)[sub]
-            q = rng.choice([f'Укажите два элемента ряда, в атомах которых {GS} суммарно столько же {SUB_GEN[sub]}, '
-                            f'сколько у частицы — {pn}.',
-                            f'У атомов каких двух элементов ряда {GS} общее число {SUB_GEN[sub]} равно их числу у '
-                            f'частицы {pn.split(" ", 1)[1]}?'])
+            q = f'Укажите два элемента ряда, атомы которых {GS} содержат такое же общее число {SUB_GEN[sub]}, как и {pn}.'
         else:
             pool = [s for s in ION_POOL if s != ref[0]]
             f = lambda s: counts(s, ion_q(s))[sub]
-            q = (f'Укажите два элемента ряда, простые ионы которых (в их типичных соединениях) содержат столько же '
-                 f'{SUB_GEN[sub]}, сколько {pn}.')
+            q = f'Укажите два элемента ряда, которым соответствуют ионы, имеющие столько же {SUB_GEN[sub]}, сколько и {pn}.'
         pred = lambda s: f(s) == v
         items = pick_row(rng, [s for s in pool if pred(s)], [s for s in pool if not pred(s)])
         p['ref'] = list(ref)
@@ -904,7 +908,8 @@ PROPS2 = {
     'oxid': (('усиления', 'ослабления'), 'окислительной способности образуемых ими простых веществ', 1, -1,
              ['nonmetal', 'p', 'period', 'group'], lambda s: E[s]['kind'] == 'n' and s not in ('H', 'B')),
     'acid_ox': (('усиления', 'ослабления'), 'кислотных свойств образуемых ими высших оксидов', 1, -1,
-                ['period', 'nonmetal', 'p', 'group'], lambda s: E[s]['sub'] == 'A' and s not in ('O', 'F', 'H')),
+                ['period', 'nonmetal', 'p', 'group'],
+                lambda s: E[s]['sub'] == 'A' and s not in ('O', 'F', 'H', 'Br', 'I')),
     'base': (('усиления', 'ослабления'), 'осно́вных свойств образуемых ими гидроксидов', -1, 1,
              ['period', 'group', 's', 'metal'], lambda s: E[s]['kind'] == 'm' and E[s]['sub'] == 'A'),
     'hyd_acid': (('усиления', 'ослабления'), 'кислотных свойств образуемых ими летучих водородных соединений', 1, 1,
@@ -912,7 +917,8 @@ PROPS2 = {
     'hyd_val': (('возрастания', 'уменьшения'), 'валентности в летучих водородных соединениях', None, None,
                 ['hydride', 'p', 'nonmetal', 'period'], lambda s: s in HYDR),
     'hiox': (('возрастания', 'уменьшения'), 'степени окисления в высших оксидах', None, None,
-             ['d', 'metal', 'period', 'p', 'small'], lambda s: s not in ('O', 'F', 'H', 'Fe', 'Co', 'Ni', 'Cu')),
+             ['d', 'metal', 'period', 'p', 'small'],
+             lambda s: s not in ('O', 'F', 'H', 'Fe', 'Co', 'Ni', 'Cu', 'Br', 'I')),
 }
 PHR2 = {'radius': ('радиус их атомов', 'увеличивался', 'уменьшался'),
         'en': ('электроотрицательность элементов', 'возрастала', 'снижалась'),
@@ -1017,6 +1023,8 @@ def seq_card(pid, rng, props):
             raise Retry
         triple = rng.sample(yes, 3)
         two = rng.sample(no, 2)
+    if prop == 'radius' and {'Al', 'Ga'} <= set(triple):
+        raise Retry   # по школьному правилу Al < Ga, а реальный радиус Ga меньше (d-сжатие)
     if dp is None:
         vals = [num_val(prop, s) for s in triple]
         if len(set(vals)) < 3:
@@ -1138,7 +1146,7 @@ def _solve_maxox(p):
                     kes=['1.3']))
 def g_maxox(rng):
     pid = 'ch-ege-03-maxox'
-    pool = [s for s in POOL3 if s not in ('O', 'F')]
+    pool = [s for s in POOL3 if s not in ('O', 'F', 'H', 'Br', 'I')]   # у Br, I высшие оксиды не получены
     if rng.random() < 0.35:
         items, v = pick_pair(rng, pool, ox_max)
         pred = pair_pred(items, ox_max)
@@ -1163,8 +1171,9 @@ def g_maxox(rng):
 def _solve_minox(p):
     lo = lambda s: r_lower_ox(z_of(s))
     if p['mode'] == 'same':
+        # все пары с совпадающей низшей степенью окисления (у металлов — 0); верная пара должна быть единственной
         vals = [lo(s) for s in p['row']]
-        return ids_of(p['row'], lambda s: lo(s) < 0 and vals.count(lo(s)) == 2)
+        return ids_of(p['row'], lambda s: vals.count(lo(s)) >= 2)
     return ids_of(p['row'], lambda s: lo(s) == -p['v'])
 
 
@@ -1187,7 +1196,9 @@ def g_minox(rng):
             by.setdefault(ox_min(s), []).append(s)
         v = rng.choice([k for k, xs in by.items() if len(xs) >= 2])
         rest_vals = [k for k in by if k != v]
-        k_nm = rng.randint(1, min(3, len(rest_vals)))
+        if len(rest_vals) < 2:
+            raise Retry
+        k_nm = rng.randint(2, min(3, len(rest_vals)))   # металлов в ряду не больше одного: их низшая с.о. 0
         items = rng.sample(by[v], 2) + [rng.choice(by[w]) for w in rng.sample(rest_vals, k_nm)] + \
             rng.sample(met, 3 - k_nm)
         rng.shuffle(items)
@@ -1802,6 +1813,8 @@ def list_card(pid, rng, pool, pred, q, p_extra, explain=sub_desc, names=None, k=
     names = (rng.random() < 0.5) if names is None else names
     view = [sub_view(s, names) for s in items]
     ans = ids_of(items, pred)
+    if sum('NH4' in items[int(i) - 1]['f'] for i in ans) > 1:
+        raise Retry   # две соли аммония в ответе — тривиальная пара
     tail = tail or rng.choice(['Запишите номера выбранных ответов.', 'Запишите в поле ответа номера выбранных веществ.'])
     q = kim_list(q)
     e = '; '.join(explain(s) for s in items) + f'. Ответ: {"".join(ans)}.'
@@ -1828,17 +1841,23 @@ def bond_q(rng, b, exam):
                            f'В каких двух веществах из приведённого перечня есть {t} связь?',
                            f'Отметьте два вещества перечня, в состав которых входят атомы (ионы), соединённые {ins} '
                            f'связью.'])
-    return rng.choice([f'Укажите два вещества, в которых имеется {t} химическая связь.',
-                       f'Какие два из перечисленных веществ образованы за счёт {ins} связи?',
-                       f'Отметьте два вещества, для которых характерна {t} связь.'])
+    acc = {'i': 'ионную', 'p': 'ковалентную полярную', 'n': 'ковалентную неполярную', 'm': 'металлическую'}[b]
+    return rng.choice([f'Из предложенного перечня выберите два вещества с {ins} связью.',
+                       f'Из предложенного перечня выберите два вещества, содержащие {acc} связь.'])
 
 
 def _bond_gen(pid, exam, letters):
     def gen(rng):
         b = rng.choice(letters)
         pool = pool_for('e' if exam == 'ЕГЭ' else 'o')
-        return list_card(pid, rng, pool, lambda s: b in s['bonds'], bond_q(rng, b, exam), {'b': b},
-                         names=None if exam == 'ЕГЭ' else False)
+        c = list_card(pid, rng, pool, lambda s: b in s['bonds'], bond_q(rng, b, exam), {'b': b},
+                      names=None if exam == 'ЕГЭ' else False)
+        if exam == 'ОГЭ' and b == 'p':
+            # как в банке ОГЭ: среди ответов хотя бы одно молекулярное вещество, соль/щёлочь — не больше одной
+            ans_f = [c['gen']['p']['subs'][int(i) - 1] for i in c['a']]
+            if sum(solve_lattice(f) == 'ion' for f in ans_f) > 1:
+                raise Retry
+        return c
     return gen
 
 
@@ -2044,25 +2063,26 @@ LAT_PROPS = [
     ('высокая температура плавления', 'strong'), ('нелетучесть', 'strong'),
     ('низкая температура плавления', 'weak'), ('летучесть', 'weak'), ('малая твёрдость', 'weak'),
     ('у многих веществ есть запах', 'weak'),
+    ('отсутствие электропроводности в твёрдом состоянии', 'nocond'),
     ('очень высокая твёрдость', 'covnet'), ('нерастворимость в воде и других растворителях', 'covnet'),
 ]
 # свойства, которые у части веществ данного типа всё же встречаются, — в дистракторы не берём
-PROPS_AMBIG = {'met': {'низкая температура плавления', 'малая твёрдость', 'очень высокая твёрдость',
+PROPS_AMBIG = {'met': {'растворы и расплавы проводят электрический ток', 'низкая температура плавления', 'малая твёрдость', 'очень высокая твёрдость',
                        'нерастворимость в воде и других растворителях', 'высокая температура плавления', 'нелетучесть',
                        'хрупкость кристаллов'},
                'ion': {'нерастворимость в воде и других растворителях', 'очень высокая твёрдость'},
                'mol': {'хрупкость кристаллов', 'нерастворимость в воде и других растворителях'},
-               'atom': {'металлический блеск', 'высокая электропроводность в твёрдом состоянии', 'хрупкость кристаллов',
+               'atom': {'отсутствие электропроводности в твёрдом состоянии', 'металлический блеск', 'высокая электропроводность в твёрдом состоянии', 'хрупкость кристаллов',
                         'высокая теплопроводность'}}
 LAT_ACC = {'ion': 'ионную', 'met': 'металлическую', 'mol': 'молекулярную', 'atom': 'атомную'}
-LAT_FEAT = {'met': {'free_e'}, 'ion': {'ions', 'strong'}, 'mol': {'weak'}, 'atom': {'covnet', 'strong'}}
+LAT_FEAT = {'met': {'free_e'}, 'ion': {'ions', 'strong', 'nocond'}, 'mol': {'weak', 'nocond'}, 'atom': {'covnet', 'strong'}}
 
 
 def _solve_props(p):
     # второй путь: что находится в узлах решётки и чем связаны частицы
     nodes = {'met': ('катионы металла и обобществлённые электроны', {'free_e'}),
-             'ion': ('катионы и анионы, прочная ионная связь', {'ions', 'strong'}),
-             'mol': ('молекулы, слабое межмолекулярное взаимодействие', {'weak'}),
+             'ion': ('катионы и анионы, прочная ионная связь, свободных электронов нет', {'ions', 'strong', 'nocond'}),
+             'mol': ('молекулы, слабое межмолекулярное взаимодействие, свободных электронов нет', {'weak', 'nocond'}),
              'atom': ('атомы, прочные ковалентные связи во всём кристалле', {'covnet', 'strong'})}[p['L']][1]
     return sorted(str(i + 1) for i, need in enumerate(p['needs']) if need in nodes)
 
@@ -2759,11 +2779,16 @@ def ox_match_card(pid, rng, elems, names=False):
         raise Retry
     picked = rng.sample(rows, 3)
     need = sorted({v for _, v in picked})
+    skel = lambda f: tuple(sorted((k, n) for k, n in parse_formula(f).items()
+                                  if k not in ('Li', 'Na', 'K', 'Mg', 'Ca', 'Ba', 'Al')))
+    if len(need) < 2 or len({skel(f) for f, _ in picked}) < 3:
+        raise Retry   # почти одинаковые вещества (K₂SiO₃ и Na₂SiO₃) или одно значение во всех позициях
     extra = [v for v in vals if v not in need]
     rng.shuffle(extra)
     right_vals = need + extra[:4 - len(need)]
     if len(right_vals) < 4:
-        cand = [v for v in (-4, -3, -2, -1, 1, 2, 3, 4, 5, 6, 7) if v not in right_vals]
+        cand = [v for v in ((1, 2, 3, 4, 5, 6, 7) if E[el]['kind'] == 'm' else (-4, -3, -2, -1, 1, 2, 3, 4, 5, 6, 7))
+                if v not in right_vals]
         right_vals += rng.sample(cand, 4 - len(right_vals))
     rng.shuffle(right_vals)
     right = [ox_view(v) for v in right_vals]
@@ -2859,6 +2884,10 @@ def g_valence(rng):
     rows = VAL[el]
     picked = rng.sample(rows, 3)
     need = sorted({v for _, v in picked})
+    skel = lambda f: tuple(sorted((k, n) for k, n in parse_formula(f).items()
+                                  if k not in ('Li', 'Na', 'K', 'Mg', 'Ca', 'Ba', 'Al')))
+    if len(need) < 2 or len({skel(f) for f, _ in picked}) < 3:
+        raise Retry   # почти одинаковые вещества (K₂SiO₃ и Na₂SiO₃) или одно значение во всех позициях
     pool = [v for v in range(1, 8) if v not in need]
     right_vals = need + rng.sample(pool, 4 - len(need))
     rng.shuffle(right_vals)
@@ -3238,17 +3267,27 @@ def g_row(rng):
 def _solve_among(p):
     els = p['els']
     zs = {s: z_of(s) for s in els}
+    per = {x: r_period(zs[x]) for x in els}
+    gr = {x: r_valence(zs[x]) for x in els}
+    rad = {x: per[x] * 10 - gr[x] for x in els}
+    en = {x: -rad[x] for x in els}
+    hi = {x: r_higher_ox(zs[x]) for x in els}
+
+    def uniq(d, s, best):   # строгий единственный экстремум; ничья — неверно
+        return d[s] == best(d.values()) and list(d.values()).count(d[s]) == 1
     res = []
     for i, (tid, s) in enumerate(p['st']):
-        per = {x: r_period(zs[x]) for x in els}
-        gr = {x: r_valence(zs[x]) for x in els}
-        rad = {x: per[x] * 10 - gr[x] for x in els}
-        en = {x: -rad[x] for x in els}
-        ok = {'maxr': rad[s] == max(rad.values()), 'minr': rad[s] == min(rad.values()),
-              'maxen': en[s] == max(en.values()), 'minen': en[s] == min(en.values()),
-              'onlymetal': r_metal(zs[s]) and sum(r_metal(zs[x]) for x in els) == 1,
-              'onlynonmetal': not r_metal(zs[s]) and sum(not r_metal(zs[x]) for x in els) == 1,
-              'maxox': r_higher_ox(zs[s]) == max(r_higher_ox(zs[x]) or 0 for x in els)}[tid]
+        if tid == 'sameox':
+            ok = len(set(hi.values())) == 1
+        elif tid == 'onlyox':
+            v = hi[s]
+            ok = list(hi.values()).count(v) == 1
+        else:
+            ok = {'maxr': lambda: uniq(rad, s, max), 'minr': lambda: uniq(rad, s, min),
+                  'maxen': lambda: uniq(en, s, max), 'minen': lambda: uniq(en, s, min),
+                  'onlymetal': lambda: r_metal(zs[s]) and sum(r_metal(zs[x]) for x in els) == 1,
+                  'onlynonmetal': lambda: not r_metal(zs[s]) and sum(not r_metal(zs[x]) for x in els) == 1,
+                  'maxox': lambda: uniq(hi, s, max)}[tid]()
         if ok:
             res.append(str(i + 1))
     return res
@@ -3258,7 +3297,9 @@ AMONG_TXT = {'maxr': 'наибольший радиус имеют атомы {g
              'maxen': 'наибольшую электроотрицательность имеет {n}', 'minen': 'наименьшую электроотрицательность имеет {n}',
              'onlymetal': 'простое вещество-металл образует только {n}',
              'onlynonmetal': 'простое вещество-неметалл образует только {n}',
-             'maxox': 'наибольшую высшую степень окисления имеет {n}'}
+             'maxox': 'наибольшую высшую степень окисления имеет {n}',
+             'onlyox': 'высшую степень окисления {v} имеет только {n}',
+             'sameox': 'все три элемента имеют одинаковую высшую степень окисления'}
 
 
 @proto('ch-oge-06-among', 'ОГЭ', 6, 'Сравнение трёх элементов: «среди элементов X, Y, Z …»',
@@ -3286,15 +3327,24 @@ def g_among(rng):
     en = {s: -rad[s] for s in els}
     mets = [s for s in els if E[s]['kind'] == 'm']
     truth = {}
+    hi = {s: ox_max(s) for s in els}
+    no_ox = any(x in ('O', 'F') for x in els)
+
+    def uniq(d, s, best):
+        return d[s] == best(d.values()) and list(d.values()).count(d[s]) == 1
     for s in els:
-        truth[('maxr', s)] = rad[s] == max(rad.values())
-        truth[('minr', s)] = rad[s] == min(rad.values())
-        truth[('maxen', s)] = en[s] == max(en.values())
-        truth[('minen', s)] = en[s] == min(en.values())
+        truth[('maxr', s)] = uniq(rad, s, max)
+        truth[('minr', s)] = uniq(rad, s, min)
+        truth[('maxen', s)] = uniq(en, s, max)
+        truth[('minen', s)] = uniq(en, s, min)
         truth[('onlymetal', s)] = E[s]['kind'] == 'm' and len(mets) == 1
         truth[('onlynonmetal', s)] = E[s]['kind'] == 'n' and len(els) - len(mets) == 1
-        if not any(x in ('O', 'F') for x in els):
-            truth[('maxox', s)] = ox_max(s) == max(ox_max(x) for x in els)
+        if not no_ox:
+            if len(set(hi.values())) > 1:
+                truth[('maxox', s)] = uniq(hi, s, max)
+            truth[('onlyox', s)] = list(hi.values()).count(hi[s]) == 1
+    if not no_ox:
+        truth[('sameox', '*')] = len(set(hi.values())) == 1
     keys = list(truth)
     rng.shuffle(keys)
     good = [k for k in keys if truth[k]]
@@ -3310,7 +3360,8 @@ def g_among(rng):
         raise Retry
     st = g2 + b3
     rng.shuffle(st)
-    texts = [AMONG_TXT[t].format(g=E[s]['gen'], n=E[s]['nom']) for t, s in st]
+    texts = [AMONG_TXT[t] if s == '*' else AMONG_TXT[t].format(g=E[s]['gen'], n=E[s]['nom'], v=signed(ox_max(s)))
+             for t, s in st]
     q = (f'Выберите два верных продолжения для следующего утверждения. Среди химических элементов '
          f'{", ".join(els)} …')
     ans = sorted(str(i + 1) for i, k in enumerate(st) if truth[k])

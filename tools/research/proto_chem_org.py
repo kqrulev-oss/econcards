@@ -3267,3 +3267,621 @@ def g25_safety(rng):
     q = mq('ситуацией при работе с веществами и правильным действием', 'СИТУАЦИЯ', 'ДЕЙСТВИЕ')
     return match_card('ch-ege-25-safety', rng, q, left, right, [right.index(SAFETY[x]) for x in left],
                       '; '.join(f'{x}: {SAFETY[x]}' for x in left) + '.', {'left': left, 'right': right})
+
+
+# ================================================================= задание 33: установление формулы органического вещества
+
+KES33 = ['5.8', '5.1', '5.4', '3.20']
+FID33 = lambda scale, trap: dict(
+    answer_format='в КИМ — развёрнутый ответ (формула, структура, уравнение; 3 балла); в тренажёре проверяется '
+                  'ключевой шаг — молекулярная формула (выбор из четырёх)',
+    style='текст задачи и три пункта «1) проведите необходимые вычисления… 2) составьте структурную формулу… '
+          '3) напишите уравнение…» — дословно как в КИМ; Ar — как в справочных данных КИМ (Cl = 35,5), Vm = 22,4 л/моль',
+    level='В', time_min=10, scale=scale, trap=trap, kes=KES33, score='3 балла (формула, структура, уравнение)')
+TAIL33 = ('На основании данных условия задания:\n1) проведите необходимые вычисления (указывайте единицы измерения искомых '
+          'физических величин) и установите молекулярную формулу вещества А;\n2) составьте структурную формулу вещества А, '
+          'которая однозначно отражает порядок связи атомов в его молекуле;\n3) {eq_task} (используйте структурные формулы '
+          'органических веществ).')
+TRAINER33 = '\nВ тренажёре: выберите молекулярную формулу вещества А.'
+NICE_N = [Fr(x, 1000) for x in (10, 15, 20, 25, 30, 40, 50, 60, 75, 80, 100, 120, 125, 150, 200, 250, 300)]
+
+
+def hill(cnt):
+    cnt = {e: n for e, n in dict(cnt).items() if n}
+    order = (['C', 'H'] if 'C' in cnt else []) + sorted(e for e in cnt if e not in ('C', 'H') or 'C' not in cnt)
+    return ''.join(e + (str(cnt[e]) if cnt[e] > 1 else '') for e in order)
+
+
+def dec(x, nd=3):
+    """Число для условия: не более nd знаков после запятой, иначе Retry."""
+    x = Fr(x)
+    if (x * 10 ** nd).denominator != 1:
+        raise Retry
+    return fmt(x)
+
+
+def _formula_opts(rng, true_cnt):
+    """Правильная формула + типичные ошибки: простейшая формула, удвоение, гомолог, «потерянный» элемент."""
+    t = dict(true_cnt)
+    g = 0
+    for v in t.values():
+        g = Fr(g).numerator and __import__('math').gcd(int(g), v) or v
+    cands = []
+    if g and g > 1:
+        cands.append({e: n // g for e, n in t.items()})
+    cands.append({e: n * 2 for e, n in t.items()} if not (g and g > 1) else {e: n // g * (g + 1) for e, n in t.items()})
+    if t.get('C', 0) > 1:
+        h = dict(t)
+        h['C'] -= 1
+        h['H'] = h.get('H', 0) - 2
+        if h['H'] > 0:
+            cands.append(h)
+    h = dict(t)
+    h['C'] = h.get('C', 0) + 1
+    h['H'] = h.get('H', 0) + 2
+    cands.append(h)
+    if t.get('O'):
+        h = dict(t)
+        h.pop('O')
+        cands.append(h)
+    if t.get('H', 0) > 2:
+        h = dict(t)
+        h['H'] = t['H'] - 2
+        cands.append(h)
+    right = hill(t)
+    out, seen = [], {right}
+    for c in cands:
+        s_ = hill(c)
+        if s_ not in seen and all(v > 0 for v in c.values()):
+            seen.add(s_)
+            out.append(s_)
+    if len(out) < 3:
+        raise Retry
+    opts_ = [right] + rng.sample(out, 3)
+    rng.shuffle(opts_)
+    return opts_, [pretty(x) for x in opts_]
+
+
+def _ratio_to_formula(moles, anchor=None, M=None):
+    """Моли элементов → молекулярная формула (независимый пересчёт). anchor=(элемент, число атомов) или M."""
+    mn = min(v for v in moles.values() if v > 0)
+    rel = {e: v / mn for e, v in moles.items() if v > 0}
+    for k in range(1, 25):
+        c = {e: v * k for e, v in rel.items()}
+        if all(abs(x - round(x)) < 0.06 * max(1, round(x)) ** 0 and abs(x - round(x)) < 0.08 for x in c.values()):
+            emp = {e: int(round(x)) for e, x in c.items()}
+            break
+    else:
+        return None
+    if anchor:
+        e, n = anchor
+        if emp.get(e, 0) == 0 or n % emp[e]:
+            return None
+        k = n // emp[e]
+    elif M:
+        me = sum(AR[e] * n for e, n in emp.items())
+        k = round(Fr(M) / me)
+    else:
+        k = 1
+    return hill({e: n * k for e, n in emp.items()})
+
+
+# -------- классы веществ для задания 33: признак (подсказка), якорь, реакция для пункта 3
+def _alc_kind(f):
+    r = next((r for r in RX if r['lhs'][0] == f and r['lhs'][1:2] == ['CuO']), None)
+    if not r:
+        return 'третичным'
+    return 'первичным' if SUB[r['rhs'][0]]['cls'] == 'альдегид' else 'вторичным'
+
+
+def _amine_kind(f):
+    atoms, bonds = D.smiles_info(SMI[f])['graph']
+    n = sum(1 for i, j, o in bonds for x, y in ((i, j), (j, i)) if atoms[x][0] == 'N' and atoms[y][0] == 'C')
+    return {1: 'первичным', 2: 'вторичным', 3: 'третичным'}[n]
+
+
+def _rx(f, lhs1=None, pred=None):
+    for r in RX:
+        if r['lhs'][0] == f and (lhs1 is None or r['lhs'][1:2] == [lhs1]) and (pred is None or pred(r)):
+            return r
+    return None
+
+
+def _clue(f):
+    """(подсказка в условии, реакция для пункта 3, формулировка пункта 3, якорь)."""
+    s = SUB[f]
+    h = s['hom']
+    if h == 'сложные эфиры':
+        r = _rx(f, 'NaOH')
+        alc = next((x for x in r['rhs'] if SUB[x]['cls'] == 'спирт'), None) if r else None
+        if not alc:
+            return None
+        kind = {'первичным': 'первичный', 'вторичным': 'вторичный', 'третичным': 'третичный'}[_alc_kind(alc)]
+        return (f'Известно, что при нагревании с раствором гидроксида натрия это вещество образует соль карбоновой кислоты и '
+                f'{kind} спирт',
+                r, 'напишите уравнение реакции вещества А с раствором гидроксида натрия', ('O', 2))
+    if h == 'предельные одноатомные спирты':
+        r = _rx(f, 'Na')
+        kind = _alc_kind(f)
+        return (f'Известно, что вещество А реагирует с натрием, а при его окислении оксидом меди(II) '
+                + ('образуется альдегид' if kind == 'первичным' else 'образуется кетон'),
+                r, 'напишите уравнение реакции вещества А с натрием', ('O', 1)) if kind != 'третичным' else None
+    if h == 'предельные альдегиды':
+        r = _rx(f, 'Ag2O')
+        return ('При нагревании вещества А с аммиачным раствором оксида серебра на стенках пробирки образуется '
+                'серебряный налёт', r,
+                'напишите уравнение реакции вещества А с аммиачным раствором оксида серебра', ('O', 1))
+    if h == 'кетоны':
+        r = _rx(f, 'H2')
+        return ('Вещество А не окисляется аммиачным раствором оксида серебра, а его каталитическое гидрирование '
+                'приводит к вторичному спирту', r,
+                'напишите уравнение реакции гидрирования вещества А', ('O', 1))
+    if h == 'предельные одноосновные карбоновые кислоты':
+        r = _rx(f, 'NaHCO3')
+        return ('Известно, что вещество А реагирует с гидрокарбонатом натрия с выделением газа', r,
+                'напишите уравнение реакции вещества А с гидрокарбонатом натрия', ('O', 2))
+    if h == 'предельные амины':
+        r = _rx(f, 'HCl')
+        return (f'Известно, что вещество А является {_amine_kind(f)} амином', r,
+                'напишите уравнение реакции вещества А с хлороводородом', ('N', 1))
+    if h == 'аминокислоты':
+        r = _rx(f, 'NaOH')
+        return ('Известно, что вещество А реагирует и с соляной кислотой, и с раствором гидроксида натрия', r,
+                'напишите уравнение реакции вещества А с раствором гидроксида натрия', ('N', 1))
+    return None
+
+
+C33 = [f for f in ORG if f in SMI and parse_formula(f).get('C', 0) <= 8 and _clue(f) and _clue(f)[1]]
+
+
+def _solve_comb(p):
+    nC = Fr(p['V_CO2']) / Fr(224, 10) if p.get('V_CO2') else Fr(p['m_CO2']) / 44
+    nH = Fr(p['m_H2O']) / 18 * 2
+    nN = Fr(p.get('V_N2') or 0) / Fr(224, 10) * 2
+    mO = Fr(p['m']) - 12 * nC - nH - 14 * nN
+    moles = {'C': nC, 'H': nH, 'N': nN, 'O': mO / 16}
+    moles = {e: v for e, v in moles.items() if v > Fr(1, 10 ** 6)}
+    f = _ratio_to_formula(moles, anchor=tuple(p['anchor']) if p.get('anchor') else None, M=p.get('M'))
+    return str(p['opts'].index(f) + 1)
+
+
+@proto('ch-ege-33-combustion', 'ЕГЭ', 33, 'Формула вещества по продуктам сгорания (CO₂, H₂O, N₂) и свойствам',
+       invariant='n(C) = n(CO₂), n(H) = 2n(H₂O), n(N) = 2n(N₂), m(O) — по разности; простейшая формула → молекулярная '
+                 'по свойствам (число атомов O/N в функциональной группе)',
+       varies='вещество (≈ 60: эфиры, спирты, альдегиды, кетоны, кислоты, амины, аминокислоты), масса пробы, способ '
+              'задания CO₂ (объём или масса)',
+       answer_rule='вычислить мольное отношение элементов, учесть кислород по разности, привести к формуле с нужным '
+                   'числом функциональных групп',
+       mistakes=['забыт кислород (по разности масс)', 'n(H) = n(H₂O) вместо 2n(H₂O)',
+                 'простейшая формула принята за молекулярную (сложный эфир C₂H₄O → C₄H₈O₂)'],
+       solve=_solve_comb, kind='param', kes=KES33,
+       fidelity=FID33('банк №33 (5.8): «При сжигании образца органического вещества массой 8,76 г получено 8,064 л CO₂ и '
+                      '5,4 г воды… подвергается гидролизу…», масса пробы 1–45 г, объёмы с тремя знаками',
+                      'кислород по разности, простейшая ≠ молекулярная формула'))
+def g33_comb(rng):
+    f = rng.choice(C33)
+    clue, r, eq_task, anchor = _clue(f)
+    a = parse_formula(f)
+    M = molar(f)
+    n = rng.choice(NICE_N)
+    m = n * M
+    use_mass = rng.random() < 0.35
+    V = n * a['C'] * Fr(224, 10)
+    mH = n * a['H'] * 9
+    tpl = rng.randrange(3)
+    co2 = (f'{dec(n * a["C"] * 44)} г углекислого газа' if use_mass else
+           f'{dec(V)} л (н.у.) ' + rng.choice(['углекислого газа', 'оксида углерода(IV)']))
+    p = {'m': str(m), 'm_H2O': str(mH), 'anchor': list(anchor)}
+    if use_mass:
+        p['m_CO2'] = str(n * a['C'] * 44)
+    else:
+        p['V_CO2'] = str(V)
+    items = [co2, f'{dec(mH)} г воды']
+    if a.get('N'):
+        VN = n * a['N'] * Fr(112, 10)
+        items.append(f'{dec(VN)} л (н.у.) азота')
+        p['V_N2'] = str(VN)
+    if tpl == 1:
+        items = items[1:] + items[:1]
+    lst = ', '.join(items[:-1]) + ' и ' + items[-1]
+    head = [f'Для установления состава вещества А навеску массой {dec(m)} г сожгли в избытке кислорода; получено {lst}.',
+            f'Навеску органического вещества А массой {dec(m)} г полностью сожгли, продукты сгорания — {lst}.',
+            f'Полное сжигание {dec(m)} г органического вещества А дало {lst}.'][tpl]
+    parts = [head]
+    if cls_fine(f) == 'амины':
+        k = _amine_kind(f)
+        clue = rng.choice([clue, {'первичным': 'В молекуле вещества А атом азота связан с одним атомом углерода',
+                                  'вторичным': 'В молекуле вещества А атом азота связан с двумя атомами углерода',
+                                  'третичным': 'В молекуле вещества А атом азота связан с тремя атомами углерода'}[k]])
+    clue = clue.replace('Известно, что вещество А', rng.choice(['Известно, что вещество А', 'Установлено, что это вещество',
+                                                                'Опытным путём установлено, что вещество А']))
+    q = ''.join(parts) + f' {clue}.\n' + TAIL33.format(eq_task=eq_task) + TRAINER33
+    opts_raw, opts_txt = _formula_opts(rng, a)
+    p['opts'] = opts_raw
+    ans = str(opts_raw.index(hill(a)) + 1)
+    nC, nH = n * a['C'], n * a['H']
+    e = (f'n(C) = n(CO₂) = {fmt(nC)} моль; n(H) = 2n(H₂O) = {fmt(nH)} моль'
+         + (f'; n(N) = 2n(N₂) = {fmt(n * a["N"])} моль' if a.get('N') else '')
+         + (f'; m(O) = {dec(m)} − {fmt(12 * nC)} − {fmt(nH)}' + (f' − {fmt(14 * n * a["N"])}' if a.get('N') else '')
+            + f' = {fmt(16 * n * a["O"])} г, n(O) = {fmt(n * a["O"])} моль' if a.get('O') else '')
+         + f'. Отношение C : H' + (' : N' if a.get('N') else '') + (' : O' if a.get('O') else '') + ' = '
+         + ' : '.join(str(a[x]) for x in ('C', 'H', 'N', 'O') if a.get(x))
+         + f' → {pretty(hill(a))} ({nm(f)}, {vw(f)}). Уравнение: {rx_eq(r)}.')
+    return pcard('ch-ege-33-combustion', q, ans, e, k='one', o=opts(opts_txt), p=p, eq=eqt(r))
+
+
+def _solve_mf(p):
+    moles = {e: Fr(p['w'][e]) / AR[e] for e in p['w']}
+    if p.get('rest'):
+        moles[p['rest']] = (100 - sum(Fr(v) for v in p['w'].values())) / AR[p['rest']]
+    f = _ratio_to_formula({e: float(v) for e, v in moles.items()}, anchor=tuple(p['anchor']))
+    return str(p['opts'].index(f) + 1)
+
+
+MF33 = [f for f in ORG if f in SMI and SUB[f]['cls'] in ('соль карбоновой кислоты', 'соль амина', 'сложный эфир',
+                                                             'аминокислота', 'галогенпроизводное', 'карбоновая кислота')
+        and parse_formula(f).get('C', 0) <= 8 and len(parse_formula(f)) >= 3
+        and set(parse_formula(f)) <= {'C', 'H', 'O', 'N', 'Na', 'K', 'Ca', 'Cl', 'Br', 'Mg', 'Cu'}]
+
+
+def _mf_clue(f):
+    s = SUB[f]
+    a = parse_formula(f)
+    for el, txt in (('Ca', 'Вещество А — кальциевая соль карбоновой кислоты'), ('Mg', 'Вещество А — магниевая соль '
+                                                                                    'карбоновой кислоты'),
+                    ('Cu', 'Вещество А — соль меди(II) и карбоновой кислоты')):
+        if el in a:
+            return txt, (el, 1)
+    if s['cls'] == 'соль карбоновой кислоты':
+        el = 'Na' if 'Na' in a else 'K'
+        if s['hom'] == 'соли карбоновых кислот' and a.get(el) == 1:
+            return (f'Известно, что вещество А — {"натриевая" if el == "Na" else "калиевая"} соль одноосновной карбоновой '
+                    f'кислоты'), (el, 1)
+        return None
+    if s['cls'] == 'соль амина':
+        el = 'Cl' if 'Cl' in a else ('Br' if 'Br' in a else None)
+        if not el or a.get('N') != 1:
+            return None
+        return 'Известно, что вещество А образуется при взаимодействии амина с галогеноводородом', ('N', 1)
+    if s['cls'] == 'галогенпроизводное':
+        el = 'Cl' if 'Cl' in a else 'Br'
+        k = a.get(el, 0)
+        if k == 1:
+            return 'Известно, что вещество А образуется при монохлорировании (монобромировании) углеводорода', (el, 1)
+        if k == 2 and SUB[f]['hom'] == 'галогеналканы':
+            return 'Известно, что вещество А образуется при присоединении галогена к алкену', (el, 2)
+        return None
+    if s['cls'] == 'аминокислота':
+        return 'Известно, что вещество А проявляет амфотерные свойства', ('N', 1)
+    if s['cls'] == 'сложный эфир' and 'N' not in a:
+        return 'Известно, что вещество А подвергается щелочному гидролизу с образованием соли и спирта', ('O', 2)
+    if s['cls'] == 'карбоновая кислота' and a.get('O') == 2 and SUB[f]['hom'] in (
+            'предельные одноосновные карбоновые кислоты', 'галогенкарбоновые кислоты'):
+        return 'Известно, что вещество А — одноосновная карбоновая кислота', ('O', 2)
+    return None
+
+
+MF33 = [f for f in MF33 if _mf_clue(f)]
+
+
+@proto('ch-ege-33-mass-fractions', 'ЕГЭ', 33, 'Формула вещества по массовым долям элементов',
+       invariant='n(Э) = ω(Э)/Ar(Э) → простейшее отношение → молекулярная формула по числу атомов металла, азота, '
+                 'галогена или кислорода, следующему из свойств',
+       varies='вещество (соли карбоновых кислот, соли аминов, галогенпроизводные, эфиры, аминокислоты), какие массовые '
+              'доли даны (все или «остальное — водород»)',
+       answer_rule='разделить массовые доли на Ar, привести к целым, масштабировать по «якорному» элементу',
+       mistakes=['округление отношения до целых слишком рано', 'не учтён элемент «остальное»', 'Ar(Cl) = 35,5'],
+       solve=_solve_mf, kind='param', kes=KES33,
+       fidelity=FID33('банк №33: «Соль органической кислоты содержит 5,05% H, 42,42% C, 32,32% O и 20,21% Ca», «вещество '
+                      'содержит 12,79% N, 10,95% H и 32,42% Cl» — массовые доли с двумя знаками',
+                      'водород «остальное», масштабирование по металлу/азоту'))
+def g33_mf(rng):
+    f = rng.choice(MF33)
+    clue, anchor = _mf_clue(f)
+    a = parse_formula(f)
+    M = molar(f)
+    w = {e: round(Fr(AR[e] * n * 100) / M, 2) for e, n in a.items()}
+    rest = rng.choice([None, 'H']) if 'H' in a else None
+    shown = {e: v for e, v in w.items() if e != rest}
+    names_el = {'C': 'углерода', 'H': 'водорода', 'O': 'кислорода', 'N': 'азота', 'Na': 'натрия', 'K': 'калия',
+                'Ca': 'кальция', 'Cl': 'хлора', 'Br': 'брома', 'Mg': 'магния', 'Cu': 'меди'}
+    order = [e for e in ('C', 'H', 'N', 'O', 'Cl', 'Br', 'Na', 'K', 'Ca', 'Mg', 'Cu') if e in shown]
+    ws = ', '.join(f'{fmt(shown[e])} % {names_el[e]}' for e in order)
+    q = (f'Органическое вещество А содержит по массе {ws}' + (', остальное — водород.' if rest else '.')
+         + f' {clue}.\n' + TAIL33.format(eq_task='напишите уравнение реакции получения вещества А')
+         + TRAINER33)
+    opts_raw, opts_txt = _formula_opts(rng, a)
+    p = {'w': {e: str(v) for e, v in shown.items()}, 'rest': rest, 'anchor': list(anchor), 'opts': opts_raw}
+    ans = str(opts_raw.index(hill(a)) + 1)
+    rr = next((r for r in RX if r['rhs'][0] == f and 'горения' not in r['type']), None)
+    e = ('Мольное отношение: ' + ' : '.join(f'{e} = {fmt(Fr(w[e]) / AR[e], 4)}' for e in order)
+         + (f' (водород — по разности: {fmt(100 - sum(shown.values()))} %)' if rest else '')
+         + f'; с учётом того, что {anchor[0]} в молекуле {anchor[1]}, получаем {pretty(hill(a))} — {nm(f)} ({vw(f)}).'
+         + (f' Получение: {rx_eq(rr)}.' if rr else ''))
+    return pcard('ch-ege-33-mass-fractions', q, ans, e, k='one', o=opts(opts_txt), p=p, eq=eqt(rr) if rr else None)
+
+
+SALT_R = {'H': ('формиат', 'HCHO', 'метаналь'), 'CH3': ('ацетат', 'CH3COCH3', 'пропанон'),
+          'C2H5': ('пропионат', '(C2H5)2CO', 'пентанон-3'), 'C3H7': ('бутират', '(C3H7)2CO', 'гептанон-4')}
+
+
+def _solve_salt(p):
+    moles = {e: Fr(v) / AR[e] for e, v in p['w'].items()}
+    f = _ratio_to_formula({e: float(v) for e, v in moles.items()}, anchor=(p['metal'], 1))
+    return str(p['opts'].index(f) + 1)
+
+
+@proto('ch-ege-33-salt-carbonyl', 'ЕГЭ', 33, 'Соль карбоновой кислоты (Ca, Ba) → при нагревании карбонильное соединение',
+       invariant='по массовым долям найти соль (RCOO)₂M; при её пиролизе образуются карбонат металла и кетон R₂CO '
+                 '(из формиата — метаналь)',
+       varies='радикал (H, CH₃, C₂H₅, C₃H₇), металл (Ca, Ba), какие доли даны',
+       answer_rule='n(Э) = ω/Ar, приведение к одному атому металла; кетон — из двух радикалов соли',
+       mistakes=['формула соли записана как RCOOM (забыт второй остаток)', 'продукт пиролиза — альдегид вместо кетона'],
+       solve=_solve_salt, kind='param', kes=KES33,
+       fidelity=FID33('банк №33: «Соль органической кислоты содержит 28,48% C, 3,39% H, 21,69% O и 46,44% Ba… при '
+                      'нагревании образуется карбонильное соединение»', 'двухвалентный металл — два кислотных остатка'))
+def g33_salt(rng):
+    R = rng.choice(list(SALT_R))
+    metal = rng.choice(['Ca', 'Ba'])
+    salt = f'({R}COO)2{metal}'
+    a = parse_formula(salt)
+    M = molar(salt)
+    w = {e: round(Fr(AR[e] * n * 100) / M, 2) for e, n in a.items()}
+    names_el = {'C': 'углерода', 'H': 'водорода', 'O': 'кислорода', 'Ca': 'кальция', 'Ba': 'бария'}
+    order = rng.sample(list(w), len(w))
+    ws = ', '.join(f'{fmt(w[e])} % {names_el[e]}' for e in order)
+    acid, ket, ketn = SALT_R[R]
+    q = (f'Соль органической кислоты содержит по массе {ws}. Известно, что при нагревании этой соли образуется '
+         f'карбонильное соединение.\n'
+         + TAIL33.format(eq_task='напишите уравнение реакции разложения этой соли при нагревании') + TRAINER33)
+    opts_raw, opts_txt = _formula_opts(rng, a)
+    eq = balance([salt], [ket, metal + 'CO3'])
+    e = (f'Отношение атомов: ' + ', '.join(f'{x}: {fmt(Fr(w[x]) / AR[x], 4)}' for x in order)
+         + f'; на один атом {metal} — формула {pretty(hill(a))}, т. е. {pretty(salt)} ({acid} '
+           f'{"кальция" if metal == "Ca" else "бария"}). При нагревании: '
+         + pretty(eq_str([salt], [ket, metal + 'CO3'], *eq)) + f' ({ketn}).')
+    return pcard('ch-ege-33-salt-carbonyl', q, str(opts_raw.index(hill(a)) + 1), e, k='one', o=opts(opts_txt),
+                 p={'w': {k: str(v) for k, v in w.items()}, 'metal': metal, 'opts': opts_raw},
+                 eq=([salt], [ket, metal + 'CO3'], eq[0], eq[1]))
+
+
+CARB33 = [f for f in ORG if f in SMI and SUB[f]['cls'] in ('соль карбоновой кислоты', 'фенолят', 'алкоголят',
+                                                               'соль аминокислоты')
+          and set(parse_formula(f)) <= {'C', 'H', 'O', 'N', 'Na', 'K'} and parse_formula(f).get('C', 0) <= 8
+          and parse_formula(f).get('Na', parse_formula(f).get('K', 0)) == 1]
+
+
+def _solve_carb(p):
+    M_ = p['metal']
+    n_m = 2 * Fr(p['m_carb']) / (2 * AR[M_] + 60)
+    nC = Fr(p['V_CO2']) / Fr(224, 10) + n_m / 2
+    nH = 2 * Fr(p['m_H2O']) / 18
+    nN = 2 * Fr(p.get('V_N2') or 0) / Fr(224, 10)
+    mO = Fr(p['m']) - 12 * nC - nH - 14 * nN - AR[M_] * n_m
+    moles = {'C': nC, 'H': nH, 'N': nN, 'O': mO / 16, M_: n_m}
+    moles = {e: float(v) for e, v in moles.items() if v > Fr(1, 10 ** 6)}
+    return str(p['opts'].index(_ratio_to_formula(moles, anchor=(M_, 1))) + 1)
+
+
+@proto('ch-ege-33-combustion-carbonate', 'ЕГЭ', 33, 'Формула соли (фенолята, алкоголята) по продуктам сгорания с карбонатом',
+       invariant='при сгорании натриевой (калиевой) соли металл уходит в карбонат: n(C) = n(CO₂) + n(Na₂CO₃), '
+                 'n(Na) = 2n(Na₂CO₃)',
+       varies='вещество (соли карбоновых кислот, феноляты, алкоголяты, соли аминокислот), масса пробы',
+       answer_rule='учесть углерод карбоната, кислород — по разности масс, привести к одному атому металла',
+       mistakes=['забыт углерод в карбонате натрия', 'кислород по разности без учёта массы натрия'],
+       solve=_solve_carb, kind='param', kes=KES33,
+       fidelity=FID33('банк №33: «При сгорании 10,8 г вещества А получили 7,84 л CO₂, 5,3 г карбоната натрия и 4,5 г '
+                      'воды»', 'углерод карбоната'))
+def g33_carb(rng):
+    f = rng.choice(CARB33)
+    a = parse_formula(f)
+    M_ = 'Na' if 'Na' in a else 'K'
+    n = rng.choice(NICE_N)
+    m = n * molar(f)
+    n_carb = n * a[M_] / 2
+    m_carb = n_carb * (2 * AR[M_] + 60)
+    V = (n * a['C'] - n_carb) * Fr(224, 10)
+    mH = n * a['H'] * 9
+    if V <= 0:
+        raise Retry
+    carb = 'карбоната натрия' if M_ == 'Na' else 'карбоната калия'
+    txt = (f'В результате полного сгорания {dec(m)} г органического вещества А образовалось {dec(m_carb)} г {carb}, '
+           f'{dec(V)} л (н.у.) углекислого газа')
+    p = {'m': str(m), 'V_CO2': str(V), 'm_carb': str(m_carb), 'm_H2O': str(mH), 'metal': M_}
+    if a.get('N'):
+        VN = n * a['N'] * Fr(112, 10)
+        txt += f', {dec(VN)} л (н.у.) азота'
+        p['V_N2'] = str(VN)
+    txt += f' и {dec(mH)} г воды.'
+    s = SUB[f]
+    clue = {'соль карбоновой кислоты': 'Вещество А образуется при действии раствора щёлочи на карбоновую кислоту',
+            'фенолят': 'Вещество А образуется при действии щёлочи на соединение ароматического ряда',
+            'алкоголят': 'Вещество А образуется при взаимодействии спирта с щелочным металлом',
+            'соль аминокислоты': 'Вещество А образуется при действии щёлочи на аминокислоту'}[s['cls']]
+    rr = next((r for r in RX if r['rhs'][0] == f and 'горения' not in r['type']), None)
+    if not rr:
+        raise Retry
+    q = txt + f' {clue}.\n' + TAIL33.format(eq_task='напишите уравнение реакции получения вещества А') + TRAINER33
+    opts_raw, opts_txt = _formula_opts(rng, a)
+    p['opts'] = opts_raw
+    e = (f'n({M_}₂CO₃) = {fmt(n_carb)} моль → n({M_}) = {fmt(2 * n_carb)} моль; n(C) = n(CO₂) + n({M_}₂CO₃) = '
+         f'{fmt(n * a["C"])} моль; n(H) = {fmt(n * a["H"])} моль; кислород — по разности. Формула '
+         f'{pretty(hill(a))} — {nm(f)} ({vw(f)}). Получение: {rx_eq(rr)}.')
+    return pcard('ch-ege-33-combustion-carbonate', q, str(opts_raw.index(hill(a)) + 1), e, k='one', o=opts(opts_txt),
+                 p=p, eq=eqt(rr))
+
+
+REACT33 = {  # класс: (реагент в тексте, газ/осадок, мольное отношение вещество : продукт, общая формула n→формула)
+    'alc': ('с избытком натрия', 'водорода', Fr(2), lambda k: f'C{k}H{2 * k + 2}O'),
+    'acid': ('с избытком раствора гидрокарбоната натрия', 'углекислого газа', Fr(1), lambda k: f'C{k}H{2 * k}O2'),
+    'ald': ('с избытком аммиачного раствора оксида серебра', 'серебра', Fr(1, 2), lambda k: f'C{k}H{2 * k}O'),
+    'alkene': ('с бромной водой', 'брома', Fr(1), lambda k: f'C{k}H{2 * k}'),
+    'amine': ('с хлороводородом', 'хлороводорода', Fr(1), lambda k: f'C{k}H{2 * k + 3}N'),
+}
+R33_POOL = {
+    'alc': [f for f in ORG if SUB[f]['hom'] == 'предельные одноатомные спирты' and _rx(f, 'Na')],
+    'acid': [f for f in ORG if SUB[f]['hom'] == 'предельные одноосновные карбоновые кислоты' and _rx(f, 'NaHCO3')],
+    'ald': [f for f in ORG if SUB[f]['hom'] == 'предельные альдегиды' and f != 'HCHO' and _rx(f, 'Ag2O')],
+    'alkene': [f for f in ORG if SUB[f]['hom'] == 'алкены' and _rx(f, 'Br2')],
+    'amine': [f for f in ORG if SUB[f]['hom'] == 'предельные амины' and _rx(f, 'HCl')],
+}
+
+
+def _solve_react(p):
+    cls = p['cls']
+    m = Fr(p['m'])
+    if cls == 'alc':
+        n = 2 * Fr(p['x']) / Fr(224, 10)
+    elif cls == 'acid':
+        n = Fr(p['x']) / Fr(224, 10)
+    elif cls == 'ald':
+        n = Fr(p['x']) / 108 / 2
+    elif cls == 'alkene':
+        n = Fr(p['x']) / 160
+    else:
+        n = Fr(p['x']) / Fr(73, 2)
+    M = m / n
+    for k in range(1, 20):
+        f = REACT33[cls][3](k)
+        if molar(f) == M:
+            return str(p['opts'].index(hill(parse_formula(f))) + 1)
+    return None
+
+
+@proto('ch-ege-33-by-reaction', 'ЕГЭ', 33, 'Формула вещества по уравнению реакции (масса вещества и продукта/реагента)',
+       invariant='по количеству газа (осадка, реагента) найти n(вещества), затем M и число атомов C из общей формулы класса',
+       varies='класс (спирт + Na, кислота + NaHCO₃, альдегид + Ag₂O, алкен + Br₂, амин + HCl), вещество, масса пробы',
+       answer_rule='n(A) из стехиометрии → M(A) = m/n → n из общей формулы CₙH₂ₙ₊ₖ…',
+       mistakes=['для спирта n(H₂) = n(спирта)/2', 'для альдегида n(Ag) = 2n(альдегида)',
+                 'в амине не учтён атом азота в общей формуле'],
+       solve=_solve_react, kind='param', kes=KES33,
+       fidelity=FID33('банк №33 и классические задачи 5.8: масса вещества + объём газа (н.у.) / масса осадка',
+                      'мольное соотношение в уравнении (H₂ : спирт = 1 : 2, Ag : альдегид = 2 : 1)'))
+def g33_react(rng):
+    cls = rng.choice(list(REACT33))
+    f = rng.choice(R33_POOL[cls])
+    a = parse_formula(f)
+    M = molar(f)
+    n = rng.choice(NICE_N)
+    m = n * M
+    rtxt, ptxt, ratio, _ = REACT33[cls]
+    if cls == 'alc':
+        x = n / 2 * Fr(224, 10)
+        data = f'выделилось {dec(x)} л (н.у.) {ptxt}'
+        r = _rx(f, 'Na')
+    elif cls == 'acid':
+        x = n * Fr(224, 10)
+        data = f'выделилось {dec(x)} л (н.у.) {ptxt}'
+        r = _rx(f, 'NaHCO3')
+    elif cls == 'ald':
+        x = n * 2 * 108
+        data = f'выделилось {dec(x)} г {ptxt}'
+        r = _rx(f, 'Ag2O')
+    elif cls == 'alkene':
+        x = n * 160
+        data = f'прореагировало {dec(x)} г {ptxt}'
+        r = _rx(f, 'Br2')
+    else:
+        x = n * Fr(73, 2)
+        data = f'прореагировало {dec(x)} г {ptxt}'
+        r = _rx(f, 'HCl')
+    cname = {'alc': 'предельного одноатомного спирта', 'acid': 'предельной одноосновной карбоновой кислоты',
+             'ald': 'предельного альдегида', 'alkene': 'алкена', 'amine': 'предельного амина'}[cls]
+    q = (f'При взаимодействии {dec(m)} г {cname} А {rtxt} {data}.\n'
+         + TAIL33.format(eq_task='напишите уравнение этой реакции') + TRAINER33)
+    opts_raw, opts_txt = _formula_opts(rng, a)
+    e = (f'n(А) = {fmt(n)} моль (по уравнению {rx_eq(r)}); M(А) = {dec(m)} / {fmt(n)} = {fmt(M)} г/моль → '
+         f'{pretty(hill(a))} ({nm(f)}, {vw(f)}).')
+    return pcard('ch-ege-33-by-reaction', q, str(opts_raw.index(hill(a)) + 1), e, k='one', o=opts(opts_txt),
+                 p={'cls': cls, 'm': str(m), 'x': str(x), 'opts': opts_raw}, eq=eqt(r))
+
+
+HAL33 = [f for f in ORG if f in SMI and SUB[f]['cls'] in ('галогенпроизводное', 'соль амина')
+         and set(parse_formula(f)) <= {'C', 'H', 'N', 'Cl', 'Br', 'O'} and parse_formula(f).get('C', 0) <= 8
+         and (parse_formula(f).get('Cl', 0) + parse_formula(f).get('Br', 0)) in (1, 2)]
+
+
+def _solve_hal(p):
+    X = p['X']
+    nC = Fr(p['V_CO2']) / Fr(224, 10)
+    nX = Fr(p['n_HX_val']) if p.get('n_HX_val') else Fr(p['V_HX']) / Fr(224, 10)
+    nH = 2 * Fr(p['m_H2O']) / 18 + nX
+    nN = 2 * Fr(p.get('V_N2') or 0) / Fr(224, 10)
+    mO = Fr(p['m']) - 12 * nC - nH - 14 * nN - AR[X] * nX
+    moles = {'C': nC, 'H': nH, 'N': nN, X: nX, 'O': mO / 16}
+    moles = {e: float(v) for e, v in moles.items() if v > Fr(1, 10 ** 5)}
+    return str(p['opts'].index(_ratio_to_formula(moles, anchor=(X, p['kX']))) + 1)
+
+
+@proto('ch-ege-33-combustion-halogen', 'ЕГЭ', 33, 'Формула галогенпроизводного (соли амина) по продуктам сгорания с HCl/HBr',
+       invariant='галоген уходит в HX: n(X) = n(HX), водород — в воде и в HX; n(H) = 2n(H₂O) + n(HX)',
+       varies='вещество (хлор- и бромалканы, дигалогениды, хлориды и бромиды аммониевых солей аминов), масса пробы',
+       answer_rule='учесть водород в галогеноводороде, число атомов галогена — из способа получения',
+       mistakes=['водород HCl не учтён', 'Ar(Cl) = 35,5', 'число атомов галогена не согласовано с реакцией получения'],
+       solve=_solve_hal, kind='param', kes=KES33,
+       fidelity=FID33('банк №33: «При сгорании 13,95 г вещества А получили 5,6 л CO₂ и 6,72 л HCl», «…2,43 г HBr, 90 мг '
+                      'воды и 112 мл азота»', 'водород галогеноводорода'))
+def g33_hal(rng):
+    f = rng.choice(HAL33)
+    a = parse_formula(f)
+    X = 'Cl' if 'Cl' in a else 'Br'
+    n = rng.choice(NICE_N)
+    m = n * molar(f)
+    nX = n * a[X]
+    nH2O = (n * a['H'] - nX) / 2
+    if nH2O <= 0:
+        raise Retry
+    V = n * a['C'] * Fr(224, 10)
+    txt = f'Образец органического вещества А массой {dec(m)} г сожгли в избытке кислорода; получено {dec(V)} л (н.у.) CO₂, '
+    p = {'m': str(m), 'V_CO2': str(V), 'm_H2O': str(nH2O * 18), 'X': X, 'kX': a[X]}
+    if rng.random() < 0.5:
+        txt += f'{dec(nX * Fr(224, 10))} л (н.у.) {"хлороводорода" if X == "Cl" else "бромоводорода"}'
+        p['V_HX'] = str(nX * Fr(224, 10))
+    else:
+        mx = nX * (AR[X] + 1)
+        txt += f'{dec(mx)} г {"хлороводорода" if X == "Cl" else "бромоводорода"}'
+        p['n_HX_val'] = str(nX)
+    if a.get('N'):
+        VN = n * a['N'] * Fr(112, 10)
+        txt += f', {dec(VN)} л (н.у.) азота'
+        p['V_N2'] = str(VN)
+    txt += f' и {dec(nH2O * 18)} г воды.'
+    rr = next((r for r in RX if r['rhs'][0] == f and 'горения' not in r['type']), None)
+    if not rr:
+        raise Retry
+    how = {'галогенпроизводное': 'Вещество А образуется при взаимодействии углеводорода с '
+                                 + ('хлором' if X == 'Cl' else 'бромом') + (' или галогеноводородом' if a[X] == 1 else ''),
+           'соль амина': 'Вещество А образуется при взаимодействии амина с ' + ('хлороводородом' if X == 'Cl' else
+                                                                                 'бромоводородом')}[SUB[f]['cls']]
+    if SUB[f]['cls'] == 'соль амина' and rr['lhs'][1:2] not in (['HCl'], ['HBr']):
+        how = f'Вещество А образуется при взаимодействии амина с {"хлор" if X == "Cl" else "бром"}алканом'
+    if a[X] == 2:
+        how += '; в молекуле два атома галогена'
+    q = txt + f' {how}.\n' + TAIL33.format(eq_task='напишите уравнение реакции получения вещества А') + TRAINER33
+    opts_raw, opts_txt = _formula_opts(rng, a)
+    p['opts'] = opts_raw
+    e = (f'n(C) = {fmt(n * a["C"])} моль; n({X}) = n(H{X}) = {fmt(nX)} моль; n(H) = 2n(H₂O) + n(H{X}) = '
+         f'{fmt(n * a["H"])} моль' + (f'; n(N) = {fmt(n * a["N"])} моль' if a.get('N') else '')
+         + f' → {pretty(hill(a))} — {nm(f)} ({vw(f)}). Получение: {rx_eq(rr)}.')
+    return pcard('ch-ege-33-combustion-halogen', q, str(opts_raw.index(hill(a)) + 1), e, k='one', o=opts(opts_txt),
+                 p=p, eq=eqt(rr))
+
+
+recipe('ch-ege-33-full-answer', 'ЕГЭ', 33, 'Установление формулы — полный развёрнутый ответ (формула, структура, уравнение)',
+       invariant='три элемента ответа: вычисления и молекулярная формула; структурная формула, однозначно следующая из '
+                 'признаков; уравнение реакции со структурными формулами',
+       varies='условие — из генераторов ch-ege-33-* (числа и признаки согласованы с базой)',
+       answer_rule='по 1 баллу за каждый элемент (критерии ФИПИ)',
+       mistakes=['структура не соответствует признакам (первичный/вторичный спирт, положение групп)',
+                 'уравнение без коэффициентов'],
+       kind='llm', how='условие и эталон берутся из ch-ege-33-* (формула, структура, уравнение из базы); ИИ проверяет '
+                       'развёрнутый ответ ученика по трём критериям',
+       check='эталонная формула пересчитана solve(); структура и уравнение — из базы; оценивание ИИ по критериям',
+       capacity=3000, example={'q': 'При сгорании 6,6 г органического вещества А получили 6,72 л (н.у.) CO₂ и 5,4 г воды. '
+                                    'Известно, что при нагревании с раствором NaOH вещество образует соль карбоновой '
+                                    'кислоты и вторичный спирт. …',
+                               'a': 'C₅H₁₀O₂; CH₃–COO–CH(CH₃)₂; CH₃COOCH(CH₃)₂ + NaOH → CH₃COONa + (CH₃)₂CHOH',
+                               'e': 'n(C) = 0,3 моль, n(H) = 0,6 моль, m(O) = 2,4 г, n(O) = 0,15 моль; C : H : O = '
+                                    '2 : 4 : 1; эфир содержит 2 атома O → C₄H₈O₂ … (пример без проверки числами)'},
+       why='структурная формула и уравнение — развёрнутый ответ; автоматически проверяется только формула', kes=KES33,
+       fidelity=FID33('как у ch-ege-33-*', 'структура должна однозначно следовать из признаков'))

@@ -846,7 +846,7 @@ def g27_gasvol(rng):
     fl = 'израсходованного' if f in r['lhs'] else pp_sh('образовавш', gnd(f))
     given = f'{"израсходовали" if g in r["lhs"] else "получили"} {ru(V)} л {gen(g)}'
     given_p = f'{"израсходовано" if g in r["lhs"] else "получено"} {ru(V)} л {gen(g)}'
-    subj = what if all(x in ('O2', 'H2', 'Cl2') for x in r['lhs']) else f'{what} {gen(main[0])}'
+    subj = what if all(x in ('O2', 'H2', 'Cl2') for x in r['lhs']) or g == main[0] else f'{what} {gen(main[0])}'
     pickq = rng.choice if main[0] not in (f, g) else (lambda xs: xs[0])
     q = pickq([f'В процессе {subj} {given}. Рассчитайте объём {fl} {gen(f)} (л).',
                     f'Какой объём {gen(f)} (л) {"расходуется" if f in r["lhs"] else "образуется"} в процессе {subj}, '

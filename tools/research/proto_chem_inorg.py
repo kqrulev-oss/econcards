@@ -2269,7 +2269,7 @@ IONS19 = [  # (запись, элемент, ст. ок.)
     ('ClO₄⁻', 'Cl', 7), ('Br⁻', 'Br', -1), ('I⁻', 'I', -1), ('MnO₄⁻', 'Mn', 7), ('MnO₄²⁻', 'Mn', 6),
     ('Mn²⁺', 'Mn', 2), ('Cr₂O₇²⁻', 'Cr', 6), ('CrO₄²⁻', 'Cr', 6), ('Fe²⁺', 'Fe', 2), ('Cu²⁺', 'Cu', 2),
     ('Ag⁺', 'Ag', 1), ('H⁻', 'H', -1), ('H⁺', 'H', 1), ('Sn²⁺', 'Sn', 2), ('Cu⁺', 'Cu', 1), ('BrO₃⁻', 'Br', 5),
-    ('IO₃⁻', 'I', 5), ('S₂O₃²⁻', 'S', 2), ('Hg²⁺', 'Hg', 2), ('Zn²⁺', 'Zn', 2), ('Al³⁺', 'Al', 3),
+    ('IO₃⁻', 'I', 5), ('S₂O₃²⁻', 'S', 2), ('Hg²⁺', 'Hg', 2),
 ]
 _OX_RANGE = {'S': (-2, 6), 'N': (-3, 5), 'Cl': (-1, 7), 'Br': (-1, 7), 'I': (-1, 7), 'Mn': (0, 7), 'Cr': (0, 6),
              'Fe': (0, 3), 'Cu': (0, 2), 'Ag': (0, 1), 'H': (-1, 1), 'Sn': (0, 4), 'Hg': (0, 2), 'Zn': (0, 2),
@@ -2640,3 +2640,396 @@ def g_20el(rng):
     e = '; '.join(f'{F(f)} — {F(p)}' for f, p in zip(items, prods)) + '.'
     return card(pid, q, ans, e, k='match', o=match_opts([F(f) for f in items], [F(x) for x in opts_]),
                 p={'items': items, 'opts': opts_, 'el': el})
+
+
+# ================================================================= ионные уравнения
+
+def _ion_label(formula, charge):
+    q = abs(charge)
+    sign = '+' if charge > 0 else '−'
+    sup = (str(q) if q > 1 else '').translate(SUP) + ('⁺' if charge > 0 else '⁻')
+    return pretty(formula) + sup
+
+
+STRONG_DISS = {'HCl': [('H', 1, 1), ('Cl', -1, 1)], 'HBr': [('H', 1, 1), ('Br', -1, 1)],
+               'HI': [('H', 1, 1), ('I', -1, 1)], 'HNO3': [('H', 1, 1), ('NO3', -1, 1)],
+               'H2SO4': [('H', 1, 2), ('SO4', -2, 1)], 'HClO4': [('H', 1, 1), ('ClO4', -1, 1)],
+               'NaOH': [('Na', 1, 1), ('OH', -1, 1)], 'KOH': [('K', 1, 1), ('OH', -1, 1)],
+               'LiOH': [('Li', 1, 1), ('OH', -1, 1)], 'Ba(OH)2': [('Ba', 2, 1), ('OH', -1, 2)],
+               'Ca(OH)2': [('Ca', 2, 1), ('OH', -1, 2)], 'Sr(OH)2': [('Sr', 2, 1), ('OH', -1, 2)],
+               'RbOH': [('Rb', 1, 1), ('OH', -1, 1)], 'CsOH': [('Cs', 1, 1), ('OH', -1, 1)]}
+
+
+def dissociate(f, form=None):
+    """Ионы сильного электролита в растворе: [(формула, заряд, число)] или None (записывается молекулой)."""
+    if form == 'конц.' or form == 'тв.':
+        return None
+    if f in STRONG_DISS:
+        return STRONG_DISS[f]
+    s = SUBS.get(f, {})
+    io = s.get('ion')
+    if not io or s.get('sol') != 'р' or s.get('cls') != 'соль':
+        return None
+    if io.get('cplx'):
+        if f.startswith('('):   # [Cu(NH3)4]SO4 — не используем
+            return None
+        m = re.match(r'([A-Z][a-z]?)(\d*)\((.+)\)(\d*)$', f)
+        if not m:
+            return None
+        cat, nc, an, na = m.group(1), int(m.group(2) or 1), m.group(3), int(m.group(4) or 1)
+        cq = {'Na': 1, 'K': 1, 'Ba': 2, 'Li': 1}[cat]
+        aq = -(cq * nc) // na
+        return [(cat, cq, nc), ('[' + an + ']', aq, na)]
+    ck, ak = io['cat'], io['an']
+    cf, cq = I.CAT[ck][0], I.CAT[ck][1]
+    af, aq = I.AN[ak][0], I.AN[ak][1]
+    nc, na = io['n']
+    if ak == 'HSO4':
+        return [(cf, cq, nc), ('H', 1, na), ('SO4', -2, na)]
+    return [(cf, cq, nc), (af, -aq, na)]
+
+
+def ionic(r):
+    """(полное, сокращённое) ионные уравнения: списки [(вид, коэф.)], вид = ('ion', формула, заряд) | ('mol', f)."""
+    if not r.get('aq'):
+        return None
+    kl, kr = r['k']
+    sides = []
+    for fs, ks in ((r['lhs'], kl), (r['rhs'], kr)):
+        c = Counter()
+        for f, k in zip(fs, ks):
+            d = dissociate(f, FORM_OF(r, f))
+            if d is None:
+                c[('mol', f, 0)] += k
+            else:
+                for fo, q, n in d:
+                    c[('ion', fo, q)] += k * n
+        sides.append(c)
+    full = [dict(sides[0]), dict(sides[1])]
+    L, Rr = Counter(sides[0]), Counter(sides[1])
+    for key in list(L):
+        if key in Rr:
+            m = min(L[key], Rr[key])
+            L[key] -= m
+            Rr[key] -= m
+    L = +L
+    Rr = +Rr
+    if not L or not Rr:
+        return None
+    g = 0
+    for v in list(L.values()) + list(Rr.values()):
+        g = math.gcd(g, v)
+    net = [{k: v // g for k, v in L.items()}, {k: v // g for k, v in Rr.items()}]
+    # проверка: атомы и заряд
+    for eqn in (full, net):
+        ch = [sum(k[2] * v for k, v in side.items()) for side in eqn]
+        if ch[0] != ch[1]:
+            return None
+        at = []
+        for side in eqn:
+            c = Counter()
+            for (kind, fo, q), v in side.items():
+                for e, n in parse_formula(fo.strip('[]')).items():
+                    c[e] += n * v
+            at.append(c)
+        if at[0] != at[1]:
+            return None
+    return full, net
+
+
+def ion_text(side_pair):
+    def t(side):
+        out = []
+        for (kind, fo, q), v in side.items():
+            name = _ion_label(fo, q) if kind == 'ion' else F(fo)
+            out.append((str(v) if v > 1 else '') + name)
+        return ' + '.join(out)
+    return t(side_pair[0]) + ' = ' + t(side_pair[1])
+
+
+def net_key(r):
+    x = ionic(r)
+    if not x:
+        return None
+    net = x[1]
+    return (frozenset(net[0].items()), frozenset(net[1].items()))
+
+
+# ================================================================= наблюдения (6, 24)
+
+_GEN_COLOR = {'белый': 'белого', 'чёрный': 'чёрного', 'голубой': 'голубого', 'бурый': 'бурого', 'жёлтый': 'жёлтого',
+              'светло-жёлтый': 'светло-жёлтого', 'серо-зелёный': 'серо-зелёного', 'синий': 'синего',
+              'кирпично-красный': 'кирпично-красного', 'зелёный': 'зелёного', 'тёмно-бурый': 'бурого',
+              'красный': 'красного', 'телесный': 'телесного', 'желтовато-белый': 'белого', 'бледно-розовый': 'розового'}
+_GAS_DESC = {'NO2': 'выделение бурого газа', 'H2S': 'выделение газа с запахом тухлых яиц',
+             'SO2': 'выделение газа с резким запахом', 'NH3': 'выделение газа с резким запахом',
+             'Cl2': 'выделение жёлто-зелёного газа', 'HCl': 'выделение газа с резким запахом'}
+
+
+_CLASSIC_PREC = {'AgCl', 'AgBr', 'AgI', 'Ag3PO4', 'BaSO4', 'BaCO3', 'CaCO3', 'CuS', 'PbS', 'FeS', 'ZnS', 'Ag2S',
+                 'Cu(OH)2', 'Fe(OH)3', 'Fe(OH)2', 'Al(OH)3', 'Zn(OH)2', 'Mg(OH)2', 'Cr(OH)3', 'H2SiO3', 'Ca3(PO4)2',
+                 'BaSO3', 'PbI2', 'BaCrO4', '(CuOH)2CO3', 'KFe(Fe(CN)6)', 'S', 'CaSO3', 'Ag2O', 'PbSO4',
+                 'Ba3(PO4)2', 'CaF2', 'Mn(OH)2', 'Ag2CO3', 'SrSO4', 'PbCrO4', 'Ag2CrO4', 'CuI', 'HgS', 'MgCO3',
+                 'Mg3(PO4)2', 'FeCO3', 'PbCO3', 'ZnCO3', 'AlPO4', 'FePO4', 'Cu3(PO4)2', 'Zn3(PO4)2', 'CaSiO3',
+                 'BaSiO3', 'MnS'}
+
+
+def _prec_color(f):
+    if f not in _CLASSIC_PREC:
+        return None
+    c = (SUBS[f].get('color') or 'белый').split(' (')[0].split(',')[0]
+    if f == 'MnS':
+        return 'телесного'
+    return _GEN_COLOR.get(c)
+
+
+def _obs_one(r, a, b):
+    lhs = set(r['lhs'])
+    prec = [x for x in r['rhs'] if x not in lhs and x != 'H2O' and SUBS.get(x, {}).get('sol') == 'н'
+            and SUBS[x]['cls'] != 'простое вещество' or x == 'S' and x not in lhs]
+    metal_dep = [x for x in r['rhs'] if x not in lhs and SUBS.get(x, {}).get('cls') == 'простое вещество' and
+                 SUBS[x].get('sub') == 'металл']
+    gases = [x for x in r['rhs'] if x in I.GASES and x not in lhs]
+    solid_in = [x for x in (a, b) if x != 'H2O' and (SUBS[x].get('sol') == 'н' or SUBS[x]['cls'] == 'простое вещество'
+                                                     and SUBS[x].get('sub') == 'металл') and x not in r['rhs']]
+    sign = r.get('sign', '')
+    out = []
+    if prec:
+        cols = {_prec_color(x) for x in prec}
+        if None in cols or len(cols) > 1:
+            return None
+        out.append(f'образование {cols.pop()} осадка')
+    if metal_dep:
+        return None
+    if gases:
+        g = gases[0]
+        if len(gases) > 1:
+            return None
+        out.append(_GAS_DESC.get(g, 'выделение газа без цвета и запаха' if g not in ('NH3', 'H2S', 'SO2', 'NO2')
+                   else 'выделение газа'))
+    if solid_in:
+        if not out or gases and not prec:
+            out.insert(0, 'растворение осадка' if SUBS[solid_in[0]]['cls'] != 'простое вещество'
+                       else 'растворение металла')
+        else:
+            return None
+    if not out:
+        if 'обесцвеч' in sign:
+            return 'обесцвечивание раствора'
+        for key in ('становится', 'окраск', 'окраш', 'буреет', 'желтеет', 'синего раствора'):
+            if key in sign:
+                return sign.split(',')[0].split(' (')[0]
+        return 'видимые признаки реакции отсутствуют'
+    return ' и '.join(out) if len(out) <= 2 else None
+
+
+def obs(a, la, b, lb):
+    """Наблюдение при сливании (добавлении) b к a в растворе: строка-признак или None (неясно)."""
+    v = reacts(a, la, b, lb)
+    if v is False:
+        return 'видимые признаки реакции отсутствуют'
+    if v is not True:
+        return None
+    rs = [r for r in pos_rx(a, la, b, lb) if r.get('aq') and 'сплавл' not in r.get('cond', '')]
+    if not rs:
+        return None
+    plain = [r for r in rs if not r.get('cond', '') or r.get('cond') in ('t', 'р-р')]
+    if len(plain) == 1 and len(rs) > 1 and not any('избыток' in r.get('cond', '') for r in rs):
+        rs = plain
+    conds = {r.get('cond', '') for r in rs}
+    if len(rs) == 2 and any('избыток' in c for c in conds) and any('недостаток' in c for c in conds):
+        lack = next(r for r in rs if 'недостаток' in r.get('cond', ''))
+        exc = next(r for r in rs if 'избыток' in r.get('cond', ''))
+        o1 = _obs_one(lack, a, b)
+        if o1 and o1.startswith('образование') and not any(SUBS.get(x, {}).get('sol') == 'н'
+                                                             for x in exc['rhs'] if x not in exc['lhs']):
+            return o1.replace(' осадка', ' осадка, растворяющегося в избытке реагента')
+        return None
+    if len(rs) != 1:
+        return None
+    return _obs_one(rs[0], a, b)
+
+
+# ================================================================= 24. Качественные реакции (неорганика)
+
+_OBS = {}
+
+
+def obs_c(a, la, b, lb):
+    k = (a, la, b, lb)
+    if k not in _OBS:
+        _OBS[k] = obs(a, la, b, lb)
+    return _OBS[k]
+
+
+U24 = [x for x in I.U if x in SUBS and x not in ('Au', 'Pt', 'Hg', 'N2', 'NO', 'N2O', 'CO', 'H2', 'O2', 'Si', 'C',
+                                                   'P', 'S', 'SiO2', 'MnO2')]
+
+
+def _lab24(f):
+    return {'HNO3': 'разб.', 'H2SO4': 'разб.'}.get(f, '')
+
+
+SIGN_PAIRS = []
+for _k, _rs in PAIR.items():
+    _k = list(_k)
+    if len(_k) != 2 or not all(x in U24 for x in _k):
+        continue
+    _a, _b = _k
+    _o = obs_c(_a, _lab24(_a), _b, _lab24(_b))
+    if _o and _o != 'видимые признаки реакции отсутствуют' or _o and 'нейтрализации' in _rs[0]['type']:
+        SIGN_PAIRS.append((_a, _b, _o))
+
+
+def _pair_txt(a, b):
+    def one(x):
+        lab = _lab24(x)
+        if not lab and SUBS[x].get('sol') == 'р' and SUBS[x]['cls'] in ('соль', 'основание', 'кислота') and \
+                x not in ('HCl', 'HBr', 'HI'):
+            lab = 'р-р'
+        return FL(x, lab)
+    return f'{one(a)} и {one(b)}'
+
+
+def _solve_24s(p):
+    ans = {}
+    for i, (a, b) in enumerate(p['pairs']):
+        # независимо: по продуктам реакции из базы (перебор всех реакций пары)
+        o = obs(a, _lab24(a), b, _lab24(b))
+        hits = [str(j + 1) for j, t in enumerate(p['opts']) if t == o]
+        if len(hits) != 1:
+            return {'err': a + b}
+        ans[LET[i]] = hits[0]
+    return ans
+
+
+@proto('ch-ege-24-signs', 'ЕГЭ', 24, 'Реагирующие вещества ↔ признак реакции (неорганика)',
+       invariant='по продуктам реакции определить видимый признак: осадок (его цвет), газ (цвет/запах), растворение '
+                 'осадка, изменение окраски или отсутствие видимых признаков',
+       varies='пары неорганических веществ: соли, кислоты, щёлочи, амфотерные гидроксиды, металлы',
+       answer_rule='каждой паре — признак протекающей реакции',
+       mistakes=['реакцию нейтрализации сопровождают «выделением газа»', 'забывают цвет осадка (Cu(OH)₂ — голубой, '
+                 'Fe(OH)₃ — бурый, AgI — жёлтый)', 'амфотерный гидроксид в избытке щёлочи растворяется'],
+       solve=_solve_24s, kind='dict', kes=['2.5'],
+       fidelity=FID(24, trap='похожие признаки (белый/жёлтый осадок, газ без запаха/с запахом), реакции без видимых '
+                             'признаков', scale='4 пары × 5 признаков — как задания банка «Установите соответствие между '
+                             'реагирующими веществами и признаком протекающей между ними реакции» (неорганическая '
+                             'часть)', kes=['2.5'], fmt_='четыре цифры под буквами А–Г'))
+def g_24s(rng):
+    pid = 'ch-ege-24-signs'
+    for _ in range(30):
+        picks = rng.sample(SIGN_PAIRS, 4)
+        if len({o for _, _, o in picks}) >= 3 and len({frozenset((a, b)) for a, b, _ in picks}) == 4:
+            break
+    else:
+        raise Retry
+    opts_ = list(dict.fromkeys(o for _, _, o in picks))
+    others = list(dict.fromkeys(o for _, _, o in SIGN_PAIRS if o not in opts_))
+    rng.shuffle(others)
+    while len(opts_) < 5 and others:
+        opts_.append(others.pop())
+    rng.shuffle(opts_)
+    pairs = [(a, b) if rng.random() < 0.5 else (b, a) for a, b, _ in picks]
+    ans = {LET[i]: str(opts_.index(o) + 1) for i, (_, _, o) in enumerate(picks)}
+    q = ('Установите соответствие между реагирующими веществами и признаком протекающей между ними реакции: к каждой '
+         'позиции, обозначенной буквой, подберите соответствующую позицию, обозначенную цифрой. Запишите в таблицу '
+         'выбранные цифры под соответствующими буквами.')
+    ex = []
+    for a, b in pairs:
+        r = pos_rx(a, _lab24(a), b, _lab24(b))
+        r = [x for x in r if x.get('aq')]
+        plain = [x for x in r if not x.get('cond')] or r
+        ex.append(eq_text(plain[0]['lhs'], plain[0]['rhs']))
+    e = '; '.join(f'{LET[i]}) {ex[i]} — {picks[i][2]}' for i in range(4)) + '.'
+    return card(pid, q, ans, e, k='match', o=match_opts([_pair_txt(a, b) for a, b in pairs], opts_),
+                p={'pairs': [list(x) for x in pairs], 'opts': opts_})
+
+
+R24 = ['KOH', 'NaOH', 'Ba(OH)2', 'AgNO3', 'BaCl2', 'Ba(NO3)2', 'HCl', 'H2SO4', 'HNO3', 'Na2CO3', 'K2CO3', 'NH3·H2O',
+       'CuSO4', 'FeCl3', 'Na2S', 'KI', 'Cl2', 'Zn', 'Cu', 'KNO3', 'NaCl', 'Na2SO4', 'CH3COONa', 'KCl', 'Na3PO4', 'CO2',
+       'Fe', 'Mg', 'Al', 'NaNO3', 'K3PO4', 'Pb(NO3)2', 'AlCl3', 'MgCl2']
+S24 = [x for x in U24 if SUBS[x]['cls'] in ('соль', 'кислота', 'основание') and SUBS[x].get('sol') == 'р'
+       or x in ('Zn', 'Fe', 'Cu', 'Mg', 'Al', 'Ag')]
+
+
+def _dist(a, b, r):
+    oa, ob = obs_c(a, _lab24(a), r, _lab24(r)), obs_c(b, _lab24(b), r, _lab24(r))
+    if oa is None or ob is None:
+        return None
+    return oa != ob
+
+
+def _share(a, b):
+    ia, ib = SUBS[a].get('ion') or {}, SUBS[b].get('ion') or {}
+    if ia and ib and (ia.get('cat') == ib.get('cat') or ia.get('an') == ib.get('an')):
+        return True
+    return SUBS[a]['cls'] == SUBS[b]['cls']
+
+
+def _solve_24d(p):
+    ans = {}
+    for i, (a, b) in enumerate(p['pairs']):
+        hits = []
+        for j, r in enumerate(p['reag']):
+            oa, ob = obs(a, _lab24(a), r, _lab24(r)), obs(b, _lab24(b), r, _lab24(r))
+            if oa is not None and ob is not None and oa != ob:
+                hits.append(str(j + 1))
+        if len(hits) != 1:
+            return {'err': a + b}
+        ans[LET[i]] = hits[0]
+    return ans
+
+
+@proto('ch-ege-24-distinguish', 'ЕГЭ', 24, 'Два вещества ↔ реактив, с помощью которого их можно различить (неорганика)',
+       invariant='для каждой пары найти реактив, дающий с веществами разные видимые признаки (осадок, газ, '
+                 'растворение, окраска)', varies='пары солей с общим катионом/анионом, кислоты, щёлочи, металлы; пять '
+                 'реактивов', answer_rule='каждой паре — реактив, который с одним веществом даёт признак, а с другим — '
+                                          'другой признак или не реагирует',
+       mistakes=['выбирают реактив, реагирующий с обоими веществами одинаково', 'не учитывают амфотерность '
+                 '(ZnCl₂/MgCl₂ и избыток щёлочи)', 'путают качественные реакции на анионы'],
+       solve=_solve_24d, kind='dict', kes=['2.5'],
+       fidelity=FID(24, trap='«ложный» реактив реагирует с обоими веществами одинаково или не реагирует ни с одним',
+                    scale='4 пары × 5 реактивов — как демоверсия 2027 (Zn и Fe, BaCl₂ и Ba(NO₃)₂, K₂SO₄ и MgSO₄, '
+                          'HBr и HNO₃)', kes=['2.5'], fmt_='четыре цифры под буквами А–Г'))
+def g_24d(rng):
+    pid = 'ch-ege-24-distinguish'
+    for _ in range(25):
+        reag = rng.sample(R24, 5)
+        cands = []
+        for _ in range(60):
+            a, b = rng.sample(S24, 2)
+            if not _share(a, b) or a in reag or b in reag:
+                continue
+            d = [_dist(a, b, r) for r in reag]
+            if None in d or sum(d) != 1:
+                continue
+            cands.append((a, b, d.index(True)))
+        uniq = {}
+        for a, b, j in cands:
+            uniq.setdefault(frozenset((a, b)), (a, b, j))
+        cands = list(uniq.values())
+        if len(cands) >= 4 and len({j for _, _, j in cands}) >= 3:
+            break
+    else:
+        raise Retry
+    rng.shuffle(cands)
+    chosen = []
+    for c in cands:
+        if len(chosen) < 4 and (sum(1 for x in chosen if x[2] == c[2]) < 2):
+            chosen.append(c)
+    if len(chosen) < 4:
+        raise Retry
+    ans = {LET[i]: str(j + 1) for i, (_, _, j) in enumerate(chosen)}
+    q = ('Установите соответствие между двумя веществами и реактивом, с помощью которого можно различить эти '
+         'вещества: к каждой позиции, обозначенной буквой, подберите соответствующую позицию, обозначенную цифрой. '
+         'Запишите в таблицу выбранные цифры под соответствующими буквами.')
+    lab = lambda x: FL(x, _lab24(x) or ('р-р' if SUBS[x].get('sol') == 'р' and SUBS[x]['cls'] != 'простое вещество'
+                                        else ''))
+    ex = []
+    for a, b, j in chosen:
+        r = reag[j]
+        ex.append(f'{F(a)} с {F(r)}: {obs_c(a, _lab24(a), r, _lab24(r))}; {F(b)}: {obs_c(b, _lab24(b), r, _lab24(r))}')
+    e = '; '.join(f'{LET[i]}) {x}' for i, x in enumerate(ex)) + '.'
+    return card(pid, q, ans, e, k='match', o=match_opts([f'{lab(a)} и {lab(b)}' for a, b, _ in chosen],
+                                                        [lab(r) for r in reag]),
+                p={'pairs': [[a, b] for a, b, _ in chosen], 'reag': reag})

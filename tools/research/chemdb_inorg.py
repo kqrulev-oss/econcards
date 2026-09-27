@@ -1180,6 +1180,8 @@ for alk, ack in [('NaOH', 'Na'), ('KOH', 'K'), ('Ba(OH)2', 'Ba'), ('LiOH', 'Li')
                 continue
             if alk == 'Ca(OH)2' and an not in ('Cl', 'NO3'):
                 continue
+            if alk in ('LiOH', 'Ca(OH)2') and ck in ('Al', 'Zn', 'Cr3'):
+                continue      # в избытке этих щелочей гидроксид тоже растворяется — не берём, чтобы не путать
             if alk == 'LiOH' and an not in ('Cl', 'NO3', 'SO4'):
                 continue
             if an == 'Br' and alk not in ('NaOH', 'KOH'):
