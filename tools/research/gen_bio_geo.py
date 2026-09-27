@@ -840,6 +840,153 @@ def check_b_taxa(c):
     return ''.join(str(j + 1) for j in order)
 
 
+# ---- пищевые сети (ОГЭ био 19–21): кто кого ест — общеизвестные связи
+WEBS = {
+    'смешанный лес': {
+        'дуб': [], 'трава': [], 'ель': [],
+        'гусеница': ['дуб'], 'заяц': ['трава', 'дуб'], 'мышь': ['трава', 'ель'], 'белка': ['ель'],
+        'синица': ['гусеница'], 'лисица': ['заяц', 'мышь'], 'сова': ['мышь', 'синица'],
+        'куница': ['белка', 'синица'], 'ястреб': ['синица', 'белка'],
+    },
+    'пресный водоём': {
+        'водоросли': [], 'ряска': [],
+        'дафния': ['водоросли'], 'прудовик': ['водоросли', 'ряска'], 'личинка стрекозы': ['дафния'],
+        'карась': ['дафния', 'прудовик'], 'лягушка': ['личинка стрекозы'], 'щука': ['карась', 'лягушка'],
+        'цапля': ['лягушка', 'карась'],
+    },
+    'Южный океан': {
+        'фитопланктон': [], 'криль': ['фитопланктон'], 'рыба': ['криль'], 'кальмар': ['рыба', 'криль'],
+        'тюлень-крабоед': ['криль'], 'синий кит': ['криль'], 'императорский пингвин': ['рыба', 'кальмар'],
+        'морской леопард': ['императорский пингвин', 'тюлень-крабоед'], 'косатка': ['морской леопард', 'тюлень-крабоед'],
+    },
+    'степь': {
+        'злаки': [], 'полынь': [], 'саранча': ['злаки', 'полынь'], 'суслик': ['злаки'],
+        'жаворонок': ['саранча'], 'ящерица': ['саранча'], 'степная гадюка': ['ящерица', 'суслик'],
+        'степной орёл': ['суслик', 'степная гадюка'], 'корсак': ['суслик', 'жаворонок'],
+    },
+}
+
+
+def web_chains(web, length):
+    """Все цепи питания заданной длины, начиная с продуцента (поиск в ширину)."""
+    eaters = {x: [y for y, food in web.items() if x in food] for x in web}
+    chains = [[p] for p, food in web.items() if not food]
+    for _ in range(length - 1):
+        chains = [ch + [e] for ch in chains for e in eaters[ch[-1]]]
+    return chains
+
+
+def gen_b_foodweb(rng):
+    name = rng.choice(list(WEBS))
+    web = WEBS[name]
+    mode = rng.choice(['chain', 'level', 'change'])
+    letters = dict(zip(sorted(web, key=lambda _: rng.random()), 'АБВГДЕЖЗИКЛМН'))
+    listing = '; '.join(f'{letters[x]} — {x}' for x in sorted(web, key=lambda x: letters[x]))
+    links = '; '.join(f'{x} питается: {", ".join(f)}' for x, f in web.items() if f)
+    if mode == 'chain':
+        L = rng.choice([3, 4, 4])
+        chains = web_chains(web, L)
+        pool = Counter(x for ch in chains for x in ch[1:])
+        cand = [x for x in pool if sum(x in ch for ch in chains) == 1]
+        if not cand:
+            return gen_b_foodweb(rng)
+        x = rng.choice(cand)
+        ch = next(c for c in chains if x in c)
+        ans = ''.join(letters[o] for o in ch)
+        q = (f'Экосистема «{name}». Организмы: {listing}. Связи: {links}. Составьте пищевую цепь из {L} организмов, '
+             f'в которую входит {x}. Начните с продуцента, запишите буквы.')
+        e = 'Цепь: ' + ' → '.join(ch) + '.'
+        return card('flip', 'bio-oge-20', q, ans, e, {'web': name, 'mode': mode, 'x': x, 'L': L, 'ans': ch})
+    if mode == 'level':
+        chains = web_chains(web, rng.choice([3, 4]))
+        ch = rng.choice(chains)
+        k = rng.randrange(len(ch))
+        x = ch[k]
+        levels = {len(c) and c.index(x) for c in web_chains(web, 3) + web_chains(web, 4) + web_chains(web, 5) if x in c}
+        if len(levels) != 1:
+            return gen_b_foodweb(rng)
+        names = ['продуцент', 'консумент I порядка', 'консумент II порядка', 'консумент III порядка', 'консумент IV порядка']
+        o, a = one(rng, names[k], [n for n in names if n != names[k]])
+        q = f'Экосистема «{name}». Связи: {links}. Кем является {x} во всех пищевых цепях этой экосистемы?'
+        return card('one', 'bio-oge-19', q, a, f'Цепь: {" → ".join(ch)}.', {'web': name, 'mode': mode, 'x': x, 'ok': names[k]}, o=o)
+    # change: если численность X выросла, как изменится численность его пищи и его единственного врага
+    eaters = {x: [y for y, food in web.items() if x in food] for x in web}
+    cand = [x for x in web if web[x] and eaters[x] and all(len(eaters[f]) >= 1 for f in web[x])]
+    x = rng.choice(cand)
+    food = rng.choice(web[x])
+    pred = rng.choice(eaters[x])
+    swap = rng.random() < 0.5
+    A, B = (pred, food) if swap else (food, pred)
+    ans = '12' if swap else '21'
+    q = (f'Экосистема «{name}». Связи: {links}. Несколько лет росла численность организма «{x}». Как изменится '
+         f'численность: А) {A}; Б) {B}? 1 — увеличится, 2 — уменьшится, 3 — не изменится. Запишите две цифры.')
+    return card('num', 'bio-oge-21', q, ans, f'{x} сильнее выедает {food} (уменьшится), у {pred} больше корма (увеличится).',
+                {'web': name, 'mode': mode, 'x': x, 'A': A, 'B': B})
+
+
+def check_b_foodweb(c):
+    web = WEBS[c['web']]
+    if c['mode'] == 'chain':
+        # поиск в глубину от хищника вниз к продуценту
+        def down(path):
+            last = path[-1]
+            if not web[last]:
+                yield path[::-1]
+            for f in web[last]:
+                yield from down(path + [f])
+        found = [p for top in web for p in down([top]) if len(p) == c['L'] and c['x'] in p]
+        found = [list(p) for p in {tuple(p) for p in found}]
+        return len(found) == 1 and found[0] == c['ans']
+    if c['mode'] == 'level':
+        depth = {}
+        def lvl(x):
+            if x not in depth:
+                depth[x] = {0} if not web[x] else {l + 1 for f in web[x] for l in lvl(f)}
+            return depth[x]
+        names = ['продуцент', 'консумент I порядка', 'консумент II порядка', 'консумент III порядка', 'консумент IV порядка']
+        L = lvl(c['x'])
+        return len(L) == 1 and names[L.pop()] == c['ok']
+    # пища X убывает (2), хищник X растёт (1); каждую из двух позиций определяем по связям
+    code = lambda y: '2' if y in web[c['x']] else '1' if c['x'] in web[y] else '3'
+    return code(c['A']) + code(c['B'])
+
+
+# ---- рацион (ОГЭ био 26): свои условные данные калорийности в тексте задачи
+DISHES = {  # блюдо: ккал на порцию (условные учебные значения задаются в условии)
+    'омлет': 250, 'каша овсяная': 180, 'бутерброд с сыром': 260, 'сырники': 320, 'йогурт': 120,
+    'суп куриный': 150, 'борщ': 170, 'котлета с пюре': 420, 'плов': 520, 'гречка с курицей': 380,
+    'салат овощной': 90, 'пицца (кусок)': 290, 'чай с сахаром': 60, 'компот': 90, 'сок апельсиновый': 110,
+    'яблоко': 50, 'банан': 95, 'шоколадный батончик': 230, 'булочка': 280, 'макароны по-флотски': 450,
+}
+
+
+def gen_b_menu(rng):
+    need = rng.choice([2200, 2400, 2500, 2600, 2800, 3000])
+    share = rng.choice([(25, 'завтрак'), (35, 'обед'), (15, 'полдник'), (25, 'ужин')])
+    dishes = rng.sample(list(DISHES), rng.randint(3, 4))
+    total = sum(DISHES[d] for d in dishes)
+    norm = need * share[0] // 100
+    mode = rng.choice(['sum', 'diff'])
+    table = '; '.join(f'{d} — {DISHES[d]} ккал' for d in dishes)
+    if mode == 'sum':
+        q = f'Подросток заказал на {share[1]}: {table}. Определите энергетическую ценность заказа (ккал). Ответ запишите в виде числа.'
+        return card('num', 'bio-oge-26', q, str(total), f'{" + ".join(str(DISHES[d]) for d in dishes)} = {total} ккал.',
+                    {'mode': mode, 'dishes': dishes})
+    q = (f'Суточная потребность подростка — {need} ккал, на {share[1]} должно приходиться {share[0]} %. Он заказал: {table}. '
+         f'На сколько ккал заказ отличается от нормы? Если заказ больше нормы — число положительное, меньше — отрицательное.')
+    return card('num', 'bio-oge-26', q, str(total - norm), f'Норма {need} × {share[0]} % = {norm} ккал; заказ {total}; разница {total - norm}.',
+                {'mode': mode, 'dishes': dishes, 'need': need, 'share': share[0]})
+
+
+def check_b_menu(c):
+    tot = 0
+    for d in c['dishes']:
+        tot += DISHES[d]
+    if c['mode'] == 'sum':
+        return str(tot)
+    return str(tot - Fraction(c['need'] * c['share'], 100).__floor__())
+
+
 # ================================================================ ГЕОГРАФИЯ
 
 # Город: (субъект РФ, широта, долгота, UTC-смещение) — ФЗ № 107-ФЗ «Об исчислении времени»
@@ -926,7 +1073,7 @@ def gen_g_sollon(rng):
              f'{max(1, lon - 5)}° {"з.д." if east else "в.д."}']
     o, a = one(rng, ok, wrong)
     e = f'1 ч = 15°, 4 мин = 1°. Разница {fh(minutes)} = {lon}°. Местное время {"больше" if east else "меньше"} гринвичского — {"восточное" if east else "западное"} полушарие.'
-    return card('one', 'geo-ege-27', q, a, e, {'t0': t0, 'tl': tl, 'ok': ok}, o=o)
+    return card('one', 'geo-ege-28', q, a, e, {'t0': t0, 'tl': tl, 'ok': ok}, o=o)
 
 
 def check_g_sollon(c):
@@ -952,7 +1099,7 @@ def gen_g_meridian(rng):
          'Длину дуги 1° меридиана примите равной 111 км. Ответ запишите в виде числа.')
     e = (f'Разность широт: {"|" + str(p1) + " − " + str(p2) + "|" if s1 == s2 else str(p1) + " + " + str(p2)} = '
          f'{abs(lat1 - lat2)}°; {abs(lat1 - lat2)} × 111 = {ans} км. Точки в разных полушариях — широты складываются.')
-    return card('num', 'geo-ege-27', q, str(ans), e, {'lat1': lat1, 'lat2': lat2},
+    return card('num', 'geo-ege-28', q, str(ans), e, {'lat1': lat1, 'lat2': lat2},
                 core={'d': abs(lat1 - lat2), 'same': s1 == s2})
 
 
@@ -1262,7 +1409,7 @@ def gen_g_sun(rng):
     q = (f'Определите высоту Солнца над горизонтом (°) в полдень {day} в пункте на широте {lat}° {hemi}. '
          'Ответ запишите в виде числа.')
     e = f'h = 90° − |φ − δ|, склонение Солнца {day} {fmt(decl)}°: 90 − |{phi} − ({fmt(decl)})| = {ans}°.'
-    return card('num', 'geo-ege-26', q, ans, e, {'phi': phi, 'day': day})
+    return card('num', 'geo-ege-27', q, ans, e, {'phi': phi, 'day': day})
 
 
 def check_g_sun(c):
@@ -1273,28 +1420,32 @@ def check_g_sun(c):
     return fmt(round(90 - z, 1), 1)
 
 
+DATES = [('22 июня', 173), ('22 декабря', 356), ('22 ноября', 326), ('15 января', 15), ('1 мая', 121),
+         ('20 июля', 201), ('10 февраля', 41), ('25 октября', 298), ('15 августа', 227), ('1 апреля', 91)]
+
+
 def gen_g_daylen(rng):
     while True:
         cs = rng.sample(list(CITIES), 3)
         lats = [CITIES[c][1] for c in cs]
         if min(abs(a - b) for a, b in itertools.combinations(lats, 2)) >= 2:
             break
-    day = rng.choice(['22 июня', '22 декабря'])
+    day, doy = rng.choice(DATES)
     asc = rng.random() < 0.5
-    sign = 1 if day == '22 июня' else -1          # летом день длиннее севернее
+    sign = 1 if 80 < doy < 266 else -1            # между равноденствиями летом день длиннее севернее
     key = lambda i: sign * CITIES[cs[i]][1]
     order = sorted(range(3), key=key, reverse=not asc)
     ans = ''.join(str(i + 1) for i in order)
     q = (f'Расположите города в порядке {"увеличения" if asc else "уменьшения"} продолжительности светового дня {day}: '
          + '; '.join(f'{i + 1}) {c}' for i, c in enumerate(cs)) + '. Запишите последовательность цифр.')
-    e = ('22 июня в Северном полушарии день тем длиннее, чем севернее пункт; 22 декабря — наоборот. Широты: '
+    e = ('Между весенним и осенним равноденствием в Северном полушарии день тем длиннее, чем севернее пункт; в остальное время — наоборот. Широты: '
          + ', '.join(f'{c} {fmt(CITIES[c][1])}°' for c in cs) + '.')
-    return card('num', 'geo-ege-3', q, ans, e, {'cs': cs, 'day': day, 'asc': asc})
+    return card('num', 'geo-ege-3', q, ans, e, {'cs': cs, 'day': day, 'doy': doy, 'asc': asc})
 
 
 def check_g_daylen(c):
     import math
-    decl = 23.44 if c['day'] == '22 июня' else -23.44
+    decl = -23.44 * math.cos(math.radians(360 / 365 * (c['doy'] + 10)))   # склонение Солнца (приближение)
 
     def length(lat):
         x = -math.tan(math.radians(lat)) * math.tan(math.radians(decl))
@@ -1303,6 +1454,42 @@ def check_g_daylen(c):
 
     L = [length(CITIES[x][1]) for x in c['cs']]
     return ''.join(str(i + 1) for i in sorted(range(3), key=lambda i: L[i], reverse=not c['asc']))
+
+
+# ---- горные системы по долготе (ЕГЭ гео 4): приблизительная долгота центра, Wikidata/атлас
+MOUNTAINS = {
+    'Евразии': {'Пиренеи': 0, 'Альпы': 10, 'Карпаты': 24, 'Большой Кавказ': 44, 'Уральские горы': 59, 'Памир': 73,
+                'Тянь-Шань': 80, 'Алтай': 88, 'Восточный Саян': 98, 'Становой хребет': 125, 'Сихотэ-Алинь': 137,
+                'Скандинавские горы': 15, 'Загрос': 48, 'Хибины': 34},
+    'Северной Америки': {'Аппалачи': -79, 'Скалистые горы': -110, 'Сьерра-Невада': -119, 'Береговые хребты Аляски': -150},
+    'Африки': {'Атлас': -3, 'Драконовы горы': 29, 'Эфиопское нагорье': 39, 'Ахаггар': 6},
+}
+
+
+def gen_g_lonorder(rng):
+    cont = rng.choice(list(MOUNTAINS))
+    m = MOUNTAINS[cont]
+    while True:
+        pick = rng.sample(list(m), 3)
+        lons = sorted(m[x] for x in pick)
+        if min(b - a for a, b in zip(lons, lons[1:])) >= 8:
+            break
+    east = rng.random() < 0.5
+    order = sorted(range(3), key=lambda i: m[pick[i]], reverse=not east)
+    ans = ''.join(str(i + 1) for i in order)
+    q = (f'Расположите горные системы {cont} {"с запада на восток" if east else "с востока на запад"}: '
+         + '; '.join(f'{i + 1}) {x}' for i, x in enumerate(pick)) + '. Запишите последовательность цифр.')
+    return card('num', 'geo-ege-4', q, ans, 'Долготы центров: ' + ', '.join(f'{x} ≈ {abs(m[x])}° {"в.д." if m[x] >= 0 else "з.д."}' for x in pick) + '.',
+                {'cont': cont, 'pick': pick, 'east': east})
+
+
+def check_g_lonorder(c):
+    import math
+    m = MOUNTAINS[c['cont']]
+    # проекция на ось запад-восток через синус угла от меридиана 180°: монотонна в (−180; 180)
+    key = lambda i: math.sin(math.radians((m[c['pick'][i]] + 180) / 2 - 90))
+    return ''.join(str(i + 1) for i in sorted(range(3), key=key, reverse=not c['east']))
+
 
 
 MONTHS = 'я ф м а м и и а с о н д'.split()
@@ -1356,18 +1543,21 @@ INFO = {  # тип → (экзамен/задание, что проверяет
     'b_transl': 'ЕГЭ био 27 · трансляция по таблице генетического кода',
     'b_anticodon': 'ЕГЭ био 27 · антикодон тРНК',
     'b_taxa': 'ЕГЭ био 12, ОГЭ био 3 · последовательность систематических групп',
+    'b_foodweb': 'ОГЭ био 19–21 · пищевые сети: цепь, трофический уровень, изменение численности',
+    'b_menu': 'ОГЭ био 26 · энергетическая ценность рациона',
     'g_time': 'ЕГЭ гео 14 · местное время в часовых зонах России',
     'g_newyear': 'ОГЭ гео 26 · порядок встречи Нового года',
-    'g_sollon': 'ЕГЭ гео 27 · долгота по солнечному времени',
-    'g_meridian': 'ЕГЭ гео 27 · расстояние по меридиану',
+    'g_sollon': 'ЕГЭ гео 28 · долгота по солнечному времени',
+    'g_meridian': 'ЕГЭ гео 28 · расстояние по меридиану',
     'g_scale': 'ОГЭ гео 9 · масштаб, расстояние по карте',
     'g_azimuth': 'ОГЭ гео 10 · азимут и стороны горизонта',
     'g_altitude': 'ОГЭ гео 13 · температура и давление с высотой',
     'g_humidity': 'ЕГЭ гео 2 · относительная и абсолютная влажность',
     'g_demo': 'ЕГЭ гео 15–16, ОГЭ гео 24 · плотность, прирост, миграции, ресурсообеспеченность',
-    'g_sun': 'ЕГЭ гео 26 · высота полуденного Солнца',
-    'g_daylen': 'ЕГЭ гео 3, ОГЭ гео 17 · продолжительность дня по широте',
-    'g_climate': 'ОГЭ гео 18, ЕГЭ гео 26 · климатограмма: амплитуда, сумма осадков',
+    'g_sun': 'ЕГЭ гео 27 · высота полуденного Солнца (солнечная радиация)',
+    'g_daylen': 'ЕГЭ гео 3, ОГЭ гео 17 · продолжительность дня по широте и дате',
+    'g_climate': 'ОГЭ гео 18, ЕГЭ гео 27 (подготовка) · климатограмма: амплитуда, сумма осадков',
+    'g_lonorder': 'ЕГЭ гео 4 · горные системы с запада на восток',
 }
 
 
