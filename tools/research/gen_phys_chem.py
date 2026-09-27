@@ -33,90 +33,9 @@ from fractions import Fraction as Fr
 G = 10
 
 
-def fmt(x, dec=None):
-    """Число → строка как в бланке: запятая, без лишних нулей. dec — округлить (половина вверх)."""
-    if isinstance(x, Fr):
-        x = x.numerator / x.denominator
-    if dec is not None:
-        q = Fr(round(Fr(x) * 10 ** dec + Fr(1, 10 ** 9)) if x >= 0 else -round(-Fr(x) * 10 ** dec + Fr(1, 10 ** 9)), 10 ** dec)
-        s = f'{float(q):.{dec}f}'
-    else:
-        s = f'{x:.6f}'
-    if '.' in s:
-        s = s.rstrip('0').rstrip('.')
-    if s in ('-0', ''):
-        s = '0'
-    return s.replace('.', ',')
+from pc_core import *  # noqa: F401,F403 — общие помощники вынесены в pc_core.py
+from pc_core import Retry, card, fmt, exact, num, ru, distractors, with_options, AR, parse_formula, molar, balance, check_balance, eq_str, pretty
 
-
-def exact(x, max_dec=2):
-    """Ответ части 1 должен быть конечной дробью с ≤ max_dec знаками. Иначе None (перебрать параметры)."""
-    x = Fr(x)
-    y = x * 10 ** max_dec
-    if y.denominator != 1:
-        return None
-    return fmt(x)
-
-
-def num(s):
-    return float(s.replace(',', '.'))
-
-
-def ru(x):
-    """Параметр в тексте условия: 2.5 → «2,5», −3 — типографский минус."""
-    return fmt(Fr(x).limit_denominator(10 ** 6)).replace('-', '−')
-
-
-def card(typ, exam, task, t, q, a, e, k='num', o=None, extra=None):
-    key = q + json.dumps(o, ensure_ascii=False, sort_keys=True) if o is not None else q
-    c = {'id': f'g-{typ}-' + hashlib.sha1(key.encode()).hexdigest()[:10], 't': t, 'k': k, 'q': q, 'a': a}
-    if o is not None:
-        c['o'] = o
-    c['e'] = e
-    c['gen'] = {'type': typ, 'exam': exam, 'task': task}
-    if extra:
-        c['gen'].update(extra)
-    if k == 'num' and 'wrong' in c['gen']:
-        c['gen']['wrong'] = distractors(a, c['gen']['wrong'])
-    return c
-
-
-def distractors(ans, wrong):
-    """Неверные ответы: сначала типичные ошибки, затем запасные (×2, ÷2, ×10) — чтобы всегда было 3 варианта."""
-    out = []
-    for w in list(wrong) + [None]:
-        if w and w != ans and w not in out and re.fullmatch(r'-?\d+(,\d+)?', w):
-            out.append(w)
-    x = num(ans)
-    for f in (2, 0.5, 10, 0.1, 3):
-        if len(out) >= 3:
-            break
-        w = fmt(Fr(x).limit_denominator(10 ** 6) * Fr(f).limit_denominator(10))
-        if w != ans and w not in out and w != '0':
-            out.append(w)
-    return out[:4]
-
-
-def choose(rng, *xs):
-    return rng.choice(xs)
-
-
-def with_options(c, rng, wrong):
-    """Числовую карточку → вариант 'one' с дистракторами из типичных ошибок."""
-    right = c['a']
-    opts = [right] + [w for w in dict.fromkeys(wrong) if w and w != right]
-    opts = opts[:4]
-    if len(opts) < 3:
-        return c
-    rng.shuffle(opts)
-    ids = 'абвг'
-    c = dict(c, k='one', o=[{'id': ids[i], 't': v} for i, v in enumerate(opts)])
-    c['a'] = ids[opts.index(right)]
-    return c
-
-
-class Retry(Exception):
-    pass
 
 
 # ================================================================= ФИЗИКА
@@ -792,105 +711,6 @@ def ph_oge_mech(rng):
 
 # ================================================================= ХИМИЯ
 
-# Ar как в КИМ: целые, кроме Cl = 35,5
-AR = {'H': 1, 'He': 4, 'Li': 7, 'Be': 9, 'B': 11, 'C': 12, 'N': 14, 'O': 16, 'F': 19, 'Ne': 20, 'Na': 23, 'Mg': 24,
-      'Al': 27, 'Si': 28, 'P': 31, 'S': 32, 'Cl': Fr(71, 2), 'Ar': 40, 'K': 39, 'Ca': 40, 'Cr': 52, 'Mn': 55, 'Fe': 56,
-      'Co': 59, 'Ni': 59, 'Cu': 64, 'Zn': 65, 'Br': 80, 'Ag': 108, 'I': 127, 'Ba': 137, 'Pb': 207}
-
-
-def parse_formula(f):
-    """'Ca(OH)2' → {'Ca':1,'O':2,'H':2}; поддерживает скобки и гидраты через '·'."""
-    total = Counter()
-    for part in f.split('·'):
-        mult = 1
-        m = re.match(r'^(\d+)(.*)$', part)
-        if m:
-            mult, part = int(m.group(1)), m.group(2)
-        stack = [Counter()]
-        i = 0
-        while i < len(part):
-            ch = part[i]
-            if ch == '(':
-                stack.append(Counter())
-                i += 1
-            elif ch == ')':
-                i += 1
-                m = re.match(r'\d+', part[i:])
-                n = int(m.group()) if m else 1
-                i += len(m.group()) if m else 0
-                top = stack.pop()
-                for k, v in top.items():
-                    stack[-1][k] += v * n
-            else:
-                m = re.match(r'([A-Z][a-z]?)(\d*)', part[i:])
-                if not m:
-                    raise ValueError(f'не разобрать {f!r} у {part[i:]!r}')
-                stack[-1][m.group(1)] += int(m.group(2) or 1)
-                i += len(m.group())
-        for k, v in stack[0].items():
-            total[k] += v * mult
-    return dict(total)
-
-
-def molar(f):
-    return sum(AR[e] * n for e, n in parse_formula(f).items())
-
-
-def balance(lhs, rhs):
-    """Коэффициенты уравнения: наименьшие целые из ядра матрицы элементов (дроби, метод Гаусса)."""
-    species = lhs + rhs
-    elems = sorted({e for s in species for e in parse_formula(s)})
-    M = [[Fr(parse_formula(s).get(e, 0) * (1 if j < len(lhs) else -1)) for j, s in enumerate(species)] for e in elems]
-    n = len(species)
-    rows, piv = [r[:] for r in M], []
-    r = 0
-    for c in range(n):
-        p = next((i for i in range(r, len(rows)) if rows[i][c] != 0), None)
-        if p is None:
-            continue
-        rows[r], rows[p] = rows[p], rows[r]
-        rows[r] = [x / rows[r][c] for x in rows[r]]
-        for i in range(len(rows)):
-            if i != r and rows[i][c] != 0:
-                f = rows[i][c]
-                rows[i] = [a - f * b for a, b in zip(rows[i], rows[r])]
-        piv.append(c)
-        r += 1
-    free = [c for c in range(n) if c not in piv]
-    if len(free) != 1:
-        raise ValueError(f'неоднозначный баланс {lhs} → {rhs}')
-    x = [Fr(0)] * n
-    x[free[0]] = Fr(1)
-    for i, c in enumerate(piv):
-        x[c] = -rows[i][free[0]]
-    lcm = 1
-    for v in x:
-        lcm = lcm * v.denominator // math.gcd(lcm, v.denominator)
-    k = [int(v * lcm) for v in x]
-    g = 0
-    for v in k:
-        g = math.gcd(g, v)
-    k = [v // g for v in k]
-    if any(v <= 0 for v in k):
-        raise ValueError(f'отрицательный коэффициент {lhs} → {rhs}: {k}')
-    return k[:len(lhs)], k[len(lhs):]
-
-
-def check_balance(lhs, rhs, kl, kr):
-    left, right = Counter(), Counter()
-    for s, k in zip(lhs, kl):
-        for e, n in parse_formula(s).items():
-            left[e] += n * k
-    for s, k in zip(rhs, kr):
-        for e, n in parse_formula(s).items():
-            right[e] += n * k
-    return left == right
-
-
-def eq_str(lhs, rhs, kl, kr, arrow='→'):
-    side = lambda ss, ks: ' + '.join((f'{k}' if k > 1 else '') + s for s, k in zip(ss, ks))
-    return f'{side(lhs, kl)} {arrow} {side(rhs, kr)}'
-
 
 # Библиотека реакций: (реагенты, продукты, русское описание). Коэффициенты считает balance().
 REACTIONS = [
@@ -944,8 +764,6 @@ REACTIONS = [
 REACTIONS = [([s.replace('[', '(').replace(']', ')') for s in l], [s.replace('[', '(').replace(']', ')') for s in r], d) for l, r, d in REACTIONS]
 
 
-def pretty(f):
-    return re.sub(r'(?<=[A-Za-z)\]])(\d+)', lambda m: m.group(1).translate(str.maketrans('0123456789', '₀₁₂₃₄₅₆₇₈₉')), f)
 
 
 def ch_balance(rng):
@@ -1572,9 +1390,13 @@ def self_check(n=200, seed=2026):
     total_err = 0
     for typ, (fn, title) in GENERATORS.items():
         rng = random.Random(f'{seed}-{typ}')
-        cards, errs = [], Counter()
-        for _ in range(n):
+        cards, errs, seen, tries = [], Counter(), set(), 0
+        while len(cards) < n and tries < n * 30:  # только разные условия: повтор — новая попытка
+            tries += 1
             c = generate(typ, rng)
+            if c['id'] in seen:
+                continue
+            seen.add(c['id'])
             for e in validate(c, typ):
                 errs[e] += 1
             cards.append(c)
@@ -1588,8 +1410,174 @@ def self_check(n=200, seed=2026):
         # оценка объёма пространства: уникальные тексты на 2000 попыток
         rng2 = random.Random(f'{seed}-{typ}-space')
         space = len({generate(typ, rng2)['id'] for _ in range(2000)})
-        rows.append((typ, title, n, uniq, ids, n_err, dict(kinds), rng_ans, space, errs.most_common(3)))
+        rows.append((typ, title, len(cards), uniq, tries - len(cards), n_err, dict(kinds), rng_ans, space, errs.most_common(3)))
     return static, rows, total_err
+
+
+
+# ================================================================= прототипы (proto_*.py)
+
+import glob as _glob
+import importlib as _importlib
+import os as _os
+import time as _time
+
+import pc_core as _pc
+
+HERE = _os.path.dirname(_os.path.abspath(__file__))
+ROOT = _os.path.dirname(_os.path.dirname(HERE))
+FIPI_DIR = _os.environ.get('FIPI_DIR', '')  # локальная выгрузка банка ФИПИ (*.jsonl с полем text); в репозиторий не кладётся
+
+
+def load_protos():
+    """Импортирует все tools/research/proto_*.py; они регистрируют прототипы в pc_core.PROTOS."""
+    if HERE not in sys.path:
+        sys.path.insert(0, HERE)
+    for path in sorted(_glob.glob(_os.path.join(HERE, 'proto_*.py'))):
+        _importlib.import_module(_os.path.basename(path)[:-3])
+    return _pc.PROTOS
+
+
+def load_fipi(subj, fipi_dir):
+    """Тексты ФИПИ по предмету (phys/chem) из локальной выгрузки: {ege,oge}-{subj}.jsonl."""
+    texts = []
+    if not fipi_dir:
+        return texts
+    for path in sorted(_glob.glob(_os.path.join(fipi_dir, f'*-{subj}*.jsonl'))):
+        for line in open(path, encoding='utf-8'):
+            t = json.loads(line).get('text', '')
+            if t:
+                texts.append(t)
+    return texts
+
+
+def sample_unique(m, rng, n, max_tries=None):
+    """n разных карточек прототипа (по тексту условия и вариантов). Возвращает (карточки, попыток, отброшено повторов)."""
+    seen, out, tries, reps = set(), [], 0, 0
+    max_tries = max_tries or n * 30
+    while len(out) < n and tries < max_tries:
+        tries += 1
+        try:
+            c = m['fn'](rng)
+        except Retry:
+            continue
+        key = _pc.norm_key(c)
+        if key in seen:
+            reps += 1
+            continue
+        seen.add(key)
+        out.append(c)
+    return out, tries, reps
+
+
+def measure_capacity(m, seed, tries=2000):
+    """Ёмкость прототипа: число разных условий на `tries` попыток. growing — новые ещё появлялись в последней четверти."""
+    rng = random.Random(f'{seed}-{m["id"]}-cap')
+    seen = set()
+    last_new = 0
+    for i in range(tries):
+        try:
+            c = m['fn'](rng)
+        except Retry:
+            continue
+        key = _pc.norm_key(c)
+        if key not in seen:
+            seen.add(key)
+            last_new = i
+    return len(seen), last_new > tries * 3 // 4
+
+
+def proto_check(n=200, seed=2026, fipi_dir=FIPI_DIR, cap_tries=2000, only=None, quiet=False):
+    protos = load_protos()
+    sims = {s: _pc.Similarity(load_fipi(s, fipi_dir)) for s in ('phys', 'chem')}
+    rows, all_keys, cross_dups, examples = [], {}, 0, {}
+    for pid, m in protos.items():
+        if only and not any(pid.startswith(x) for x in only):
+            continue
+        if m['fn'] is None:
+            rows.append({'id': pid, 'm': m, 'kind': m['kind'], 'n': 0, 'errs': Counter(), 'cap': m['capacity'], 'growing': False,
+                         'sim': None, 'sim_bad': 0, 'reps': 0, 'tries': 0})
+            continue
+        rng = random.Random(f'{seed}-{pid}')
+        t0 = _time.time()
+        cards, tries, reps = sample_unique(m, rng, n)
+        errs = Counter()
+        for c in cards:
+            for e in _pc.check_card(c, m):
+                errs[e[:120]] += 1
+            key = _pc.norm_key(c)
+            if key in all_keys and all_keys[key] != pid:
+                cross_dups += 1
+            all_keys[key] = pid
+        if len(cards) < min(n, 50):
+            errs[f'мало разных карточек: {len(cards)} за {tries} попыток'] += 1
+        cap, growing = measure_capacity(m, seed, cap_tries)
+        sim = sims[m['subj']]
+        scores = [sim.score(_pc.card_text(c))[0] for c in cards] if sim.n else []
+        rows.append({'id': pid, 'm': m, 'kind': m['kind'], 'n': len(cards), 'errs': errs, 'cap': cap, 'growing': growing,
+                     'sim': max(scores) if scores else None, 'sim_bad': sum(s >= 0.3 for s in scores), 'reps': reps,
+                     'tries': tries, 'sec': _time.time() - t0})
+        examples[pid] = cards[0] if cards else None
+    return rows, cross_dups, examples, {s: v.n for s, v in sims.items()}
+
+
+def export_protos(rows, examples):
+    """data/source/phys-prototypes.json и chem-prototypes.json — по записи на прототип."""
+    out = {'phys': [], 'chem': []}
+    for r in rows:
+        m = r['m']
+        if m['fn'] is not None:
+            c = examples.get(m['id'])
+            ex = {k: c[k] for k in ('k', 'q', 'o', 'a', 'e') if k in c} if c else None
+            gen = {'kind': m['kind'], 'fn': f'tools/research/{m["fn"].__module__}.py:{m["gen"]}'}
+            cap = r['cap']
+        else:
+            ex, gen, cap = m['example'], dict(m['gen']), m['capacity']
+            if m.get('why'):
+                gen['why'] = m['why']
+        out[m['subj']].append({
+            'id': m['id'], 'exam': m['exam'], 'n': m['n'], 'title': m['title'], 'kes': m['kes'],
+            'invariant': m['invariant'], 'varies': m['varies'], 'answer_rule': m['answer_rule'], 'mistakes': m['mistakes'],
+            'gen': gen, 'capacity': cap, 'capacity_note': ('≥ (на 2000 попыток новые ещё появлялись)' if r.get('growing') else
+                                                           ('оценка' if m['fn'] is None else 'разных условий на 2000 попыток')),
+            'fipi_sim_max': None if r.get('sim') is None else round(r['sim'], 3),
+            'example': ex,
+        })
+    for subj, recs in out.items():
+        recs.sort(key=lambda x: (x['exam'] != 'ЕГЭ', x['n'], x['id']))
+        path = _os.path.join(ROOT, 'data', 'source', f'{subj}-prototypes.json')
+        with open(path, 'w', encoding='utf-8') as f:
+            json.dump({'meta': {'about': 'Каталог прототипов заданий ЕГЭ (КИМ 2027) и ОГЭ: что неизменно, что меняется, '
+                                         'как считается ответ; генератор аналогов или рецепт. Тексты заданий ФИПИ не включены; '
+                                         'примеры составлены самостоятельно.',
+                                'built_by': 'python3 tools/research/gen_phys_chem.py --protos --export'},
+                       'prototypes': recs}, f, ensure_ascii=False, indent=1)
+            f.write('\n')
+        print('записано', path, len(recs))
+
+
+def print_proto_report(rows, cross_dups, nfipi, n):
+    print(f'Самопроверка прототипов: до {n} разных карточек на прототип; текстов ФИПИ для сверки: {nfipi}')
+    print()
+    print('| прототип | экз. | № | вид | карточек | повторов отброшено | ошибок | ёмкость | сходство с ФИПИ (макс.) |')
+    print('|---|---|---|---|---|---|---|---|---|')
+    tot_err = 0
+    for r in rows:
+        m = r['m']
+        ne = sum(r['errs'].values())
+        tot_err += ne
+        cap = f"{r['cap']}{'+' if r['growing'] else ''}" if r['cap'] is not None else '—'
+        sim = '—' if r['sim'] is None else f"{r['sim']:.2f}" + (f" ({r['sim_bad']} ≥ 0,3)" if r['sim_bad'] else '')
+        print(f"| {r['id']} | {m['exam']} | {m['n']} | {r['kind']} | {r['n']} | {r['reps']} | {ne} | {cap} | {sim} |")
+        for e, cnt in r['errs'].most_common(3):
+            print(f'|  | ↳ {e} | {cnt} |  |  |  |  |  |  |')
+    gen_rows = [r for r in rows if r['m']['fn'] is not None]
+    bad_sim = sum(r['sim_bad'] for r in rows)
+    print()
+    print(f'Итого: прототипов {len(rows)} (с генератором {len(gen_rows)}, рецептов {len(rows) - len(gen_rows)}); '
+          f'карточек {sum(r["n"] for r in rows)}; ошибок {tot_err}; повторов в выдаче 0 (отброшено при генерации '
+          f'{sum(r["reps"] for r in rows)}); дублей между прототипами {cross_dups}; карточек со сходством с ФИПИ ≥ 0,3: {bad_sim}.')
+    return tot_err + cross_dups + bad_sim
 
 
 def main():
@@ -1598,7 +1586,28 @@ def main():
     ap.add_argument('--sample', type=int, default=0)
     ap.add_argument('--seed', type=int, default=2026)
     ap.add_argument('--options', action='store_true', help='показывать числовые карточки как «один вариант» с дистракторами')
+    ap.add_argument('--protos', action='store_true', help='самопроверка прототипов (proto_*.py) вместо старых 25 типов')
+    ap.add_argument('--only', nargs='*', help='только прототипы с этими префиксами id (ph-ege-01 …)')
+    ap.add_argument('--fipi', default=FIPI_DIR, help='папка с локальной выгрузкой ФИПИ (*.jsonl) для проверки сходства')
+    ap.add_argument('--cap', type=int, default=2000, help='попыток для оценки ёмкости прототипа')
+    ap.add_argument('--export', action='store_true', help='записать data/source/{phys,chem}-prototypes.json')
     args = ap.parse_args()
+    if args.protos or args.export:
+        if args.sample:
+            load_protos()
+            out = []
+            for pid, m in _pc.PROTOS.items():
+                if m['fn'] is None or (args.only and not any(pid.startswith(x) for x in args.only)):
+                    continue
+                cards, _, _ = sample_unique(m, random.Random(f'{args.seed}-{pid}-sample'), args.sample)
+                out += cards
+            print(json.dumps(out, ensure_ascii=False, indent=1))
+            return
+        rows, cross, examples, nf = proto_check(args.n, args.seed, args.fipi, args.cap, args.only)
+        bad = print_proto_report(rows, cross, nf, args.n)
+        if args.export:
+            export_protos(rows, examples)
+        sys.exit(1 if bad else 0)
     if args.sample:
         out = []
         for typ in GENERATORS:
@@ -1614,17 +1623,17 @@ def main():
     print(f'Самопроверка генераторов: {args.n} вариантов на тип, seed {args.seed}')
     print('Справочные данные и контрольные примеры:', 'OK' if not static else '; '.join(static))
     print()
-    print('| тип | задание | сгенерировано | уникальных условий | ошибок | виды карточек | диапазон ответа | уникальных на 2000 |')
-    print('|---|---|---|---|---|---|---|---|')
+    print('| тип | задание | карточек | уникальных условий | отброшено повторов | ошибок | виды карточек | диапазон ответа | уникальных на 2000 |')
+    print('|---|---|---|---|---|---|---|---|---|')
     for typ, title, n, uniq, ids, n_err, kinds, rng_ans, space, top in rows:
         kinds_s = ', '.join(f'{k} {v}' for k, v in kinds.items())
-        print(f'| {typ} | {title} | {n} | {uniq} | {n_err} | {kinds_s} | {rng_ans} | {space} |')
+        print(f'| {typ} | {title} | {n} | {uniq} | {ids} | {n_err} | {kinds_s} | {rng_ans} | {space} |')
         for e, cnt in top:
             print(f'|  | ↳ {e} | {cnt} |  |  |  |  |  |')
     dup_note = sum(n - uniq for _, _, n, uniq, *_ in rows)
     print()
-    print(f'Итого: {len(rows)} типов, {len(rows) * args.n} карточек, ошибок {total_err}, повторов условий внутри выборок {dup_note} '
-          f'(повторы отбрасываются при сборке по id = sha1(условия)).')
+    print(f'Итого: {len(rows)} типов, {sum(r[2] for r in rows)} карточек, ошибок {total_err}, повторов условий в выдаче {dup_note} '
+          f'(повтор при генерации — новая попытка; отброшено {sum(r[4] for r in rows)}).')
     sys.exit(1 if total_err or static else 0)
 
 
