@@ -1481,6 +1481,23 @@ def shingles(text, k=5, mask=True):
     return {' '.join(w[i:i + k]) for i in range(len(w) - k + 1)}
 
 
+# Стандартные инструкции КИМ — общие математические обороты, а не авторский текст. Их вырезаем
+# из нашего условия перед сверкой, чтобы формулировка могла быть «как в КИМ»: сравнивается
+# только содержательная часть (сюжет, формула с числами).
+STOCK = [r'найдите (?:корень|корни) уравнения', r'решите уравнение', r'решите неравенство', r'решите систему(?: уравнений| неравенств)?',
+         r'найдите значение выражения', r'найдите значение', r'вычислите', r'упростите выражение',
+         r'если уравнение имеет более одного корня,? в ответе (?:запишите|укажите) (?:меньший|больший) из (?:них|корней)',
+         r'найдите точку (?:минимума|максимума) функции', r'найдите (?:наименьшее|наибольшее) значение функции',
+         r'на отрезке', r'на промежутке', r'в ответе (?:запишите|укажите)[^.]*', r'ответ дайте в [^.]*',
+         r'результат округлите до [^.]*', r'запишите номера выбранных утверждений[^.]*', r'без пробелов, запятых и других дополнительных символов',
+         r'на рисунке изображ[её]н[аоы]? (?:график|графики)[^.]*', r'найдите', r'определите', r'укажите']
+STOCK_RE = re.compile('|'.join(STOCK), re.I)
+
+
+def strip_stock(text):
+    return STOCK_RE.sub(' ', text.replace('ё', 'е').replace('Ё', 'Е'))
+
+
 def wordy(text):
     """Сюжетное ли условие: 8 и больше русских слов. В коротких «формульных» условиях
     («Решите уравнение …») слов почти нет, и совпадение инструкции неизбежно — их сверяем
@@ -1510,6 +1527,7 @@ class Fipi:
 
     def sim(self, text):
         """Наибольшая доля шинглов нашего текста, найденных в одном тексте ФИПИ."""
+        text = strip_stock(text)
         mask = wordy(text)
         sh = shingles(text, mask=mask)
         if not sh:
@@ -1533,7 +1551,7 @@ def card_text(c):
     return c['q'] + ' ' + ' '.join(str(x.get('t', '')) for x in o if isinstance(x, dict))
 
 
-def run_proto(p, n, fipi=None, seed=1):
+def run_proto(p, n, fipi=None, seed=1, cap_tries=None):
     """Самопроверка одного прототипа → (карточки, сводка)."""
     info = dict(id=p['id'], kind=p['kind'], fail=0, dup=0, drop=0, bad=0, cards=0, capacity=0, sim_max=None, sim_over=0)
     if p['kind'] == 'llm':
@@ -1582,7 +1600,7 @@ def run_proto(p, n, fipi=None, seed=1):
         cards.append(c)
     r2 = random.Random(f'cap-{p["id"]}')
     uniq = set()
-    for _ in range(CAP_TRIES):
+    for _ in range(CAP_TRIES if cap_tries is None else cap_tries):
         res = p['fn'](r2)
         if res:
             uniq.add(res[0]['q'] + json.dumps(res[0].get('o'), ensure_ascii=False) + res[0].get('svg', ''))
@@ -1706,7 +1724,7 @@ def review_dump(path, fipi_dir, k=5):
             bank[exam] = fipi.bank.get(key, [])
     with open(path, 'w', encoding='utf-8') as fh:
         for p in sorted(protos.values(), key=lambda p: (list(EXAMS).index(p['exam']), p['n'], p['id'])):
-            cards, _ = run_proto(p, k, None, seed=7)
+            cards, _ = run_proto(p, k, None, seed=7, cap_tries=0)
             rng = random.Random(p['id'])
             same_bank = [r_['text'] for r_ in bank.get(p['exam'], []) if p.get('fipi') and re.search(p['fipi'], r_['text'], re.I)]
             rec = {k_: p[k_] for k_ in ('id', 'exam', 'n', 'title', 'invariant', 'varies', 'answer_rule', 'kind', 'kim', 'mistakes')}
