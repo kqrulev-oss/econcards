@@ -1075,7 +1075,7 @@ STEM8N = ['Какие два из перечисленных веществ не
 def _gen8(rng, pid, xs):
     x = rng.choice(xs)
     neg = rng.random() < 0.3
-    cands = [y for y in REAGENTS if y != x and R(x, y) is not None]
+    cands = [y for y in REAGENTS if y != x and R(x, y) is not None and y not in REACTIVE_M]
     yes = [y for y in cands if R(x, y)]
     no = [y for y in cands if R(x, y) is False]
     if len(yes) < 3 or len(no) < 3:
@@ -1287,9 +1287,56 @@ def cond_tag(cond):
         return 'конц.'
     if 'разб' in c:
         return 'разб.'
-    if any(w in c for w in ('изб', 'недост', ':', 'хол', 'кипяч', 'влажн', 'обжиг', 'эл')):
+    if any(w in c for w in ('изб', 'недост', ':', 'кипяч', 'влажн', 'обжиг', 'эл')):
         return 'особые'
+    if 'хол' in c:
+        return 'хол.'
     return ''
+
+
+_MULTI = None
+
+
+def cond_dependent(lhs):
+    """Реагенты, для которых в базе есть разные наборы продуктов при разных условиях (Cl2 + KOH, C + O2 …)."""
+    global _MULTI
+    if _MULTI is None:
+        acc = {}
+        for r in chemdb.load()['reactions']:
+            L = frozenset(x for x in r['lhs'] if x != 'H2O') if len(r['lhs']) == 3 else frozenset(r['lhs'])
+            acc.setdefault(L, set()).add(frozenset(r['rhs']))
+        _MULTI = {k for k, v in acc.items() if len(v) > 1}
+    L = frozenset(x for x in lhs if x != 'H2O') if len(lhs) == 3 else frozenset(lhs)
+    return L in _MULTI
+
+
+def cond_words(cond):
+    c = cond or ''
+    w = []
+    if 'хол' in c:
+        w.append('на холоду')
+    elif re.search(r'(^|[ ,(])t\b', c):
+        w.append('t°')
+    if 'горен' in c:
+        w.append('горение')
+    if 'кат' in c:
+        w.append('кат.')
+    if 'разряд' in c:
+        w.append('электрический разряд')
+    return ', '.join(w)
+
+
+def _cond_ok9(r):
+    """Если продукты зависят от условий, условие обязано быть в тексте карточки (конц./разб., t°, на холоду, сплавление)."""
+    if not cond_dependent(r['lhs']):
+        return True
+    return bool(cond_tag(r.get('cond')) in ('конц.', 'разб.', 'сплавление') or cond_words(r.get('cond'))
+                or set(r['lhs']) & AMPH9 or 'пар' in (r.get('cond') or ''))
+
+
+def prod_text(ps):
+    ts = [disp(x) for x in ps]
+    return ts[0] if len(ts) == 1 else ', '.join(ts[:-1]) + ' и ' + ts[-1]
 
 
 def _lhs_key(lhs, cond):
@@ -1352,7 +1399,7 @@ EXOTIC = {'FeSO3', 'FeSiO3', 'ZnSiO3', 'MgSiO3', 'BaSiO3', 'Fe3(PO4)2', 'FePO4',
 
 
 def _usable9(r):
-    if any(x not in SUB for x in r['lhs'] + r['rhs']):
+    if any(x not in SUB for x in r['lhs'] + r['rhs']) or not _cond_ok9(r):
         return False
     if _fam9(r) in ('salts', 'acidbase', 'redox') and any(x in EXOTIC for x in r['lhs'] + r['rhs']):
         return False
@@ -1387,12 +1434,11 @@ def lhs_text(r):
     s = ' и '.join(ts)
     if tag == 'сплавление' and not set(L) & AMPH9:
         s += ' (сплавление)'
+    if cond_dependent(r['lhs']) and tag not in ('сплавление',) and not set(L) & AMPH9:
+        w = cond_words(r.get('cond'))
+        if w and 'пар' not in (r.get('cond') or '') and 'горяч' not in (r.get('cond') or ''):
+            s += f' ({w})'
     return s
-
-
-def prod_text(ps):
-    ts = [disp(x) for x in ps]
-    return ts[0] if len(ts) == 1 else ', '.join(ts[:-1]) + ' и ' + ts[-1]
 
 
 SWAP_F = {'H2O': ['H2'], 'H2': ['H2O'], 'NO': ['NO2', 'N2'], 'NO2': ['NO', 'N2'], 'N2': ['NO', 'NH3'], 'SO2': ['SO3'],
@@ -3080,6 +3126,10 @@ def _dist(s1, s2, r, fn):
     o1, o2 = vis(fn(s1, r), r), vis(fn(s2, r), r)
     if o1 is None or o2 is None:
         return None
+    p1 = {x.split(',')[0] for x in o1 if x.startswith('осадок:')}
+    p2 = {x.split(',')[0] for x in o2 if x.startswith('осадок:')}
+    if p1 & p2:            # осадок одного цвета в обоих случаях (даже с примесью другого) — не различить
+        return False
     return o1 != o2
 
 
@@ -3107,7 +3157,10 @@ def _pairs17(mode):
 
 
 PAIRS17 = {m: _pairs17(m) for m in ('sol', 'ind', 'solid')}
-REAG17 = {'sol': R17_SOL, 'ind': R17_SOL, 'solid': ['HCl', 'HNO3', 'H2SO4', 'NaOH', 'KOH', 'Ba(OH)2', 'CuSO4', 'AgNO3',
+R17_TYP = ['HCl', 'H2SO4', 'HNO3', 'NaOH', 'KOH', 'Ba(OH)2', 'BaCl2', 'Ba(NO3)2', 'AgNO3', 'Na2CO3', 'K2CO3', 'Na2SO4',
+           'K2SO4', 'K3PO4', 'Na3PO4', 'CuSO4', 'CuCl2', 'Na2S', 'NaCl', 'KCl', 'KNO3', 'NaNO3', 'MgCl2', 'ZnSO4', 'FeCl3',
+           'LiCl', 'KBr', 'NaBr', 'Ca(NO3)2', 'CaCl2']
+REAG17 = {'sol': R17_TYP, 'ind': R17_TYP, 'solid': ['HCl', 'HNO3', 'H2SO4', 'NaOH', 'KOH', 'Ba(OH)2', 'CuSO4', 'AgNO3',
                                                     'NaCl', 'KNO3', 'Na2SO4', 'BaCl2', 'FeSO4', 'CuCl2']}
 
 
@@ -3584,7 +3637,7 @@ def g20_halves(rng):
     o = match_opts(['процесс окисления', 'процесс восстановления'], items)
     a = {'А': str(items.index(hr) + 1), 'Б': str(items.index(ho) + 1)}
     q = (INTRO20.format(s=scheme_str(sch)) + TASK20 + '\n\nПроверьте себя (пункт 1): установите соответствие между '
-         'процессом и его уравнением, затем найдите множители электронного баланса.')
+         'процессом и его уравнением; множители электронного баланса проверяются отдельным шагом решения.')
     kl, kr = sch['k']
     m1, m2 = multipliers(e_of(hr), e_of(ho))
     return pcard('ch-oge-20-electron-balance', q, a, _solution20(sch), k='match', o=o, eq=(sch['lhs'], sch['rhs'], kl, kr),
@@ -3868,6 +3921,12 @@ def g21_x(rng):
              not ((chain[pos - 1], f) in E and (f, chain[pos + 1]) in E)]
     if len(cands) < 3:
         raise Retry
+    nxt = chain[pos + 1]
+    if kind(nxt) in ('oxb', 'oxam', 'oxa'):   # к «→ оксид» не даём соли/гидроксиды, которые сами разлагаются до оксида
+        cands = [f for f in cands if not (char_el(f) == char_el(nxt) and (f in SALT and SALT[f][1] in ('NO3', 'CO3', 'SO4', 'SO3')
+                                                                          or kind(f) in ('bins', 'bamp', 'alk')))]
+        if len(cands) < 3:
+            raise Retry
     near = [f for f in cands if (chain[pos - 1], f) in E or (f, chain[pos + 1]) in E]
     dist = rng.sample(near, min(2, len(near)))
     dist += rng.sample([f for f in cands if f not in dist], 3 - len(dist))
@@ -3876,15 +3935,34 @@ def g21_x(rng):
     q = INTRO21.format(s=' → '.join(shown)) + '\n\nПроверьте себя: какое из приведённых веществ может быть веществом X?'
     o = opts([disp(f) for f in items])
     a = str(items.index(x) + 1)
-    rg = [sorted(E[(chain[i], chain[i + 1])])[0] for i in range(3)]
-    eqs = []
-    for i in range(3):
-        for r in chemdb.load()['reactions']:
-            if chain[i] in r['lhs'] and chain[i + 1] in r['rhs'] and (rg[i] == T21 and len(r['lhs']) == 1 or rg[i] in r['lhs']):
-                eqs.append((r['lhs'], r['rhs'], r['k'][0], r['k'][1]))
-                break
+    eqs = _typical_eqs(chain)
     e = f'X — {disp(x)}. Уравнения: ' + '; '.join(f'{i + 1}) {eq_text(eq)}' for i, eq in enumerate(eqs)) + '.'
     return pcard('ch-oge-21-find-x', q, a, e, k='one', o=o, eqs=eqs, p={'chain': chain, 'pos': pos, 'items': items})
+
+
+PREF21 = ['O2', 'H2O', T21, 'HCl', 'H2SO4', 'HNO3', 'NaOH', 'KOH', 'CO2', 'SO2', 'SO3', 'H2', 'Cl2', 'AgNO3', 'BaCl2',
+          'Ba(NO3)2', 'Na2CO3', 'K2CO3', 'Ca(OH)2', 'Ba(OH)2', 'H3PO4', 'Na3PO4', 'K3PO4', 'CuSO4', 'C', 'CO', 'Fe', 'Zn',
+          'Mg', 'Al', 'Cu']
+
+
+def _typical_eqs(chain):
+    """Пояснение: для каждой стадии — самое типовое уравнение из базы участка (реагенты O2, H2O, нагревание, HCl …)."""
+    Em = edges21('my')
+    eqs = []
+    for i in range(3):
+        rgs = sorted(Em.get((chain[i], chain[i + 1]), ()), key=lambda x: PREF21.index(x) if x in PREF21 else 99)
+        done = False
+        for rg in rgs:
+            for r in D.REACTIONS:
+                if chain[i] in r['lhs'] and chain[i + 1] in r['rhs'] and (
+                        (rg == T21 and len(r['lhs']) == 1) or (rg != T21 and rg in r['lhs'])):
+                    kl, kr = balance(r['lhs'], r['rhs'])
+                    eqs.append((r['lhs'], r['rhs'], kl, kr))
+                    done = True
+                    break
+            if done:
+                break
+    return eqs
 
 
 def _stage_eqs(a, b, rg):

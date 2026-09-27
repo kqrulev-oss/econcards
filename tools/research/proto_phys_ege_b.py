@@ -2439,6 +2439,41 @@ def _trend_txt(key, d):
     return f'{cap1(Y)} {verb} при увеличении {X[1]}.'
 
 
+PLAUS_T = {'tmath_m': 'up', 'tspr_m': 'const', 'acp_r': 'up', 'gas_pV': 'up', 'ek_T': 'const', 'cap_d': 'up', 'R_S': 'up',
+           'Tlc_C': 'down', 'eind': 'down', 'Ef_lam': 'up', 'pf_lam': 'up', 'Ek_I': 'up', 'Aout_nu': 'down', 'T12_N': 'up'}
+PLAUS_L = {'tmath_m': 1, 'tspr_m': 1, 'tmath_l': 1, 'kin_s_t': 1, 'ek_v': 1, 'ep_x': 1, 'grav_r': -1, 'acp_r': 1, 'coul_r': -1,
+           'cap_d': 1, 'R_S': 1, 'wL_I': 1, 'Tlc_C': 1, 'eind': -1, 'gas_pV': 1, 'vkv_T': 1, 'Ef_lam': 1, 'pf_lam': 1, 'Ek_I': 1,
+           'fel_x': 2, 'arch_v': 0}
+
+
+def _slot(rng, sec_, used, kind, truth):
+    """Утверждение о законе раздела sec_: truth=False — только правдоподобная подмена (типичная ошибка), не абсурд."""
+    pool = PLAUS_T if kind == 'trend' else PLAUS_L
+    cand = [k for k, v in LAWS.items() if v[0] == sec_ and k not in used and (truth or k in pool)]
+    if not cand:
+        raise Retry
+    key = rng.choice(cand)
+    used.add(key)
+    e = Fr(LAWS[key][4])
+    if kind == 'trend':
+        d = 'const' if e == 0 else ('up' if e > 0 else 'down')
+        if truth:
+            return (_trend_txt(key, d), {'t': 'trend', 'k': key, 'd': d}, True, 'верная зависимость')
+        wd = pool[key]
+        return (_trend_txt(key, wd), {'t': 'trend', 'k': key, 'd': wd}, False, 'на самом деле: ' + _trend_txt(key, d).lower())
+    if truth:
+        return (_law_claim(key, e), {'t': 'law', 'k': key, 'e': fr(e)}, True, 'верная зависимость')
+    w = Fr(pool[key])
+    return (_law_claim(key, w), {'t': 'law', 'k': key, 'e': fr(w)}, False, 'на самом деле: ' + _law_claim(key, e).lower())
+
+
+def _truths(rng, n=5):
+    k = rng.choice([2, 3])
+    t = [True] * k + [False] * (n - k)
+    rng.shuffle(t)
+    return t
+
+
 def _trend_item(rng, key):
     e = Fr(LAWS[key][4])
     d = 'const' if e == 0 else ('up' if e > 0 else 'down')
@@ -2459,13 +2494,8 @@ def _trend_item(rng, key):
 def g18_trend(rng):
     secs = [1, 2, 3, 4, rng.choice([1, 2, 3, 4])]
     rng.shuffle(secs)
-    keys, items = [], []
-    for s_ in secs:
-        key = rng.choice([k for k, v in LAWS.items() if v[0] == s_ and k not in keys])
-        keys.append(key)
-        items.append(_trend_item(rng, key))
-    if not 2 <= sum(x[2] for x in items) <= 3:
-        raise Retry
+    used = set()
+    items = [_slot(rng, s_, used, 'trend', tv) for s_, tv in zip(secs, _truths(rng))]
     return many_card('ph-ege-18-trend', rng, rng.choice(Q18), items, {}, fixed=True)
 
 
@@ -2504,18 +2534,14 @@ def g18_mixed(rng):
     secs = [1, 2, 3, 4, rng.choice([1, 2, 3, 4])]
     rng.shuffle(secs)
     items, used = [], set()
-    for s_ in secs:
+    for s_, tv in zip(secs, _truths(rng)):
         kind = rng.choice(['law', 'trend', 'phen'])
         if kind == 'phen':
-            x = rng.choice([x for x in PHEN if x[2] == s_ and x[0].rstrip('f') not in used])
+            x = rng.choice([x for x in PHEN if x[2] == s_ and x[3] == tv and x[0].rstrip('f') not in used])
             used.add(x[0].rstrip('f'))
             items.append(_phen_item(x))
         else:
-            key = rng.choice([k for k, v in LAWS.items() if v[0] == s_ and k not in used])
-            used.add(key)
-            items.append(_law_item(rng, key) if kind == 'law' else _trend_item(rng, key))
-    if not 2 <= sum(x[2] for x in items) <= 3:
-        raise Retry
+            items.append(_slot(rng, s_, used, kind, tv))
     return many_card('ph-ege-18-mixed', rng, rng.choice(Q18), items, {}, fixed=True)
 
 

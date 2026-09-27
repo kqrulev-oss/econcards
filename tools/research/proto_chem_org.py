@@ -181,6 +181,25 @@ def by_scheme():
 SCHEME = by_scheme()
 
 
+def canon(r):
+    """Химическая «суть» реагента и условий: одинаковый ключ — одинаковое действие на вещество.
+    Детали записи (Ni/Pt, «t°, p», избыток, катализатор гидратации) не различаются; различаются: вид реагента (rk),
+    среда окисления KMnO₄, спиртовой/водный раствор (в rk), Pd (частичное гидрирование), холод (реакция Вагнера),
+    t > / < 140 °C (в rk), свет/катализатор (в rk)."""
+    c = r.get('cond', '')
+    flags = []
+    if 'Pd' in c:
+        flags.append('Pd')
+    if 'KMnO4' in r['lhs'] and ('0' in c and '°C' in c):
+        flags.append('cold')
+    rk = r.get('rk', '') or ('therm:' + clean_cond(c))
+    return (rk, r.get('medium', ''), tuple(flags))
+
+
+def canon_prods(sub, key):
+    return {r['rhs'][0] for r in RX if r['lhs'][0] == sub and canon(r) == key}
+
+
 def pick_distinct(rng, items, n, key=lambda x: x):
     items = list(items)
     rng.shuffle(items)
@@ -2102,9 +2121,19 @@ O_CLS = {'спирт', 'фенол', 'альдегид', 'кетон', 'карб
          'соль карбоновой кислоты', 'алкоголят', 'фенолят'}
 
 
+_CANON_PRODS = defaultdict(set)
+for _r in RX:
+    _CANON_PRODS[(_r['lhs'][0], canon(_r))].add(_r['rhs'][0])
+
+
+def _mixed(r):
+    return ('реакция Вюрца' in r['type'] and len(r['lhs']) == 3) or 'крекинга' in r['type']
+
+
 def _ok_rx(r):
-    return (r['rhs'][0] in SUB and SUB[r['rhs'][0]].get('org') and 'горения' not in r['type']
-            and len(SCHEME[rkey(r)]) == 1 and r['lhs'][0] in SUB and SUB[r['lhs'][0]].get('org')
+    return (r['rhs'][0] in SUB and SUB[r['rhs'][0]].get('org') and 'горения' not in r['type'] and not _mixed(r)
+            and len(SCHEME[rkey(r)]) == 1 and len(_CANON_PRODS[(r['lhs'][0], canon(r))]) == 1
+            and r['lhs'][0] in SUB and SUB[r['lhs'][0]].get('org')
             and parse_formula(r['rhs'][0]).get('C', 0) <= 10 and r['rhs'][0] not in _POOL10_SKIP
             and SUB[r['rhs'][0]]['hom'] not in ('жиры',) and SUB[r['lhs'][0]]['hom'] not in ('жиры',))
 
@@ -2296,17 +2325,16 @@ def _sig_label(r):
     return rg + (f', {c}' if '(' in c else f' ({c})')
 
 
+def _canon_db(r):
+    """canon() для строки базы (независимо от кэшей генератора)."""
+    return list(canon(r))
+
+
 def _solve_reagent(p):
     out = {}
     for i, (sub, prod) in enumerate(p['left']):
-        good = []
-        for n, group in enumerate(p['right']):
-            for sg in group:
-                lhs = [sub] + list(sg[0])
-                if any(r['lhs'] == lhs and r.get('cond', '') == sg[1] and r.get('medium', '') == sg[2]
-                       and r['rhs'][0] == prod for r in D.REACTIONS):
-                    good.append(n)
-                    break
+        good = [n for n, keys in enumerate(p['right'])
+                if any(r['lhs'][0] == sub and r['rhs'][0] == prod and _canon_db(r) in keys for r in D.REACTIONS)]
         out[LET[i]] = str(good[0] + 1)
     return out
 
@@ -2314,33 +2342,53 @@ def _solve_reagent(p):
 _BY_LABEL = None
 
 
-def _gen_reagent(pid, rng, pool):
+def label_canons():
     global _BY_LABEL
     if _BY_LABEL is None:
         _BY_LABEL = defaultdict(set)
         for r in RX:
-            _BY_LABEL[sig_label(r)].add(sig(r))
-    by_label = _BY_LABEL
+            _BY_LABEL[sig_label(r)].add(canon(r))
+    return _BY_LABEL
+
+
+def _distinct_labels(labels):
+    """Метки с разной химической сутью (не допускаем «H₂ (Ni, t°)» и «H₂ (Ni, t°, p)» в одном списке)."""
+    by = label_canons()
+    out, seen = [], set()
+    for L in labels:
+        ks = frozenset(by[L])
+        if ks & seen:
+            continue
+        seen |= ks
+        out.append(L)
+    return out
+
+
+def _fits(sub, prod, L):
+    ks = label_canons()[L]
+    return any(r['lhs'][0] == sub and r['rhs'][0] == prod and canon(r) in ks for r in RX)
+
+
+def _gen_reagent(pid, rng, pool):
+    by_label = label_canons()
     rs = pick_distinct(rng, pool, 4, key=lambda r: (r['lhs'][0], r['rhs'][0]))
-    labels = list(dict.fromkeys(sig_label(r) for r in rs))
+    labels = _distinct_labels(dict.fromkeys(sig_label(r) for r in rs))
     others = sorted({sig_label(r) for r in pool} - set(labels))
     rng.shuffle(others)
-    right = labels + others[:6 - len(labels)]
-    if len(right) < 6:
+    right = _distinct_labels(labels + others)[:6]
+    if len(right) < 6 or not set(sig_label(r) for r in rs) <= set(right):
         raise Retry
     rng.shuffle(right)
-    # однозначность: для каждой строки подходит ровно один реагент из шести (по базе)
+    # однозначность: для каждой строки подходит ровно один реагент из шести
     for r in rs:
-        n = sum(any(x['lhs'][0] == r['lhs'][0] and x['rhs'][0] == r['rhs'][0] and sig_label(x) == L for x in RX)
-                for L in right)
-        if n != 1:
+        if sum(_fits(r['lhs'][0], r['rhs'][0], L) for L in right) != 1:
             raise Retry
     lt = [f'{eqv(r["lhs"][0])} —X→ {eqv(r["rhs"][0])}' for r in rs]
     q = mq('схемой превращения и реагентом X, который участвует в этом превращении', 'СХЕМА ПРЕВРАЩЕНИЯ', 'РЕАГЕНТ X')
     ans = [right.index(sig_label(r)) for r in rs]
     return match_card(pid, rng, q, lt, right, ans, '; '.join(rx_eq(r) for r in rs) + '.',
                       {'left': [[r['lhs'][0], r['rhs'][0]] for r in rs],
-                       'right': [sorted([list(x) for x in by_label[L]]) for L in right]},
+                       'right': [sorted(list(x) for x in by_label[L]) for L in right]},
                       eqs=[eqt(r) for r in rs])
 
 
@@ -2436,19 +2484,19 @@ def g15_scheme(rng):
 
 def _solve_subst_x(p):
     out = {}
-    for i, (sg, prod) in enumerate(p['left']):
-        good = []
-        for n, f in enumerate(p['right']):
-            lhs = [f] + list(sg[0])
-            if any(r['lhs'] == lhs and r.get('cond', '') == sg[1] and r.get('medium', '') == sg[2]
-                   and r['rhs'][0] == prod for r in D.REACTIONS):
-                good.append(n)
+    for i, (key, prod) in enumerate(p['left']):
+        good = [n for n, f in enumerate(p['right'])
+                if any(r['lhs'][0] == f and r['rhs'][0] == prod and _canon_db(r) == key for r in D.REACTIONS)]
         out[LET[i]] = str(good[0] + 1)
     return out
 
 
+def _makes(f, prod, key):
+    return any(x['lhs'][0] == f and x['rhs'][0] == prod and canon(x) == key for x in RX)
+
+
 def _gen_subst_x(pid, rng, pool):
-    rs = pick_distinct(rng, pool, 4, key=lambda r: (sig(r), r['rhs'][0]))
+    rs = pick_distinct(rng, pool, 4, key=lambda r: (canon(r), r['rhs'][0]))
     subs = list(dict.fromkeys(r['lhs'][0] for r in rs))
     conf = set()
     for f in subs:
@@ -2456,16 +2504,15 @@ def _gen_subst_x(pid, rng, pool):
                                        or parse_formula(g).get('C') == parse_formula(f).get('C'))
                     and g != f and SUB[g]['cls'] in O_CLS | {'углеводород'} and g not in _POOL10_SKIP)
     conf -= set(subs)
+    # отвлекающие не должны давать ни один из продуктов строк тем же реагентом
+    conf = [g for g in sorted(conf) if not any(_makes(g, r['rhs'][0], canon(r)) for r in rs)]
     need = 6 - len(subs)
     if need < 0 or len(conf) < need:
         raise Retry
-    right = subs + rng.sample(sorted(conf), need)
+    right = subs + rng.sample(conf, need)
     rng.shuffle(right)
-    for r in rs:  # ровно один подходящий субстрат (по базе) и ни один отвлекающий не даёт тот же продукт
-        n = sum(any(x['lhs'] == [f] + r['lhs'][1:] and x.get('cond', '') == r.get('cond', '') and
-                    x.get('medium', '') == r.get('medium', '') and x['rhs'][0] == r['rhs'][0] for x in RX)
-                for f in right)
-        if n != 1:
+    for r in rs:  # ровно один подходящий кандидат
+        if sum(_makes(f, r['rhs'][0], canon(r)) for f in right) != 1:
             raise Retry
     rt = [nm(f, rng) for f in right]
     if len(set(rt)) < 6:
@@ -2475,7 +2522,7 @@ def _gen_subst_x(pid, rng, pool):
     q = mq('схемой реакции и веществом X, принимающим в ней участие', 'СХЕМА РЕАКЦИИ', 'ВЕЩЕСТВО X')
     ans = [right.index(r['lhs'][0]) for r in rs]
     return match_card(pid, rng, q, lt, rt, ans, '; '.join(rx_eq(r) for r in rs) + '.',
-                      {'left': [[list(sig(r)), r['rhs'][0]] for r in rs], 'right': right}, eqs=[eqt(r) for r in rs])
+                      {'left': [[list(canon(r)), r['rhs'][0]] for r in rs], 'right': right}, eqs=[eqt(r) for r in rs])
 
 
 @proto('ch-ege-15-substance-x', 'ЕГЭ', 15, 'Схема «X + реагент → продукт»: найти исходное вещество X',

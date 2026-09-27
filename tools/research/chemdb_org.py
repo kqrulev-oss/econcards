@@ -100,7 +100,10 @@ _SRC = 'школьный курс органической химии; назв�
 
 
 def _view(v):
-    return v.replace('#', '≡').replace('-', '–') if v else v
+    if not v:
+        return v
+    v = v.replace('#', '≡').replace('-', '–')
+    return re.sub(r'\(([\d,]+|орто|мета|пара)–\)', r'(\1-)', v)
 
 
 def _sub_digits(v):
@@ -408,7 +411,7 @@ S('HOOCCOOH', 'этандиовая кислота', AC, 'двухосновны
 S('HOOC(CH2)4COOH', 'гександиовая кислота', AC, 'двухосновные карбоновые кислоты', 'OC(=O)CCCCC(=O)O',
   triv=['адипиновая кислота'], view='HOOC-(CH2)4-COOH', state='тв')
 S('HOOCC6H4COOH', 'бензол-1,4-дикарбоновая кислота', AC, 'двухосновные карбоновые кислоты', 'OC(=O)c1ccc(cc1)C(=O)O',
-  triv=['терефталевая кислота'], view='HOOC-C6H4-COOH', state='тв')
+  triv=['терефталевая кислота'], view='HOOC-C6H4-COOH (1,4-)', state='тв')
 S('CH3CH(OH)COOH', '2-гидроксипропановая кислота', AC, 'гидроксикислоты', 'CC(O)C(=O)O', triv=['молочная кислота'],
   view='CH3-CH(OH)-COOH', state='ж')
 S('CH2ClCOOH', 'хлоруксусная кислота', AC, 'галогенкарбоновые кислоты', 'OC(=O)CCl', triv=['хлорэтановая кислота'],
@@ -442,7 +445,7 @@ S('C6H5COONa', 'бензоат натрия', SA, A, 'O=C(O[Na])c1ccccc1', view=
 S('C6H5COOK', 'бензоат калия', SA, A, 'O=C(O[K])c1ccccc1', view='C6H5-COOK', state='тв')
 S('KOOCCOOK', 'оксалат калия', SA, A, '[K]OC(=O)C(=O)O[K]', view='KOOC-COOK', state='тв')
 S('NaOOCCOONa', 'оксалат натрия', SA, A, '[Na]OC(=O)C(=O)O[Na]', view='NaOOC-COONa', state='тв')
-S('KOOCC6H4COOK', 'терефталат калия', SA, A, '[K]OC(=O)c1ccc(cc1)C(=O)O[K]', view='KOOC-C6H4-COOK', state='тв')
+S('KOOCC6H4COOK', 'терефталат калия', SA, A, '[K]OC(=O)c1ccc(cc1)C(=O)O[K]', view='KOOC-C6H4-COOK (1,4-)', state='тв')
 S('C17H35COONa', 'стеарат натрия', SA, 'мыла', 'CCCCCCCCCCCCCCCCCC(=O)O[Na]', view='C17H35-COONa', state='тв',
   use=['твёрдое мыло'])
 S('C17H35COOK', 'стеарат калия', SA, 'мыла', 'CCCCCCCCCCCCCCCCCC(=O)O[K]', view='C17H35-COOK', state='тв',
@@ -550,17 +553,15 @@ S('H2N(CH2)5COOH', '6-аминогексановая кислота', AA, A, 'NC
   view='H2N-(CH2)5-COOH', state='тв', use=['мономер капрона'])
 S('C6H5CH2CH(NH2)COOH', 'фенилаланин', AA, A, 'NC(Cc1ccccc1)C(=O)O', triv=['2-амино-3-фенилпропановая кислота'],
   view='C6H5-CH2-CH(NH2)-COOH', state='тв')
-S('HSCH2CH(NH2)COOH', 'цистеин', AA, A, 'NC(CS)C(=O)O', triv=['2-амино-3-сульфанилпропановая кислота'],
-  view='HS-CH2-CH(NH2)-COOH', state='тв')
 S('H2NCH2COONa', 'глицинат натрия', 'соль аминокислоты', 'соли аминокислот', 'NCC(=O)O[Na]', view='H2N-CH2-COONa',
   state='тв')
 S('H2NCH2COOK', 'глицинат калия', 'соль аминокислоты', 'соли аминокислот', 'NCC(=O)O[K]', view='H2N-CH2-COOK', state='тв')
 S('CH3CH(NH2)COONa', 'аланинат натрия', 'соль аминокислоты', 'соли аминокислот', 'CC(N)C(=O)O[Na]',
   view='CH3-CH(NH2)-COONa', state='тв')
-S('ClH3NCH2COOH', 'хлорид глициния', 'соль аминокислоты', 'соли аминокислот', 'Cl[NH3]CC(=O)O',
-  triv=['гидрохлорид глицина'], view='[H3N-CH2-COOH]Cl', state='тв')
-S('CH3CH(NH3Cl)COOH', 'хлорид аланиния', 'соль аминокислоты', 'соли аминокислот', 'CC([NH3]Cl)C(=O)O',
-  triv=['гидрохлорид аланина'], view='[CH3-CH(NH3)-COOH]Cl', state='тв')
+S('ClH3NCH2COOH', 'гидрохлорид глицина', 'соль аминокислоты', 'соли аминокислот', 'Cl[NH3]CC(=O)O',
+  triv=['хлорид глициния'], view='[H3N-CH2-COOH]Cl', state='тв')
+S('CH3CH(NH3Cl)COOH', 'гидрохлорид аланина', 'соль аминокислоты', 'соли аминокислот', 'CC([NH3]Cl)C(=O)O',
+  triv=['хлорид аланиния'], view='[CH3-CH(NH3)-COOH]Cl', state='тв')
 S('H2NCH2COOCH3', 'метиловый эфир глицина', ES, 'эфиры аминокислот', 'COC(=O)CN', view='H2N-CH2-COO-CH3', state='ж')
 S('H2NCH2COOC2H5', 'этиловый эфир глицина', ES, 'эфиры аминокислот', 'CCOC(=O)CN', view='H2N-CH2-COO-C2H5', state='ж')
 S('CH3CH(NH2)COOCH3', 'метиловый эфир аланина', ES, 'эфиры аминокислот', 'COC(=O)C(C)N', view='CH3-CH(NH2)-COO-CH3',
@@ -591,7 +592,7 @@ S('(C6H11O5)2O', 'мальтоза', CB, 'дисахариды', None, triv=['с
 S('C6H10O5', 'крахмал', CB, 'полисахариды', None, view='(C6H10O5)n', state='тв', notes='формула — одного звена; α-глюкоза')
 S('C6H7O2(OH)3', 'целлюлоза', CB, 'полисахариды', None, triv=['клетчатка'], view='[C6H7O2(OH)3]n', state='тв',
   notes='формула — одного звена; β-глюкоза')
-S('C6H8(OH)6', 'сорбит', 'спирт', 'многоатомные спирты', 'OCC(O)C(O)C(O)C(O)CO', triv=['гександиол-1,2,3,4,5,6'],
+S('C6H8(OH)6', 'гексангексаол-1,2,3,4,5,6', 'спирт', 'многоатомные спирты', 'OCC(O)C(O)C(O)C(O)CO', triv=['сорбит'],
   view='HOCH2-(CHOH)4-CH2OH', state='тв', use=['сахарозаменитель'])
 S('C6H7O2(ONO2)3', 'тринитрат целлюлозы', 'сложный эфир (неорганической кислоты)', 'эфиры целлюлозы', None,
   triv=['пироксилин'], view='[C6H7O2(ONO2)3]n', state='тв', use=['бездымный порох'])
@@ -947,8 +948,6 @@ for a, h2, br2, hbr, hcl, h2o, diol, cl2 in ALK:
           tags=['реакция Вагнера'], sign='обесцвечивание раствора KMnO4, бурый осадок MnO2', medium='нейтр.')
 R(['CH2CHCH3', 'Cl2'], ['CH2CHCH2Cl', 'HCl'], ['замещения', 'галогенирования'], '500 °C', rk='Cl2t',
   tags=['замещение в аллильное положение'])
-R(['CH2CHCH3', 'HBr'], ['CH3CH2CH2Br'], ['присоединения', 'гидрогалогенирования'], 'пероксиды', rk='HBrperox',
-  tags=['против правила Марковникова (перекисный эффект)'])
 R(['C2H4', 'O2'], ['CH3CHO'], ['окисления'], 'PdCl2, CuCl2, t', rk='O2cat', tags=['вакер-процесс'])
 R(['CH2CHCl', 'HCl'], ['CH3CHCl2'], ['присоединения', 'гидрогалогенирования'], '', tags=['правило Марковникова'])
 R(['CH2CHCH2Cl', 'NaOH'], ['CH2CHCH2OH', 'NaCl'], ['замещения', 'гидролиза'], 'водн. р-р, t')
@@ -1009,7 +1008,7 @@ R(['C2H2', 'HCl'], ['CH2CHCl'], ['присоединения', 'гидрогал
 R(['C2H2', 'HCl'], ['CH3CHCl2'], ['присоединения', 'гидрогалогенирования'], 'избыток HCl', tags=['правило Марковникова'])
 R(['C2H2', 'H2O'], ['CH3CHO'], ['присоединения', 'гидратации'], 'Hg2+, H+', tags=['реакция Кучерова'])
 R(['C2H2', 'HCN'], ['CH2CHCN'], ['присоединения'], 'кат.')
-R(['C2H2', 'CH3COOH'], ['CH3COOCHCH2'], ['присоединения'], 'Zn(CH3COO)2, t')
+R(['C2H2', 'CH3COOH'], ['CH3COOCHCH2'], ['присоединения'], 'ацетат цинка, t')
 R(['C2H2'], ['C6H6'], ['присоединения', 'тримеризации'], 'C (акт.), 600 °C', rk='', tags=['реакция Зелинского'])
 R(['CHCCH3'], ['C6H3(CH3)3'], ['присоединения', 'тримеризации'], 'C (акт.), t', rk='')
 R(['C2H2', 'Ag(NH3)2OH'], ['Ag2C2', 'NH3', 'H2O'], ['замещения'], 'аммиачный р-р', rk='AgNH3',
@@ -1358,6 +1357,12 @@ R(['C17H35COONa', 'CaCl2'], ['(C17H35COO)2Ca', 'NaCl'], ['обмена'], '', rk
 R(['C17H35COONa', 'Ca(HCO3)2'], ['(C17H35COO)2Ca', 'NaHCO3'], ['обмена'], '', rk='CaCl2', sign='осадок')
 R(['HOOCCOOH', 'NaOH'], ['NaOOCCOONa', 'H2O'], ['обмена', 'нейтрализации'], '')
 R(['HOOCCOOH', 'KOH'], ['KOOCCOOK', 'H2O'], ['обмена', 'нейтрализации'], '')
+for _a, _salt, _b in [('HOOCCOOH', 'NaOOCCOONa', 'NaHCO3'), ('HOOCCOOH', 'NaOOCCOONa', 'Na2CO3'),
+                      ('HOOCCOOH', 'NaOOCCOONa', 'Na'), ('HOOCCOOH', 'KOOCCOOK', 'K2CO3'),
+                      ('HOOCCOOH', 'KOOCCOOK', 'KHCO3'), ('HOOCC6H4COOH', 'KOOCC6H4COOK', 'K2CO3'),
+                      ('CH2ClCOOH', 'CH2ClCOONa', 'NaHCO3'), ('CH2ClCOOH', 'CH2ClCOONa', 'NaOH')]:
+    R([_a, _b], [_salt] + (['H2'] if _b == 'Na' else ['CO2', 'H2O'] if 'CO3' in _b else ['H2O']),
+      ['обмена'] if _b != 'Na' else ['замещения', 'ОВР'], '')
 R(['HOOCCOOH', 'KMnO4', 'H2SO4'], ['CO2', 'MnSO4', 'K2SO4', 'H2O'], ['окисления', 'ОВР'], 'H2SO4, t', rk='KMnO4',
   medium='кисл.', sign='обесцвечивание раствора KMnO4')
 R(['HOOCC6H4COOH', 'KOH'], ['KOOCC6H4COOK', 'H2O'], ['обмена', 'нейтрализации'], '')
