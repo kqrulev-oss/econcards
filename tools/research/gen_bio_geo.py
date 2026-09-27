@@ -36,6 +36,9 @@ from math import gcd
 from functools import reduce
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from ru_morph import agree, inflect, predicate, short_adj  # noqa: E402
+
 # ---------------------------------------------------------------- общее
 
 getcontext().prec = 40
@@ -69,13 +72,14 @@ def one(rng, correct, wrong, n=4):
         if len(opts) == n:
             break
     rng.shuffle(opts)
-    ids = 'абвгде'
+    ids = '123456'                          # в КИМ варианты нумеруются цифрами
     o = [{'id': ids[i], 't': t} for i, t in enumerate(opts)]
     return o, ids[opts.index(correct)]
 
 
 def card(kind, topic, q, a, e, chk, o=None, core=None):
-    c = {'k': kind, 't': topic, 'q': q, 'a': a, 'e': e, 'src': 'gen:' + kind, 'chk': chk}
+    minus = lambda t: re.sub(r'(?<!\.)\.\.(?!\.)', '.', re.sub(r'(?<![\w\-−])-(?=\d)', '−', t))   # минус; «з.д..» → «з.д.»
+    c = {'k': kind, 't': topic, 'q': minus(q), 'a': a, 'e': minus(e), 'src': 'gen:' + kind, 'chk': chk}
     if o is not None:
         c['o'] = o
     c['core'] = json.dumps(core if core is not None else chk, ensure_ascii=False, sort_keys=True)
@@ -135,7 +139,7 @@ def gen_b_chromo(rng):
     what = rng.choice(['хромосом', 'молекул ДНК'])
     kn, kc = PHASES[ph]
     ans = n2 // 2 * (kn if what == 'хромосом' else kc)
-    q = (f'В соматических клетках {org} {n2} хромосом(ы). Сколько {what} содержится {ph}? '
+    q = (f'В соматических клетках {org} содержится {agree(n2, "хромосома")}. Сколько {what} содержится {ph}? '
          'В ответе запишите только число.')
     e = (f'n = {n2 // 2}. {ph[0].upper() + ph[1:]} набор {kn}n{kc}c: '
          f'{what} = {ans}.')
@@ -192,9 +196,9 @@ def check_b_chargaff(c):
 
 def gen_b_coding(rng):
     n = rng.randint(20, 600)
-    mode = rng.choice(['mrna', 'dna2', 'dna1', 'trna', 'triplets', 'back', 'len'])
+    mode = rng.choice(['mrna', 'dna2', 'dna1', 'trna', 'triplets', 'back'])
     if mode == 'back':
-        q = (f'Фрагмент иРНК (без стоп-кодона) содержит {3 * n} нуклеотидов. Сколько аминокислот '
+        q = (f'Фрагмент иРНК (без стоп-кодона) содержит {agree(3 * n, "нуклеотид")}. Сколько аминокислот '
              'кодирует этот фрагмент? В ответе запишите только число.')
         a, e = n, f'Одну аминокислоту кодирует триплет: {3 * n} : 3 = {n}.'
     elif mode == 'len':
@@ -210,7 +214,7 @@ def gen_b_coding(rng):
                 'triplets': 'триплетов в иРНК'}[mode]
         mult = {'mrna': 3, 'dna2': 6, 'dna1': 3, 'trna': 1, 'triplets': 1}[mode]
         a = n * mult
-        q = (f'Белок состоит из {n} аминокислот. Сколько {what}? Стоп-кодон и некодирующие '
+        q = (f'Белок состоит из {agree(n, "аминокислота", "gent")}. Сколько {what}? Стоп-кодон и некодирующие '
              'участки не учитывайте. В ответе запишите только число.')
         e = {1: f'Одна аминокислота — один триплет и одна тРНК: {n}.',
              3: f'Одна аминокислота — три нуклеотида: {n} × 3 = {3 * n}.',
@@ -248,29 +252,30 @@ def gen_b_food(rng):
     ch = rng.choice(CHAINS)
     L = len(ch)
     mode = rng.choice(['need', 'energy', 'top'])
+    chain = f'Пищевая цепь: {" → ".join(ch)}.'
     if mode == 'need':
-        top = rng.choice([1, 2, 3, 4, 5, 6, 8, 10, 12, 15, 20, 25, 30, 40, 50])
+        top = rng.choice([1, 2, 3, 4, 5, 6, 8, 10, 12, 15, 20, 25, 30]) * (100 if ch[-1] in ('синий кит', 'тюлень') else 1)
         ans = top * 10 ** (L - 1)
-        q = (f'Пищевая цепь: {" → ".join(ch)}. На основании правила 10 % рассчитайте массу (кг) '
-             f'организмов первого звена ({ch[0]}), необходимую для существования {ch[-1]} массой {top} кг. '
+        q = (f'{chain} Используя правило экологической пирамиды (10 %), определите, какая масса (кг) '
+             f'организмов первого звена ({ch[0]}) необходима, чтобы масса {inflect(ch[-1], "gent")} увеличилась на {top} кг. '
              'В ответе запишите только число.')
         e = f'Звеньев {L}, переходов {L - 1}: {top} × 10^{L - 1} = {ans} кг.'
         chk = {'L': L, 'mode': mode, 'x': top}
     elif mode == 'energy':
         k = rng.randint(2, L)
-        e1 = rng.choice([10, 20, 50, 100, 200, 500]) * 10 ** rng.randint(2, 5)
+        e1 = rng.choice([1, 2, 3, 4, 5, 6, 8]) * 10 ** rng.randint(max(k - 1, 3), 6)
         ans = Fraction(e1, 10 ** (k - 1))
-        q = (f'Пищевая цепь: {" → ".join(ch)}. Продуценты накопили {e1} кДж энергии. '
+        q = (f'{chain} Продуценты накопили {e1} кДж энергии. '
              f'Сколько энергии (кДж) перейдёт к организмам {k}-го трофического уровня ({ch[k - 1]}) '
              'по правилу 10 %? В ответе запишите только число.')
         e = f'С каждого уровня на следующий переходит 10 %: {e1} / 10^{k - 1} = {fmt(ans)} кДж.'
         ans = fmt(ans)
         chk = {'L': L, 'mode': mode, 'x': e1, 'k': k}
     else:
-        m1 = rng.choice([100, 200, 500, 1000, 2000, 5000, 10000, 20000, 50000])
+        m1 = rng.choice([1, 2, 3, 4, 5, 6, 8]) * 10 ** max(L - 1, 3) * rng.choice([1, 10])
         ans = Fraction(m1, 10 ** (L - 1))
-        q = (f'Пищевая цепь: {" → ".join(ch)}. Биомасса первого звена ({ch[0]}) — {m1} кг. '
-             f'Какая масса (кг) последнего звена ({ch[-1]}) может прокормиться по правилу 10 %? '
+        q = (f'{chain} Биомасса первого звена ({ch[0]}) — {m1} кг. '
+             f'Какая биомасса (кг) {inflect(ch[-1], "gent")} может образоваться за счёт этой пищи по правилу 10 %? '
              'В ответе запишите только число.')
         e = f'{m1} / 10^{L - 1} = {fmt(ans)} кг.'
         ans = fmt(ans)
@@ -325,46 +330,54 @@ def seq(r):
 
 
 def gen_b_mono(rng):
+    """ЕГЭ 4: моногибридное скрещивание; chk kind=ratio (соотношение) или prob (вероятность, %)."""
+    kind = rng.choice(['ratio', 'prob'])
     inc = rng.random() < 0.3
-    p1, p2 = rng.choice([('Aa', 'Aa'), ('Aa', 'aa'), ('AA', 'aa'), ('AA', 'Aa'), ('Aa', 'Aa'), ('Aa', 'aa')])
-    g = cross1(p1, p2)
+    for _ in range(100):
+        p1, p2 = rng.choice([('Aa', 'Aa'), ('Aa', 'aa'), ('AA', 'aa'), ('AA', 'Aa'), ('Aa', 'Aa'), ('Aa', 'aa')])
+        g = cross1(p1, p2)
+        if kind == 'ratio' and sum(1 for v in g.values() if v) > 1:
+            break
+        if kind == 'prob' and 'Aa' in (p1, p2):
+            break
     if inc:
         org, ph_aa, ph_Aa, ph_a = rng.choice(INCOMPLETE)
         desc = {'AA': ph_aa, 'Aa': ph_Aa, 'aa': ph_a}
-        intro = f'У растений/животных ({org}) при неполном доминировании AA — {ph_aa}, Aa — {ph_Aa}, aa — {ph_a}.'
+        intro = (f'У {inflect(org, "gent")} признак наследуется по типу неполного доминирования: '
+                 f'AA — {ph_aa}, Aa — {ph_Aa}, aa — {ph_a}.')
         phen = {desc[k]: v for k, v in g.items() if v}
     else:
         org, dom, rec = rng.choice(TRAITS)
         desc = {'AA': dom, 'Aa': dom, 'aa': rec}
-        intro = f'У организма ({org}) признак «{dom}» доминирует над «{rec}».'
+        intro = f'У {inflect(org, "gent")} ген, определяющий {inflect(dom, "accs")} (A), доминирует над геном, определяющим {inflect(rec, "accs")} (a).'
         phen = Counter()
         for k, v in g.items():
             if v:
                 phen[desc[k]] += v
     word = lambda gt: {'AA': 'гомозиготную доминантную', 'Aa': 'гетерозиготную', 'aa': 'гомозиготную рецессивную'}[gt]
     word2 = lambda gt: {'AA': 'гомозиготной доминантной', 'Aa': 'гетерозиготной', 'aa': 'гомозиготной рецессивной'}[gt]
-    parents = f'Скрестили {word(p1)} особь ({p1}) с {word2(p2)} ({p2}).'
-    mode = rng.choice(['phen', 'gen', 'prob', 'nphen'])
-    if mode in ('phen', 'gen') and sum(1 for v in g.values() if v) == 1:
-        mode = 'prob'                      # потомство однородно — «соотношение» бессмысленно
-    if mode == 'phen':
-        r = ratio([int(v * 4) for v in phen.values()])
-        q = f'{intro} {parents} Определите соотношение фенотипов потомков. Ответ запишите в виде последовательности цифр в порядке их убывания.'
+    parents = f'Скрестили {word(p1)} особь с {word2(p2)}.'
+    gt = None
+    if kind == 'ratio':
+        mode = rng.choice(['phen', 'gen']) if inc or len(phen) != sum(1 for v in g.values() if v) else 'phen'
+        if mode == 'phen' and len(phen) == 1:
+            mode = 'gen'
+        r = ratio([int(v * 4) for v in (phen.values() if mode == 'phen' else [v for v in g.values() if v])])
+        what = 'фенотипов' if mode == 'phen' else 'генотипов'
+        q = f'{intro} {parents} Определите соотношение {what} в потомстве. Ответ запишите в виде последовательности цифр, показывающих соотношение получившихся {what}, в порядке их убывания.'
         a = seq(r)
-    elif mode == 'gen':
-        r = ratio([int(v * 4) for v in g.values() if v])
-        q = f'{intro} {parents} Определите соотношение генотипов потомков. Ответ запишите в виде последовательности цифр в порядке их убывания.'
-        a = seq(r)
-    elif mode == 'prob':
-        gt = rng.choice(GENO1)
-        q = f'{intro} {parents} Какова вероятность (%) появления {GNAME[gt]} потомков? В ответе запишите только число.'
-        a = fmt(g[gt] * 100)
     else:
-        q = f'{intro} {parents} Сколько фенотипических классов получится в потомстве? В ответе запишите только число.'
-        a = str(len(phen))
+        mode = 'prob'
+        opts = [x for x in GENO1 if 0 < g[x] < 1] or GENO1
+        gt = rng.choice(opts)
+        if inc:
+            q = f'{intro} {parents} Какова вероятность (%) появления в потомстве особей, имеющих {inflect(desc[gt], "accs")}? В ответе запишите только число.'
+        else:
+            q = f'{intro} {parents} Какова вероятность (%) появления в потомстве {GNAME[gt]} особей? В ответе запишите только число.'
+        a = fmt(g[gt] * 100)
     tab = ', '.join(f'{k} — {fmt(v * 100)} %' for k, v in g.items() if v)
     e = f'Генотипы потомков: {tab}.'
-    chk = {'p1': p1, 'p2': p2, 'inc': inc, 'mode': mode, 'gt': gt if mode == 'prob' else None}
+    chk = {'p1': p1, 'p2': p2, 'inc': inc, 'mode': mode, 'gt': gt, 'kind': kind}
     return card('num', 'bio-ege-4', q, a, e, chk, core=chk)
 
 
@@ -399,7 +412,14 @@ def gametes(gt):
 
 
 def gen_b_dihybrid(rng):
-    mode = rng.choice(['phen', 'prob', 'gam', 'nphen'])
+    mode = rng.choice(['phen', 'prob', 'gam', 'nphen', 'ngen'])
+    if mode == 'ngen':
+        p1, p2 = rng.choice([('AaBb', 'AaBb'), ('AaBb', 'aabb'), ('AaBb', 'Aabb'), ('AaBb', 'aaBb'), ('AaBB', 'AaBb'), ('Aabb', 'aaBb')])
+        n = len({''.join(sorted(x[0] + y[0])) + ''.join(sorted(x[1] + y[1])) for x in gametes(p1) for y in gametes(p2)})
+        q = (f'Скрестили особей с генотипами {p1} и {p2} (гены не сцеплены, доминирование полное). '
+             'Сколько разных генотипов может получиться в потомстве? В ответе запишите только число.')
+        return card('num', 'bio-ege-4', q, str(n), f'Перебор гамет {", ".join(gametes(p1))} × {", ".join(gametes(p2))}: генотипов {n}.',
+                    {'p1': p1, 'p2': p2, 'mode': mode})
     if mode == 'gam':
         k = rng.randint(2, 5)
         letters = 'ABCDE'[:k]
@@ -411,8 +431,13 @@ def gen_b_dihybrid(rng):
     choice = lambda l: rng.choice([l + l, l + l.lower(), l.lower() * 2])
     while True:
         p1, p2 = choice('A') + choice('B'), choice('A') + choice('B')
-        if p1.count('a') + p1.count('b') + p2.count('a') + p2.count('b') and ('Aa' in p1 + p2 or 'Bb' in p1 + p2):
-            break
+        if not (p1.count('a') + p1.count('b') + p2.count('a') + p2.count('b') and ('Aa' in p1 + p2 or 'Bb' in p1 + p2)):
+            continue
+        ga_ = cross1(p1[:2], p2[:2])
+        gb_ = cross1(p1[2:].replace('B', 'A').replace('b', 'a'), p2[2:].replace('B', 'A').replace('b', 'a'))
+        if mode in ('phen', 'nphen') and (ga_['AA'] + ga_['Aa'] in (0, 1) and gb_['AA'] + gb_['Aa'] in (0, 1)):
+            continue                     # один фенотипический класс — вырожденная задача
+        break
     ga = cross1(p1[:2], p2[:2])
     gb = cross1(p1[2:].replace('B', 'A').replace('b', 'a'), p2[2:].replace('B', 'A').replace('b', 'a'))
     pa = {'A_': ga['AA'] + ga['Aa'], 'aa': ga['aa']}
@@ -427,11 +452,14 @@ def gen_b_dihybrid(rng):
         q = q0 + ' Сколько фенотипических классов получится в потомстве? В ответе запишите только число.'
         a = str(len(phen))
     else:
-        target = rng.choice(list(phen))
+        ok = [t for t in phen if (phen[t] * 100).denominator == 1 and phen[t] < 1]
+        if not ok:
+            return gen_b_dihybrid(rng)
+        target = rng.choice(ok)
         name = {'A_B_': 'с обоими доминантными признаками', 'A_bb': 'с доминантным первым и рецессивным вторым признаком',
                 'aaB_': 'с рецессивным первым и доминантным вторым признаком', 'aabb': 'с обоими рецессивными признаками'}[target]
-        q = q0 + f' Какова вероятность (%) появления потомков {name}? Ответ округлите до сотых.'
-        a = fmt(phen[target] * 100, 2)
+        q = q0 + f' Какова вероятность (%) появления потомков {name}? В ответе запишите только число.'
+        a = fmt(phen[target] * 100)
         mode = 'prob:' + target
     e = 'Фенотипы: ' + ', '.join(f'{k} — {fmt(v * 100, 2)} %' for k, v in phen.items()) + '. Признаки наследуются независимо, вероятности перемножаются.'
     return card('num', 'bio-ege-4', q, a, e, {'p1': p1, 'p2': p2, 'mode': mode})
@@ -440,6 +468,8 @@ def gen_b_dihybrid(rng):
 def check_b_dihybrid(c):
     if c['mode'] == 'gam':
         return str(len(set(gametes(c['gt']))))
+    if c['mode'] == 'ngen':
+        return str(len(Counter(tuple(sorted([x[0], y[0]]) + sorted([x[1], y[1]])) for x in gametes(c['p1']) for y in gametes(c['p2']))))
     g1, g2 = gametes(c['p1']), gametes(c['p2'])
     ph = Counter()
     for x in g1:
@@ -452,7 +482,7 @@ def check_b_dihybrid(c):
         return seq(ratio(list(ph.values())))
     if c['mode'] == 'nphen':
         return str(len(ph))
-    return fmt(Fraction(ph[c['mode'].split(':')[1]] * 100, tot), 2)
+    return fmt(Fraction(ph[c['mode'].split(':')[1]] * 100, tot))
 
 
 BLOOD = {'I⁰I⁰': 'I', 'IᴬIᴬ': 'II', 'IᴬI⁰': 'II', 'IᴮIᴮ': 'III', 'IᴮI⁰': 'III', 'IᴬIᴮ': 'IV'}
@@ -480,7 +510,7 @@ def gen_b_blood(rng):
     for x in ALLELES[m]:
         for y in ALLELES[f]:
             probs[blood_of(x, y)] += Fraction(1, 4)
-    mode = rng.choice(['p', 'p', 'n', 'rh'])
+    mode = rng.choice(['p', 'p', 'n'])
     base = f'Мать имеет генотип {m} ({BLOOD[m]} группа крови), отец — {f} ({BLOOD[f]} группа).'
     grp = rng.choice(['I', 'II', 'III', 'IV'])
     chk = {'m': m, 'f': f, 'grp': grp, 'mode': mode}
@@ -502,6 +532,8 @@ def gen_b_blood(rng):
              f'Какова вероятность (%) рождения {name} ребёнка с {grp} группой крови? Ответ округлите до сотых.')
         chk.update(rm=rm, rf=rf, want=want)
         return card('num', 'bio-ege-4', q, ans, e + f' По резусу: {fmt(pr[want] * 100, 2)} %; вероятности перемножаются.', chk)
+    if not probs[grp] and rng.random() < 0.85:
+        return gen_b_blood(rng)
     q = base + f' Какова вероятность (%) рождения ребёнка с {grp} группой крови? В ответе запишите только число.'
     return card('num', 'bio-ege-4', q, fmt(probs[grp] * 100), e, chk)
 
@@ -550,6 +582,8 @@ def gen_b_xlinked(rng):
     carrier = lambda k: 'Y' not in k and k.count('X' + d) == 1
     good = {'больных': sick, 'здоровых': lambda k: not sick(k), 'девочек-носительниц': carrier}[what]
     n = sum(good(k) for k in pool)
+    if n in (0, len(pool)) and rng.random() < 0.85:
+        return gen_b_xlinked(rng)
     ans = fmt(Fraction(100 * n, len(pool)))
     kind = 'доминантного' if dom else 'рецессивного'
     q = (f'Ген {kind} признака «{dis}» ({D if dom else d}) сцеплен с X-хромосомой. Мать — {mom}, отец — {dad}. '
@@ -580,7 +614,7 @@ def check_b_xlinked(c):
 
 
 def gen_b_linkage(rng):
-    dist = rng.randint(1, 49)
+    dist = rng.randint(5, 30)
     cis = rng.random() < 0.6
     geno = 'AB//ab' if cis else 'Ab//aB'
     parental = {'AaBb', 'aabb'} if cis else {'Aabb', 'aaBb'}
@@ -592,14 +626,18 @@ def gen_b_linkage(rng):
         nonrec = total - rec
         cls = sorted(parental) + sorted({'AaBb', 'aabb', 'Aabb', 'aaBb'} - parental)
         counts = [nonrec // 2, nonrec // 2, rec // 2, rec // 2]
+        mix = list(zip(cls, counts))
+        rng.shuffle(mix)
+        cls, counts = [x for x, _ in mix], [y for _, y in mix]
         q = (f'При анализирующем скрещивании дигетерозиготы {geno} с ab//ab получено потомство: '
              + ', '.join(f'{g} — {n}' for g, n in zip(cls, counts))
              + '. Определите расстояние между генами A и B (сМ). В ответе запишите только число.')
         e = f'Кроссоверных потомков {rec // 2} + {rec // 2} = {rec} из {total}: {rec} / {total} × 100 = {dist} сМ.'
         return card('num', 'bio-ege-4', q, str(dist), e, {'mode': 'rev', 'cls': cls, 'counts': counts, 'cis': cis})
+    dist -= dist % 2                   # проценты классов — целые
     cls = rng.choice(['AaBb', 'aabb', 'Aabb', 'aaBb'])
     val = Fraction(100 - dist, 2) if cls in parental else Fraction(dist, 2)
-    q = (f'Гены A и B сцеплены, расстояние между ними {dist} морганид (сМ). Дигетерозиготную особь {geno} '
+    q = (f'Гены A и B расположены в одной хромосоме, частота кроссинговера между ними — {dist} % (расстояние {dist} сМ). Дигетерозиготную особь {geno} '
          f'скрестили с рецессивной дигомозиготой ab//ab. Какой процент потомков будет иметь генотип {cls}? '
          'В ответе запишите только число.')
     e = (f'Кроссоверных гамет {dist} %, по {fmt(Fraction(dist, 2))} % каждого типа; некроссоверных '
@@ -817,23 +855,31 @@ RANKS_P = ['царство', 'отдел', 'класс', 'порядок', 'се
 
 
 def gen_b_taxa(rng):
-    row = rng.choice(TAXA)
-    ranks = RANKS_A if row[0] == 'Животные' else RANKS_P
-    avail = [i for i, x in enumerate(row) if x]
-    k = rng.choice([5, 5, 6])
-    pick = sorted(rng.sample(avail, min(k, len(avail))))
-    items = [(i, f'{ranks[i]} {row[i]}' if rng.random() < 0.5 else row[i]) for i in pick]
+    """ЕГЭ 12 — 6 таксонов (часто с доменом Эукариоты, ранги можно не называть); ОГЭ 3 — 5 таксонов, ранг всегда указан."""
+    row0 = rng.choice(TAXA)
+    row = ['Эукариоты'] + row0
+    ranks = ['домен'] + (RANKS_A if row0[0] == 'Животные' else RANKS_P)
+    m = rng.choice([5, 6])
+    avail = [i for i, x in enumerate(row) if x and (m == 6 or i > 0)]
+    for _ in range(50):
+        pick = sorted(rng.sample(avail, min(m, len(avail))))
+        if m == 5 or 0 in pick or rng.random() < 0.3:
+            break
+    named = m == 5 or rng.random() < 0.5
+    items = [(i, f'{ranks[i]} {row[i]}' if named and i > 0 else row[i]) for i in pick]
     shown = items[:]
     rng.shuffle(shown)
     top_down = rng.random() < 0.5
     order = sorted(shown, key=lambda x: x[0], reverse=not top_down)
     ans = ''.join(str(shown.index(x) + 1) for x in order)
-    lst = '; '.join(f'{j + 1}) {t}' for j, (_, t) in enumerate(shown))
-    q = (f'Упорядочьте систематические группы — от {"самой крупной к самой мелкой" if top_down else "самой мелкой к самой крупной"}: '
-         f'{lst}. Ответ — цифры подряд.')
+    lst = '\n'.join(f'{j + 1}) {t}' for j, (_, t) in enumerate(shown))
+    what = 'систематических групп' if m == 6 else 'систематических таксонов'
+    start = ('наибольшего' if top_down else 'наименьшего') if m == 5 else ('самой крупной' if top_down else 'самой мелкой')
+    q = (f'Установите последовательность {what}, начиная с {start}.\n{lst}\n'
+         'Запишите в таблицу соответствующую последовательность цифр.')
     e = 'Порядок рангов: ' + ' → '.join(ranks[i] for i in pick) + '.'
-    return card('num', 'bio-ege-12', q, ans, e,
-                {'row': row[-1], 'k': row[0], 'shown': [i for i, _ in shown], 'top_down': top_down})
+    return card('num', 'bio-ege-12' if m == 6 else 'bio-oge-3', q, ans, e,
+                {'row': row[-1], 'k': row0[0], 'm': len(shown), 'shown': [i for i, _ in shown], 'top_down': top_down})
 
 
 def check_b_taxa(c):
@@ -1021,18 +1067,36 @@ CITIES = {
 }
 
 
+TIME_EVENTS = ['трансляция финального матча', 'онлайн-урок', 'прямой эфир концерта', 'старт всероссийской олимпиады',
+               'видеоконференция', 'запуск космического корабля', 'вебинар', 'телемост']
+MULTIZONE = {'Республика Саха (Якутия)', 'Сахалинская область'}      # несколько часовых зон в субъекте
+
+
 def gen_g_time(rng):
-    a, b = rng.sample(list(CITIES), 2)
-    h = rng.randint(0, 23)
+    """ЕГЭ 14: msk — из Москвы на восток (МСК+1…+9); west — в пункт с меньшим поясным временем (часто через полночь)."""
+    mode = rng.choice(['msk', 'west'])
+    if mode == 'msk':
+        a = 'Москва'
+        b = rng.choice([c for c in CITIES if 4 <= CITIES[c][3] <= 12 and CITIES[c][0] not in MULTIZONE])
+    else:
+        while True:
+            a, b = rng.sample(list(CITIES), 2)
+            if CITIES[b][3] < CITIES[a][3] and not {CITIES[a][0], CITIES[b][0]} & MULTIZONE and (b == 'Калининград' or rng.random() < 0.8):
+                break
+    h, m = rng.randint(0, 23), rng.choice([0, 0, 15, 30, 45])
     ua, ub = CITIES[a][3], CITIES[b][3]
-    if ua == ub:
-        return gen_g_time(rng)
+    if mode == 'west' and h >= ua - ub and rng.random() < 0.6:
+        h = rng.randint(0, ua - ub - 1)                   # переход через полночь назад
     ans = (h + ub - ua) % 24
-    q = (f'Трансляция началась в {h} ч по местному времени города {a}. Который час (ч) по местному '
-         f'времени был в этот момент в городе {b}? Используйте часовые зоны России. Ответ запишите в виде числа.')
-    e = (f'{a}: UTC+{ua} (МСК{ua - 3:+d}), {b}: UTC+{ub} (МСК{ub - 3:+d}). Разница {ub - ua:+d} ч: '
-         f'{h} {"+" if ub >= ua else "−"} {abs(ub - ua)} = {ans} ч.')
-    return card('num', 'geo-ege-14', q, str(ans), e, {'a': a, 'b': b, 'h': h})
+    ev = rng.choice(TIME_EVENTS)
+    where = 'по московскому времени' if a == 'Москва' else f'по местному времени города {a}'
+    q = (f'{cap(ev)} начался в {h} ч {m:02d} мин {where}. Который час по местному времени был в этот момент в городе {b} '
+         f'({CITIES[b][0]})? Ответ запишите в виде числа (только часы).').replace('(Москва)', '')
+    if ev.split()[0] in ('трансляция', 'видеоконференция'):
+        q = q.replace('начался', 'началась', 1)
+    e = (f'{a}: МСК{ua - 3:+d}, {b}: МСК{ub - 3:+d}. Разница {ub - ua:+d} ч: '
+         f'{h} {"+" if ub >= ua else "−"} {abs(ub - ua)} = {ans} ч{" (предыдущие сутки)" if h + ub - ua < 0 else ""}.').replace('МСК+0', 'МСК')
+    return card('num', 'geo-ege-14', q, str(ans), e, {'a': a, 'b': b, 'h': h, 'mode': mode})
 
 
 def check_g_time(c):
@@ -1043,14 +1107,16 @@ def check_g_time(c):
 
 def gen_g_newyear(rng):
     while True:
-        cs = rng.sample(list(CITIES), 3)
+        cs = rng.sample([c for c in CITIES if CITIES[c][0] not in MULTIZONE and c not in ('Москва', 'Санкт-Петербург')], 3)
         if len({CITIES[c][3] for c in cs}) == 3:
             break
     regs = [CITIES[c][0] for c in cs]
     order = sorted(range(3), key=lambda i: -CITIES[cs[i]][3])
     ans = ''.join(str(i + 1) for i in order)
-    q = ('Где раньше наступит 1 января? Упорядочьте регионы от того, где полночь придёт первой, к тому, где последней: '
-         + '; '.join(f'{i + 1}) {r}' for i, r in enumerate(regs)) + '. Ответ — цифры подряд.')
+    ev = rng.choice(['Новый год', 'полдень (12 ч по местному времени)', 'начало рабочего дня (9 ч по местному времени)'])
+    q = (f'Расположите регионы России в той последовательности, в которой в них наступает {ev}, начиная с региона, '
+         'где это происходит раньше всего: ' + '; '.join(f'{i + 1}) {r}' for i, r in enumerate(regs))
+         + '. Запишите в таблицу получившуюся последовательность цифр.')
     e = 'Раньше встречают там, где больше смещение от UTC: ' + ', '.join(f'{r} — МСК{CITIES[c][3] - 3:+d}' for r, c in zip(regs, cs)) + '.'
     return card('num', 'geo-oge-26', q, ans, e, {'cs': cs})
 
@@ -1063,99 +1129,111 @@ def check_g_newyear(c):
     return ''.join(str(i + 1) for _, i in sorted(moments))
 
 
+def fhm(m):
+    return f'{m // 60} ч {m % 60:02d} мин'
+
+
 def gen_g_sollon(rng):
-    gh, gm = rng.randint(0, 23), rng.choice([0, 20, 40])
-    lon = rng.randint(1, 179)
-    east = rng.random() < 0.5
-    minutes = lon * 4
-    t0 = gh * 60 + gm
-    tl = (t0 + minutes) % 1440 if east else (t0 - minutes) % 1440
-    fh = lambda m: f'{m // 60} ч {m % 60:02d} мин'
-    q = (f'На нулевом меридиане Солнце показывает {fh(t0)}, а в искомом пункте в тот же момент {fh(tl)} '
-         f'(солнечное время). Найдите долготу пункта; он лежит ближе к нулевому меридиану, чем к 180-му.')
-    ok = f'{lon}° {"в.д." if east else "з.д."}'
-    wrong = [f'{lon}° {"з.д." if east else "в.д."}', f'{(lon + 1) if lon < 179 else lon - 2}° {"в.д." if east else "з.д."}',
-             f'{min(179, round(lon * 1.5)) if lon * 1.5 != lon else lon + 3}° {"в.д." if east else "з.д."}',
-             f'{max(1, lon - 5)}° {"з.д." if east else "в.д."}']
-    o, a = one(rng, ok, wrong)
-    e = f'1 ч = 15°, 4 мин = 1°. Разница {fh(minutes)} = {lon}°. Местное время {"больше" if east else "меньше"} гринвичского — {"восточное" if east else "западное"} полушарие.'
-    return card('one', 'geo-ege-28', q, a, e, {'t0': t0, 'tl': tl, 'ok': ok}, o=o)
+    """ЕГЭ 28: lon — долгота пункта по разнице солнечного времени; time — солнечное время на другом меридиане."""
+    mode = rng.choice(['lon', 'time'])
+    if mode == 'lon':
+        ref = rng.choice([0, 0, 15, 30, 45, 60, 90, 120])         # опорный меридиан, в.д.
+        lon = rng.choice([x for x in range(-175, 176, 5) if x != ref and abs(x - ref) <= 150])
+        t0 = rng.randint(6, 18) * 60 + rng.choice([0, 20, 40])
+        tl = (t0 + 4 * (lon - ref)) % 1440
+        L = lambda x: 'нулевом меридиане' if x == 0 else f'меридиане {abs(x)}° {"в.д." if x > 0 else "з.д."}'
+        q = (f'Определите географическую долготу пункта, если известно, что в полдень по солнечному времени пункта '
+             f'на {L(ref)} в этот момент {fhm((720 - 4 * (lon - ref)) % 1440)} (солнечное время). Пункт находится в том же полушарии '
+             'относительно 180-го меридиана, что и опорный меридиан (линию перемены дат не пересекаем). Запишите решение.')
+        ok = f'{abs(lon)}° {"в.д." if lon > 0 else "з.д."}' if lon else '0°'
+        e = (f'Разница солнечного времени {fhm(abs(4 * (lon - ref)))} = {abs(lon - ref)}° (1° = 4 мин). '
+             f'В пункте полдень наступил {"раньше" if lon > ref else "позже"} — он {"восточнее" if lon > ref else "западнее"} опорного меридиана: {ok}.')
+        c = card('flip', 'geo-ege-28', q, ok, e, {'mode': mode, 'ref': ref, 'lon': lon, 'ok': ok})
+        c['x'] = ok
+        return c
+    ref = rng.choice([x for x in range(-150, 151, 15)])
+    lon = rng.choice([x for x in range(-175, 176, 5) if x != ref])
+    t0 = rng.randint(0, 23) * 60 + rng.choice([0, 0, 30])
+    tl = t0 + 4 * (lon - ref)
+    L = lambda x: 'нулевом меридиане' if x == 0 else f'меридиане {abs(x)}° {"в.д." if x > 0 else "з.д."}'
+    q = (f'На {L(ref)} солнечное время {fhm(t0)}. Определите, какое солнечное время в этот момент на {L(lon)}. '
+         'Ответ запишите в формате «ч мин» и укажите, те же ли это сутки.')
+    day = '' if 0 <= tl < 1440 else (' (следующие сутки)' if tl >= 1440 else ' (предыдущие сутки)')
+    ans = fhm(tl % 1440) + day
+    e = f'Разность долгот {abs(lon - ref)}° × 4 мин = {fhm(abs(4 * (lon - ref)))}; к востоку время больше, к западу — меньше: {ans}.'
+    c = card('flip', 'geo-ege-28', q, ans, e, {'mode': mode, 'ref': ref, 'lon': lon, 't0': t0, 'ok': ans})
+    c['x'] = ans
+    return c
 
 
 def check_g_sollon(c):
-    d = (c['tl'] - c['t0']) % 1440
-    if d > 720:
-        d -= 1440
-    lon = abs(d) / 4
-    return f'{int(lon)}° {"в.д." if d > 0 else "з.д."}' == c['ok']
+    if c['mode'] == 'lon':
+        noon_ref = (720 - 4 * (c['lon'] - c['ref'])) % 1440           # время на опорном меридиане в полдень пункта
+        d = 720 - noon_ref                                             # насколько пункт «впереди» опорного
+        if d > 720:
+            d -= 1440
+        if d < -720:
+            d += 1440
+        lon = c['ref'] + d // 4
+        ok = f'{abs(lon)}° {"в.д." if lon > 0 else "з.д."}' if lon else '0°'
+        return ok == c['ok']
+    tl = c['t0'] + 4 * (c['lon'] - c['ref'])
+    day = '' if 0 <= tl < 1440 else (' (следующие сутки)' if tl >= 1440 else ' (предыдущие сутки)')
+    return fhm(tl % 1440) + day == c['ok']
 
 
 def gen_g_meridian(rng):
+    """ЕГЭ 28: судно и порт на одном меридиане; cross — по разные стороны экватора, same — в одном полушарии."""
+    mode = rng.choice(['same', 'cross'])
     lon = rng.randint(1, 179)
     hemi = rng.choice(['в.д.', 'з.д.'])
-    p1 = rng.randint(0, 80)
-    p2 = rng.randint(0, 80)
-    s1, s2 = rng.choice(['с.ш.', 'ю.ш.']), rng.choice(['с.ш.', 'ю.ш.'])
+    while True:
+        p1, p2 = rng.randint(1, 70), rng.randint(1, 70)
+        if mode == 'cross':
+            s1, s2 = rng.sample(['с.ш.', 'ю.ш.'], 2)
+        else:
+            s1 = s2 = rng.choice(['с.ш.', 'ю.ш.'])
+        if p1 != p2 or mode == 'cross':
+            break
     lat1 = p1 if s1 == 'с.ш.' else -p1
     lat2 = p2 if s2 == 'с.ш.' else -p2
-    if lat1 == lat2:
-        return gen_g_meridian(rng)
-    ans = abs(lat1 - lat2) * 111
-    q = (f'Определите расстояние (км) по меридиану между точками {p1}° {s1} {lon}° {hemi} и {p2}° {s2} {lon}° {hemi}. '
-         'Длину дуги 1° меридиана примите равной 111 км. Ответ запишите в виде числа.')
-    e = (f'Разность широт: {"|" + str(p1) + " − " + str(p2) + "|" if s1 == s2 else str(p1) + " + " + str(p2)} = '
-         f'{abs(lat1 - lat2)}°; {abs(lat1 - lat2)} × 111 = {ans} км. Точки в разных полушариях — широты складываются.')
-    return card('num', 'geo-ege-28', q, str(ans), e, {'lat1': lat1, 'lat2': lat2},
-                core={'d': abs(lat1 - lat2), 'same': s1 == s2})
+    d = abs(lat1 - lat2)
+    ans = d * 111
+    q = (f'Судно находится в точке с координатами {p1}° {s1} {lon}° {hemi}, порт назначения — в точке {p2}° {s2} {lon}° {hemi}. '
+         'Определите расстояние (км) между ними по меридиану. Длину дуги 1° меридиана примите равной 111 км. Запишите решение.')
+    how = (f'точки по разные стороны от экватора — широты складываются: {p1} + {p2}' if s1 != s2
+           else f'точки в одном полушарии — из большей широты вычитаем меньшую: {max(p1, p2)} − {min(p1, p2)}')
+    e = f'Точки на одном меридиане; {how} = {d}°; {d} × 111 = {ans} км.'
+    c = card('num', 'geo-ege-28', q, str(ans), e, {'lat1': lat1, 'lat2': lat2, 'mode': mode}, core={'d': d, 'mode': mode})
+    return c
 
 
 def check_g_meridian(c):
-    # длина дуги как доля окружности 360° × 111 км на градус
     arc_deg = abs(c['lat1'] - c['lat2'])
     return str(round(arc_deg / 360 * 360 * 111))
 
 
 def gen_g_scale(rng):
-    scale = rng.choice([1000, 2000, 5000, 10000, 25000, 50000, 100000, 200000, 500000, 1000000, 2500000, 5000000])
-    mode = rng.choice(['dist', 'named', 'map'])
-    if mode == 'dist':
-        mm = rng.randint(5, 250)
+    """ОГЭ 9: расстояние на местности по карте масштаба 1:N, ответ в метрах с округлением до десятков."""
+    scale = rng.choice([5000, 10000, 10000, 20000, 25000])
+    for _ in range(30):                # чаще — с округлением (некратно 10 м)
+        mm = rng.randint(8, 90)
         m = Fraction(mm, 1000) * scale
-        unit = 'м' if m < 10000 else 'км'
-        val = m if unit == 'м' else m / 1000
-        ans = fmt(Fraction(fmt(val / 10, 0)) * 10 if unit == 'м' and m >= 100 else val, 1)
-        q = (f'Расстояние на карте масштаба 1:{sp(scale)} между двумя пунктами {fmt(Fraction(mm, 10))} см. '
-             f'Определите расстояние на местности ({unit}).'
-             + (' Результат округлите до десятков метров.' if unit == 'м' and m >= 100 else ''))
-        e = f'В 1 см {fmt(Fraction(scale, 100))} м: {fmt(Fraction(mm, 10))} × {fmt(Fraction(scale, 100))} = {fmt(m)} м.'
-        chk = {'mode': mode, 'scale': scale, 'mm': mm}
-    elif mode == 'named':
-        q = f'Численный масштаб карты 1:{sp(scale)}. Сколько метров на местности соответствует 1 см на карте?'
-        ans = fmt(Fraction(scale, 100))
-        e = f'1:{sp(scale)} — в 1 см {sp(scale)} см = {ans} м.'
-        chk = {'mode': mode, 'scale': scale}
-    else:
-        km = rng.choice([0.5, 1, 1.5, 2, 3, 4, 5, 8, 10, 12, 20, 25, 40, 50, 100, 150, 200])
-        cm = Fraction(str(km)) * 100000 / scale
-        if cm < Fraction(1, 2) or cm > 40 or (cm * 10).denominator != 1:
-            return gen_g_scale(rng)
-        ans = fmt(cm)
-        q = f'Расстояние на местности {fmt(km)} км. Каким будет расстояние (см) на карте масштаба 1:{sp(scale)}?'
-        e = f'{fmt(km)} км = {fmt(Fraction(str(km)) * 100000)} см; {fmt(Fraction(str(km)) * 100000)} : {scale} = {ans} см.'
-        chk = {'mode': mode, 'scale': scale, 'km': km}
-    return card('num', 'geo-oge-9', q, ans, e, chk)
+        if m >= 100 and m % 10:
+            break
+    ans = fmt(half_up(m / 10, 0) * 10)
+    a_, b_ = rng.choice([('родника', 'школы'), ('моста', 'церкви'), ('колодца', 'дома лесника'), ('пристани', 'маяка'),
+                         ('отдельно стоящего дерева', 'родника'), ('часовни', 'моста через реку')])
+    q = (f'Расстояние на карте масштаба 1:{sp(scale)} от {a_} до {b_} по прямой составляет {fmt(Fraction(mm, 10))} см. '
+         'Определите расстояние на местности между этими объектами. Измерение проводите между центрами условных знаков. '
+         'Полученный результат округлите до десятков метров. Ответ запишите цифрами (м).')
+    e = f'В 1 см {fmt(Fraction(scale, 100))} м: {fmt(Fraction(mm, 10))} × {fmt(Fraction(scale, 100))} = {fmt(m)} м ≈ {ans} м.'
+    return card('num', 'geo-oge-9', q, ans, e, {'mode': 'dist', 'scale': scale, 'mm': mm})
 
 
 def check_g_scale(c):
-    s = c['scale']
-    if c['mode'] == 'named':
-        return fmt(Fraction(s, 100))
-    if c['mode'] == 'map':
-        return fmt(Fraction(str(c['km'])) * 100000 / s)
-    m = Fraction(c['mm'], 1000) * s
-    if m < 10000:
-        return fmt(half_up(m, -1)) if m >= 100 else fmt(m, 1)
-    return fmt(m / 1000, 1)
+    m = Fraction(c['mm'], 1000) * c['scale']
+    return fmt(half_up(m, -1))
 
 
 DIRS = ['север', 'северо-восток', 'восток', 'юго-восток', 'юг', 'юго-запад', 'запад', 'северо-запад']
@@ -1194,39 +1272,53 @@ def check_g_azimuth(c):
 
 
 def gen_g_altitude(rng):
-    mode = rng.choice(['temp', 'temp_up', 'press', 'height'])
+    """ОГЭ 13: temp/temp_up (температура с высотой), press/height (давление с высотой); ЕГЭ 2: slope_t (три станции на склоне)."""
+    mode = rng.choice(['temp', 'temp_up', 'press', 'height', 'slope_t'])
     if mode == 'temp':
-        h = rng.choice(range(500, 8001, 250))
-        t0 = rng.randint(-10, 35)
+        h = rng.choice(range(500, 5001, 500))
+        t0 = rng.randint(10, 30)
         ans = fmt(t0 - Fraction(6, 1000) * h, 1)
-        q = (f'Температура воздуха у подножия горы (уровень моря) {t0} °С. Определите температуру (°С) на вершине высотой {h} м, '
-             'если она понижается на 0,6 °С на каждые 100 м. Ответ запишите в виде числа.')
+        q = (f'Определите, какая температура воздуха будет на вершине горы высотой {h} м, если у её подножия (на уровне моря) '
+             f'температура составляет +{t0} °С и известно, что температура понижается на 0,6 °С на каждые 100 м. '
+             'Ответ запишите в виде числа.')
         e = f'{h} / 100 × 0,6 = {fmt(Fraction(6, 1000) * h)} °С; {t0} − {fmt(Fraction(6, 1000) * h)} = {ans} °С.'
         chk = {'mode': mode, 'h': h, 't0': t0}
     elif mode == 'temp_up':
-        h = rng.choice(range(500, 6001, 500))
-        t1 = rng.randint(-30, 10)
+        h = rng.choice(range(500, 5001, 500))
+        t1 = rng.randint(-15, 8)
         ans = fmt(t1 + Fraction(6, 1000) * h, 1)
-        q = (f'На вершине горы высотой {h} м температура {t1} °С. Какая температура (°С) в это время у подножия (уровень моря), '
-             'если на каждые 100 м она меняется на 0,6 °С? Ответ запишите в виде числа.')
+        q = (f'На вершине горы высотой {h} м температура воздуха {t1:+d} °С. Определите температуру воздуха у подножия горы '
+             '(на уровне моря), если известно, что температура понижается на 0,6 °С на каждые 100 м. Ответ запишите в виде числа.')
         e = f'{t1} + {h} / 100 × 0,6 = {ans} °С.'
         chk = {'mode': mode, 'h': h, 't1': t1}
     elif mode == 'press':
-        h = rng.choice(range(100, 3001, 100))
-        p0 = rng.choice([750, 755, 760, 765, 770])
+        h = rng.choice(range(200, 3001, 100))
+        p0 = rng.choice([750, 755, 760, 760, 760, 765])
         ans = str(p0 - h // 10)
-        q = (f'У подножия холма давление {p0} мм рт. ст. Каким будет давление на высоте {h} м над подножием, '
-             'если оно понижается на 1 мм рт. ст. на каждые 10 м подъёма? Ответ запишите в виде числа.')
+        q = (f'Определите, какое атмосферное давление будет на вершине горы высотой {h} м, если у её подножия оно составляет '
+             f'{p0} мм рт. ст. и известно, что давление понижается на 1 мм рт. ст. на каждые 10 м подъёма. Ответ запишите в виде числа.')
         e = f'{h} / 10 = {h // 10} мм; {p0} − {h // 10} = {ans}.'
         chk = {'mode': mode, 'h': h, 'p0': p0}
-    else:
+    elif mode == 'height':
         p0 = rng.choice([750, 755, 760, 765])
-        dp = rng.randint(5, 150)
+        dp = rng.randint(12, 150)
         ans = str(dp * 10)
-        q = (f'У подножия горы давление {p0} мм рт. ст., на вершине {p0 - dp} мм рт. ст. Определите относительную высоту горы (м), '
-             'если давление падает на 1 мм рт. ст. на каждые 10 м. Ответ запишите в виде числа.')
+        q = (f'У подножия горы атмосферное давление {p0} мм рт. ст., на вершине — {p0 - dp} мм рт. ст. Определите относительную '
+             'высоту горы (м), если давление понижается на 1 мм рт. ст. на каждые 10 м подъёма. Ответ запишите в виде числа.')
         e = f'{p0} − {p0 - dp} = {dp} мм; {dp} × 10 = {ans} м.'
         chk = {'mode': mode, 'p0': p0, 'dp': dp}
+    else:
+        while True:
+            ts = rng.sample(range(-12, 15), 3)
+            if min(ts) < 0 < max(ts) and min(abs(x - y) for x, y in itertools.combinations(ts, 2)) >= 2:
+                break
+        q = ('На метеостанциях 1, 2 и 3, расположенных на склоне горы на разных высотах, одновременно измерили температуру воздуха. '
+             'Результаты: ' + '; '.join(f'метеостанция {i + 1} — {t:+d} °С'.replace('+0', '0') for i, t in enumerate(ts))
+             + '. Расположите эти метеостанции в порядке увеличения их высоты над уровнем моря. '
+             'Запишите в таблицу получившуюся последовательность цифр.')
+        ans = ''.join(str(i + 1) for i in sorted(range(3), key=lambda i: -ts[i]))
+        return card('num', 'geo-ege-2', q, ans, 'В тропосфере температура с высотой понижается: чем выше станция, тем холоднее.',
+                    {'mode': mode, 'ts': ts})
     return card('num', 'geo-oge-13', q, ans, e, chk)
 
 
@@ -1244,164 +1336,257 @@ def check_g_altitude(c):
         for _ in range(c['h'] // 10):
             p -= 1
         return str(p)
+    if m == 'slope_t':
+        h = [-(t - 20) / Fraction(6, 1000) for t in c['ts']]     # высота из градиента 0,6 °С/100 м
+        return ''.join(str(i + 1) for i in sorted(range(3), key=lambda i: h[i]))
     return str(c['dp'] * 10)
 
 
-# максимальное содержание водяного пара (г/м³) при температуре — школьная справочная таблица
-SAT = {-20: 1, -10: 2, 0: 5, 10: 9, 20: 17, 30: 30}
+# максимальное содержание водяного пара (г/м³) при температуре — справочная таблица школьного атласа
+SAT = {-20: Fraction('0.9'), -10: Fraction('2.3'), 0: Fraction('4.8'), 10: Fraction('9.4'), 20: Fraction('17.3'), 30: Fraction('30.4')}
 
 
 def gen_g_humidity(rng):
-    mode = rng.choice(['rh', 'order', 'abs', 'order_a', 'press'])
+    """ОГЭ 13: rh (расчёт относительной влажности); ЕГЭ 2: rh_order, temp_order, press (упорядочить метеостанции)."""
+    mode = rng.choice(['rh', 'rh_order', 'temp_order', 'press'])
     if mode == 'rh':
-        t = rng.choice(list(SAT))
-        a = rng.randint(1, SAT[t])
-        ans = fmt(Fraction(100 * a, SAT[t]), 0)
-        q = (f'При температуре {t} °С в 1 м³ воздуха может содержаться не более {SAT[t]} г водяного пара. '
-             f'Фактически содержится {a} г. Определите относительную влажность (%). Ответ округлите до целого.')
-        e = f'{a} / {SAT[t]} × 100 % = {ans} %.'
-        return card('num', 'geo-ege-2', q, ans, e, {'mode': mode, 't': t, 'a': a})
-    if mode == 'abs':
-        t = rng.choice(list(SAT))
-        rh = rng.choice([10, 20, 25, 40, 50, 60, 75, 80, 100])
-        if SAT[t] * rh % 100:
-            return gen_g_humidity(rng)
-        ans = str(SAT[t] * rh // 100)
-        q = (f'При температуре {t} °С насыщенный воздух содержит {SAT[t]} г/м³ водяного пара. Сколько граммов пара '
-             f'содержится в 1 м³ воздуха при относительной влажности {rh} %? Ответ запишите в виде числа.')
-        return card('num', 'geo-ege-2', q, ans, f'{SAT[t]} × {rh} / 100 = {ans} г.', {'mode': mode, 't': t, 'rh': rh})
-    if mode == 'order_a':
-        t = rng.choice([t for t in SAT if SAT[t] >= 5])
-        aa = rng.sample(range(1, SAT[t] + 1), 3)
-        q = (f'В пунктах 1, 2 и 3 температура воздуха одинакова ({t:+d} °С), содержание водяного пара: '
-             + '; '.join(f'{i + 1}) {x} г/м³' for i, x in enumerate(aa))
-             + '. Расположите пункты в порядке понижения относительной влажности. Ответ — цифры подряд.')
-        ans = ''.join(str(i + 1) for i in sorted(range(3), key=lambda i: -aa[i]))
-        return card('num', 'geo-ege-2', q, ans, 'При одной температуре относительная влажность пропорциональна содержанию пара.',
-                    {'mode': mode, 't': t, 'aa': aa})
-    if mode == 'press':
-        ps = rng.sample(range(560, 771), 3)
-        up = rng.random() < 0.5
-        q = ('На метеостанциях 1, 2 и 3 на склоне горы одновременно измерили давление: '
-             + '; '.join(f'{i + 1}) {p} мм рт. ст.' for i, p in enumerate(ps))
-             + f'. Расположите метеостанции в порядке {"увеличения" if up else "уменьшения"} их высоты. Ответ — цифры подряд.')
-        ans = ''.join(str(i + 1) for i in sorted(range(3), key=lambda i: -ps[i] if up else ps[i]))
-        return card('num', 'geo-ege-2', q, ans, 'С высотой давление понижается: выше станция — ниже давление.',
-                    {'mode': mode, 'ps': ps, 'up': up})
-    # order: одинаковое содержание пара — чем теплее, тем ниже относительная влажность
-    a = rng.choice([1, 2, 5, 9])
-    ts = rng.sample([t for t in SAT if SAT[t] >= a], 3)
-    q = ('В пунктах 1, 2 и 3 одновременно измерили содержание водяного пара и температуру: '
-         + '; '.join(f'{i + 1}) {a} г/м³, {t:+d} °С' for i, t in enumerate(ts))
-         + '. Расположите пункты в порядке повышения относительной влажности. Ответ — цифры подряд.')
-    order = sorted(range(3), key=lambda i: -ts[i])
-    ans = ''.join(str(i + 1) for i in order)
-    e = 'При одинаковом содержании пара относительная влажность выше там, где холоднее (меньше насыщение).'
-    return card('num', 'geo-ege-2', q, ans, e, {'mode': mode, 'a': a, 'ts': ts})
+        t = rng.choice([-10, 0, 10, 20, 30])
+        for _ in range(100):
+            a = Fraction(rng.randint(3, int(SAT[t] * 10) - 2), 10)
+            phi = 100 * a / SAT[t]
+            if phi % 10 and 15 < phi < 98:
+                break
+        ans = fmt(half_up(phi, 0))
+        q = (f'Температура воздуха {t:+d} °С, содержание водяного пара в нём {fmt(a)} г/м³. Какова относительная влажность воздуха, '
+             f'если при такой температуре максимально возможное содержание водяного пара составляет {fmt(SAT[t])} г/м³? '
+             'Полученный результат округлите до целого числа.').replace('+0 °С', '0 °С')
+        e = f'{fmt(a)} / {fmt(SAT[t])} × 100 % ≈ {ans} %.'
+        return card('num', 'geo-oge-13', q, ans, e, {'mode': mode, 't': t, 'a': str(a)})
+    if mode == 'rh_order':
+        for _ in range(200):
+            ts = rng.sample([-10, 0, 10, 20, 30], 3)
+            aa = [Fraction(rng.randint(3, int(SAT[t] * 9)), 10) for t in ts]
+            rh = [a / SAT[t] for a, t in zip(aa, ts)]
+            if min(abs(x - y) for x, y in itertools.combinations(rh, 2)) > Fraction(5, 100):
+                break
+        rows = '; '.join(f'Метеостанция {i + 1}: температура {t:+d} °С, содержание водяного пара {fmt(a)} г/м³'.replace('+0 °С', '0 °С')
+                         for i, (t, a) in enumerate(zip(ts, aa)))
+        sat = ', '.join(f'{t:+d} °С — {fmt(SAT[t])} г/м³'.replace('+0 °С', '0 °С') for t in sorted(ts))
+        q = (f'На трёх метеостанциях одновременно измерили температуру воздуха и содержание в нём водяного пара. {rows}. '
+             f'Максимально возможное содержание водяного пара: {sat}. Расположите метеостанции в порядке повышения '
+             'относительной влажности воздуха (от наименьшей к наибольшей). Запишите в таблицу получившуюся последовательность цифр.')
+        ans = ''.join(str(i + 1) for i in sorted(range(3), key=lambda i: rh[i]))
+        e = 'Относительная влажность: ' + ', '.join(f'{i + 1}) {fmt(100 * r, 0)} %' for i, r in enumerate(rh)) + '.'
+        return card('num', 'geo-ege-2', q, ans, e, {'mode': mode, 'ts': ts, 'aa': [str(a) for a in aa]})
+    if mode == 'temp_order':
+        phi = rng.choice([55, 60, 65, 70, 75, 80, 85, 90])
+        ts = rng.sample([-10, 0, 10, 20, 30], 3)
+        aa = [half_up(SAT[t] * phi / 100, 1) for t in ts]
+        q = ('На трёх метеостанциях одновременно измерили содержание водяного пара в воздухе: '
+             + '; '.join(f'метеостанция {i + 1} — {fmt(a)} г/м³' for i, a in enumerate(aa))
+             + f'. Относительная влажность воздуха на всех станциях одинакова и составляет {phi} %. Расположите метеостанции '
+             'в порядке повышения температуры воздуха на них. Запишите в таблицу получившуюся последовательность цифр.')
+        ans = ''.join(str(i + 1) for i in sorted(range(3), key=lambda i: ts[i]))
+        e = 'При одинаковой относительной влажности пара больше там, где теплее: ' + ', '.join(f'{i + 1}) {t:+d} °С' for i, t in enumerate(ts)) + '.'
+        return card('num', 'geo-ege-2', q, ans, e, {'mode': mode, 'aa': [str(a) for a in aa], 'phi': phi})
+    while True:
+        ps = rng.sample(range(600, 761), 3)
+        if min(abs(x - y) for x, y in itertools.combinations(ps, 2)) >= 8:
+            break
+    q = ('На метеостанциях 1, 2 и 3, расположенных на склоне горы на разных высотах, одновременно измерили атмосферное давление: '
+         + '; '.join(f'метеостанция {i + 1} — {p} мм рт. ст.' for i, p in enumerate(ps))
+         + '. Расположите эти метеостанции в порядке увеличения их высоты над уровнем моря. '
+         'Запишите в таблицу получившуюся последовательность цифр.').replace('ст..', 'ст.')
+    ans = ''.join(str(i + 1) for i in sorted(range(3), key=lambda i: -ps[i]))
+    return card('num', 'geo-ege-2', q, ans, 'С высотой давление понижается: выше станция — ниже давление.', {'mode': mode, 'ps': ps})
 
 
 def check_g_humidity(c):
     m = c['mode']
     if m == 'rh':
-        return fmt(half_up(Fraction(100 * c['a'], SAT[c['t']]), 0))
-    if m == 'abs':
-        return str(round(SAT[c['t']] * c['rh'] / 100))
-    if m == 'order_a':
-        return ''.join(str(i + 1) for i in sorted(range(3), key=lambda i: Fraction(c['aa'][i], SAT[c['t']]), reverse=True))
-    if m == 'press':
-        import math
-        h = [18400 * math.log10(760 / p) for p in c['ps']]   # барометрическая ступень: высота монотонно растёт при падении P
-        return ''.join(str(i + 1) for i in sorted(range(3), key=lambda i: h[i], reverse=not c['up']))
-    rh = [c['a'] / SAT[t] for t in c['ts']]
-    return ''.join(str(i + 1) for i in sorted(range(3), key=lambda i: rh[i]))
+        return fmt(half_up(100 * Fraction(c['a']) / SAT[c['t']], 0))
+    if m == 'rh_order':
+        rh = [Fraction(a) / SAT[t] for a, t in zip(c['aa'], c['ts'])]
+        return ''.join(str(i + 1) for i in sorted(range(3), key=lambda i: rh[i]))
+    if m == 'temp_order':
+        sat = [Fraction(a) * 100 / c['phi'] for a in c['aa']]     # насыщающее содержание растёт с температурой
+        return ''.join(str(i + 1) for i in sorted(range(3), key=lambda i: sat[i]))
+    import math
+    h = [18400 * math.log10(760 / p) for p in c['ps']]   # барометрическая формула: высота растёт при падении P
+    return ''.join(str(i + 1) for i in sorted(range(3), key=lambda i: h[i]))
 
 
-REGIONS_AREA = None  # площади регионов здесь не используются — задачи на плотность с условными числами
+# запасы и добыча (порядок величин — по открытым отраслевым обзорам 2020-х; в задаче значения слегка варьируются)
+RESOURCES = {
+    'нефти': ('млрд т', 'млн т', {'Саудовская Аравия': (40.9, 520), 'Россия': (14.8, 540), 'Канада': (27.1, 270),
+                                   'Венесуэла': (48.0, 40), 'Ирак': (19.6, 210), 'Иран': (21.7, 170), 'ОАЭ': (13.0, 180),
+                                   'Кувейт': (14.0, 140), 'США': (8.2, 750), 'Казахстан': (3.9, 90), 'Норвегия': (1.1, 90),
+                                   'Бразилия': (1.7, 170), 'Нигерия': (5.0, 80), 'Ливия': (6.3, 60)}),
+    'природного газа': ('трлн м³', 'млрд м³', {'Россия': (37.4, 690), 'Иран': (32.1, 250), 'Катар': (23.8, 175),
+                                             'Туркменистан': (13.6, 80), 'США': (12.6, 1000), 'Саудовская Аравия': (6.0, 115),
+                                             'Норвегия': (1.4, 120), 'Алжир': (2.3, 100), 'Австралия': (2.4, 150), 'Китай': (8.4, 220)}),
+    'угля': ('млрд т', 'млн т', {'Китай': (143, 4500), 'США': (249, 540), 'Индия': (111, 900), 'Австралия': (150, 450),
+                                 'Россия': (162, 440), 'Индонезия': (35, 690), 'ЮАР': (10, 230), 'Казахстан': (25, 110),
+                                 'Польша': (28, 100), 'Колумбия': (4.5, 60)}),
+}
+ARABLE = {'Россия': (146, 123), 'Канада': (39, 38), 'Индия': (1430, 155), 'Китай': (1410, 119), 'США': (335, 158),
+          'Австралия': (27, 31), 'Казахстан': (20, 30), 'Бразилия': (216, 63), 'Египет': (112, 3.3), 'Япония': (124, 4.1),
+          'Украина': (37, 32), 'Аргентина': (46, 33), 'Германия': (84, 11.7), 'Франция': (68, 18)}      # млн чел., млн га пашни
+SEAS = {'Балтийского моря': 7, 'Чёрного моря': 18, 'Азовского моря': 11, 'Белого моря': 26, 'Средиземного моря': 38,
+        'Красного моря': 41, 'Баренцева моря': 34, 'Японского моря': 34, 'Карибского моря': 36}
+
+
+RES_ABLT = {'нефти': 'нефтью', 'природного газа': 'природным газом', 'угля': 'углём'}
+
+
+def of_country(name):
+    """«Саудовской Аравии»; несклоняемые — «страны США»."""
+    g = inflect(name, 'gent')
+    return g if g != name else f'страны {name}'
+
+
+def years_word(n):
+    n = abs(int(n))
+    return 'год' if n % 10 == 1 and n % 100 != 11 else ('года' if 2 <= n % 10 <= 4 and not 12 <= n % 100 <= 14 else 'лет')
+
+
+def jitter(rng, v, pct=8, nd=1):
+    return half_up(Fraction(str(v)) * (100 + rng.randint(-pct, pct)) / 100, nd)
+
+
+def subj(rng, big=False):
+    S = FACTS['geo']['ru_subjects']
+    name = rng.choice([k for k, v in S.items() if v.get('pop') and v.get('area') and (not big or v['pop'] > 800000)])
+    return name, S[name]
+
+
+def demo_rows(rng, years=2):
+    """Реальный субъект: численность на 1 января, естественный и миграционный прирост с реалистичными коэффициентами."""
+    name, v = subj(rng, True)
+    p = [v['pop'] + rng.randint(-3000, 3000)]
+    nats, migs = [], []
+    for _ in range(years):
+        br, dr = Fraction(rng.randint(65, 130), 10), Fraction(rng.randint(95, 160), 10)
+        nat = int((br - dr) * p[-1] / 1000) + rng.randint(-50, 50)
+        mig = int(p[-1] * Fraction(rng.randint(-80, 80), 10000)) + rng.randint(-50, 50)
+        nats.append(nat)
+        migs.append(mig)
+        p.append(p[-1] + nat + mig)
+    return name, p, nats, migs
 
 
 def gen_g_demo(rng):
-    mode = rng.choice(['density', 'natural', 'migr', 'urban', 'supply', 'reserves', 'birth'])
+    mode = rng.choice(['density', 'natural', 'migr', 'urban', 'supply', 'reserves', 'birth', 'salinity', 'nat_abs'])
+    Y = rng.choice([2022, 2023, 2024])
     if mode == 'density':
-        pop = rng.randint(100, 9000) * 1000
-        area = rng.randint(5, 900) * 1000
-        ans = fmt(Fraction(pop, area), 1)
-        q = (f'Численность населения региона {sp(pop)} человек, площадь {sp(area)} км². Определите среднюю плотность '
-             'населения (чел./км²). Ответ округлите до десятых.')
-        e = f'{pop} / {area} = {ans} чел./км².'
+        name, v = subj(rng)
+        pop, area = v['pop'], v['area']
+        ans = fmt(half_up(Fraction(pop, area), 1), 1)
+        q = (f'Численность населения субъекта РФ «{name}» на 1 января 2025 г. составляла {sp(pop)} человек, площадь территории — '
+             f'{sp(area)} км². Определите среднюю плотность населения (чел./км²). Полученный результат округлите до десятых.')
+        e = f'{sp(pop)} : {sp(area)} ≈ {ans} чел./км².'
         chk = {'mode': mode, 'pop': pop, 'area': area}
-    elif mode == 'natural':
-        pop = rng.randint(200, 5000) * 1000
-        b = rng.randint(5, 20) * pop // 1000 + rng.randint(-200, 200)
-        d = rng.randint(8, 18) * pop // 1000 + rng.randint(-200, 200)
-        ans = fmt(Fraction((b - d) * 1000, pop), 1)
-        q = (f'В регионе с численностью населения {sp(pop)} человек за год родилось {sp(b)} и умерло {sp(d)} человек. '
-             'Определите естественный прирост (‰). Ответ округлите до десятых.')
-        e = f'({b} − {d}) / {pop} × 1000 = {ans} ‰.'
-        chk = {'mode': mode, 'pop': pop, 'b': b, 'd': d}
-    elif mode == 'migr':
-        p1 = rng.randint(200, 5000) * 1000 + rng.randint(0, 999)
-        nat = rng.randint(-15000, 8000)
-        mig = rng.randint(-12000, 12000)
-        p2 = p1 + nat + mig
-        ans = str(mig)
-        q = (f'Численность населения региона на 1 января 2025 г. — {sp(p1)} человек, на 1 января 2026 г. — {sp(p2)}. '
-             f'Естественный прирост за 2025 г. составил {sp(nat)} человек. Определите миграционный прирост (человек). '
-             'Ответ запишите в виде числа.')
-        e = f'Общий прирост {p2 - p1}; миграционный = общий − естественный = {p2 - p1} − ({nat}) = {mig}.'
-        chk = {'mode': mode, 'p1': p1, 'p2': p2, 'nat': nat}
+    elif mode in ('natural', 'migr', 'nat_abs'):
+        name, p, nats, migs = demo_rows(rng, 1)
+        tab = (f'Используя данные таблицы, ', f'Численность населения субъекта РФ «{name}»: на 1 января {Y} г. — {sp(p[0])} чел., '
+               f'на 1 января {Y + 1} г. — {sp(p[1])} чел.')
+        if mode == 'natural':
+            avg = Fraction(p[0] + p[1], 2)
+            ans = fmt(half_up(nats[0] * 1000 / avg, 1), 1)
+            q = (f'{tab[1]} Естественный прирост населения за {Y} г. составил {sp(nats[0])} чел. {tab[0]}определите величину '
+                 f'естественного прироста населения (в ‰) в {Y} г. При расчётах используйте показатель среднегодовой численности '
+                 'населения. Полученный результат округлите до десятых.')
+            e = f'Среднегодовая численность ({sp(p[0])} + {sp(p[1])}) : 2 = {fmt(avg, 1)}; {nats[0]} : {fmt(avg, 1)} × 1000 ≈ {ans} ‰.'
+            chk = {'mode': mode, 'p': p, 'nat': nats[0]}
+        elif mode == 'migr':
+            ans = str(migs[0])
+            q = (f'{tab[1]} Естественный прирост населения за {Y} г. составил {sp(nats[0])} чел. {tab[0]}определите величину '
+                 f'миграционного прироста (убыли) населения в {Y} г. (чел.). Убыль запишите со знаком «минус».')
+            e = f'Общий прирост {p[1] - p[0]}; миграционный = общий − естественный = {p[1] - p[0]} − ({nats[0]}) = {ans}.'
+            chk = {'mode': mode, 'p1': p[0], 'p2': p[1], 'nat': nats[0]}
+        else:
+            ans = str(nats[0])
+            q = (f'{tab[1]} Миграционный прирост населения за {Y} г. составил {sp(migs[0])} чел. {tab[0]}определите величину '
+                 f'естественного прироста (убыли) населения в {Y} г. (чел.). Убыль запишите со знаком «минус».')
+            e = f'Общий прирост {p[1] - p[0]}; естественный = общий − миграционный = {p[1] - p[0]} − ({migs[0]}) = {ans}.'
+            chk = {'mode': mode, 'p1': p[0], 'p2': p[1], 'mig': migs[0]}
     elif mode == 'urban':
-        tot = rng.randint(300, 9000) * 1000
-        urb = rng.randint(20, 95) * tot // 100 + rng.randint(-500, 500)
-        ans = fmt(Fraction(urb * 100, tot), 1)
-        q = (f'В регионе проживает {sp(tot)} человек, из них в городах — {sp(urb)}. Определите долю городского населения (%). '
-             'Ответ округлите до десятых.')
-        e = f'{urb} / {tot} × 100 = {ans} %.'
+        C = FACTS['geo']['countries']
+        iso = rng.choice([i for i in C if wbv(i, 'urban') and wbv(i, 'pop') and wbv(i, 'pop') > 2e6])
+        tot = int(wbv(iso, 'pop'))
+        urb = int(tot * Fraction(str(round(wbv(iso, 'urban'), 1))) / 100)
+        ans = fmt(half_up(Fraction(urb * 100, tot), 0))
+        q = (f'Численность населения {of_country(C[iso]["name"])} — {sp(tot)} человек, из них в городах проживает {sp(urb)} человек. '
+             'Определите долю городского населения (%). Полученный результат округлите до целого числа.')
+        e = f'{sp(urb)} : {sp(tot)} × 100 ≈ {ans} %.'
         chk = {'mode': mode, 'tot': tot, 'urb': urb}
-    elif mode == 'supply':
-        prod = rng.randint(50, 5000)
-        years = rng.randint(10, 300)
-        res = prod * years
-        ans = str(years)
-        q = (f'Разведанные запасы ресурса в стране — {sp(res)} млн т, годовая добыча — {sp(prod)} млн т. '
-             'Определите ресурсообеспеченность (лет). Ответ запишите в виде числа.')
-        e = f'{res} / {prod} = {years} лет.'
-        chk = {'mode': mode, 'res': res, 'prod': prod}
-    elif mode == 'reserves':
-        prod = rng.randint(50, 5000)
-        years = rng.randint(10, 300)
-        ans = str(prod * years)
-        q = (f'Годовая добыча ресурса — {sp(prod)} млн т, ресурсообеспеченность — {years} лет. Определите величину '
-             'разведанных запасов (млн т). Ответ запишите в виде числа.')
-        e = f'{prod} × {years} = {ans} млн т.'
-        chk = {'mode': mode, 'prod': prod, 'years': years}
+    elif mode in ('supply', 'reserves'):
+        res_name = rng.choice(list(RESOURCES))
+        ru, pu, T = RESOURCES[res_name]
+        rows = rng.sample(list(T), 3)
+        vals = {c: (jitter(rng, T[c][0], 8, 1), jitter(rng, T[c][1], 8, 0)) for c in rows}
+        ask = rng.choice(rows)
+        R, P = vals[ask]
+        k = 1000
+        table = '; '.join(f'{c} — запасы {fmt(vals[c][0])} {ru}, добыча {fmt(vals[c][1])} {pu} в год' for c in rows)
+        if mode == 'supply':
+            ans = fmt(half_up(R * k / P, 0))
+            q = (f'В таблице приведены данные о разведанных запасах и добыче {res_name} в {Y} г.: {table}. Используя данные таблицы, '
+                 f'определите ресурсообеспеченность {of_country(ask)} {RES_ABLT[res_name]} (в годах). Полученный результат округлите до целого числа.')
+            e = f'{fmt(R)} {ru} = {fmt(R * k)} {pu}; {fmt(R * k)} : {fmt(P)} ≈ {ans} лет.'
+            chk = {'mode': mode, 'R': str(R), 'P': str(P)}
+        else:
+            yrs = int(half_up(R * k / P, 0))
+            ans = fmt(half_up(P * yrs / k, 1), 1)
+            q = (f'Годовая добыча {res_name} в {inflect(ask, "loct") if inflect(ask, "loct") != ask else "стране " + ask} в {Y} г. составила {fmt(P)} {pu}. '
+                 f'Ресурсообеспеченность {of_country(ask)} {RES_ABLT[res_name]} при таком уровне добычи — {yrs} {years_word(yrs)}. Определите разведанные запасы {res_name} ({ru}). '
+                 'Полученный результат округлите до десятых.')
+            e = f'{fmt(P)} × {yrs} = {fmt(P * yrs)} {pu} = {ans} {ru}.'
+            chk = {'mode': mode, 'P': str(P), 'yrs': yrs}
+    elif mode == 'salinity':
+        sea = rng.choice(list(SEAS))
+        L = rng.choice([1, 2, 3, 4, 5])
+        g = SEAS[sea] * L + rng.randint(-L, L)
+        ans = fmt(half_up(Fraction(g, L), 0))
+        q = (f'Учащиеся определили, что в {agree(L, "литр")} воды {sea} растворено {g} г солей. '
+             'Определите солёность воды (‰). Полученный результат округлите до целого числа.').replace(' 1 литр ', ' 1 литре ')
+        q = re.sub(r'в (\d+) литра? ', lambda m_: f'в {m_.group(1)} {"литре" if m_.group(1) == "1" else "литрах"} ', q)
+        e = f'Солёность — граммы солей в 1 л (кг) воды: {g} : {L} ≈ {ans} ‰.'
+        chk = {'mode': mode, 'g': g, 'L': L}
     else:
-        pop = rng.randint(200, 9000) * 1000
-        rate = Fraction(rng.randint(50, 250), 10)
-        b = int(rate * pop / 1000)
-        ans = fmt(Fraction(b * 1000, pop), 1)
-        q = (f'В стране с населением {sp(pop)} человек за год родилось {sp(b)} детей. Определите коэффициент рождаемости (‰). '
-             'Ответ округлите до десятых.')
-        e = f'{b} / {pop} × 1000 = {ans} ‰.'
+        C = FACTS['geo']['countries']
+        iso = rng.choice([i for i in C if wbv(i, 'birth') and wbv(i, 'pop') and wbv(i, 'pop') > 2e6])
+        pop = int(wbv(iso, 'pop'))
+        b = int(Fraction(str(round(wbv(iso, 'birth'), 1))) * pop / 1000)
+        ans = fmt(half_up(Fraction(b * 1000, pop), 1), 1)
+        q = (f'Численность населения {of_country(C[iso]["name"])} — {sp(pop)} человек, за год родилось {sp(b)} детей. '
+             'Определите коэффициент рождаемости (‰). Полученный результат округлите до десятых.')
+        e = f'{sp(b)} : {sp(pop)} × 1000 ≈ {ans} ‰.'
         chk = {'mode': mode, 'pop': pop, 'b': b}
-    return card('num', 'geo-ege-16', q, ans, e, chk)
+    topic = {'salinity': 'geo-oge-13', 'density': 'geo-oge-13', 'urban': 'geo-oge-13'}.get(mode, 'geo-ege-16')
+    return card('num', topic, q, ans, e, chk)
 
 
 def check_g_demo(c):
     m = c['mode']
     F = Fraction
     if m == 'density':
-        return fmt(F(c['pop'], c['area']), 1)
+        return fmt(half_up(F(c['pop'], c['area']), 1), 1)
     if m == 'natural':
-        return fmt(F((c['b'] - c['d']) * 1000, c['pop']), 1)
+        return fmt(half_up(F(c['nat'] * 2000, c['p'][0] + c['p'][1]), 1), 1)
     if m == 'migr':
         return str((c['p2'] - c['p1']) - c['nat'])
+    if m == 'nat_abs':
+        return str((c['p2'] - c['p1']) - c['mig'])
     if m == 'urban':
-        return fmt(F(c['urb'] * 100, c['tot']), 1)
+        return fmt(half_up(F(c['urb'] * 100, c['tot']), 0))
     if m == 'supply':
-        return fmt(F(c['res'], c['prod']))
+        return fmt(half_up(F(c['R']) * 1000 / F(c['P']), 0))
     if m == 'reserves':
-        return str(c['prod'] * c['years'])
-    return fmt(F(c['b'] * 1000, c['pop']), 1)
+        return fmt(half_up(F(c['P']) * c['yrs'] / 1000, 1), 1)
+    if m == 'salinity':
+        return fmt(half_up(F(c['g'], c['L']), 0))
+    return fmt(half_up(F(c['b'] * 1000, c['pop']), 1), 1)
 
 
 def gen_g_sun(rng):
@@ -1444,7 +1629,7 @@ def gen_g_daylen(rng):
     ans = ''.join(str(i + 1) for i in order)
     q = (f'Дата — {day}. Упорядочьте города от {"самого короткого" if asc else "самого длинного"} светового дня '
          f'к {"самому длинному" if asc else "самому короткому"}: '
-         + '; '.join(f'{i + 1}) {c}' for i, c in enumerate(cs)) + '. Ответ — цифры подряд.')
+         + '; '.join(f'{i + 1}) {c}' for i, c in enumerate(cs)) + '. Запишите в таблицу получившуюся последовательность цифр.')
     e = ('Между весенним и осенним равноденствием в Северном полушарии день тем длиннее, чем севернее пункт; в остальное время — наоборот. Широты: '
          + ', '.join(f'{c} {fmt(CITIES[c][1])}°' for c in cs) + '.')
     return card('num', 'geo-ege-3', q, ans, e, {'cs': cs, 'day': day, 'doy': doy, 'asc': asc})
@@ -1485,7 +1670,7 @@ def gen_g_lonorder(rng):
     order = sorted(range(3), key=lambda i: m[pick[i]], reverse=not east)
     ans = ''.join(str(i + 1) for i in order)
     q = (f'Расположите горные системы {cont} {"с запада на восток" if east else "с востока на запад"}: '
-         + '; '.join(f'{i + 1}) {x}' for i, x in enumerate(pick)) + '. Ответ — цифры подряд.')
+         + '; '.join(f'{i + 1}) {x}' for i, x in enumerate(pick)) + '. Запишите в таблицу получившуюся последовательность цифр.')
     return card('num', 'geo-ege-4', q, ans, 'Долготы центров: ' + ', '.join(f'{x} ≈ {abs(m[x])}° {"в.д." if m[x] >= 0 else "з.д."}' for x in pick) + '.',
                 {'cont': cont, 'pick': pick, 'east': east})
 
@@ -1577,7 +1762,7 @@ def parse_args(args):
         if '=' in a:
             k, v = a.split('=', 1)
             kw[k] = v
-        elif a in ('each', 'diff', 'obj', 'prop', 'cls', 'rev', 'max', 'min', 'ru', 'world', 'same'):  # флаги
+        elif a in ('each', 'diff', 'obj', 'prop', 'cls', 'rev', 'max', 'min', 'ru', 'world', 'same', 'city', 'center'):  # флаги
             kw[a] = True
         else:
             pos.append(a)
@@ -1608,11 +1793,10 @@ def many_card(topic, q, items, good, e, chk):
     return c
 
 
-def seq_card(topic, q, shown, order, e, chk):
+def seq_card(topic, q, shown, order, e, chk, tail='Запишите в таблицу соответствующую последовательность цифр.'):
     """shown — перемешанные тексты, order — индексы shown в верном порядке."""
     ans = ''.join(str(i + 1) for i in order)
-    q = re.sub(r'^Установите (правильную )?последовательность', 'Установите порядок', q)
-    q = q + ': ' + '; '.join(f'{i + 1}) {t}' for i, t in enumerate(shown)) + '. Ответ — цифры подряд.'
+    q = q.rstrip('.:') + ': ' + '; '.join(f'{i + 1}) {t}' for i, t in enumerate(shown)) + '. ' + tail
     c = card('num', topic, q, ans, e, chk)
     c['x'] = ans
     return c
@@ -1622,46 +1806,92 @@ def cap(s):
     return s[:1].upper() + s[1:]
 
 
+# формулировки КИМ (свои, в стиле экзамена)
+TAIL_MATCH = 'Запишите в таблицу выбранные цифры под соответствующими буквами.'
+TAIL_MANY = 'Выберите три верных ответа из шести и запишите в таблицу цифры, под которыми они указаны.'
+NUM_WORD = {2: 'два', 3: 'три', 4: 'четыре', 5: 'пять', 6: 'шесть'}
+NUM_GEN = {2: 'двух', 3: 'трёх', 4: 'четырёх', 5: 'пяти', 6: 'шести'}
+
+
+def lvl_ok(item, kw, S=None):
+    """Уровень: для ОГЭ (lvl=oge) не берём помеченное "ege", для ЕГЭ (lvl=ege) — помеченное "oge"."""
+    want = kw.get('lvl')
+    if not want:
+        return True
+    other = 'ege' if want == 'oge' else 'oge'
+    if isinstance(item, dict) and item.get('level') == other:
+        return False
+    name = item['t'] if isinstance(item, dict) else item
+    if S is not None and name in S.get(f'{other}_only', []):
+        return False
+    return True
+
+
 # ---------------------------------------------------------------- sets: объекты × свойства
 
-def set_matrix(S):
-    objs = S['objects']
-    return objs, [(p['t'], set(p['yes'])) for p in S['props']]
+def set_matrix(S, kw=None):
+    kw = kw or {}
+    objs = [o for o in S['objects'] if lvl_ok(o, kw, S)]
+    props = [(p['t'], set(p['yes']) & set(objs), p.get('syn')) for p in S['props'] if lvl_ok(p, kw, S)]
+    return objs, [(t, y, syn) for t, y, syn in props if y]
 
 
-def pool_of(S, kw):
+def pool_of(S, kw, objs=None):
     g = kw.get('g')
-    if g:
-        return list(S['groups'][g])
-    return list(S['objects'])
+    pool = list(S['groups'][g]) if g else list(S['objects'])
+    return [o for o in pool if objs is None or o in objs]
+
+
+def no_syn(chosen, props):
+    """Не ставить в одну карточку два свойства из одной группы синонимов."""
+    syn = {t: s for t, _, s in props}
+    seen = set()
+    for t in chosen:
+        s = syn.get(t)
+        if s:
+            if s in seen:
+                return False
+            seen.add(s)
+    return True
 
 
 def gen_d_match(rng, args, topic='dict'):
-    """Соответствие «характеристика → объект» (ЕГЭ 6, 10, 14, 19; ОГЭ 11): 2–3 объекта, 5–6 характеристик."""
+    """Соответствие «характеристика → объект» (ЕГЭ 6, 10, 14, 19; ОГЭ 11, 18): 2–3 объекта, 6 характеристик,
+    распределение ответов не хуже 3–2–1 (для двух объектов — 4–2)."""
     (ref,), kw = parse_args(args)
     S = table(ref, 'sets')
-    objs, props = set_matrix(S)
-    pool = pool_of(S, kw)
+    objs, props = set_matrix(S, kw)
+    pool = pool_of(S, kw, objs)
     k = int(kw.get('k', rng.choice([2, 2, 3] if len(pool) >= 3 else [2])))
+    if len(pool) < k:
+        raise Skip(ref)
     n = int(kw.get('n', 6))
-    for _ in range(60):
-        chosen = rng.sample(pool, min(k, len(pool)))
-        cand = [(t, [o for o in chosen if o in y]) for t, y in props]
+    cap_ = 3 if k >= 3 else 4
+    for _ in range(80):
+        chosen = rng.sample(pool, k)
+        cand = [(t, [o for o in chosen if o in y]) for t, y, _ in props]
         cand = [(t, hit[0]) for t, hit in cand if len(hit) == 1]
         by = {o: [t for t, h in cand if h == o] for o in chosen}
         if any(len(v) < 1 for v in by.values()) or len(cand) < n:
             continue
-        pick = [rng.choice(by[o]) for o in chosen]                # каждому объекту — хотя бы одна
+        pick = [rng.choice(by[o]) for o in chosen]
         rest = [t for t, _ in cand if t not in pick]
-        pick += rng.sample(rest, n - len(pick))
+        rng.shuffle(rest)
+        who = dict(cand)
+        cnt = Counter(who[t] for t in pick)
+        for t in rest:
+            if len(pick) == n:
+                break
+            if cnt[who[t]] < cap_ and no_syn(pick + [t], props):
+                pick.append(t)
+                cnt[who[t]] += 1
+        if len(pick) < n or not no_syn(pick, props):
+            continue
         rng.shuffle(pick)
         right = sorted(chosen, key=lambda o: objs.index(o))
-        who = {t: h for t, h in cand}
         ans = [right.index(who[t]) for t in pick]
-        if len(set(ans)) < 2:
-            continue
-        q = (f'Соотнесите характеристики с {S.get("q_obj", "объектами")}: для каждой буквы выберите номер '
-             'подходящего объекта.')
+        q = (f'Установите соответствие между характеристиками и {S.get("q_obj", "объектами")}: к каждой позиции, данной '
+             f'в первом столбце, подберите соответствующую позицию из второго столбца. {TAIL_MATCH}')
         e = '; '.join(f'{LET[i]} — {right[j]}' for i, j in enumerate(ans)) + '.'
         return match_card(topic, q, pick, right, ans, e, {'eng': 'd_match', 'ref': ref, 'objs': right, 'props': pick})
     raise Skip(ref)
@@ -1679,34 +1909,48 @@ def check_d_match(c):
     return out
 
 
+def similarity_order(x, objs, props):
+    """Соседи объекта по доле общих свойств — из них берём неверные варианты (типичная путаница)."""
+    own = {t for t, y, _ in props if x in y}
+    def sim(o):
+        other = {t for t, y, _ in props if o in y}
+        return len(own & other) / (len(own | other) or 1)
+    return sorted((o for o in objs if o != x), key=sim, reverse=True)
+
+
 def gen_d_many(rng, args, topic='dict'):
-    """3 верных из 6 (ЕГЭ 7, 11, 15, 18; ОГЭ 9, 17). Режим diff: признаки X, которых нет у Y."""
+    """3 верных из 6 (ЕГЭ 7, 11, 15, 18; ОГЭ 9, 16, 17). Неверные — свойства ближайших «соседей» объекта.
+    Режим diff: «Какие признаки характерны для X, в отличие от Y?»"""
     (ref,), kw = parse_args(args)
     S = table(ref, 'sets')
-    objs, props = set_matrix(S)
-    pool = pool_of(S, kw)
-    n_true = int(kw.get('t', 3))
-    n_all = int(kw.get('n', 6))
-    for _ in range(60):
+    objs, props = set_matrix(S, kw)
+    pool = pool_of(S, kw, objs)
+    n_true, n_all = int(kw.get('t', 3)), int(kw.get('n', 6))
+    for _ in range(80):
         if kw.get('diff'):
             if len(pool) < 2:
                 raise Skip(ref)
-            x, y = rng.sample(pool, 2)
-            good = [t for t, s in props if x in s and y not in s]
-            bad = [t for t, s in props if y in s and x not in s] + [t for t, s in props if x in s and y in s]
-            q = (f'Какие признаки отличают объект «{x}» от объекта «{y}»? Выберите {n_true} верных ответа '
-                 f'из {n_all}. Ответ — номера верных вариантов.')
+            x = rng.choice(pool)
+            y = similarity_order(x, pool, props)[0] if rng.random() < 0.7 else rng.choice([o for o in pool if o != x])
+            good = [t for t, s, _ in props if x in s and y not in s]
+            bad = [t for t, s, _ in props if y in s and x not in s]
+            q = (f'Какие признаки характерны для {inflect(x, "gent")}, в отличие от {inflect(y, "gent")}? '
+                 f'{TAIL_MANY.replace("три", NUM_WORD[n_true]).replace("шести", NUM_GEN[n_all])}')
         else:
             x = rng.choice(pool)
-            others = [o for o in pool if o != x]
-            good = [t for t, s in props if x in s and not set(pool) <= s]
-            bad = [t for t, s in props if x not in s and s & set(others)]
             y = None
-            q = (f'{S["title"]}. Объект: {x}. Какие {n_true} характеристики из {n_all} к нему относятся? '
-                 'Ответ — номера верных вариантов.')
+            near = similarity_order(x, pool, props)[:2]
+            good = [t for t, s, _ in props if x in s and not set(pool) <= s]
+            bad = [t for t, s, _ in props if x not in s and s & set(near)] or \
+                  [t for t, s, _ in props if x not in s and s & set(pool)]
+            q = (f'Какие признаки характерны для {inflect(x, "gent")}? '
+                 f'{TAIL_MANY.replace("три", NUM_WORD[n_true]).replace("шести", NUM_GEN[n_all])}')
         if len(good) < n_true or len(bad) < n_all - n_true:
             continue
-        items = rng.sample(good, n_true) + rng.sample(bad, n_all - n_true)
+        items = rng.sample(good, n_true)
+        if not no_syn(items, props):
+            continue
+        items += rng.sample(bad, n_all - n_true)
         rng.shuffle(items)
         gi = [i for i, t in enumerate(items) if t in good]
         e = 'Верно: ' + '; '.join(items[i] for i in gi) + '.'
@@ -1723,32 +1967,36 @@ def check_d_many(c):
 
 
 def gen_d_one(rng, args, topic='dict'):
-    """Один из четырёх: признак объекта или объект по признаку (ОГЭ 8, 14, 15; текстовая замена рисунков)."""
+    """Один из четырёх: верное утверждение об объекте или объект по признаку (ОГЭ 14, 15; текстовая замена рисунков)."""
     (ref,), kw = parse_args(args)
     S = table(ref, 'sets')
-    objs, props = set_matrix(S)
-    pool = pool_of(S, kw)
+    objs, props = set_matrix(S, kw)
+    pool = pool_of(S, kw, objs)
     by_obj = kw.get('obj') or (not kw.get('prop') and rng.random() < 0.5)
-    for _ in range(60):
-        if by_obj:                                   # «Для какого объекта характерно …?»
-            t, s = rng.choice(props)
+    for _ in range(80):
+        if by_obj:                                   # «Какой … ?» — признак → объект
+            t, s, _ = rng.choice(props)
             yes = [o for o in pool if o in s]
             no = [o for o in pool if o not in s]
-            if len(yes) < 1 or len(no) < 3:
+            if len(yes) != 1 or len(no) < 3:
                 continue
-            x = rng.choice(yes)
-            o, a = one(rng, x, rng.sample(no, 3))
-            q = f'{S["title"]}. Для какого объекта характерно: {t}?'
-            return card('one', topic, q, a, f'{cap(t)} — {x}.', {'eng': 'd_one', 'ref': ref, 'mode': 'obj', 't': t, 'opts': [z['t'] for z in o]}, o=o)
+            x = yes[0]
+            o, a = one(rng, x, similarity_order(x, no, props)[:3])
+            noun = S.get('q_one', 'из перечисленных структур')
+            q = f'Какой {noun} {t}?' if S.get('q_one') else f'Какая из перечисленных структур характеризуется так: {t}?'
+            return card('one', topic, q, a, f'{cap(t)} — {x}.', {'eng': 'd_one', 'ref': ref, 'mode': 'obj', 't': t,
+                        'opts': [z['t'] for z in o]}, o=o)
         x = rng.choice(pool)
-        good = [t for t, s in props if x in s and not set(pool) <= s]
-        bad = [t for t, s in props if x not in s and s & set(pool)]
+        near = similarity_order(x, pool, props)[:2]
+        good = [t for t, s, _ in props if x in s and not set(pool) <= s]
+        bad = [t for t, s, _ in props if x not in s and s & set(near)]
         if not good or len(bad) < 3:
             continue
         t = rng.choice(good)
         o, a = one(rng, t, rng.sample(bad, 3))
-        q = f'{S["title"]}. Какая характеристика относится к объекту «{x}»?'
-        return card('one', topic, q, a, f'{cap(x)}: {t}.', {'eng': 'd_one', 'ref': ref, 'mode': 'prop', 'x': x, 'opts': [z['t'] for z in o]}, o=o)
+        q = f'Какое утверждение о {inflect(x, "loct")} верно?'
+        return card('one', topic, q, a, f'{cap(x)}: {t}.', {'eng': 'd_one', 'ref': ref, 'mode': 'prop', 'x': x,
+                    'opts': [z['t'] for z in o]}, o=o)
     raise Skip(ref)
 
 
@@ -1759,42 +2007,45 @@ def check_d_one(c):
         ok = [i for i, o in enumerate(c['opts']) if o in yes[c['t']]]
     else:
         ok = [i for i, t in enumerate(c['opts']) if c['x'] in yes[t]]
-    return 'абвгде'[ok[0]] if len(ok) == 1 else None
+    return '123456'[ok[0]] if len(ok) == 1 else None
 
 
-JUDGE = ['только А', 'только Б', 'и А, и Б', 'ни А, ни Б']
+JUDGE = ['верно только А', 'верно только Б', 'верны оба суждения', 'оба суждения неверны']
 
 
 def gen_d_judge(rng, args, topic='dict'):
-    """Верны ли суждения А и Б (ОГЭ 12). Истинность — по матрице набора."""
+    """Верны ли суждения А и Б (ОГЭ 12): два предложения об ОДНОМ объекте; неверное — свойство ближайшего соседа."""
     (ref,), kw = parse_args(args)
     S = table(ref, 'sets')
-    objs, props = set_matrix(S)
-    pool = pool_of(S, kw)
+    objs, props = set_matrix(S, kw)
+    pool = pool_of(S, kw, objs)
     want = rng.choice([(1, 0), (0, 1), (1, 1), (0, 0)])
-    sts = []
-    for truth in want:
-        for _ in range(60):
-            x = rng.choice(pool)
-            t, s = rng.choice(props)
-            if (x in s) == bool(truth) and s & set(pool) and not set(pool) <= s:
-                if (x, t) not in [(a, b) for a, b, _ in sts]:
-                    sts.append((x, t, truth))
-                    break
-        else:
-            raise Skip(ref)
-    ans = {(1, 0): 0, (0, 1): 1, (1, 1): 2, (0, 0): 3}[want]
-    o = [{'id': 'абвг'[i], 't': t} for i, t in enumerate(JUDGE)]
-    q = (f'{S["title"]}. Какие из утверждений правильные? А. {cap(sts[0][0])}: {sts[0][1]}. Б. {cap(sts[1][0])}: {sts[1][1]}.')
-    e = f'А — {"верно" if sts[0][2] else "неверно"}, Б — {"верно" if sts[1][2] else "неверно"}.'
-    return card('one', topic, q, 'абвг'[ans], e, {'eng': 'd_judge', 'ref': ref, 'st': [[x, t] for x, t, _ in sts]}, o=o)
+    for _ in range(80):
+        x = rng.choice(pool)
+        near = similarity_order(x, pool, props)[:2]
+        good = [t for t, s, _ in props if x in s and not set(pool) <= s]
+        bad = [t for t, s, _ in props if x not in s and s & set(near)]
+        if len(good) < 2 or len(bad) < 2:
+            continue
+        g = rng.sample(good, 2)
+        b = rng.sample(bad, 2)
+        sts = [(x, g[i] if want[i] else b[i], want[i]) for i in range(2)]
+        if not no_syn([t for _, t, _ in sts], props):
+            continue
+        ans = {(1, 0): 0, (0, 1): 1, (1, 1): 2, (0, 0): 3}[want]
+        o = [{'id': str(i + 1), 't': t} for i, t in enumerate(JUDGE)]
+        about = inflect(x, 'loct')
+        q = (f'Верны ли следующие суждения о {about}? А. {predicate(x, sts[0][1])}. Б. {predicate(x, sts[1][1])}.')
+        e = f'А — {"верно" if sts[0][2] else "неверно"}, Б — {"верно" if sts[1][2] else "неверно"}.'
+        return card('one', topic, q, str(ans + 1), e, {'eng': 'd_judge', 'ref': ref, 'st': [[x_, t] for x_, t, _ in sts]}, o=o)
+    raise Skip(ref)
 
 
 def check_d_judge(c):
     S = table(c['ref'], 'sets')
     yes = {p['t']: set(p['yes']) for p in S['props']}
     A, B = (x in yes[t] for x, t in c['st'])
-    return 'абвг'[{(True, False): 0, (False, True): 1, (True, True): 2, (False, False): 3}[(A, B)]]
+    return '1234'[{(True, False): 0, (False, True): 1, (True, True): 2, (False, False): 3}[(A, B)]]
 
 
 def attr_pairs(S, attr):
@@ -1802,35 +2053,62 @@ def attr_pairs(S, attr):
     return {o: v for o, v in vals.items() if list(vals.values()).count(v) == 1}
 
 
+def cols_of(title, C=None):
+    if C and C.get('cols'):
+        return C['cols']
+    if '→' in title:
+        a, b = [x.strip() for x in title.split('→', 1)]
+        return [cap(a), cap(b)]
+    return ['Объект', 'Характеристика']
+
+
+EXTRA_CLASSES = {  # правдоподобные неверные варианты, когда классов в таблице мало
+    'geo/peoples_religion': ['католицизм', 'протестантизм', 'иудаизм', 'индуизм'],
+}
+
+
 def gen_d_analogy(rng, args, topic='dict'):
-    """Аналогия «объект — значение» (ЕГЭ 1, ОГЭ 8): по образцу найти пропуск. Для sets[attrs] и classes."""
+    """Таблица «объект — характеристика» с пропуском (ЕГЭ 1 — ответ словом; ОГЭ 8 — выбор 1 из 4)."""
     (ref,), kw = parse_args(args)
     if kw.get('cls'):
         C = table(ref, 'classes')
-        items = C['items']
+        items = {k: v for k, v in C['items'].items() if lvl_ok(k, kw, C) and lvl_ok(v, kw, C)}
         x, y = rng.sample(list(items), 2)
-        if items[x] == items[y] and rng.random() < 0.7:
-            x, y = rng.sample(list(items), 2)
-        vy = items[y]
-        wrong = [c for c in C['classes'] if c != vy]
+        vx, vy = items[x], items[y]
+        if vx == vy:
+            raise Skip(ref)
+        classes = [c for c in C['classes'] if c in set(items.values())]
+        wrong = [c for c in classes if c not in (vy, vx)]
+        wrong += [c for c in EXTRA_CLASSES.get(ref, []) if c not in wrong and c not in (vx, vy)]
         if len(wrong) < 3:
             raise Skip(ref)
+        # корень ответа не должен стоять в описании (иначе ответ подсказан)
+        stem = re.sub(r'(ия|ика|ие|ый|ой|ий|ая)$', '', vy.lower())[:6]
+        if len(stem) >= 5 and stem in y.lower():
+            raise Skip(ref)
         o, a = one(rng, vy, rng.sample(wrong, 3))
-        title = C['title']
+        cols = cols_of(C['title'], C)
         chk = {'eng': 'd_analogy', 'ref': ref, 'cls': True, 'y': y, 'opts': [z['t'] for z in o]}
-        vx = items[x]
     else:
         S = table(ref, 'sets')
         attr = kw.get('a') or rng.choice(list(S['attrs']))
         pairs = attr_pairs(S, attr)
+        dom = S.get('domain', {})
         if len(pairs) < 4:
             raise Skip(ref)
         x, y = rng.sample(list(pairs), 2)
+        if dom and dom.get(x) != dom.get(y):
+            raise Skip(ref)
         vx, vy = pairs[x], pairs[y]
-        o, a = one(rng, vy, rng.sample([v for k, v in pairs.items() if k not in (x, y)], 3))
-        title = f'{S["title"]} ({attr})'
+        same = [k for k in pairs if k not in (x, y) and (not dom or dom.get(k) == dom.get(y))]
+        if len(same) < 3:
+            raise Skip(ref)
+        o, a = one(rng, vy, [pairs[k] for k in rng.sample(same, 3)])
+        cols = [S.get('q_one', 'Объект').capitalize(), cap(attr)]
         chk = {'eng': 'd_analogy', 'ref': ref, 'attr': attr, 'y': y, 'opts': [z['t'] for z in o]}
-    q = f'{title}. Образец: «{x}» — «{vx}». Что нужно вписать на место пропуска: «{y}» — …?'
+    title = kw.get('title') or f'{cols[0]} и {cols[1].lower()}'
+    q = (f'Рассмотрите таблицу «{title}» и заполните пустую ячейку. | {cols[0]} | {cols[1]} | — | {x} | {vx} | — '
+         f'| {y} | ? | Какое понятие следует вписать на место вопроса?')
     return card('one', topic, q, a, f'{cap(y)} — {vy}.', chk, o=o)
 
 
@@ -1840,45 +2118,53 @@ def check_d_analogy(c):
     else:
         v = table(c['ref'], 'sets')['attrs'][c['attr']][c['y']]
     ok = [i for i, t in enumerate(c['opts']) if t == v]
-    return 'абвгде'[ok[0]] if len(ok) == 1 else None
+    return '123456'[ok[0]] if len(ok) == 1 else None
 
 
 def gen_d_table(rng, args, topic='dict'):
-    """Таблица (ЕГЭ 20): 3 строки × 2 атрибута, 3 пропуска А–В, список из 6 элементов."""
+    """Таблица (ЕГЭ 20): 3 строки × «объект + 2 атрибута», пропуски А–В в разных столбцах, список из 8 элементов."""
     (ref,), kw = parse_args(args)
     S = table(ref, 'sets')
     attrs = [a for a in S.get('attrs', {}) if len(attr_pairs(S, a)) >= 4]
-    if len(attrs) < 1:
+    if len(attrs) < 2:
         raise Skip(ref)
-    cols = rng.sample(attrs, min(2, len(attrs)))
+    cols = rng.sample(attrs, 2)
     rows = [o for o in S['objects'] if all(o in attr_pairs(S, a) for a in cols)]
-    if len(rows) < 4:
+    if len(rows) < 5:
         raise Skip(ref)
     rows = rng.sample(rows, 3)
-    cells = [(r, a) for r in rows for a in cols]
-    hide = rng.sample(cells, 3)
-    hide.sort(key=lambda ra: cells.index(ra))
-    true = [attr_pairs(S, a)[r] for r, a in hide]
-    distr = [v for a in cols for o, v in attr_pairs(S, a).items() if v not in true and o not in rows]
-    if len(distr) < 3:
+    head = [S.get('q_one', 'Объект').capitalize()] + [cap(a) for a in cols]
+    # пропуски: в каждой строке ровно один, в разных столбцах (включая столбец объекта)
+    colidx = rng.sample(range(3), 3)
+    hide = [(rows[i], colidx[i]) for i in range(3)]
+    def val(r, j):
+        return r if j == 0 else attr_pairs(S, cols[j - 1])[r]
+    true = [val(r, j) for r, j in hide]
+    others = [o for o in S['objects'] if o not in rows and all(o in attr_pairs(S, a) for a in cols)]
+    distr = set()
+    for o in others:
+        distr.add(o)
+        for a in cols:
+            distr.add(attr_pairs(S, a)[o])
+    distr -= set(true)
+    nd = int(kw.get('opts', 8)) - 3
+    if len(distr) < nd:
         raise Skip(ref)
-    items = true + rng.sample(sorted(set(distr)), 3)
+    items = true + rng.sample(sorted(distr), nd)
     rng.shuffle(items)
     lines = []
     for r in rows:
-        cellv = []
-        for a in cols:
-            if (r, a) in hide:
-                cellv.append(f'({LET[hide.index((r, a))]})')
-            else:
-                cellv.append(attr_pairs(S, a)[r])
-        lines.append(f'{r} | ' + ' | '.join(cellv))
-    q = (f'{S["title"]}. Таблица «объект | {" | ".join(cols)}»: ' + '; '.join(lines) +
-         '. Для каждой буквы выберите элемент из списка: ' + '; '.join(f'{i + 1}) {t}' for i, t in enumerate(items)) +
-         '. Запишите цифры в порядке А, Б, В.')
+        cells = []
+        for j in range(3):
+            cells.append(f'({LET[[h[0] for h in hide].index(r)]})' if (r, j) in hide else val(r, j))
+        lines.append(' | '.join(cells))
+    q = (f'Проанализируйте таблицу «{S["title"]}». Заполните пустые ячейки таблицы, используя элементы, приведённые в списке: '
+         f'для каждой ячейки, обозначенной буквой, выберите соответствующий элемент. | {" | ".join(head)} | — '
+         + ' — '.join(f'| {l} |' for l in lines) + ' Список элементов: ' +
+         '; '.join(f'{i + 1}) {t}' for i, t in enumerate(items)) + '. Запишите в таблицу выбранные цифры под соответствующими буквами.')
     ans = ''.join(str(items.index(v) + 1) for v in true)
     c = card('num', topic, q, ans, '; '.join(f'{LET[i]} — {v}' for i, v in enumerate(true)) + '.',
-             {'eng': 'd_table', 'ref': ref, 'hide': hide, 'items': items})
+             {'eng': 'd_table', 'ref': ref, 'cols': cols, 'hide': hide, 'items': items})
     c['x'] = ans
     return c
 
@@ -1886,8 +2172,8 @@ def gen_d_table(rng, args, topic='dict'):
 def check_d_table(c):
     S = table(c['ref'], 'sets')
     out = ''
-    for r, a in c['hide']:
-        v = S['attrs'][a][r]
+    for r, j in c['hide']:
+        v = r if j == 0 else S['attrs'][c['cols'][j - 1]][r]
         hits = [i for i, t in enumerate(c['items']) if t == v]
         if len(hits) != 1:
             return None
@@ -1898,23 +2184,32 @@ def check_d_table(c):
 # ---------------------------------------------------------------- seqs, classes, effects, texts
 
 def gen_d_seq(rng, args, topic='dict'):
-    """Последовательность (ЕГЭ 8, 16; ОГЭ 5): 5–6 шагов процесса, взятых в исходном порядке и перемешанных."""
+    """Последовательность (ЕГЭ 8, 16; ОГЭ 5): шаги процесса в исходном порядке, перемешанные; ключевые звенья (keep)
+    из таблицы всегда входят в выборку."""
     (ref,), kw = parse_args(args)
     Q = table(ref, 'seqs')
-    steps = Q['steps']
+    full = Q['steps']
+    drop = set(Q.get('ege_only', [])) if kw.get('lvl') == 'oge' else set(Q.get('oge_only', [])) if kw.get('lvl') == 'ege' else set()
+    steps = [t for t in full if t not in drop]
+    keep_t = [full[i] for i in Q.get('keep', []) if i < len(full) and full[i] not in drop]
+    if kw.get('m') and len(steps) < int(kw['m']):
+        raise Skip(ref)                                 # прототип требует ровно m элементов, как в КИМ
     m = min(int(kw.get('m', rng.choice([5, 6]))), len(steps))
     if m < 4:
         raise Skip(ref)
-    if rng.random() < 0.5 and len(steps) > m:                  # подряд идущие шаги
+    keep = [steps.index(t) for t in keep_t]
+    if rng.random() < 0.5 and len(steps) > m and not keep:
         s0 = rng.randrange(len(steps) - m + 1)
         idx = list(range(s0, s0 + m))
     else:
-        idx = sorted(rng.sample(range(len(steps)), m))
+        rest = [i for i in range(len(steps)) if i not in keep]
+        idx = sorted(rng.sample(keep, m) if len(keep) > m else keep + rng.sample(rest, m - len(keep)))
     shown = idx[:]
     rng.shuffle(shown)
     order = sorted(range(m), key=lambda j: shown[j])
     e = 'Порядок: ' + ' → '.join(steps[i] for i in idx) + '.'
-    return seq_card(topic, Q['q'], [steps[i] for i in shown], order, e, {'eng': 'd_seq', 'ref': ref, 'shown': [steps[i] for i in shown]})
+    q = Q['q'] if Q['q'].startswith('Установите') else 'Установите последовательность: ' + Q['q'][:1].lower() + Q['q'][1:]
+    return seq_card(topic, q, [steps[i] for i in shown], order, e, {'eng': 'd_seq', 'ref': ref, 'shown': [steps[i] for i in shown]})
 
 
 def check_d_seq(c):
@@ -1924,31 +2219,46 @@ def check_d_seq(c):
 
 
 def gen_d_class(rng, args, topic='dict'):
-    """Отнести элементы к классам (ОГЭ 2, 18; ЕГЭ 19): k классов, n элементов; each — по одному на класс."""
+    """Отнести элементы к классам (ОГЭ 2, 11, 18; ЕГЭ 19): k классов, n элементов; each — по одному на класс.
+    Распределение не хуже 3–2–1 (две категории — не хуже 4–2)."""
     (ref,), kw = parse_args(args)
     C = table(ref, 'classes')
+    only = set(kw['only'].split('+')) if kw.get('only') else None
     by = {}
     for it, cl in C['items'].items():
+        if not lvl_ok(it, kw, C) or (only and cl not in only) or it in C.get('hint_items', []):
+            continue
         by.setdefault(cl, []).append(it)
     classes = [c for c in C['classes'] if len(by.get(c, [])) >= 1]
     k = min(int(kw.get('k', rng.choice([2, 3]))), len(classes))
     n = int(kw.get('n', 6 if k <= 3 else k))
     if k < 2:
         raise Skip(ref)
-    for _ in range(60):
+    cap_ = 3 if k >= 3 else 4
+    for _ in range(80):
         cls = rng.sample(classes, k)
         if kw.get('each'):
             items = [rng.choice(by[c]) for c in cls]
         else:
-            pool = [it for c in cls for it in by[c]]
-            if len(pool) < n:
+            if any(len(by[c]) < 1 for c in cls) or sum(min(len(by[c]), cap_) for c in cls) < n:
                 continue
             items = [rng.choice(by[c]) for c in cls]
-            items += rng.sample([it for it in pool if it not in items], n - k)
+            cnt = Counter(C['items'][it] for it in items)
+            pool = [it for c in cls for it in by[c] if it not in items]
+            rng.shuffle(pool)
+            for it in pool:
+                if len(items) == n:
+                    break
+                if cnt[C['items'][it]] < cap_:
+                    items.append(it)
+                    cnt[C['items'][it]] += 1
+            if len(items) < n:
+                continue
         rng.shuffle(items)
         right = [c for c in C['classes'] if c in cls]
         ans = [right.index(C['items'][it]) for it in items]
-        q = f'{C["title"]}. Для каждого элемента с буквой выберите номер подходящей категории.'
+        base = C.get('q') or f'Установите соответствие: {C["title"]}'
+        q = f'{base.rstrip(".")}: к каждой позиции, данной в первом столбце, подберите соответствующую позицию из второго столбца. {TAIL_MATCH}'
         e = '; '.join(f'{it} — {C["items"][it]}' for it in items) + '.'
         return match_card(topic, q, items, right, ans, e, {'eng': 'd_class', 'ref': ref, 'items': items, 'right': right})
     raise Skip(ref)
@@ -1963,20 +2273,24 @@ CHANGE = ['увеличится', 'уменьшится', 'не изменитс
 
 
 def gen_d_change(rng, args, topic='dict'):
-    """Как изменится величина (ЕГЭ 2): ситуация, 2–3 величины, ответы 1/2/3, цифры могут повторяться."""
+    """Как изменится величина (ЕГЭ 2): ситуация и ровно две величины (как в КИМ), ответы 1/2/3, цифры могут повторяться."""
     (ref,), kw = parse_args(args)
     E = FACTS[ref.split('/')[0]]['effects']
-    keys = kw['keys'].split('+') if kw.get('keys') else list(E)      # keys=a+b — подмножество ситуаций прототипа
+    keys = kw['keys'].split('+') if kw.get('keys') else list(E)
+    if kw.get('grp'):
+        keys = [k for k in E if E[k].get('group') in kw['grp'].split('+')] or keys
+    keys = [k for k in keys if k in E]
     name = rng.choice(keys)
     sit = E[name]
     vals = list(sit['values'])
-    m = min(int(kw.get('m', rng.choice([2, 3]))), len(vals))
+    m = min(int(kw.get('m', 2)), len(vals))
     pick = rng.sample(vals, m)
     ans = [CHANGE.index(sit['values'][v]) for v in pick]
-    q = f'{sit["situation"]}. Как изменятся при этом величины? Для каждой величины определите характер её изменения'
-    c = match_card(topic, q + '.', pick, CHANGE, ans, '; '.join(f'{v} — {sit["values"][v]}' for v in pick) + '.',
-                   {'eng': 'd_change', 'ref': ref, 'sit': name, 'pick': pick})
-    return c
+    q = (f'{sit["situation"].rstrip(".")}. Как изменятся при этом {" и ".join(pick)}? Для каждой величины определите '
+         'соответствующий характер её изменения. Запишите в таблицу выбранные цифры для каждой величины. '
+         'Цифры в ответе могут повторяться.')
+    return match_card(topic, q, pick, CHANGE, ans, '; '.join(f'{v} — {sit["values"][v]}' for v in pick) + '.',
+                      {'eng': 'd_change', 'ref': ref, 'sit': name, 'pick': pick})
 
 
 def check_d_change(c):
@@ -1999,8 +2313,10 @@ def gen_d_text(rng, args, topic='dict'):
     text = t['t']
     for s in slots:
         text = text.replace('{' + s + '}', f'({s})')
-    q = (f'Заполните пропуски в тексте словами из списка: {text} Список: ' +
-         '; '.join(f'{i + 1}) {x}' for i, x in enumerate(items)) + f'. Запишите цифры в порядке {", ".join(slots)}.')
+    ttl = f' «{t["title"]}»' if t.get('title') else ''
+    q = (f'Вставьте в текст{ttl} пропущенные термины из предложенного перечня, используя для этого цифровые обозначения. '
+         f'{text} Перечень терминов: ' +
+         '; '.join(f'{i + 1}) {x}' for i, x in enumerate(items)) + f'. Запишите в таблицу цифры выбранных ответов в порядке букв ({", ".join(slots)}).')
     c = card('num', topic, q, ans, '; '.join(f'{s} — {t["slots"][s]}' for s in slots) + '.',
              {'eng': 'd_text', 'ref': ref, 'text': t['t'], 'items': items})
     c['x'] = ans
@@ -2012,13 +2328,47 @@ def check_d_text(c):
     t = next(x for x in FACTS[ns][key] if x['t'] == c['text'])
     return ''.join(str(c['items'].index(t['slots'][s]) + 1) for s in t['slots'])
 
+CMANY_Q = {  # таблица → (начало вопроса, именная группа с {x} в им. падеже — склоняется в вин. падеж) или шаблон с «{x}»
+    'species_criterion': ('Какие примеры иллюстрируют', '{x} критерий вида'),
+    'selection_form': ('Какие примеры иллюстрируют', '{x} форма естественного отбора'),
+    'speciation': ('Какие примеры иллюстрируют', '{x} видообразование'),
+    'evo_path': ('Какие примеры иллюстрируют', '{x}'),
+    'biotic_relation': ('Какие примеры иллюстрируют', '{x}'),
+    'variability_examples': ('Какие примеры иллюстрируют', '{x}'),
+    'adaptation_type': ('Какие примеры иллюстрируют', '{x} приспособление'),
+    'evo_evidence': 'Какие примеры относят к доказательствам эволюции группы «{x}»?',
+    'eco_factor': 'Какие из перечисленных факторов относят к группе «{x}»?',
+    'trophic_role': 'Какие из перечисленных организмов в экосистеме выполняют роль «{x}»?',
+    'biosphere_substance': 'Какие примеры относят к веществу биосферы, которое В. И. Вернадский назвал «{x}»?',
+    'cycle_process': 'Какие процессы относятся к круговороту {x}?',
+    'anthropo_factor': 'Какие из перечисленных факторов антропогенеза относят к группе «{x}»?',
+    'mutation_types': 'Какие примеры относят к мутациям типа «{x}»?',
+    'organ_system': 'Какие органы относят к системе «{x}»?',
+    'disease_cause': 'Какие заболевания относят к группе «{x}»?',
+    'animal_class': 'Какие из перечисленных животных относят к классу «{x}»?',
+    'habitat': 'Какие из перечисленных организмов обитают в среде «{x}»?',
+    'development_examples': 'У каких из перечисленных животных {x}?',
+    'germ_layers': 'Какие органы развиваются из зародышевого листка «{x}»?',
+    'breeding_examples': 'Какие примеры иллюстрируют метод селекции «{x}»?',
+    'organ_modification': 'Какие примеры относят к видоизменениям «{x}»?',
+}
+
+
+def cmany_question(ref, x):
+    t = CMANY_Q.get(ref.split('/', 1)[1], 'Какие примеры относятся к понятию «{x}»?')
+    if isinstance(t, tuple):
+        return f'{t[0]} {inflect(t[1].format(x=x), "accs")}?'
+    return t.format(x=x)
+
+
 def gen_d_cmany(rng, args, topic='dict'):
-    """Выбрать 3 из 6 примеров, относящихся к одному понятию (ЕГЭ 17, 18; ОГЭ 9): по таблице classes."""
+    """Выбрать 3 из 6 примеров, относящихся к одному понятию (ЕГЭ 17, 18; ОГЭ 9, 17): по таблице classes."""
     (ref,), kw = parse_args(args)
     C = table(ref, 'classes')
     by = {}
     for it, cl in C['items'].items():
-        by.setdefault(cl, []).append(it)
+        if lvl_ok(it, kw, C):
+            by.setdefault(cl, []).append(it)
     t, n = int(kw.get('t', 3)), int(kw.get('n', 6))
     cls = [c for c in C['classes'] if len(by.get(c, [])) >= t]
     if not cls:
@@ -2030,7 +2380,7 @@ def gen_d_cmany(rng, args, topic='dict'):
     items = rng.sample(by[x], t) + rng.sample(others, n - t)
     rng.shuffle(items)
     gi = [i for i, it in enumerate(items) if C['items'][it] == x]
-    q = f'{C["title"]}. Выберите {t} примера, которые относятся к понятию «{x}». Ответ — номера верных вариантов.'
+    q = cmany_question(ref, x) + ' ' + TAIL_MANY.replace('три', NUM_WORD[t]).replace('шести', NUM_GEN[n])
     e = '; '.join(f'{it} — {C["items"][it]}' for it in items) + '.'
     return many_card(topic, q, items, gi, e, {'eng': 'd_cmany', 'ref': ref, 'x': x, 'items': items})
 
@@ -2057,10 +2407,14 @@ def gen_d_ctable(rng, args, topic='dict'):
     # шум: категории не из таблицы и примеры категорий не из таблицы — чтобы не было второго подходящего
     spare_c = [c for c in cls if c not in rows_c]
     spare_i = [it for c in spare_c for it in by[c]]
-    distr = rng.sample(spare_c, min(2, len(spare_c))) + rng.sample(spare_i, 1)
+    nd = int(kw.get('opts', 8)) - 3
+    nc = min(len(spare_c), nd // 2 + 1)
+    if len(spare_i) < nd - nc:
+        raise Skip(ref)
+    distr = rng.sample(spare_c, nc) + rng.sample(spare_i, nd - nc)
     items = true + distr
     rng.shuffle(items)
-    head = C.get('cols', ['пример', 'категория'])
+    head = cols_of(C['title'], C)
     lines = []
     for i, (it, c) in enumerate(rows):
         v = [it, c]
@@ -2068,9 +2422,10 @@ def gen_d_ctable(rng, args, topic='dict'):
             if (i, j) in hide:
                 v[j] = f'({LET[hide.index((i, j))]})'
         lines.append(' | '.join(v))
-    q = (f'{C["title"]}. Таблица «{head[0]} | {head[1]}»: ' + '; '.join(lines) +
-         '. Для каждой буквы выберите элемент из списка: ' + '; '.join(f'{k + 1}) {t}' for k, t in enumerate(items)) +
-         '. Запишите цифры в порядке А, Б, В.')
+    q = (f'Проанализируйте таблицу «{head[0]} и {head[1].lower()}». Заполните пустые ячейки таблицы, используя элементы, '
+         f'приведённые в списке. | {head[0]} | {head[1]} | — ' + ' — '.join(f'| {l} |' for l in lines) +
+         ' Список элементов: ' + '; '.join(f'{k + 1}) {t}' for k, t in enumerate(items)) +
+         '. Запишите в таблицу выбранные цифры под соответствующими буквами.')
     ans = ''.join(str(items.index(v) + 1) for v in true)
     c = card('num', topic, q, ans, '; '.join(f'{LET[k]} — {v}' for k, v in enumerate(true)) + '.',
              {'eng': 'd_ctable', 'ref': ref, 'rows': rows, 'hide': hide, 'items': items})
@@ -2112,7 +2467,7 @@ def check_d_kinds(c):
     ns, key = c['ref'].split('/', 1)
     kinds = FACTS[ns][key][c['c']]['kinds']
     ok = [i for i, t in enumerate(c['opts']) if t in kinds]
-    return 'абвгде'[ok[0]] if len(ok) == 1 else None
+    return '123456'[ok[0]] if len(ok) == 1 else None
 
 
 def gen_d_gloss(rng, args, topic='dict'):
@@ -2131,10 +2486,14 @@ def check_d_gloss(c):
     ns, key = c['ref'].split('/', 1)
     G = FACTS[ns][key]
     ok = [i for i, t in enumerate(c['opts']) if G[t]['def'] == c['def']]
-    return 'абвгде'[ok[0]] if len(ok) == 1 else None
+    return '123456'[ok[0]] if len(ok) == 1 else None
 
 
 # ---------------------------------------------------------------- география: таблицы с числами и тегами
+
+NOT_CITY = {'Адлерский район'}
+FED_CITIES = {'Москва', 'Санкт-Петербург', 'Севастополь'}   # вне масштаба остальных — в сравнения городов не берём
+
 
 def geo_rows(tab):
     """Строки таблицы geo-facts как {название: запись}; у стран — по школьному названию."""
@@ -2142,13 +2501,15 @@ def geo_rows(tab):
     if tab == 'countries':
         return {r['name']: r for r in G['countries'].values()}
     if tab == 'stations':
-        return {r['name']: r for r in G.get('stations', [])}
+        return {r['name']: r for r in G.get('stations', []) if r.get('school') is not False}
     if tab.startswith('obj'):
         cls = tab.split(':', 1)[1] if ':' in tab else None
-        return {r['name']: r for r in G.get('objects', []) if cls is None or r['class'] == cls}
+        return {r['name']: r for r in G.get('objects', []) if (cls is None or r['class'] == cls) and r.get('school') is not False}
     if tab == 'capitals':
         return {r['name']: {'lat': v[0], 'lon': v[1]} for r in G['countries'].values()
                 if len(r.get('capital_coords', {})) == 1 for v in r['capital_coords'].values()}
+    if tab == 'ru_cities':                 # не город (район Сочи) — исключаем всюду
+        return {k: v for k, v in G[tab].items() if k not in NOT_CITY}
     return G[tab]
 
 
@@ -2160,6 +2521,8 @@ def geo_value(tab, row, field):
             if 'birth' in wb and 'death' in wb:
                 return round(wb['birth'][0] - wb['death'][0], 1), wb['birth'][1]
             return None
+        if field == 'area' and 'land' in wb and wb['area'][0] > wb['land'][0] * 1.3:
+            return None                              # в ряду World Bank 2023 площадь у части стран завышена (Канада, Норвегия…)
         if field in wb:
             return wb[field][0], wb[field][1]
         return None
@@ -2231,6 +2594,8 @@ def geo_filter(tab, rows, kw):
         if kw.get('world') and r.get('country') in (None, 'Россия'):
             continue
         if kw.get('big') and tab == 'countries' and (geo_value(tab, r, 'pop') or (0,))[0] < float(kw['big']):
+            continue
+        if tab in ('ru_cities', 'ru_subjects') and k in FED_CITIES and not kw.get('fed'):
             continue
         out[k] = r
     return out
@@ -2317,6 +2682,36 @@ TAG_FIELD = {  # поле со списком тегов → окончание 
 }
 
 
+TAG_INTRO = {  # практическая вводная, как в КИМ
+    ('hazards', 'permafrost'): 'При строительстве домов и дорог в некоторых регионах приходится учитывать особые свойства грунтов. ',
+    ('hazards', 'seismic'): 'В ряде регионов здания возводят по нормам сейсмостойкого строительства. ',
+    ('hazards', 'mudflow'): 'Для защиты посёлков в горных долинах строят противоселевые дамбы. ',
+    ('hazards', 'avalanche'): 'На горных дорогах и курортах работают службы противолавинной защиты. ',
+    ('hazards', 'drought'): 'Для защиты посевов от засух создают лесополосы и оросительные системы. ',
+    ('hazards', 'flood_spring'): 'Ежегодно весной МЧС готовится к подъёму воды в реках. ',
+    ('hazards', 'surge_flood'): 'В устьях некоторых рек при сильном ветре с моря вода поднимается и затапливает побережье. ',
+    ('hazards', 'dust_storm'): 'Сильные ветры в засушливых районах поднимают в воздух частицы почвы. ',
+    ('hazards', 'typhoon'): 'Летом и в начале осени сюда приходят тропические циклоны. ',
+}
+COMPOSITE = {'Тюменская область', 'Архангельская область'}   # включают автономные округа — ответ неоднозначен
+
+
+def geo_point(tab, name):
+    """Координаты объекта таблицы (центр субъекта или город) для правила «далёких» неверных вариантов."""
+    G = FACTS['geo']
+    if tab == 'ru_regions':
+        r = G['ru_regions'].get(name, {})
+        s_ = G['ru_subjects'].get(r.get('wd_name', name), {})
+        return (s_['center_lat'], s_['center_lon']) if 'center_lat' in s_ else None
+    if tab == 'city_industries':
+        c = G['ru_cities'].get(name)
+        if c:
+            return (c['lat'], c['lon'])
+        subj = G['city_industries'][name].get('subject')
+        return geo_point('ru_regions', subj) if subj else None
+    return None
+
+
 def tag_rows(tab, field, tag):
     rows = geo_rows(tab)
     def has(r):
@@ -2335,16 +2730,29 @@ def gen_d_pick(rng, args, topic='dict'):
         tag_v = True if tag == 'true' else tag
         rows, has = tag_rows(tab, field, tag_v)
         rows = geo_filter(tab, rows, kw)
+        minor = lambda r_: tag_v in (r_.get(field + '_minor') or []) or (field == 'tags' and tag_v in (r_.get('tags_minor') or []))
+        rows = {x: r_ for x, r_ in rows.items() if not minor(r_) and not r_.get('school') is False}   # второстепенное — ни «да», ни «нет»
         yes = [r for r in rows if has(rows[r])]
         no = [r for r in rows if not has(rows[r]) and not rows[r].get('new')]
         yes = [r for r in yes if not rows[r].get('new')]
         if len(yes) < k or len(no) < n - k:
             raise Skip(f'{tab}.{field}={tag}')
+        # теги заданы только положительно («где есть»), поэтому неверные варианты берём далеко от всех «да»:
+        # иначе в них попадают регионы, где явление тоже есть (второй верный ответ)
+        far = float(kw.get('far', 500 if tab == 'ru_regions' else 250))
+        pts = {x: geo_point(tab, x) for x in yes + no}
+        no = [x for x in no if x not in COMPOSITE and pts.get(x) and
+              all(pts.get(y) is None or dist_km(pts[x], pts[y]) >= far for y in yes)]
+        if len(no) < n - k:
+            raise Skip(f'{tab}.{field}={tag}: мало далёких неверных вариантов')
         items = rng.sample(yes, k) + rng.sample(no, n - k)
         rng.shuffle(items)
         good = [i for i, x in enumerate(items) if x in yes]
         phrase = TAG_Q.get((field, tag_v)) or TAG_FIELD.get(field, 'есть признак «{}»').format(tag)
-        q = f'Выберите {k} {noun} из списка, в которых {phrase}. Ответ — номера верных вариантов'
+        intro = TAG_INTRO.get((field, tag_v), '')
+        many_word = {2: 'двух', 3: 'трёх'}.get(k, str(k))
+        plural = {'субъекта': 'субъектов России', 'города': 'городов', 'страны': 'стран'}.get(noun, noun)
+        q = f'{intro}В каких {many_word} из перечисленных {plural} {phrase}? Запишите цифры, под которыми они указаны'
         e = 'Верно: ' + ', '.join(items[i] for i in good) + '.'
         return many_card(topic, q + '.', items, good, e, {'eng': 'd_pick', 'tab': tab, 'field': field, 'tag': tag_v, 'items': items})
     what, label, unit, srcname = ORDER_Q[(tab, field)]
@@ -2365,9 +2773,9 @@ def gen_d_pick(rng, args, topic='dict'):
         good = [i for i, x in enumerate(items) if x in s[:k]]
         nom = PICK_NOM.get(field)
         if nom:
-            q = f'Выберите {k} {noun}, в которых {nom[0]} {nom[1] if top else nom[2]}. Ответ — номера верных вариантов.'
+            q = f'Выберите {k} {noun}, в которых {nom[0]} {nom[1] if top else nom[2]}. Запишите цифры, под которыми они указаны.'
         else:
-            q = f'Выберите {k} {noun} с {"наибольшим" if top else "наименьшим"} значением показателя «{label}». Ответ — номера верных вариантов.'
+            q = f'Выберите {k} {noun} с {"наибольшим" if top else "наименьшим"} значением показателя «{label}». Запишите цифры, под которыми они указаны.'
         e = '; '.join(f'{x} — {fmt(Fraction(str(vals[x][0])), 1)} {unit}' for x in items) + f' ({srcname}).'
         return many_card(topic, q, items, good, e, {'eng': 'd_pick', 'tab': tab, 'field': field, 'top': top, 'k': k, 'items': items})
     raise Skip(f'{tab}.{field}')
@@ -2412,8 +2820,14 @@ def gen_d_coords(rng, args, topic='dict'):
     ew = 'в. д.' if lon >= 0 else 'з. д.'
     what = 'столицей (административным центром) какого субъекта Российской Федерации' if tab == 'ru_subjects' else 'столицей какого государства'
     q = f'Город имеет координаты {abs(lat)}° {ns} и {abs(lon)}° {ew} Этот город является {what}?'
+    if kw.get('city') and tab == 'capitals':          # ОГЭ 7: назвать сам город-столицу
+        caps = {r['name']: next(iter(r['capital_coords'])) for r in FACTS['geo']['countries'].values() if len(r.get('capital_coords', {})) == 1}
+        o = [{'id': z['id'], 't': caps[z['t']]} for z in o]
+        q = (f'Определите по координатам {abs(lat)}° {ns} и {abs(lon)}° {ew} столицу государства, '
+             'которая имеет такие географические координаты.')
     e = f'{x}: центр {pts[x][0]}°, {pts[x][1]}°; ближе всех к точке ({lat}°, {lon}°).'
-    return card('one', topic, q, a, e, {'eng': 'd_coords', 'tab': tab, 'pt': [lat, lon], 'opts': [z['t'] for z in o]}, o=o)
+    return card('one', topic, q, a, e, {'eng': 'd_coords', 'tab': tab, 'pt': [lat, lon], 'city': bool(kw.get('city')),
+                                         'opts': [z['t'] for z in o]}, o=o)
 
 
 def check_d_coords(c):
@@ -2421,8 +2835,12 @@ def check_d_coords(c):
     def pt(k):
         r = rows[k]
         return (r['center_lat'], r['center_lon']) if c['tab'] == 'ru_subjects' else (r['lat'], r['lon'])
-    d = [dist_km(tuple(c['pt']), pt(k)) for k in c['opts']]
-    return 'абвгде'[d.index(min(d))]
+    if c['tab'] == 'capitals' and c.get('city'):
+        caps = {next(iter(r['capital_coords'])): r['name'] for r in FACTS['geo']['countries'].values() if len(r.get('capital_coords', {})) == 1}
+        d = [dist_km(tuple(c['pt']), pt(caps[k])) for k in c['opts']]
+    else:
+        d = [dist_km(tuple(c['pt']), pt(k)) for k in c['opts']]
+    return '123456'[d.index(min(d))]
 
 
 CLUE = {  # поле субъекта → формулировка признака
@@ -2450,6 +2868,11 @@ def region_clues(r):
     if not r.get('seas'):
         out.append(('seas', None))
     return out
+
+
+def clue_minor(r, f, v):
+    """Признак есть, но второстепенный (industries_minor и т. п.) — такой субъект не годится ни в ответ, ни в дистрактор."""
+    return isinstance(v, str) and v in (r.get(f + '_minor') or [])
 
 
 def clue_ok(r, f, v):
@@ -2498,7 +2921,7 @@ def gen_d_region(rng, args, topic='dict'):
             q = f'Субъект Российской Федерации: {desc}. К какому экономическому району он относится?'
         else:
             near = [k for k in R if k != x and R[k]['econ'] == R[x]['econ']] + list(R[x].get('neighbors', []))
-            near = [k for k in dict.fromkeys(near) if k in R and k != x]
+            near = [k for k in dict.fromkeys(near) if k in R and k != x and not any(clue_minor(R[k], *cc) for cc in chosen)]
             if len(near) < 3:
                 near += rng.sample([k for k in R if k != x and k not in near], 3 - len(near))
             o, a = one(rng, x, rng.sample(near, 3))
@@ -2516,7 +2939,7 @@ def check_d_region(c):
         ok = [i for i, t in enumerate(c['opts']) if t in ans]
     else:
         ok = [i for i, t in enumerate(c['opts']) if t in fit]
-    return 'абвгде'[ok[0]] if len(ok) == 1 else None
+    return '123456'[ok[0]] if len(ok) == 1 else None
 
 
 def gen_d_district(rng, args, topic='dict'):
@@ -2532,7 +2955,7 @@ def gen_d_district(rng, args, topic='dict'):
     items = rng.sample(own, k) + rng.sample(other, n - k)
     rng.shuffle(items)
     gi = [i for i, b in enumerate(items) if b in own]
-    q = f'Какие из перечисленных отраслей относятся к отраслям специализации района «{x}»? Ответ — номера верных вариантов.'
+    q = f'Какие из перечисленных отраслей относятся к отраслям специализации района «{x}»? Запишите цифры, под которыми они указаны.'
     return many_card(topic, q, items, gi, f'{x}: ' + ', '.join(own) + '.', {'eng': 'd_district', 'tab': tab, 'x': x, 'items': items})
 
 
@@ -2565,7 +2988,7 @@ def gen_d_objone(rng, args, topic='dict'):
 
 def check_d_objone(c):
     v = obj_place(geo_rows(c['tab'])[c['x']])
-    return 'абвгде'[c['opts'].index(v)]
+    return '123456'[c['opts'].index(v)]
 
 
 def gen_d_producers(rng, args, topic='dict'):
@@ -2581,7 +3004,7 @@ def gen_d_producers(rng, args, topic='dict'):
     gi = [i for i, x in enumerate(items) if x in top]
     T = P[k]
     q = (f'Какие три страны из перечисленных входят в пятёрку мировых лидеров: {T["title"].lower()} — {T["role"]} '
-         f'({T["year"]} г.)? Ответ — номера верных вариантов.')
+         f'({T["year"]} г.)? Запишите цифры, под которыми они указаны.')
     e = 'Пятёрка: ' + ', '.join(top) + f' ({T["src"][0].split(",")[0]}).'
     return many_card(topic, q, items, gi, e, {'eng': 'd_producers', 'k': k, 'items': items})
 
@@ -2646,7 +3069,7 @@ def country_clues(r):
     for f in ('part', 'gov', 'structure', 'coast'):
         if r.get(f):
             out.append((f, r[f]))
-    for f in ('oceans', 'groups', 'language'):
+    for f in ('groups',):              # язык и океан — прямые подсказки, в КИМ их не дают
         out += [(f, v) for v in r.get(f) or []]
     return out
 
@@ -2694,7 +3117,7 @@ def check_d_country(c):
     C = {x['name']: x for x in FACTS['geo']['country_tags'].values()}
     ok = [i for i, t in enumerate(c['opts'])
           if all(ct_ok(C[t], f, v) for f, v in c['clues']) and c['special'] in (C[t].get('special') or [])]
-    return 'абвгде'[ok[0]] if len(ok) == 1 else None
+    return '123456'[ok[0]] if len(ok) == 1 else None
 
 
 def gen_d_city(rng, args, topic='dict'):
@@ -2712,24 +3135,45 @@ def gen_d_city(rng, args, topic='dict'):
 
 
 def check_d_city(c):
-    return 'абвгде'[c['opts'].index(FACTS['geo']['ru_cities'][c['x']]['subject'])]
+    return '123456'[c['opts'].index(FACTS['geo']['ru_cities'][c['x']]['subject'])]
+
+
+STMT_Q = {  # о чём говорится в верных высказываниях — формулировка стема КИМ
+    'urbanization': 'о процессе урбанизации', 'suburbanization': 'о процессе субурбанизации', 'migration': 'о миграциях населения',
+    'natural_reproduction': 'о естественном движении населения', 'demographic_policy': 'о демографической политике',
+    'aging': 'о старении населения', 'integration': 'о процессах экономической интеграции', 'globalization': 'о глобализации',
+    'specialization': 'о международной специализации производства', 'river_regime': 'о режиме реки', 'river_feeding': 'о питании реки',
+    'climate': 'о климате', 'weather': 'о погоде', 'tectonics': 'о проявлениях внутренних процессов, формирующих рельеф',
+    'erosion': 'о проявлениях внешних процессов, формирующих рельеф', 'rational_use': 'о рациональном природопользовании',
+    'irrational_use': 'о нерациональном природопользовании',
+}
 
 
 def gen_d_statements(rng, args, topic='dict'):
-    """Высказывания о процессе (ЕГЭ гео 12, ОГЭ 22): свой банк с тегами; k верных из n."""
+    """Высказывания о процессе (ЕГЭ гео 12, ОГЭ 15, 22): свой банк с тегами; k верных из n.
+    Высказывания части явления (субурбанизация ⊂ урбанизация, near_ok: false) и помеченные not_near неверными не даём."""
     (ref, tag), kw = parse_args(args)
     ns, key = ref.split('/', 1)
     B = FACTS[ns][key]
-    k, n = int(kw.get('k', rng.choice([2, 3])) ), int(kw.get('n', 5))
+    k, n = int(kw.get('k', rng.choice([2, 3]))), int(kw.get('n', 5))
     near = [t for t in kw.get('near', '').split('+') if t in B] or [t for t in B if t != tag]
+    near = [t for t in near if not (B[t].get('near_ok') is False and B[t].get('part_of') == tag)]
     good = rng.sample(B[tag]['items'], k)
-    bad_pool = [s for t in near for s in B[t]['items']]
+    bad_pool = [s for t in near for s in B[t]['items'] if s not in set((B[t].get('not_near') or {}).get(tag, []))
+                and s not in B[tag]['items']]
+    if len(bad_pool) < n - k:
+        raise Skip(tag)
     bad = rng.sample(bad_pool, n - k)
     items = good + bad
     rng.shuffle(items)
     gi = [i for i, s in enumerate(items) if s in good]
-    q = (f'Какие из высказываний относятся к явлению «{B[tag]["title"]}»? Ответ — номера верных вариантов')
-    return many_card(topic, q + '.', items, gi, 'Верно: ' + ' '.join(items[i] for i in gi),
+    about = STMT_Q.get(tag, f'о явлении «{B[tag]["title"]}»')
+    q = f'Выберите все высказывания, в которых говорится {about}. Запишите цифры, под которыми они указаны.'
+    if tag in ('rational_use', 'irrational_use'):
+        kind = 'рационального' if tag == 'rational_use' else 'нерационального'
+        q = (f'Какие {"два" if k == 2 else "три"} из перечисленных видов деятельности являются примерами {kind} природопользования? '
+             'Запишите цифры, под которыми они указаны.')
+    return many_card(topic, q, items, gi, 'Верно: ' + ' '.join(items[i] for i in gi),
                      {'eng': 'd_statements', 'ref': ref, 'tag': tag, 'items': items})
 
 
@@ -2743,101 +3187,145 @@ def check_d_statements(c):
 # ---- новые параметрические генераторы по прототипам (этап «прототипы → аналоги»)
 
 # график/таблица опыта (ЕГЭ 21, ОГЭ 4): свои контексты; утверждения — только проверяемые по данным
+# (фактор, ед., значения x, показатель, ед., форма, категория, (мин, макс) показателя, знаков после запятой)
+# диапазоны — типичные учебные/справочные значения
 GRAPH_CTX = [
-    ('температура', '°C', [5, 10, 15, 20, 25, 30, 35, 40], 'скорость фотосинтеза элодеи', 'пузырьков O₂/мин', 'bell'),
-    ('температура', '°C', [10, 20, 30, 35, 40, 50, 60], 'активность фермента амилазы', 'усл. ед.', 'bell'),
-    ('освещённость', 'тыс. лк', [0, 5, 10, 15, 20, 25, 30], 'скорость фотосинтеза', 'мг CO₂/ч', 'sat'),
-    ('концентрация CO₂', '%', [0.01, 0.02, 0.04, 0.06, 0.08, 0.1], 'интенсивность фотосинтеза', 'усл. ед.', 'sat'),
-    ('концентрация субстрата', 'ммоль/л', [1, 2, 4, 6, 8, 10, 12], 'скорость ферментативной реакции', 'мкмоль/мин', 'sat'),
-    ('время после посева', 'ч', [0, 2, 4, 6, 8, 10, 12], 'число бактерий в колонии', 'тыс.', 'grow'),
-    ('концентрация соли', '%', [0, 0.5, 1, 1.5, 2, 3, 4], 'масса кусочков картофеля после опыта', 'г', 'decline'),
-    ('pH среды', '', [2, 3, 4, 5, 6, 7, 8, 9], 'активность пепсина', 'усл. ед.', 'bell'),
-    ('время бега', 'мин', [0, 5, 10, 15, 20, 25, 30], 'частота сердечных сокращений', 'уд./мин', 'sat'),
-    ('возраст', 'лет', [10, 20, 30, 40, 50, 60, 70], 'жизненная ёмкость лёгких', 'л', 'bell'),
-    ('доза удобрения', 'кг/га', [0, 20, 40, 60, 80, 100, 120], 'урожайность пшеницы', 'ц/га', 'bell'),
-    ('температура воды', '°C', [0, 5, 10, 15, 20, 25, 30], 'содержание растворённого кислорода', 'мг/л', 'decline'),
-    ('время после приёма пищи', 'ч', [0, 0.5, 1, 1.5, 2, 3, 4], 'концентрация глюкозы в крови', 'ммоль/л', 'bell'),
-    ('концентрация пестицида', 'мг/л', [0, 1, 2, 3, 4, 5, 6], 'выживаемость личинок комаров', '%', 'decline'),
-    ('глубина', 'м', [0, 5, 10, 20, 30, 40, 50], 'численность водорослей', 'тыс./л', 'decline'),
+    ('температура', '°C', [5, 10, 15, 20, 25, 30, 35, 40], 'скорость фотосинтеза элодеи', 'пузырьков O₂ в минуту', 'bell', 'plant', (3, 42), 0),
+    ('температура', '°C', [0, 10, 20, 30, 40, 50, 60], 'активность амилазы слюны', 'усл. ед.', 'bell', 'human', (5, 100), 0),
+    ('pH среды', '', [1, 2, 3, 4, 5, 6, 7, 8], 'активность пепсина', 'усл. ед.', 'bell', 'human', (2, 100), 0),
+    ('возраст', 'лет', [10, 20, 30, 40, 50, 60, 70], 'жизненная ёмкость лёгких', 'л', 'bell', 'human', (2.4, 4.8), 1),
+    ('время после приёма пищи', 'ч', [0, 0.5, 1, 1.5, 2, 2.5, 3], 'концентрация глюкозы в крови', 'ммоль/л', 'bell', 'human', (4.4, 8.2), 1),
+    ('доза азотного удобрения', 'кг/га', [0, 30, 60, 90, 120, 150, 180], 'урожайность пшеницы', 'ц/га', 'bell', 'plant', (18, 46), 0),
+    ('температура', '°C', [0, 5, 10, 15, 20, 25, 30, 35], 'скорость прорастания семян гороха', '% проросших за 5 суток', 'bell', 'plant', (4, 96), 0),
+    ('освещённость', 'тыс. лк', [0, 5, 10, 15, 20, 25, 30], 'интенсивность фотосинтеза', 'мг CO₂ на 100 см² листа в час', 'sat', 'plant', (1, 24), 0),
+    ('концентрация CO₂ в воздухе', '%', [0.01, 0.02, 0.04, 0.06, 0.08, 0.1, 0.12], 'интенсивность фотосинтеза', 'усл. ед.', 'sat', 'plant', (8, 60), 0),
+    ('концентрация субстрата', 'ммоль/л', [1, 2, 4, 6, 8, 10, 12], 'скорость ферментативной реакции', 'мкмоль/мин', 'sat', 'enzyme', (6, 58), 0),
+    ('время бега', 'мин', [0, 2, 4, 6, 8, 10, 12], 'частота сердечных сокращений', 'уд./мин', 'sat', 'human', (72, 168), 0),
+    ('время откорма', 'недель', [0, 4, 8, 12, 16, 20, 24], 'масса тела поросёнка', 'кг', 'sat', 'animal', (20, 108), 0),
+    ('время физической нагрузки', 'мин', [0, 5, 10, 15, 20, 25, 30], 'частота дыхания', 'вдохов в минуту', 'sat', 'human', (16, 42), 0),
+    ('температура воды', '°C', [0, 5, 10, 15, 20, 25, 30], 'содержание растворённого кислорода', 'мг/л', 'decline', 'eco', (7.6, 14.6), 1),
+    ('концентрация раствора соли', '%', [0, 0.5, 1, 1.5, 2, 3, 4], 'масса кусочка картофеля после опыта', 'г', 'decline', 'plant', (7.4, 10.8), 1),
+    ('концентрация пестицида', 'мг/л', [0, 1, 2, 3, 4, 5, 6], 'выживаемость личинок комаров', '%', 'decline', 'eco', (4, 96), 0),
+    ('глубина', 'м', [0, 5, 10, 20, 30, 40, 50], 'интенсивность фотосинтеза водорослей', 'усл. ед.', 'decline', 'eco', (3, 100), 0),
+    ('возраст', 'лет', [20, 30, 40, 50, 60, 70, 80], 'верхняя граница слышимых частот', 'кГц', 'decline', 'human', (8, 19), 0),
+    ('время задержки дыхания', 'с', [0, 10, 20, 30, 40, 50, 60], 'насыщение крови кислородом', '%', 'decline', 'human', (88, 98), 0),
+    ('время после посева', 'ч', [0, 2, 4, 6, 8, 10, 12], 'число бактерий в колонии', 'тыс.', 'grow', 'micro', (1, 900), 0),
 ]
 
 
-def graph_series(rng, shape, n):
-    """Целые значения ряда заданной формы, без случайных совпадений соседей."""
-    if shape == 'bell':
-        peak = rng.randrange(2, n - 1)
-        up = sorted(rng.sample(range(5, 90), peak))
-        top = up[-1] + rng.randint(4, 15)
-        down = sorted(rng.sample(range(3, top), n - peak - 1), reverse=True)
-        return up + [top] + down
-    if shape == 'sat':
-        k = rng.randrange(3, n - 1)
-        up = sorted(rng.sample(range(5, 90), k))
-        return up + [up[-1]] * (n - k)
+def graph_series(rng, shape, n, lo=5, hi=90, dec=0):
+    """Ряд заданной формы в реалистичном диапазоне [lo, hi]; монотонные участки строгие после округления."""
+    step = Fraction(1, 10 ** dec)
+    grid = [Fraction(lo) + i * step for i in range(int((Fraction(str(hi)) - Fraction(str(lo))) / step) + 1)]
+    rnd = lambda v: float(v) if dec else int(v)
     if shape == 'grow':
         v = [rng.randint(2, 9)]
         for _ in range(n - 1):
             v.append(v[-1] * 2 if rng.random() < 0.75 else v[-1] * 2 + rng.randint(1, 5))
         return v
-    return sorted(rng.sample(range(5, 99), n), reverse=True)     # decline
+    if shape == 'bell':
+        peak = rng.randrange(2, n - 2)
+        top = grid[-1] - rng.randint(0, max(1, len(grid) // 12)) * step
+        below = [g for g in grid if g < top]
+        up = sorted(rng.sample(below, peak))
+        down = sorted(rng.sample(below, n - peak - 1), reverse=True)
+        return [rnd(x) for x in up + [top] + down]
+    if shape == 'sat':
+        k = rng.randrange(3, n - 1)                    # плато с точки k
+        up = sorted(rng.sample(grid[:-1], k))
+        top = rng.choice([g for g in grid if g > up[-1]])
+        return [rnd(x) for x in up + [top] * (n - k)]
+    k = rng.choice([n, n, n - 1, n - 2])               # decline: иногда плато в конце
+    down = sorted(rng.sample(grid[1:], k), reverse=True)
+    return [rnd(x) for x in down + [down[-1]] * (n - k)]
 
 
-def graph_statements(xs, ys, fx, fy, xu):
-    """(текст, верно по данным?) — только утверждения, которые можно проверить по таблице."""
+def graph_statements(xs, ys, fx, fy, xu, yu=''):
+    """(текст, верно по данным?) — утверждения в духе КИМ, проверяемые по точкам графика."""
     n = len(xs)
     X = lambda i: f'{fmt(Fraction(str(xs[i])))}{" " + xu if xu else ""}'
-    fx = f'значении фактора «{fx}»'
+    V = lambda v: f'{fmt(Fraction(str(v)))}{" " + yu if yu and len(yu) < 12 else ""}'
+    Y = cap(fy)
+    MX, MN = short_adj(fy, 'максимальный'), short_adj(fy, 'минимальный')
     imax = max(range(n), key=lambda i: ys[i])
     imin = min(range(n), key=lambda i: ys[i])
-    out = []                                  # при повторе максимума/минимума утверждение неоднозначно — не берём
+    out = []
     if ys.count(ys[imax]) == 1:
-        out.append((f'наибольшее значение показателя «{fy}» отмечено при {fx} {X(imax)}', True))
+        out.append((f'{Y} {MX} при значении фактора {X(imax)}', True))
+    else:                                              # плато: «максимальна в точке начала плато» — неоднозначно, берём ложную формулировку
+        out.append((f'{Y} {MX} только при значении фактора {X(n - 1)}', False))
     if ys.count(ys[imin]) == 1:
-        out.append((f'наименьшее значение показателя «{fy}» отмечено при {fx} {X(imin)}', True))
-    alt = (imax + 2) % n
-    if ys[alt] != ys[imax]:
-        out.append((f'наибольшее значение показателя «{fy}» отмечено при {fx} {X(alt)}', False))
-    for a in range(n - 2):
-        b = a + 2
-        seg = ys[a:b + 1]
+        out.append((f'{Y} {MN} при значении фактора {X(imin)}', True))
+    for alt in (imax - 1, imax + 1, imax + 2):
+        if 0 <= alt < n and ys[alt] < ys[imax]:
+            out.append((f'{Y} {MX} при значении фактора {X(alt)}', False))
+            break
+    inc = all(p < q for p, q in zip(ys, ys[1:]))
+    dec_ = all(p > q for p, q in zip(ys, ys[1:]))
+    out.append((f'{Y} возрастает на всём изученном интервале', inc))
+    out.append((f'{Y} снижается на всём изученном интервале', dec_))
+    flat = [i for i in range(n - 1) if ys[i] == ys[i + 1]]
+    if flat:
+        a = flat[0]
+        out.append((f'{Y} не изменяется при значениях фактора от {X(a)} до {X(n - 1)}', all(ys[i] == ys[a] for i in range(a, n))))
+        out.append((f'{Y} перестаёт изменяться начиная со значения фактора {X(a)}', True))
+        if a > 1:
+            out.append((f'{Y} не изменяется при значениях фактора от {X(a - 1)} до {X(n - 1)}', False))
+    else:
+        a = rng_mid = n // 2
+        out.append((f'{Y} не изменяется при значениях фактора от {X(a)} до {X(n - 1)}', False))
+    for a in range(0, n - 2, 2):
+        seg = ys[a:a + 3]
         if all(p < q for p, q in zip(seg, seg[1:])):
-            out.append((f'в интервале от {X(a)} до {X(b)} показатель растёт', True))
-            out.append((f'в интервале от {X(a)} до {X(b)} показатель снижается', False))
+            out.append((f'при увеличении фактора от {X(a)} до {X(a + 2)} {fy} возрастает', True))
+            out.append((f'при увеличении фактора от {X(a)} до {X(a + 2)} {fy} снижается', False))
         elif all(p > q for p, q in zip(seg, seg[1:])):
-            out.append((f'в интервале от {X(a)} до {X(b)} показатель снижается', True))
-            out.append((f'в интервале от {X(a)} до {X(b)} показатель растёт', False))
-        elif all(p == q for p, q in zip(seg, seg[1:])):
-            out.append((f'в интервале от {X(a)} до {X(b)} показатель не меняется', True))
-    out.append((f'показатель растёт на всём изученном интервале', all(p < q for p, q in zip(ys, ys[1:]))))
-    out.append((f'показатель снижается на всём изученном интервале', all(p > q for p, q in zip(ys, ys[1:]))))
-    i, j = sorted((0, n - 1))
-    out.append((f'при {X(n - 1)} значение показателя больше, чем при {X(0)}', ys[-1] > ys[0]))
-    out.append((f'при {X(0)} значение показателя больше, чем при {X(n - 1)}', ys[0] > ys[-1]))
-    return out
+            out.append((f'при увеличении фактора от {X(a)} до {X(a + 2)} {fy} снижается', True))
+            out.append((f'при увеличении фактора от {X(a)} до {X(a + 2)} {fy} возрастает', False))
+    i = n // 2
+    out.append((f'при значении фактора {X(i)} {fy} составляет {V(ys[i])}', True))
+    j = (i + 1) % n
+    if ys[j] != ys[i]:
+        out.append((f'при значении фактора {X(i)} {fy} составляет {V(ys[j])}', False))
+    return [(cap(t), ok) for t, ok in out]
 
 
 def gen_b_graph(rng):
-    fx, xu, xs, fy, yu, shape = rng.choice(GRAPH_CTX)
-    ys = graph_series(rng, shape, len(xs))
-    sts = graph_statements(xs, ys, fx, fy, xu)
-    good = [s for s, ok in sts if ok]
-    bad = [s for s, ok in sts if not ok]
+    fx, xu, xs, fy, yu, shape, cat, (lo, hi), dec = rng.choice(GRAPH_CTX)
+    ys = graph_series(rng, shape, len(xs), lo, hi, dec)
+    sts = graph_statements(xs, ys, fx, fy, xu, yu)
+    seen, uniq = set(), []
+    for t, ok in sts:
+        if t not in seen:
+            seen.add(t)
+            uniq.append((t, ok))
+    good = [t for t, ok in uniq if ok]
+    bad = [t for t, ok in uniq if not ok]
     k = rng.choice([2, 2, 3])
     if len(good) < k or len(bad) < 5 - k:
         return gen_b_graph(rng)
-    items = rng.sample(good, k) + rng.sample(bad, 5 - k)
+    topic_of = lambda t: re.sub(r'(возрастает|снижается|(максимальн|минимальн)\w+( только)? при значении фактора [\d,]+|составляет .*)', '', t)
+    for _ in range(60):                # без пар-антонимов об одном интервале: они подсказывают ответ
+        items = rng.sample(good, k) + rng.sample(bad, 5 - k)
+        if len({topic_of(t) for t in items}) == 5:
+            break
     rng.shuffle(items)
-    gi = [i for i, s in enumerate(items) if s in good]
-    table_ = '; '.join(f'{fmt(Fraction(str(x)))} → {y}' for x, y in zip(xs, ys))
-    q = (f'Исследователь изучал, как {fx} ({xu or "ед."}) влияет на показатель «{fy}» ({yu}). Результаты: {table_}. '
-         f'Выберите утверждения, которые можно сформулировать на основании этих данных.')
-    c = many_card('bio-ege-21', q, items, gi, 'По таблице: ' + '; '.join(items[i] for i in gi) + '.',
-                  {'xs': xs, 'ys': ys, 'fx': fx, 'fy': fy, 'xu': xu, 'items': items})
+    gi = [i for i, t in enumerate(items) if t in good]
+    pts = '; '.join(f'({fmt(Fraction(str(x)))}; {fmt(Fraction(str(y)))})' for x, y in zip(xs, ys))
+    axes = f'по оси абсцисс — {fx}{" (" + xu + ")" if xu else ""}, по оси ординат — {fy} ({yu})'
+    if k == 2:
+        q = (f'Изучите график зависимости: {axes}. Точки графика: {pts}. Какие два из приведённых ниже описаний '
+             'верно характеризуют данную зависимость? Запишите в ответе цифры, под которыми они указаны.')
+    else:
+        q = (f'Проанализируйте график: {axes}. Точки графика: {pts}. Выберите все утверждения, которые можно '
+             'сформулировать на основании анализа представленных данных. Запишите в ответе цифры, под которыми они указаны.')
+    c = many_card('bio-ege-21', q, items, gi, 'По точкам графика: ' + '; '.join(items[i] for i in gi) + '.',
+                  {'xs': xs, 'ys': ys, 'fx': fx, 'fy': fy, 'xu': xu, 'yu': yu, 'items': items, 'nk': k, 'shape': shape, 'cat': cat})
     return c
 
 
 def check_b_graph(c):
-    truth = dict(graph_statements(c['xs'], c['ys'], c['fx'], c['fy'], c['xu']))
+    truth = dict(graph_statements(c['xs'], c['ys'], c['fx'], c['fy'], c['xu'], c.get('yu', '')))
     return [str(i + 1) for i, s in enumerate(c['items']) if truth[s]]
 
 
@@ -2854,7 +3342,7 @@ PLOIDY = {
                             'клетка кожуры семени': 2, 'микроспора': 1},
     'зелёной водоросли улотрикса': {'клетка нити': 1, 'зигота': 2, 'гамета': 1, 'зооспора': 1},
 }
-PLANT_2N = [8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30, 32, 36, 40, 42, 48]
+PLANT_2N = [12, 14, 16, 18, 20, 22, 24, 26, 28, 30, 32, 36, 40, 42, 48]
 
 
 def gen_b_ploidy(rng):
@@ -2865,7 +3353,7 @@ def gen_b_ploidy(rng):
     n = rng.choice(PLANT_2N) // 2
     given = n * PLOIDY[sp][shown_cell]
     ans = n * k
-    q = (f'У {sp} {shown_cell} содержит {given} хромосом(ы). Сколько хромосом содержит {cell}? '
+    q = (f'У {sp} {shown_cell} содержит {agree(given, "хромосома")}. Какое число хромосом содержит {cell}? '
          'В ответе запишите только число.')
     e = f'{cap(shown_cell)} — {PLOIDY[sp][shown_cell]}n = {given}, n = {n}; {cell} — {k}n = {ans}.'
     return card('num', 'bio-ege-3', q, str(ans), e, {'sp': sp, 'cell': cell, 'shown': shown_cell, 'given': given})
@@ -2967,7 +3455,7 @@ def check_b_mutation(c):
     t = c['tmpl'][:c['pos']] + c['nb'] + c['tmpl'][c['pos'] + 1:]
     rna = ''.join(RNA_FROM_DNA[b] for b in t)             # иРНК 5'→3' комплементарна матрице 3'→5'
     aa = CODE[rna[c['ci'] * 3:c['ci'] * 3 + 3]]
-    return 'абвгде'[c['opts'].index(aa)]
+    return '123456'[c['opts'].index(aa)]
 
 
 # таблица с вычислениями (ОГЭ 25, ЕГЭ 23): свои условные данные
@@ -3030,32 +3518,58 @@ INDEX_Q = {  # критерий → (текст, функция по ряду и
 
 
 def gen_g_index_table(rng):
-    """ЕГЭ гео 10: индексы производства (% к предыдущему году), условные данные; выбрать регионы по критерию."""
-    crit = rng.choice(list(INDEX_Q))
-    text, f = INDEX_Q[crit]
+    """ЕГЭ гео 10: таблица 4 регионов за 3 года — индексы производства (% к предыдущему году) или абсолютные значения;
+    вопрос КИМ: в каких регионах показатель ежегодно увеличивался (сокращался). Данные условные, масштаб реалистичный."""
+    kind = rng.choice(['ind', 'agr', 'abs'])
+    grow = rng.random() < 0.6
     regs = rng.sample(ru_subject_names(), 4)
-    years = rng.choice([(2021, 2022, 2023), (2022, 2023, 2024), (2019, 2020, 2021)])
-    for _ in range(100):
-        rows = [[rng.choice([rng.randint(88, 99), rng.randint(101, 114)]) + rng.choice([0, 0.5]) for _ in years] for _ in regs]
-        good = [i for i, r in enumerate(rows) if f(r)]
-        if 1 <= len(good) <= 2:
+    y0 = rng.choice([2019, 2020, 2021, 2022])
+    years = (y0, y0 + 1, y0 + 2)
+    for _ in range(300):
+        if kind == 'abs':
+            base = rng.randint(300, 4000)
+            rows = []
+            for _r in regs:
+                v, row = base * rng.uniform(0.5, 1.5), []
+                for _y in years:
+                    v *= 1 + rng.choice([-1, 1]) * rng.uniform(0.004, 0.04)
+                    row.append(round(v, 1))
+                rows.append(row)
+            ok = lambda r: all(q > p for p, q in zip(r, r[1:])) if grow else all(q < p for p, q in zip(r, r[1:]))
+        else:
+            rows = [[round(rng.choice([rng.uniform(88, 99.9), rng.uniform(100.1, 114)]), 1) for _y in years] for _r in regs]
+            ok = lambda r: min(r) > 100 if grow else max(r) < 100
+        good = [i for i, r in enumerate(rows) if ok(r)]
+        # ловушки: для индексов — ряд, растущий, но ниже 100 (или падающий, но выше 100); ряд с одним провалом
+        if kind != 'abs':
+            trap = any((all(q > p for p, q in zip(r, r[1:])) and max(r) < 100) if grow else (all(q < p for p, q in zip(r, r[1:])) and min(r) > 100) for r in rows)
+        else:
+            trap = any(r[-1] > r[0] and not ok(r) for r in rows) if grow else any(r[-1] < r[0] and not ok(r) for r in rows)
+        if 1 <= len(good) <= 3 and trap:
             break
     else:
         return gen_g_index_table(rng)
-    branch = rng.choice(['промышленного производства', 'продукции сельского хозяйства'])
-    tab = '; '.join(f'{i + 1}) {g}: ' + ', '.join(f'{y} — {fmt(Fraction(str(v)))}' for y, v in zip(years, r))
+    what = {'ind': 'Индекс промышленного производства (в % к предыдущему году)',
+            'agr': 'Индекс производства продукции сельского хозяйства (в % к предыдущему году)',
+            'abs': rng.choice(['Численность населения (тыс. чел.)', 'Валовой сбор зерна (тыс. т)', 'Производство молока (тыс. т)'])}[kind]
+    tab = '; '.join(f'{i + 1}) {g}: ' + ', '.join(f'{y} г. — {fmt(Fraction(str(v)))}' for y, v in zip(years, r))
                     for i, (g, r) in enumerate(zip(regs, rows)))
-    q = (f'Индексы {branch} (в % к предыдущему году; условные данные): {tab}. В каких регионах {text}? '
-         'Ответ — номера верных вариантов.')
-    c = many_card('geo-ege-10', q, regs, good, 'Индекс больше 100 % — рост, меньше 100 % — сокращение.',
-                  {'rows': rows, 'crit': crit})
-    return c
+    verb = 'увеличивался' if grow else 'сокращался'
+    obj = 'объём производства' if kind != 'abs' else 'показатель'
+    q = (f'Проанализируйте данные таблицы. {what}: {tab}. В каких из приведённых регионов {obj} ежегодно {verb} '
+         f'в период с {years[0]} по {years[-1]} г.? Запишите цифры, под которыми указаны эти регионы.')
+    e = ('Индекс больше 100 % — рост к предыдущему году, меньше 100 % — сокращение (даже если индекс растёт).' if kind != 'abs'
+         else 'Нужен рост (снижение) в каждом году, а не только от первого года к последнему.')
+    return many_card('geo-ege-10', q, regs, good, e, {'rows': rows, 'kind': kind, 'grow': grow})
 
 
 def check_g_index_table(c):
     out = []
     for i, r in enumerate(c['rows']):
-        ok = {'grow_each': min(r) > 100, 'fall_each': max(r) < 100, 'fall_last': r[-1] < 100, 'grow_first': r[0] > 100}[c['crit']]
+        if c['kind'] == 'abs':
+            ok = all((q > p) if c['grow'] else (q < p) for p, q in zip(r, r[1:]))
+        else:
+            ok = all((v > 100) if c['grow'] else (v < 100) for v in r)
         if ok:
             out.append(str(i + 1))
     return out
@@ -3111,7 +3625,7 @@ def check_g_pair(c):
         win = c['a'] if ga * pb > gb * pa else c['b']
     else:
         win = c['a'] if c['num'][0] > c['num'][1] and c['num'][2] > c['num'][3] else c['b']
-    return 'абвгде'[c['opts'].index(C[win]['name'])]
+    return '123456'[c['opts'].index(C[win]['name'])]
 
 
 DENS_SCALE = [(0, 10), (11, 50), (51, 100), (101, 200), (201, None)]
@@ -3134,30 +3648,30 @@ def gen_g_density_class(rng):
             continue
         k = next(i for i, (lo, hi) in enumerate(DENS_SCALE) if hi is None or r <= hi)
         labels = [dens_label(lo, hi) for lo, hi in DENS_SCALE]
-        o = [{'id': 'абвгд'[i], 't': t} for i, t in enumerate(labels)]
+        o = [{'id': '12345'[i], 't': t} for i, t in enumerate(labels)]
         q = f'Определите, к какому интервалу средней плотности населения (чел./км²) относится страна {C[iso]["name"]}.'
         e = f'{C[iso]["name"]}: ≈ {r} чел./км² (World Bank, {C[iso]["wb"]["density"][1]}).'
-        return card('one', 'geo-ege-20', q, 'абвгд'[k], e, {'iso': iso}, o=o)
+        return card('one', 'geo-ege-20', q, '12345'[k], e, {'iso': iso}, o=o)
 
 
 def check_g_density_class(c):
     d = wbv(c['iso'], 'density')
     for i, (lo, hi) in enumerate(DENS_SCALE):
         if hi is None or d < hi + 0.5:
-            return 'абвгд'[i]
+            return '12345'[i]
 
 
 def gen_g_sunrise(rng):
     """ОГЭ гео 17: где раньше взойдёт Солнце по московскому времени (равноденствие: решает долгота)."""
     cs = [c for c in CITIES if CITIES[c][3] is not None]
     for _ in range(100):
-        pick = rng.sample(cs, 3)
+        pick = rng.sample(cs, 4)
         lons = sorted(CITIES[c][2] for c in pick)
         if min(b - a for a, b in zip(lons, lons[1:])) >= 4:
             break
     day = rng.choice(['21 марта', '23 сентября'])
     first = max(pick, key=lambda c: CITIES[c][2])
-    o, a = one(rng, first, [c for c in pick if c != first], n=3)
+    o, a = one(rng, first, [c for c in pick if c != first])
     q = f'Дата — {day}. Часы во всех городах выставлены по Москве. В каком городе восход наступит раньше?'
     e = f'В дни равноденствия восход раньше там, где восточнее: {first} ({fmt(CITIES[first][2])}° в. д.).'
     return card('one', 'geo-oge-17', q, a, e, {'pick': pick, 'opts': [x['t'] for x in o]}, o=o)
@@ -3166,7 +3680,7 @@ def gen_g_sunrise(rng):
 def check_g_sunrise(c):
     # восход по всемирному времени в равноденствие: 6 ч − λ/15 (без учёта рефракции) — меньше у восточного
     t = {x: 6 - CITIES[x][2] / 15 for x in c['opts']}
-    return 'абвгде'[c['opts'].index(min(t, key=t.get))]
+    return '123456'[c['opts'].index(min(t, key=t.get))]
 
 
 ROCKS_SED = ['песок', 'глина', 'известняк', 'песчаник', 'мергель', 'каменная соль', 'гравий', 'суглинок', 'доломит', 'мел']
@@ -3184,7 +3698,7 @@ def gen_g_strata(rng):
     q = (f'Обрыв на берегу реки: сверху вниз залегают слои — {", ".join(layers)} (залегание ненарушенное). '
          f'Расположите породы в порядке {"от самой древней к самой молодой" if old_first else "от самой молодой к самой древней"}')
     return seq_card('geo-oge-8', q, shown, order, 'Ниже залегающие слои образовались раньше.',
-                    {'layers': layers, 'shown': shown, 'old': old_first})
+                    {'layers': layers, 'shown': shown, 'old': old_first, 'k': k})
 
 
 def check_g_strata(c):
@@ -3277,7 +3791,7 @@ def gen_g_climtype(rng):
 
 def check_g_climtype(c):
     s = next(x for x in stations_full() if x['name'] == c['name'])
-    return 'абвгде'[c['opts'].index(s['belt'])]
+    return '123456'[c['opts'].index(s['belt'])]
 
 
 def gen_g_climtable(rng):
@@ -3327,94 +3841,144 @@ def check_g_climtable(c):
             v = v[::-1]
         if all(a < b for a, b in zip(v, v[1:])):
             ok.append(i)
-    return 'абвгде'[ok[0]] if len(ok) == 1 else None
+    return '123456'[ok[0]] if len(ok) == 1 else None
 
 
 
 
 def gen_g_demo2(rng):
-    """ЕГЭ гео 15–16: добыча по запасам, обеспеченность на душу, общий прирост, миграция по потокам."""
+    """ЕГЭ гео 15–16: добыча по запасам, обеспеченность пашней на душу, изменение численности, миграция по потокам."""
     mode = rng.choice(['production', 'percap', 'total', 'flows'])
+    Y = rng.choice([2022, 2023, 2024])
     if mode == 'production':
-        years = rng.choice([20, 25, 30, 40, 50, 60, 80, 100])
-        prod = rng.randint(3, 400)
-        res = prod * years
-        q = (f'Разведанные запасы ресурса — {sp(res)} млн т, ресурсообеспеченность — {years} лет. Определите годовую '
-             'добычу (млн т). Ответ запишите в виде числа.')
-        ans, e, chk = str(prod), f'{sp(res)} : {years} = {prod} млн т.', {'mode': mode, 'res': res, 'years': years}
+        res_name = rng.choice(list(RESOURCES))
+        ru, pu, T = RESOURCES[res_name]
+        cn = rng.choice(list(T))
+        R = jitter(rng, T[cn][0], 8, 1)
+        years = int(half_up(R * 1000 / T[cn][1], 0))
+        ans = fmt(half_up(R * 1000 / years, 0))
+        q = (f'Учащиеся нашли данные о разведанных запасах {res_name} в {inflect(cn, "loct") if inflect(cn, "loct") != cn else "стране " + cn}: '
+             f'{fmt(R)} {ru}; ресурсообеспеченность {of_country(cn)} {RES_ABLT[res_name]} — {years} {years_word(years)}. '
+             f'Определите годовую добычу {res_name} ({pu}). Полученный результат округлите до целого числа.')
+        e = f'{fmt(R)} {ru} = {fmt(R * 1000)} {pu}; {fmt(R * 1000)} : {years} ≈ {ans} {pu}.'
+        chk = {'mode': mode, 'R': str(R), 'years': years}
     elif mode == 'percap':
-        pop = rng.randint(2, 300)                        # млн чел.
-        per = Fraction(rng.randint(2, 400), 10)          # га (или тыс. м³) на человека
-        tot = per * pop
-        what = rng.choice([('площадь пашни', 'млн га', 'га'), ('площадь лесов', 'млн га', 'га'),
-                           ('ресурсы пресной воды', 'км³', 'тыс. м³')])
-        q = (f'В стране с населением {pop} млн человек {what[0]} составляет {fmt(tot)} {what[1]}. Определите '
-             f'обеспеченность на душу населения ({what[2]} на человека). Ответ округлите до десятых.')
-        ans, e = fmt(per, 1), f'{fmt(tot)} : {pop} = {fmt(per, 1)}.'
-        chk = {'mode': mode, 'tot': str(tot), 'pop': pop}
+        cn = rng.choice(list(ARABLE))
+        pop, ar = jitter(rng, ARABLE[cn][0], 3, 1), jitter(rng, ARABLE[cn][1], 5, 1)
+        ans = fmt(half_up(ar / pop, 2), 2)
+        q = (f'Площадь пашни {of_country(cn)} в {Y} г. составляла {fmt(ar)} млн га, численность населения — {fmt(pop)} млн человек. '
+             'Определите обеспеченность страны пашней (га на человека). Полученный результат округлите до сотых.')
+        e = f'{fmt(ar)} : {fmt(pop)} ≈ {ans} га/чел.'
+        chk = {'mode': mode, 'ar': str(ar), 'pop': str(pop)}
     elif mode == 'total':
-        p1 = rng.randint(300, 5000) * 1000
-        nat = rng.randint(-40, 20) * 100
-        mig = rng.randint(-30, 50) * 100
-        q = (f'Численность населения региона на 1 января — {sp(p1)} чел. За год естественный прирост составил '
-             f'{nat:+d} чел., миграционный прирост {mig:+d} чел. Какой станет численность на 1 января следующего года?')
-        ans, e = str(p1 + nat + mig), f'{sp(p1)} {nat:+d} {mig:+d} = {sp(p1 + nat + mig)}.'
-        chk = {'mode': mode, 'p1': p1, 'nat': nat, 'mig': mig}
+        name, p, nats, migs = demo_rows(rng, 2)
+        q = (f'Численность населения субъекта РФ «{name}» на 1 января: {Y} г. — {sp(p[0])} чел.; {Y + 1} г. — {sp(p[1])} чел.; '
+             f'{Y + 2} г. — {sp(p[2])} чел. Используя данные таблицы, определите, на сколько человек изменилась численность '
+             f'населения за {Y + 1} г. Если численность уменьшилась, ответ запишите со знаком «минус».')
+        ans = str(p[2] - p[1])
+        e = f'За {Y + 1} г. — разность численности на 1 января {Y + 2} и {Y + 1} гг.: {sp(p[2])} − {sp(p[1])} = {ans}.'
+        chk = {'mode': mode, 'p': p}
     else:
-        ins = [rng.randint(5, 90) for _ in range(2)]
-        outs = [rng.randint(5, 90) for _ in range(2)]
-        q = (f'Миграционные потоки региона за год (тыс. чел.): прибыло из других регионов — {ins[0]}, из-за рубежа — {ins[1]}; '
-             f'выбыло в другие регионы — {outs[0]}, за рубеж — {outs[1]}. Определите миграционный прирост (тыс. чел.; '
-             'убыль — со знаком «минус»).')
-        ans = str(sum(ins) - sum(outs))
-        e, chk = f'({ins[0]} + {ins[1]}) − ({outs[0]} + {outs[1]}) = {ans}.', {'mode': mode, 'ins': ins, 'outs': outs}
-    return card('num', 'geo-ege-15', q, ans, e, chk)
+        name, v = subj(rng, True)
+        k = v['pop'] / 1_000_000                          # масштаб потоков — от численности субъекта
+        inner = half_up(Fraction(str(round(rng.uniform(4, 20) * k, 1))), 1)
+        reg_in, reg_out = [half_up(Fraction(str(round(rng.uniform(5, 25) * k, 1))), 1) for _ in range(2)]
+        int_in, int_out = [half_up(x / rng.randint(3, 10), 1) for x in (reg_in, reg_out)]
+        q = (f'Миграция населения субъекта РФ «{name}» в {Y} г. (тыс. чел.): внутрирегиональная — прибыло {fmt(inner)}, выбыло {fmt(inner)}; '
+             f'межрегиональная — прибыло {fmt(reg_in)}, выбыло {fmt(reg_out)}; международная — прибыло {fmt(int_in)}, выбыло {fmt(int_out)}. '
+             'Используя эти данные, определите величину миграционного прироста (убыли) населения субъекта в этом году '
+             '(тыс. чел.). Убыль запишите со знаком «минус».')
+        ans = fmt(reg_in + int_in - reg_out - int_out, 1)
+        e = (f'Внутрирегиональная миграция не меняет численность субъекта. ({fmt(reg_in)} + {fmt(int_in)}) − ({fmt(reg_out)} + {fmt(int_out)}) = {ans}.')
+        chk = {'mode': mode, 'ins': [str(inner), str(reg_in), str(int_in)], 'outs': [str(inner), str(reg_out), str(int_out)]}
+    return card('num', 'geo-ege-16' if mode in ('total', 'flows') else 'geo-ege-15', q, ans, e, chk)
 
 
 def check_g_demo2(c):
     m = c['mode']
+    F = Fraction
     if m == 'production':
-        return str(c['res'] // c['years'])
+        return fmt(half_up(F(c['R']) * 1000 / c['years'], 0))
     if m == 'percap':
-        return fmt(half_up(Fraction(c['tot']) / c['pop'], 1), 1)
+        return fmt(half_up(F(c['ar']) / F(c['pop']), 2), 2)
     if m == 'total':
-        return str(c['p1'] + c['nat'] + c['mig'])
-    return str(sum(c['ins']) - sum(c['outs']))
+        return str(c['p'][2] - c['p'][1])
+    return fmt(sum(F(x) for x in c['ins']) - sum(F(x) for x in c['outs']), 1)
+
+
+def gen_g_demo4(rng):
+    """ОГЭ гео 23: таблица 4 субъектов (численность на 1 января, естественный и миграционный прирост) → один регион по условию."""
+    Y = rng.choice([2022, 2023, 2024])
+    crit = rng.choice(['birth', 'outflow', 'grew', 'fell_inflow'])
+    for _ in range(200):
+        rows = [demo_rows(rng, 1) for _ in range(4)]
+        if len({r[0] for r in rows}) < 4:
+            continue
+        test = {'birth': lambda r: r[2][0] > 0, 'outflow': lambda r: r[3][0] < 0,
+                'grew': lambda r: r[2][0] + r[3][0] > 0,
+                'fell_inflow': lambda r: r[2][0] + r[3][0] < 0 and r[3][0] > 0}[crit]
+        good = [i for i, r in enumerate(rows) if test(r)]
+        if len(good) == 1:
+            break
+    else:
+        return gen_g_demo4(rng)
+    text = {'birth': 'рождаемость превышала смертность', 'outflow': 'наблюдался миграционный отток населения',
+            'grew': 'численность населения увеличилась', 'fell_inflow': 'численность населения сократилась, несмотря на миграционный приток'}[crit]
+    tab = '; '.join(f'{i + 1}) {r[0]}: численность на 1 января {Y} г. — {sp(r[1][0])} чел., естественный прирост — {r[2][0]} чел., '
+                    f'миграционный прирост — {r[3][0]} чел.' for i, r in enumerate(rows))
+    q = (f'Проанализируйте данные таблицы о населении субъектов РФ за {Y} г.: {tab}. В каком из субъектов в {Y} г. {text}? '
+         'Запишите в ответ цифру, под которой указан этот субъект.')
+    names = [r[0] for r in rows]
+    c = card('one', 'geo-oge-23', q, str(good[0] + 1), 'Естественный прирост > 0 — рождаемость выше смертности; общий = естественный + миграционный.',
+             {'rows': [[r[2][0], r[3][0]] for r in rows], 'crit': crit}, o=[{'id': str(i + 1), 't': n} for i, n in enumerate(names)])
+    return c
+
+
+def check_g_demo4(c):
+    t = {'birth': lambda n, m: n > 0, 'outflow': lambda n, m: m < 0, 'grew': lambda n, m: n + m > 0,
+         'fell_inflow': lambda n, m: n + m < 0 and m > 0}[c['crit']]
+    hits = [str(i + 1) for i, (n, m) in enumerate(c['rows']) if t(n, m)]
+    return hits[0] if len(hits) == 1 else None
 
 
 SCALES = {
     'density': ([(0, 10), (11, 50), (51, 100), (101, 200), (201, None)], 'средней плотности населения (чел./км²)'),
-    'urban': ([(0, 25), (26, 50), (51, 75), (76, None)], 'доли городского населения (%)'),
+    'urban': ([(0, 20), (21, 40), (41, 60), (61, 80), (81, None)], 'доли городского населения (%)'),
 }
 
 
 def gen_d_interval(rng, args, topic='dict'):
-    """ЕГЭ гео 20: страна → интервал легенды картограммы (плотность или доля горожан, World Bank)."""
+    """ЕГЭ гео 20: три страны ↔ интервалы легенды картограммы (плотность или доля горожан, World Bank)."""
     (tab, field), kw = parse_args(args)
     scale, label = SCALES[field]
     C = FACTS['geo']['countries']
     pool = [i for i in C if wbv(i, field) is not None and wbv(i, 'pop') > 3e6]
     bounds = [hi + 0.5 for lo, hi in scale if hi is not None]
+
+    def cls(v):
+        return next(i for i, b in enumerate(bounds + [float('inf')]) if v < b)
+    ok = [i for i in pool if not any(abs(wbv(i, field) - b) < max(1.5, b * 0.05) for b in bounds)]   # не у границы
     for _ in range(100):
-        iso = rng.choice(pool)
-        v = wbv(iso, field)
-        if any(abs(v - b) < max(1.5, b * 0.05) for b in bounds):     # не у границы интервала
+        pick = rng.sample(ok, 3)
+        ks = [cls(wbv(i, field)) for i in pick]
+        if len(set(ks)) < 3:                              # в КИМ цифры в ответе не повторяются
             continue
-        k = next(i for i, b in enumerate(bounds + [float('inf')]) if v < b)
         labels = [f'более {lo - 1}' if hi is None else f'{lo}–{hi}' for lo, hi in scale]
-        o = [{'id': 'абвгд'[i], 't': t} for i, t in enumerate(labels)]
-        q = f'Определите, к какому интервалу {label} относится страна {C[iso]["name"]}.'
-        e = f'{C[iso]["name"]}: {fmt(Fraction(str(round(v, 1))))} (World Bank, {C[iso]["wb"][field][1]}).'
-        return card('one', topic, q, 'абвгд'[k], e, {'eng': 'd_interval', 'field': field, 'iso': iso}, o=o)
+        q = (f'Установите соответствие между страной и значением {label}, которое ей соответствует на картограмме. '
+             'Для каждой страны выберите номер интервала.')
+        e = '; '.join(f'{C[i]["name"]} — {fmt(Fraction(str(round(wbv(i, field), 1))))}' for i in pick) + \
+            f' (World Bank, {C[pick[0]]["wb"][field][1]}).'
+        return match_card(topic, q, [C[i]['name'] for i in pick], labels, ks, e, {'eng': 'd_interval', 'field': field, 'isos': pick})
     raise Skip(field)
 
 
 def check_d_interval(c):
     scale, _ = SCALES[c['field']]
-    v = wbv(c['iso'], c['field'])
-    for i, (lo, hi) in enumerate(scale):
-        if hi is None or v < hi + 0.5:
-            return 'абвгд'[i]
+    out = ''
+    for iso in c['isos']:
+        v = wbv(iso, c['field'])
+        out += str(next(i for i, (lo, hi) in enumerate(scale) if hi is None or v < hi + 0.5) + 1)
+    return out
 
 
 def gen_d_struct(rng, args, topic='dict'):
@@ -3431,7 +3995,7 @@ def gen_d_struct(rng, args, topic='dict'):
         right = sorted(pick, key=lambda i: wbv(i, keys[0]))
         labels = [f'сельское хозяйство {round(wbv(i, keys[0]))} %, промышленность {round(wbv(i, keys[1]))} %, '
                   f'сфера услуг {round(wbv(i, keys[2]))} %' for i in right]
-        left = rng.sample(pick, 2)
+        left = rng.sample(pick, int(kw.get('left', 3)))
         ans = [right.index(i) for i in left]
         what = 'ВВП' if kind == 'gdp' else 'занятых'
         q = f'Соотнесите страны со структурой {what} по секторам экономики (данные World Bank): для каждой буквы — номер.'
@@ -3491,7 +4055,7 @@ def check_b_orf(c):
     while i + 3 <= len(rna) and CODE[rna[i:i + 3]] != 'стоп':
         prot.append(CODE[rna[i:i + 3]])
         i += 3
-    return 'абвгде'[c['opts'].index('-'.join(prot))]
+    return '123456'[c['opts'].index('-'.join(prot))]
 
 
 def gen_b_nondisj(rng):
@@ -3504,7 +4068,7 @@ def gen_b_nondisj(rng):
             'gamete_minus': ('в гамете, которой не досталось хромосомы этой пары', n - 1),
             'zygote_plus': ('в зиготе от слияния такой гаметы (с лишней хромосомой) с нормальной гаметой', n2 + 1),
             'zygote_minus': ('в зиготе от слияния гаметы без хромосомы этой пары с нормальной гаметой', n2 - 1)}[mode]
-    q = (f'В соматических клетках {org} {n2} хромосом(ы). В мейозе I одна пара гомологичных хромосом не разошлась. '
+    q = (f'В соматических клетках {org} содержится {agree(n2, "хромосома")}. В мейозе I одна пара гомологичных хромосом не разошлась. '
          f'Сколько хромосом {what[0]}? В ответе запишите только число.')
     return card('num', 'bio-ege-28', q, str(what[1]), f'n = {n}; ответ {what[1]}.', {'n2': n2, 'mode': mode})
 
@@ -3522,8 +4086,8 @@ def gen_b_phylo(rng):
     D = 2 * r * T
     if D.denominator != 1:
         return gen_b_phylo(rng)
-    q = (f'Два вида имеют общего предка. В исследованном участке ДНК между ними {int(D)} различий (замен). '
-         f'Скорость накопления замен в каждой линии — {fmt(r)} замены за миллион лет. Сколько миллионов лет назад '
+    q = (f'Два вида имеют общего предка. В исследованном участке ДНК между ними {agree(int(D), "различие")} (замены нуклеотидов). '
+         f'Скорость накопления замен в каждой линии — {agree(int(r), "замена") if r.denominator == 1 else fmt(r) + " замены"} за миллион лет. Сколько миллионов лет назад '
          'разошлись линии этих видов? Ответ запишите числом.')
     return card('num', 'bio-ege-27', q, str(T), f'Замены копятся в обеих линиях: T = D : (2r) = {int(D)} : {fmt(2 * r)} = {T}.',
                 {'D': int(D), 'r': str(r)})
@@ -3592,7 +4156,7 @@ def check_b_foodweb2(c):
 
 def gen_g_strata2(rng):
     """ОГЭ гео 8 (нарушенное залегание): магматическое тело прорывает слои — оно моложе прорванных слоёв."""
-    k = rng.choice([3, 4])
+    k = 2                                                # 2 слоя + магматическое тело = 3 элемента, как в КИМ
     layers = rng.sample(ROCKS_SED, k)                    # сверху вниз
     cut = rng.randint(1, k)                               # сколько нижних слоёв прорвала интрузия
     intr = rng.choice(['гранит', 'диорит', 'габбро'])
@@ -3621,6 +4185,178 @@ def check_g_strata2(c):
     age[c['intr']] = (k - c['cut'] - 1 + k - c['cut']) / 2     # между последним непрорванным и первым прорванным
     idx = sorted(range(len(c['shown'])), key=lambda j: age[c['shown'][j]], reverse=c['old'])
     return ''.join(str(j + 1) for j in idx)
+
+
+
+
+ORDERS = ['продуцент', 'консумент I порядка', 'консумент II порядка', 'консумент III порядка', 'консумент IV порядка']
+
+
+def web_levels(web):
+    """Все порядки каждого организма по всем путям от продуцентов."""
+    memo = {}
+
+    def lv(x, stack=()):
+        if x in memo:
+            return memo[x]
+        if not web[x]:
+            memo[x] = {0}
+        else:
+            memo[x] = {l + 1 for f in web[x] if f not in stack for l in lv(f, stack + (x,))}
+        return memo[x]
+    return {x: lv(x) for x in web}
+
+
+def foodweb_facts(web, x):
+    """(утверждение, верно?) об организме x по схеме пищевой сети."""
+    eaters = {a: [b for b, food in web.items() if a in food] for a in web}
+    L = web_levels(web)[x]
+    out = []
+    for i, name in enumerate(ORDERS[:4]):
+        out.append((f'является {name.replace("продуцент", "продуцентом").replace("консумент", "консументом")}', i in L))
+    for f in web:
+        if f == x:
+            continue
+        out.append((f'питается организмом «{f}»', f in web[x]))
+        out.append((f'служит пищей для организма «{f}»', f in eaters[x]))
+    out.append(('входит в пищевую цепь из 4 звеньев', any(x in ch for ch in web_chains(web, 4))))
+    return out
+
+
+def gen_b_foodweb3(rng):
+    """ОГЭ био 19: выбрать 3 из 6 характеристик организма, отмеченного на схеме пищевой сети."""
+    name = rng.choice(list(WEBS))
+    web = WEBS[name]
+    x = rng.choice([o for o in web if web[o]])
+    facts = foodweb_facts(web, x)
+    good = [t for t, ok in facts if ok]
+    bad = [t for t, ok in facts if not ok]
+    if len(good) < 3 or len(bad) < 3:
+        return gen_b_foodweb3(rng)
+    items = rng.sample(good, 3) + rng.sample(bad, 3)
+    rng.shuffle(items)
+    links = '; '.join(f'{o} → {", ".join(f)}' for o, f in web.items() if f)
+    q = (f'Рассмотрите схему пищевой сети экосистемы «{name}» (стрелка: кто → кем питается): {links}. '
+         f'Выберите три утверждения, верно характеризующие организм «{x}» в этой сети. Запишите цифры, под которыми они указаны.')
+    gi = [i for i, t in enumerate(items) if t in good]
+    return many_card('bio-oge-19', q, items, gi, 'Верно: ' + '; '.join(items[i] for i in gi) + '.', {'web': name, 'x': x, 'items': items})
+
+
+def check_b_foodweb3(c):
+    web = WEBS[c['web']]
+    truth = dict(foodweb_facts(web, c['x']))
+    return [str(i + 1) for i, t in enumerate(c['items']) if truth[t]]
+
+
+EXTREME = {  # таблица:поле → (вопрос о максимуме, о минимуме)
+    'obj:река:length_km': ('Какая из перечисленных рек имеет наибольшую длину?', 'Какая из перечисленных рек имеет наименьшую длину?'),
+    'obj:вершина:elev_m': ('Какая из перечисленных вершин самая высокая?', 'Какая из перечисленных вершин самая низкая?'),
+    'obj:озеро:area_km2': ('Какое из перечисленных озёр имеет наибольшую площадь?', 'Какое из перечисленных озёр имеет наименьшую площадь?'),
+    'countries:area': ('Какая из перечисленных стран имеет наибольшую площадь территории?', 'Какая из перечисленных стран имеет наименьшую площадь территории?'),
+    'countries:pop': ('В какой из перечисленных стран численность населения наибольшая?', 'В какой из перечисленных стран численность населения наименьшая?'),
+}
+
+
+def gen_d_extreme(rng, args, topic='dict'):
+    """ОГЭ гео 1: один объект из четырёх с наибольшим/наименьшим значением (длина, высота, площадь)."""
+    (tab, field), kw = parse_args(args)
+    rows = geo_filter(tab, geo_rows(tab), kw)
+    vals = {k: geo_value(tab, r, field) for k, r in rows.items()}
+    vals = {k: v[0] for k, v in vals.items() if v and v[0]}
+    gap = float(kw.get('gap', 1.1))
+    for _ in range(100):
+        pick = rng.sample(list(vals), 4)
+        top = rng.random() < 0.7
+        s = sorted(pick, key=vals.get, reverse=top)
+        a, b = vals[s[0]], vals[s[1]]
+        if max(a, b) < min(a, b) * gap:
+            continue
+        o, ans = one(rng, s[0], s[1:])
+        qmax, qmin = EXTREME[f'{tab}:{field}']
+        e = '; '.join(f'{x} — {sp(round(vals[x]))}' for x in pick) + '.'
+        return card('one', topic, qmax if top else qmin, ans, e, {'eng': 'd_extreme', 'tab': tab, 'field': field, 'top': top,
+                    'opts': [z['t'] for z in o]}, o=o)
+    raise Skip(tab)
+
+
+def check_d_extreme(c):
+    rows = geo_rows(c['tab'])
+    v = [geo_value(c['tab'], rows[x], c['field'])[0] for x in c['opts']]
+    best = (max if c['top'] else min)(range(len(v)), key=lambda i: v[i])
+    return '123456'[best]
+
+
+def daylen_hours(lat, doy):
+    import math
+    decl = -23.44 * math.cos(math.radians(360 / 365 * (doy + 10)))
+    x = -math.tan(math.radians(lat)) * math.tan(math.radians(decl))
+    return 2 * math.degrees(math.acos(max(-1, min(1, x)))) / 15
+
+
+def gen_g_daylen1(rng):
+    """ОГЭ гео 17: в каком из четырёх городов 22 июня / 22 декабря день самый длинный (короткий)."""
+    day, doy = rng.choice([('22 июня', 173), ('22 декабря', 356)])
+    for _ in range(100):
+        cs = rng.sample(list(CITIES), 4)
+        lats = sorted(CITIES[c][1] for c in cs)
+        if min(b - a for a, b in zip(lats, lats[1:])) >= 2:
+            break
+    longest = rng.random() < 0.5
+    north = max(cs, key=lambda c: CITIES[c][1])
+    south = min(cs, key=lambda c: CITIES[c][1])
+    right = (north if day == '22 июня' else south) if longest else (south if day == '22 июня' else north)
+    o, a = one(rng, right, [c for c in cs if c != right])
+    q = f'В каком из перечисленных городов {day} продолжительность светового дня {"наибольшая" if longest else "наименьшая"}?'
+    return card('one', 'geo-oge-17', q, a, f'{day}: чем {"севернее" if (day == "22 июня") == longest else "южнее"}, тем {"длиннее" if longest else "короче"} день.',
+                {'cs': cs, 'doy': doy, 'longest': longest, 'opts': [z['t'] for z in o]}, o=o)
+
+
+def check_g_daylen1(c):
+    L = [daylen_hours(CITIES[x][1], c['doy']) for x in c['opts']]
+    i = (max if c['longest'] else min)(range(4), key=lambda j: L[j])
+    return '123456'[i]
+
+
+def gen_g_chart1(rng):
+    """ОГЭ гео 23: по ряду значений (график/таблица) выбрать год с наибольшим/наименьшим значением — 1 из 4."""
+    c = gen_g_chart(rng)
+    if c['chk']['mode'] == 'delta':
+        return gen_g_chart1(rng)
+    years = c['chk']['years']
+    right = c['a']
+    wrong = rng.sample([str(y) for y in years if str(y) != right], 3)
+    o, a = one(rng, right, wrong)
+    q = c['q'].replace('В каком году', 'Выберите год, когда').rstrip('?') + '.'
+    return card('one', 'geo-oge-23', q, a, c['e'], dict(c['chk'], opts=[z['t'] for z in o]), o=o)
+
+
+def check_g_chart1(c):
+    best = check_g_chart(c)
+    return '123456'[c['opts'].index(best)]
+
+
+def gen_g_sun1(rng):
+    """ОГЭ гео 17: в каком из четырёх городов 22 июня / 22 декабря полуденное Солнце выше (ниже) всего."""
+    day, decl = rng.choice([('22 июня', 23.5), ('22 декабря', -23.5), ('21 марта', 0)])
+    for _ in range(100):
+        cs = rng.sample(list(CITIES), 4)
+        lats = sorted(CITIES[c][1] for c in cs)
+        if min(b - a for a, b in zip(lats, lats[1:])) >= 2:
+            break
+    high = rng.random() < 0.6
+    h = {c: 90 - abs(CITIES[c][1] - decl) for c in cs}
+    right = (max if high else min)(cs, key=h.get)
+    o, a = one(rng, right, [c for c in cs if c != right])
+    q = f'В каком из перечисленных городов {day} Солнце в полдень поднимается над горизонтом {"выше" if high else "ниже"}, чем в остальных?'
+    return card('one', 'geo-oge-17', q, a, 'h = 90° − |φ − δ|: ' + ', '.join(f'{c} {fmt(Fraction(str(round(h[c], 1))))}°' for c in cs) + '.',
+                {'cs': cs, 'decl': decl, 'high': high, 'opts': [z['t'] for z in o]}, o=o)
+
+
+def check_g_sun1(c):
+    import math
+    z = [abs(math.radians(CITIES[x][1] - c['decl'])) for x in c['opts']]     # зенитное расстояние
+    i = (min if c['high'] else max)(range(4), key=lambda j: z[j])
+    return '123456'[i]
 
 
 # ================================================================ реестр и самопроверка
@@ -3678,7 +4414,12 @@ INFO = {  # тип → (экзамен/задание, что проверяет
     'b_phylo': 'ЕГЭ био 27 · молекулярные часы: время расхождения видов',
     'b_foodweb2': 'ОГЭ био 21 · пищевая сеть: конкурент и несвязанный организм',
     'g_strata2': 'ОГЭ гео 8 · разрез с магматическим телом (нарушенное залегание)',
+    'b_foodweb3': 'ОГЭ био 19 · три характеристики организма по схеме пищевой сети',
+    'g_daylen1': 'ОГЭ гео 17 · где 22 июня/22 декабря день самый длинный (1 из 4)',
+    'g_chart1': 'ОГЭ гео 23 · год максимума/минимума по ряду (1 из 4)',
+    'g_sun1': 'ОГЭ гео 17 · где полуденное Солнце выше/ниже (1 из 4)',
     'g_demo2': 'ЕГЭ гео 15–16 · добыча по запасам, обеспеченность на душу, общий прирост, миграционные потоки',
+    'g_demo4': 'ОГЭ гео 23 · таблица демографии 4 субъектов, выбор субъекта по условию',
 }
 
 
@@ -3734,6 +4475,47 @@ def unique_cards(typ, n, seed=2026):
     return out
 
 
+FOLD_ORDER = ['байкальская складчатость', 'каледонская складчатость', 'герцинская складчатость',
+              'мезозойская складчатость', 'кайнозойская (альпийская) складчатость']
+
+
+def gen_d_tectseq(rng, args, topic='dict'):
+    """ЕГЭ гео 13 (тектоника): три структуры земной коры — от более древней складчатости к более молодой."""
+    C = FACTS['geo']['classes']['tectonic_age']['items']
+    by = {}
+    for s_, t in C.items():
+        if t in FOLD_ORDER:
+            by.setdefault(t, []).append(s_)
+    eps = rng.sample(sorted(by), 3)
+    pick = [rng.choice(by[e]) for e in eps]
+    old_first = rng.random() < 0.6
+    order = sorted(range(3), key=lambda i: FOLD_ORDER.index(C[pick[i]]), reverse=not old_first)
+    q = (f'Расположите горные сооружения в порядке {"от более древних" if old_first else "от более молодых"} по времени '
+         f'складчатости {"к более молодым" if old_first else "к более древним"}')
+    return seq_card(topic, q, pick, order, '; '.join(f'{x} — {C[x]}' for x in pick) + '.', {'eng': 'd_tectseq', 'pick': pick, 'old': old_first})
+
+
+def check_d_tectseq(c):
+    C = FACTS['geo']['classes']['tectonic_age']['items']
+    return ''.join(str(i + 1) for i in sorted(range(3), key=lambda i: FOLD_ORDER.index(C[c['pick'][i]]), reverse=not c['old']))
+
+
+def gen_d_regword(rng, args, topic='dict'):
+    """ОГЭ гео 2: вписать название — единственное государство-сосед или море субъекта РФ (ответ словом)."""
+    (tab, field), kw = parse_args(args)
+    R = {k: v for k, v in FACTS['geo'][tab].items() if not v.get('new') and len(v.get(field) or []) == 1}
+    x = rng.choice(list(R))
+    v = R[x][field][0]
+    q = {'borders': f'Субъект Российской Федерации «{x}» граничит только с одним иностранным государством. Назовите это государство.',
+         'seas': f'Субъект Российской Федерации «{x}» имеет выход только к одному морю. Назовите это море.'}[field]
+    c = card('word', topic, q + ' Ответ запишите словом.', v, f'{x}: {v}.', {'eng': 'd_regword', 'tab': tab, 'field': field, 'x': x})
+    return c
+
+
+def check_d_regword(c):
+    return FACTS['geo'][c['tab']][c['x']][c['field']][0]
+
+
 # ================================================================ прототипы: генератор по спецификации и самопроверка
 
 ENGINES = {k[4:]: (v, globals()['check_' + k[4:]]) for k, v in list(globals().items())
@@ -3769,7 +4551,7 @@ def make_gen(spec):
         name, _, a = spec.partition(':')
         gen, chk = ENGINES[name]
         args = [x for x in a.split(',') if x]
-        return (lambda rng: gen(rng, args)), (lambda c: agree(chk(c['chk']), c))
+        return (lambda rng: gen(rng, args)), (lambda c: same_answer(chk(c['chk']), c))
     name, _, filt = spec.partition('@')
     want = dict(kv.split('=', 1) for kv in filt.split('&') if kv)
 
@@ -3779,7 +4561,7 @@ def make_gen(spec):
             if all(str(c['chk'].get(k)) == v for k, v in want.items()):
                 return c
         raise Skip(spec)
-    return g, lambda c: agree(CHECKS[name](c['chk']), c)
+    return g, lambda c: same_answer(CHECKS[name](c['chk']), c)
 
 
 def to_word(c):
@@ -3801,7 +4583,7 @@ def agree_word(c, check_one):
     return check_one(one_card)
 
 
-def agree(res, c):
+def same_answer(res, c):
     if isinstance(res, bool):
         return res
     if c['k'] == 'match':
@@ -3922,6 +4704,77 @@ def example_of(c):
     return ex
 
 
+# ---------------------------------------------------------------- сверка с форматом КИМ 2027 (data/research/kim-format-2027.json)
+
+KIM = {(k['exam'], k['subj'], k['n']): k for k in
+       json.loads((ROOT / 'data' / 'research' / 'kim-format-2027.json').read_text('utf-8'))} if (ROOT / 'data' / 'research' / 'kim-format-2027.json').exists() else {}
+
+
+def card_shape(c):
+    """Формат ответа карточки в терминах КИМ и число элементов."""
+    k = c['k']
+    if k == 'match':
+        return 'digits_match', {'left': len(c['o']['left']), 'right': len(c['o']['right']),
+                                'repeat': len(set(c['a'].values())) < len(c['a'])}
+    if k == 'many':
+        return 'digits_set', {'options': len(c['o']), 'correct': len(c['a'])}
+    if k == 'one':
+        return 'digits_set', {'options': len(c['o']), 'correct': 1}
+    if k == 'word':
+        return 'word', {}
+    if k in ('num', 'flip'):
+        if k == 'num' and ('под соответствующими буквами' in c['q'] or 'в порядке букв' in c['q']):
+            return 'digits_match', {'left': len(c['a'])}
+        if k == 'num' and ('последовательность цифр' in c['q'] or 'цифры подряд' in c['q']) and re.fullmatch(r'\d+', c['a']):
+            return 'digits_seq', {'seq_len': len(c['a'])}
+        if k == 'flip' and re.fullmatch(r'[А-ЯЁ]+', c['a']):
+            return 'digits_seq', {'seq_len': len(c['a']), 'symbols': 'letters'}
+        if k == 'num' and re.fullmatch(r'[1-3]{2,3}', c['a']) and '1 — увеличится' in c['q']:
+            return 'digits_match', {'left': len(c['a']), 'right': 3}
+        return 'number', {}
+    return k, {}
+
+
+def in_range(v, want):
+    if want is None or want == 'any':
+        return True
+    if isinstance(want, list):
+        return want[0] <= v <= want[-1]
+    return v == want
+
+
+def kim_auto(p, cards):
+    """Формат и устройство аналогов против эталона КИМ: (format_ok, structure_ok, заметки)."""
+    kim = KIM.get((p['exam'], 'bio' if p['id'].startswith('bio') else 'geo', p['n']))
+    if not kim or not cards:
+        return None
+    want = kim['answer'] if isinstance(kim['answer'], list) else [kim['answer']]
+    st = kim.get('structure', {})
+    fmt_bad, st_bad = set(), set()
+    for c in cards:
+        a, sh = card_shape(c)
+        if want == ['open']:
+            fmt_bad.add(f'в КИМ развёрнутый ответ, у нас {a} (шаг задания)')
+            continue
+        if a not in want:
+            fmt_bad.add(f'ответ {a}, в КИМ {"/".join(want)}')
+            continue
+        for key in ('left', 'right', 'options', 'correct', 'seq_len'):
+            if key in sh and key in st and not in_range(sh[key], st[key]):
+                st_bad.add(f'{key}: {sh[key]} вместо {st[key]}')
+        if 'repeat' in sh and st.get('repeat_digits') is False and sh['repeat']:
+            st_bad.add('цифры повторяются, в КИМ — нет')
+    return {'format': 'fail' if fmt_bad else 'pass', 'structure': 'fail' if st_bad or fmt_bad else 'pass',
+            'notes': sorted(fmt_bad | st_bad)}
+
+
+def kim_meta(p):
+    kim = KIM.get((p['exam'], 'bio' if p['id'].startswith('bio') else 'geo', p['n']))
+    if not kim:
+        return {}
+    return {k: kim.get(k) for k in ('level', 'points', 'time_min', 'answer', 'structure', 'scoring', 'codifier')}
+
+
 def proto_check(subjects, probe, fipi_dir, write, only=None):
     fipi = fipi_shingles(fipi_dir) if fipi_dir else None
     rows, fail = [], 0
@@ -3932,10 +4785,14 @@ def proto_check(subjects, probe, fipi_dir, write, only=None):
                 continue
             g = p['gen']
             if isinstance(g, dict):              # llm / bank — генератора нет, ёмкость оценена в записи
+                p.setdefault('fidelity', {})['kim'] = kim_meta(p)
                 rows.append((p['id'], g['kind'], None))
                 continue
             r = run_proto(p, probe, fipi=fipi)
             n = len(r['cards'])
+            fid = p.setdefault('fidelity', {})
+            fid['kim'] = kim_meta(p)
+            fid['auto'] = kim_auto(p, r['cards'][:300])
             p['capacity'] = n if n < probe * 0.95 else f'≥{n}'
             if r['cards']:
                 p['example'] = example_of(r['cards'][0])
