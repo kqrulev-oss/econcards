@@ -308,7 +308,7 @@ def rus_pack():
     return {
         'id': 'ege-rus', 'title': 'ЕГЭ: русский язык', 'subject': 'Русский язык',
         'desc': 'Все тестовые задания ЕГЭ с разборами и теорией по Розенталю',
-        'color': '#E4572E', 'topics': topics, 'theory': theory, 'cards': cards,
+        'color': '#5B3DF5', 'topics': topics, 'theory': theory, 'cards': cards,
     }
 
 
@@ -336,7 +336,7 @@ def stress_pack():
     return {
         'id': 'udarenie', 'title': 'Ударения', 'subject': 'Русский язык',
         'desc': 'Орфоэпический минимум ФИПИ для задания 4 ЕГЭ',
-        'color': '#8A4FFF', 'topics': topics, 'theory': theory, 'cards': cards,
+        'color': '#C2185B', 'topics': topics, 'theory': theory, 'cards': cards,
     }
 
 
@@ -567,7 +567,7 @@ def math_pack():
     return {
         'id': 'ege-math', 'title': 'ЕГЭ: профильная математика', 'subject': 'Математика',
         'desc': 'Все 19 заданий по прототипам: от геометрии и вероятности до параметров и экономической задачи',
-        'color': '#1E9E5A', 'topics': topics, 'theory': theory, 'cards': cards,
+        'color': '#0E7C86', 'topics': topics, 'theory': theory, 'cards': cards,
     }
 
 
