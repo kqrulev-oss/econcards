@@ -3668,7 +3668,9 @@ def _c29_text(c):
 
 def _redox_in(items):
     s = set(items) | {'H2O'}
-    return [r for r in REDOX29 if set(r['lhs']) <= s]
+    return [r for r in RX if set(r['lhs']) <= s and 'электролиз' not in r['type'] and redox_roles(r) and
+            not any(FORM_OF(r, x) == 'конц.' for x in r['lhs']) and agent_formula(r, 'ox') and
+            agent_formula(r, 'red')]
 
 
 def _solve_29c(p):
