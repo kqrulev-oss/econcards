@@ -67,7 +67,39 @@ def rnd(x, dec):
     out = fmt(Fr(x), dec)
     if out in ('0', '-0'):
         raise Retry
+    # точность должна соответствовать величине ответа: округление не искажает ответ больше чем на 5 %
+    x = Fr(x)
+    if x and abs(Fr(out.replace(',', '.')) - x) / abs(x) > Fr(1, 20):
+        raise Retry
     return out
+
+
+# Растворимость при ~20 °C (г на 100 г воды; справочник Лидина/CRC) → предельная массовая доля насыщенного раствора, %.
+# Концентрации в условиях не должны превышать 90 % от неё (запас). Кислоты, смешивающиеся с водой, не ограничены.
+SOLUB20 = {
+    'NaNO3': 88, 'Mg(NO3)2': 70, 'KNO3': Fr(316, 10), 'Ba(NO3)2': Fr(91, 10), 'CuCl2': 73, 'KCl': 34, 'NaCl': 36,
+    'CaCl2': Fr(745, 10), 'K2SO4': Fr(111, 10), 'Na2SO4': Fr(195, 10), 'CuSO4': Fr(207, 10), 'ZnSO4': 54, 'MgSO4': 35,
+    'Na2CO3': Fr(215, 10), 'K2CO3': 111, 'NH4NO3': 192, 'AgNO3': 216, 'ZnCl2': 395, 'NH4Cl': Fr(372, 10),
+    'Al2(SO4)3': Fr(364, 10), 'Zn(NO3)2': 118, 'CH3COONa': Fr(464, 10), 'NaOH': 109, 'KOH': 112, 'C6H12O6': 91,
+    'C12H22O11': 204, 'Cu(NO3)2': 125, 'BaCl2': Fr(358, 10), 'FeCl3': 92, 'MgCl2': Fr(546, 10), 'Fe2(SO4)3': 80,
+    'Na2S': Fr(186, 10), 'Na2SO3': 26, 'Na3PO4': Fr(121, 10), 'K3PO4': 90, 'Pb(NO3)2': Fr(545, 10), 'KI': 144,
+    'Na2SiO3': 22, 'Ba(OH)2': Fr(39, 10), 'Ca(NO3)2': 121, 'FeSO4': Fr(265, 10), 'Ca(OH)2': Fr(17, 100),
+    'KMnO4': Fr(64, 10), 'Fe(NO3)3': 82, 'AlCl3': 45, 'HCl': 72, 'KHCO3': Fr(332, 10),
+    'NaHCO3': Fr(96, 10), 'NaF': 4, 'FeCl2': 64, 'H2SiO3': 0,
+}
+
+
+def wmax(f):
+    """Предельная массовая доля (%) с запасом 10 %; None — ограничения нет (кислоты, смешивающиеся с водой)."""
+    S = SOLUB20.get(f)
+    if S is None:
+        return None
+    return Fr(S) / (100 + Fr(S)) * 100 * Fr(9, 10)
+
+
+def w_ok(f, *ws):
+    lim = wmax(f)
+    return lim is None or all(Fr(w) <= lim for w in ws)
 
 
 def rs(x, dec):
@@ -213,7 +245,7 @@ def g26_add(rng):
             raise Retry
     dec = rng.choice([0, 0, 1])
     w = (s1 + add) / (m1 + add + water - evap) * 100
-    if w >= 70:
+    if w >= 70 or not w_ok(f, w1, w):
         raise Retry
     ans = rnd(w, dec)
     same = _same(cw) if cw in ('соли', 'щёлочи') else name
@@ -237,7 +269,8 @@ def g26_add(rng):
                       f'Какой стала массовая доля {name} в растворе?',
                       f'Найдите массовую долю {"соли" if cw == "соли" else name} в конечном растворе.'])
     q = f'{s} {ask} {tail(dec)}'
-    e = (f'm({name}) = {fmt(s1, 2)}' + (f' + {ru(add)}' if add else '') + f' = {fmt(s1 + add, 2)} г; '
+    e = (f'm({name}) = ' + (f'{ru(m1)}·{fmt(w1, 2)}/100' if mode != 'masses' else f'{fmt(s1, 2)}') +
+         (f' + {ru(add)}' if add else '') + f' = {fmt(s1 + add, 2)} г; '
          f'm(р-ра) = {ru(m1)}' + (f' + {ru(add)}' if add else '') + (f' + {ru(water)}' if water else '') +
          (f' − {ru(evap)}' if evap else '') + f' = {ru(m1 + add + water - evap)} г; ω = {fmt(s1 + add, 2)}/'
          f'{ru(m1 + add + water - evap)}·100 % ≈ {ans} %.')
@@ -271,6 +304,8 @@ def g26_mix(rng):
     dec = rng.choice([0, 1, 1])
     tot = sum(Fr(a * b, 100) for a, b in zip(ms, ws))
     w = tot / (sum(ms) + water) * 100
+    if not w_ok(f, *ws):
+        raise Retry
     ans = rnd(w, dec)
     parts = [f'{m} г раствора с массовой долей {name} {x} %' if i == 0 else f'{m} г {x} %-ного раствора'
              for i, (m, x) in enumerate(zip(ms, ws))]
@@ -324,6 +359,8 @@ def g26_water(rng):
     dec = rng.choice([0, 1])
     lo, hi = sorted(rng.sample(W26, 2))
     w1, w2 = (hi, lo) if mode in ('add', 'take_add') else (lo, hi)
+    if not w_ok(f, w1, w2):
+        raise Retry
     m = Fr(rng.choice(range(20, 601, 5)))
     if mode in ('take_add', 'take_evap', 'take_salt'):
         m = Fr(rng.choice(range(5, 61)))
@@ -403,6 +440,8 @@ def g26_salt(rng):
     sols = [x for x in SOL26 if x[2] in ('соли', 'щёлочи', 'глюкозы', 'сахарозы')]
     f, name, cw = pick(rng, sols)
     w1, w2 = sorted(rng.sample(W26[:-3], 2))
+    if not w_ok(f, w2):
+        raise Retry
     m = Fr(rng.choice(range(50, 501, 5)))
     dec = rng.choice([0, 1])
     x = m * (w2 - w1) / (100 - w2)
@@ -435,6 +474,8 @@ def g26_mixfind(rng):
     f, name, cw = pick(rng, SOL26)
     a, b, c = sorted(rng.sample(W26, 3))
     w1, w2, w = (c, a, b) if rng.random() < 0.5 else (a, c, b)
+    if not w_ok(f, c):
+        raise Retry
     m1 = Fr(rng.choice(range(50, 401, 5)))
     dec = rng.choice([0, 1])
     x = m1 * (w1 - w) / (w - w2)
@@ -444,8 +485,8 @@ def g26_mixfind(rng):
     q = rng.choice([f'Имеются два раствора {name}: {m1} г с массовой долей {w1} % и раствор с массовой долей {w2} %. '
                     f'Какую массу второго раствора нужно смешать с первым, чтобы массовая доля {name} в смеси составила '
                     f'{w} %?',
-                    f'Для получения {w} %-ного раствора {name} к {m1} г его {w1} %-ного раствора прибавили раствор того '
-                    f'же вещества с массовой долей {w2} %. Рассчитайте массу прибавленного раствора.'])
+                    f'Для получения {w} %-ного раствора {name} к {m1} г {w1} %-ного раствора этого же вещества прибавили '
+                    f'его раствор с массовой долей {w2} %. Рассчитайте массу прибавленного раствора.'])
     q += ' ' + tail(dec)
     e = f'{m1}·{w1} + x·{w2} = ({m1} + x)·{w} ⇒ x = {m1}·({w1} − {w})/({w} − {w2}) ≈ {ans} г.'
     wrong = W([m1 * (w - w2) / (w1 - w), x + m1, m1 * w / w2], dec)
@@ -519,6 +560,19 @@ MOLAR = ['NaOH', 'KOH', 'NaCl', 'KCl', 'H2SO4', 'HNO3', 'HCl', 'Na2CO3', 'CuSO4'
          'NH4NO3', 'C6H12O6', 'AgNO3', 'K2CO3', 'MgSO4', 'ZnCl2', 'KMnO4']
 
 
+# приближённая зависимость плотности раствора от массовой доли (20 °C): ρ ≈ 1 + k·ω, ω в % (по справочным таблицам)
+RHO_K = {'NaOH': Fr(11, 1000), 'KOH': Fr(92, 10000), 'NaCl': Fr(72, 10000), 'KCl': Fr(64, 10000), 'H2SO4': Fr(70, 10000),
+         'HNO3': Fr(57, 10000), 'HCl': Fr(49, 10000), 'Na2CO3': Fr(104, 10000), 'CuSO4': Fr(107, 10000),
+         'KNO3': Fr(65, 10000), 'Na2SO4': Fr(93, 10000), 'CaCl2': Fr(86, 10000), 'BaCl2': Fr(94, 10000),
+         'NH4NO3': Fr(41, 10000), 'C6H12O6': Fr(39, 10000), 'AgNO3': Fr(93, 10000), 'K2CO3': Fr(92, 10000),
+         'MgSO4': Fr(105, 10000), 'ZnCl2': Fr(95, 10000), 'KMnO4': Fr(70, 10000)}
+
+
+def rho_of(f, w):
+    """Реалистичная плотность раствора (г/мл), округлённая до сотых."""
+    return Fr(round((1 + RHO_K[f] * Fr(w)) * 100), 100)
+
+
 def _mname(f):
     return {'HCl': 'хлороводорода', 'NH4NO3': 'нитрата аммония'}.get(f) or gen(f)
 
@@ -577,7 +631,9 @@ def g26_molar(rng):
         e = f'n = c·V = {ru(c)}·{ru(V / 1000)} = {ru(c * V / 1000)} моль; m = n·M'
     elif mode == 'c_from_w':
         w = rng.choice([2, 4, 5, 8, 10, 12, 15, 20, 25, 30])
-        rho = Fr(rng.choice(range(101, 131)), 100)
+        if not w_ok(f, w):
+            raise Retry
+        rho = rho_of(f, w)
         x = w * rho * 10 / Mf
         q = (f'Раствор {name} с массовой долей растворённого вещества {w} % имеет плотность {ru(rho)} г/мл. '
              f'Рассчитайте молярную концентрацию {name} в нём (моль/л).')
@@ -586,8 +642,11 @@ def g26_molar(rng):
         e = f'В 1 л: m(р-ра) = 1000·{ru(rho)} г, m(в-ва) = {ru(1000 * rho * w / 100)} г; c = m/M'
     else:
         c = Fr(rng.choice([10, 20, 25, 50, 75, 100, 125, 150, 200, 250, 300]), 100)
-        rho = Fr(rng.choice(range(101, 131)), 100)
+        w_est = c * Mf / 10                      # ω при ρ ≈ 1, затем уточняем плотность
+        rho = rho_of(f, c * Mf / 10 / (1 + RHO_K[f] * w_est))
         x = c * Mf / rho / 10
+        if not w_ok(f, x):
+            raise Retry
         q = (f'Молярная концентрация {name} в растворе равна {ru(c)} моль/л, а его плотность — {ru(rho)} г/мл. '
              f'Найдите массовую долю {name} в этом растворе (%).')
         wrong = W([c * Mf / 10, c * Mf / rho, c * Mf / rho / 100], dec)
@@ -678,7 +737,8 @@ def _g27_q(rng, pid, by_set):
     if Q < 1 or Q > 30000:
         raise Retry
     ans = rnd(Q, dec)
-    q = f'{_thermo_q_text(rng, r, f, by, val)} {tail(dec)}'
+    txt = _thermo_q_text(rng, r, f, by, val)
+    q = f'{txt}{chr(10) if txt.endswith("кДж") else " "}{tail(dec)}'
     _, eq = therm_eq(r)
     e = f'n({pretty(f)}) = {fmt(n, 4)} моль; на {k} моль по уравнению приходится {abs(r["q"])} кДж ⇒ ' \
         f'Q = {abs(r["q"])}·n/{k} ≈ {ans} кДж.'
@@ -757,7 +817,7 @@ def g27_inv(rng):
                     f'Определите {what}, если известно, что тепловой эффект процесса составил {ru(Q)} кДж '
                     f'({"теплота выделялась" if r["q"] > 0 else "теплота поглощалась"}). Термохимическое уравнение '
                     f'реакции:\n{eq}'])
-    q += ' ' + tail(dec)
+    q += ('\n' if q.endswith('кДж') else ' ') + tail(dec)
     unit = {'V': VM, 'm': M(f), 'n': 1}[by]
     e = f'n({pretty(f)}) = {k}·{ru(Q)}/{abs(r["q"])} = {ru(n)} моль' + \
         {'V': '; V = n·22,4', 'm': f'; m = n·{ru(M(f))}', 'n': ''}[by] + f' ≈ {ans}.'
@@ -915,16 +975,16 @@ def g28_imp(rng):
     if val < Fr(1, 2):
         raise Retry
     ans = rnd(val, dec)
-    raw = c['raw'][0]
+    raw, rg, rawg = c['raw']
     tpl = rng.randrange(3)
     if tpl == 0:
-        q = f'Образец ({raw}) массой {ru(m)} г, содержащий {imp} % {c["imp"]}, {c["act"]}. Рассчитайте {_want(f, fby)}.'
+        q = f'Образец {rawg} массой {ru(m)} г, содержащий {imp} % {c["imp"]}, {c["act"]}. Рассчитайте {_want(f, fby)}.'
     elif tpl == 1:
-        q = f'Образец сырья ({raw}) массой {ru(m)} г содержит {100 - imp} % {gen(g)} по массе; остальное — примеси, ' \
-            f'не участвующие в реакции. Образец {c["act"]}. Определите {_want(f, fby)}.'
+        q = f'{cap(raw)} массой {ru(m)} г {"содержат" if rg == "pl" else "содержит"} {100 - imp} % {gen(g)} по массе; остальное — примеси, не участвующие ' \
+            f'в реакции. Образец {c["act"]}. Определите {_want(f, fby)}.'
     else:
-        q = f'В заводской лаборатории {ru(m)} г сырья ({raw}) {c["act"]}. Содержание {c["imp"]} в сырье — {imp} % по ' \
-            f'массе. Найдите {_want(f, fby)}.'
+        q = f'В заводской лаборатории образец {rawg} массой {ru(m)} г {c["act"]}. Массовая доля {c["imp"]} в образце — ' \
+            f'{imp} %. Найдите {_want(f, fby)}.'
     q += ' ' + tail(dec)
     eqs, eq = eqp(r['lhs'], r['rhs'])
     unit = _unit(f, fby)
@@ -1002,7 +1062,8 @@ def _solve_28_eta(p):
                     'словами', 'Б', 4, 'как в банке: 96 г Mg → 50,4 г Si; 61 г KClO₃ → 13,44 л O₂', 'теоретический расчёт '
                     'по уравнению', ['5.5'], '1 балл'))
 def g28_eta(rng):
-    r = pick(rng, D.YIELD + [x for x in D.STOICH if x['calc']['g'] in ('CaCO3', 'Zn', 'Al', 'CaC2', 'NaNO3', 'KMnO4')])
+    r = pick(rng, D.YIELD + [x for x in D.STOICH if x['calc']['g'] in ('Zn', 'Al', 'CaC2')
+                             and 'постоянной массы' not in x['calc']['act'] and 'длительн' not in x['calc']['act']])
     c = r['calc']
     g, f = c['g'], c['f']
     k = coef(r['lhs'], r['rhs'])
@@ -1029,7 +1090,7 @@ def g28_eta(rng):
     if '{g}' in c['act']:
         s = f'При {c["act"].format(g=amount)} удалось выделить {got} {gen(f)}.'
     elif gby == 'm':
-        s = f'Навеску чистого вещества ({NOM[g]}) массой {ru(val)} г {c["act"]}; выделено {got} {gen(f)}.'
+        s = f'{cap(NOM[g])} массой {ru(val)} г {c["act"]}; выделено {got} {gen(f)}.'
     else:
         s = f'Порцию {gen(g)} объёмом {ru(val)} л (н.у.) {c["act"]}; выделено {got} {gen(f)}.'
     q = s + ' ' + rng.choice([f'Рассчитайте выход {gen(f)} (%) по отношению к теоретическому.',
@@ -1151,11 +1212,10 @@ def g28_raw(rng):
     mode = rng.choice(['raw', 'imp'])
     dec = rng.choice([0, 1])
     got = f'{ru(pv)} л (н.у.) {gen(f)}' if fby == 'V' else f'{ru(pv)} г {gen(f)}'
-    raw = c['raw'][0]
+    raw, rg, rawg = c['raw']
     if mode == 'raw':
         x = pure * 100 / (100 - imp)
-        q = f'Сырьё ({raw}) содержит {imp} % {c["imp"]}. Некоторую массу сырья {c["act"]} и получили {got}. ' \
-            f'Рассчитайте массу взятого сырья.'
+        q = f'Образец {rawg}, содержащий {imp} % {c["imp"]}, {c["act"]} и получили {got}. Рассчитайте массу образца.'
         wrong = W([pure, pure * (100 - imp) / 100, pure * (100 + imp) / 100], dec)
         p = dict(lhs=r['lhs'], rhs=r['rhs'], g=g, f=f, pv=str(pv), fby=fby, imp=imp, mode=mode, dec=dec)
     else:
@@ -1164,7 +1224,7 @@ def g28_raw(rng):
         x = (m - pure) / m * 100
         if x <= 0:
             raise Retry
-        q = f'Сырьё ({raw}) массой {ru(m)} г {c["act"]} и получили {got}. Какова массовая доля (%) примесей в этом сырье?'
+        q = f'Образец {rawg} массой {ru(m)} г {c["act"]} и получили {got}. Определите массовую долю (%) примесей в образце.'
         wrong = W([pure / m * 100, (m - pure) / pure * 100, x / 2], dec)
         p = dict(lhs=r['lhs'], rhs=r['rhs'], g=g, f=f, pv=str(pv), fby=fby, m=str(m), mode=mode, dec=dec)
     ans = rnd(x, dec)
@@ -1175,103 +1235,56 @@ def g28_raw(rng):
     return pcard('ch-ege-28-raw', q, ans, e, p=p, wrong=wrong, eq=eq)
 
 
-def _solve_28_simple(p):
+def _solve_28_rev(p):
     k = coef(p['lhs'], p['rhs'])
-    n = Fr(p['v']) / _unit_i(p['g'], p['gby'])
-    return rs(n * k[p['f']] / k[p['g']] * _unit_i(p['f'], p['fby']), p['dec'])
+    nf = Fr(p['pv']) / _unit_i(p['f'], p['fby'])
+    ng = nf * 100 / Fr(p['eta']) * k[p['g']] / k[p['f']]
+    return rs(ng * _unit_i(p['g'], p['gby']), p['dec'])
 
 
-SIMPLE28 = [  # (lhs, rhs, название процесса)
-    (['Zn', 'H2SO4'], ['ZnSO4', 'H2'], 'растворение цинка в разбавленной серной кислоте'),
-    (['Al', 'HCl'], ['AlCl3', 'H2'], 'растворение алюминия в соляной кислоте'),
-    (['Mg', 'HCl'], ['MgCl2', 'H2'], 'растворение магния в соляной кислоте'),
-    (['Fe', 'HCl'], ['FeCl2', 'H2'], 'растворение железа в соляной кислоте'),
-    (['NaNO3'], ['NaNO2', 'O2'], 'термическое разложение нитрата натрия'),
-    (['KNO3'], ['KNO2', 'O2'], 'термическое разложение нитрата калия'),
-    (['KClO3'], ['KCl', 'O2'], 'каталитическое разложение хлората калия'),
-    (['Cu(OH)2'], ['CuO', 'H2O'], 'прокаливание гидроксида меди(II)'),
-    (['Fe(OH)3'], ['Fe2O3', 'H2O'], 'прокаливание гидроксида железа(III)'),
-    (['CaCO3'], ['CaO', 'CO2'], 'обжиг карбоната кальция'),
-    (['MgCO3'], ['MgO', 'CO2'], 'прокаливание карбоната магния'),
-    (['CuO', 'H2'], ['Cu', 'H2O'], 'восстановление оксида меди(II) водородом'),
-    (['Fe2O3', 'Al'], ['Al2O3', 'Fe'], 'алюмотермическое восстановление оксида железа(III)'),
-    (['NaOH', 'H2SO4'], ['Na2SO4', 'H2O'], 'полная нейтрализация серной кислоты гидроксидом натрия'),
-    (['Ca(OH)2', 'HNO3'], ['Ca(NO3)2', 'H2O'], 'нейтрализация азотной кислоты гидроксидом кальция'),
-    (['Na2CO3', 'HCl'], ['NaCl', 'CO2', 'H2O'], 'взаимодействие карбоната натрия с соляной кислотой'),
-    (['Na2SO3', 'H2SO4'], ['Na2SO4', 'SO2', 'H2O'], 'взаимодействие сульфита натрия с серной кислотой'),
-    (['NH3', 'HCl'], ['NH4Cl'], 'поглощение аммиака соляной кислотой'),
-    (['CaC2', 'H2O'], ['Ca(OH)2', 'C2H2'], 'гидролиз карбида кальция'),
-    (['FeS', 'HCl'], ['FeCl2', 'H2S'], 'действие соляной кислоты на сульфид железа(II)'),
-    (['H2S', 'O2'], ['SO2', 'H2O'], 'полное сгорание сероводорода'),
-    (['NH3', 'O2'], ['N2', 'H2O'], 'сгорание аммиака в кислороде'),
-    (['Cu(NO3)2'], ['CuO', 'NO2', 'O2'], 'термическое разложение нитрата меди(II)'),
-]
-
-
-PREP_W = {'растворение': 'растворении', 'разложение': 'разложении', 'прокаливание': 'прокаливании', 'обжиг': 'обжиге',
-          'восстановление': 'восстановлении', 'нейтрализация': 'нейтрализации', 'взаимодействие': 'взаимодействии',
-          'поглощение': 'поглощении', 'гидролиз': 'гидролизе', 'действие': 'действии', 'сгорание': 'сгорании',
-          'термическое': 'термическом', 'каталитическое': 'каталитическом', 'полная': 'полной', 'полное': 'полном',
-          'алюмотермическое': 'алюмотермическом'}
-
-
-def _prep(proc):
-    w = proc.split(' ')
-    out = []
-    for i, x in enumerate(w):
-        if x in PREP_W and (i == 0 or w[i - 1] in PREP_W):
-            out.append(PREP_W[x])
-        else:
-            out.append(x)
-    return ' '.join(out)
-
-
-@proto('ch-ege-28-simple', 'ЕГЭ', 28, 'Масса, объём или количество вещества по уравнению (без примесей и выхода)',
-       invariant='n(дано) = m/M или V/22,4; n(искомое) = n·k(иск.)/k(дано); ответ m, V или n',
-       varies='реакция (разложение, металл + кислота, нейтрализация, горение, восстановление), дано и искомое — любой '
-              'участник (прямая и обратная задачи), в моль, г или л',
-       answer_rule='масса (г), объём (л) или количество вещества (моль) с указанной точностью',
-       mistakes=['не учли коэффициенты', 'объём газа через молярную массу', 'перевернули отношение коэффициентов'],
-       solve=_solve_28_simple, kes=['5.1'],
-       fidelity=fid('число, г, л или моль', 'задания банка с КЭС 5.1 (краткий ответ): «Определите объём водорода (н.у.), '
-                    'который выделится при …» — относим к № 28 как базовый расчёт по уравнению; уравнение в условии '
-                    'не дано', 'Б', 3, 'как в банке: 0,2–5 моль, 2–340 г', 'коэффициенты уравнения', ['5.1'], '1 балл'))
-def g28_simple(rng):
-    lhs, rhs, proc = pick(rng, SIMPLE28)
-    k = coef(lhs, rhs)
-    g, f = rng.sample([s for s in lhs + rhs if s != 'H2O'], 2)
-    gby = rng.choice(['n', 'm', 'm'] + (['V'] if is_gas(g) else []))
-    fby = rng.choice(['V', 'V', 'm'] if is_gas(f) else ['m', 'm', 'n'])
-    if gby == 'n' and fby == 'n':
+@proto('ch-ege-28-reverse', 'ЕГЭ', 28, 'Масса (объём) исходного вещества по количеству продукта и выходу',
+       invariant='n(продукта, практ.) → n(продукта, теор.) = n(практ.)·100/η → по коэффициентам n(исходного) → m или V',
+       varies='реакция (промышленные синтезы, брожение, этерификация, нитрование, восстановление металлов, окисление '
+              'сероводорода), полученное количество продукта, выход, что найти (масса или объём исходного вещества)',
+       answer_rule='масса (г) или объём (л, н.у.) исходного вещества с указанной точностью',
+       mistakes=['умножили на выход вместо деления', 'не учли коэффициенты', 'нашли теоретическое количество продукта'],
+       solve=_solve_28_rev, kes=['5.5'],
+       fidelity=fid('число, г или л', 'как задание банка «Вычислите массу этилового спирта, из которого с выходом 75 % '
+                    'получили 33,6 л (н.у.) бутадиена-1,3» — формулировка своя. Задания банка с КЭС 5.1 (простой расчёт '
+                    'по уравнению без примесей и выхода) по плану 2027 не относятся к № 28 (5.4/5.5), поэтому отдельного '
+                    'прототипа для них нет', 'Б', 4, 'продукт 1–100 г (л), выход 40–95 %',
+                    'обратный ход: делить на выход, а не умножать', ['5.5'], '1 балл'))
+def g28_reverse(rng):
+    r = pick(rng, D.YIELD)
+    c = r['calc']
+    g, f = c['g'], c['f']
+    k = coef(r['lhs'], r['rhs'])
+    fby = 'V' if is_gas(f) and rng.random() < 0.7 else 'm'
+    gby = 'V' if is_gas(g) and rng.random() < 0.7 else 'm'
+    nf = Fr(rng.choice(range(1, 61)), rng.choice([10, 20, 40]))
+    pv = nf * _unit(f, fby)
+    if not nice(pv, 2):
         raise Retry
-    n = Fr(rng.choice(range(1, 81)), rng.choice([4, 8, 10, 20]))
-    v = n * _unit(g, gby)
-    if not nice(v, 3):
-        raise Retry
-    x = n * k[f] / k[g] * _unit(f, fby)
-    dec = rng.choice([0, 1, 2])
+    eta = Fr(rng.choice([50, 60, 62.5, 64, 70, 75, 80, 85, 90, 92, 95, 96])).limit_denominator(10)
+    x = nf * 100 / eta * k[g] / k[f] * _unit(g, gby)
+    dec = rng.choice([0, 1, 2]) if gby == 'V' else rng.choice([0, 1])
     ans = rnd(x, dec)
-    given = {'n': f'{ru(v)} моль', 'm': f'{ru(v)} г', 'V': f'{ru(v)} л (н.у.)'}[gby]
-    role_g = 'израсходовано' if g in lhs else 'получено'
-    want = {'V': f'объём (н.у.) {gen(f)}', 'm': f'массу {gen(f)}', 'n': f'количество вещества {gen(f)} (моль)'}[fby]
-    unit_w = {'V': 'объём (н.у.)', 'm': 'массу', 'n': 'количество вещества'}[fby]
-    tail_n = ' (моль)' if fby == 'n' else ''
-    if f in lhs and len(lhs) == 1:
-        want = f'{unit_w} {"разложившейся" if gnd(f) == "f" else "разложившегося"} {gen(f)}{tail_n}'
-    elif f in lhs:
-        want = f'{unit_w} {gen(f)}{tail_n}, {"вступившей" if gnd(f) == "f" else "вступившего"} в реакцию'
-    else:
-        want = f'{unit_w} {pp_sh("образовавш", gnd(f))} {gen(f)}{tail_n}'
-    pr = _prep(proc).replace(' ' + gen(g), '', 1)
-    q = rng.choice([f'При {pr} {role_g} {given} {gen(g)}. Рассчитайте {want}.',
-                    f'{cap(given)} {gen(g)} {role_g} при {pr}. Определите {want}.'])
+    got = f'{ru(pv)} л (н.у.)' if fby == 'V' else f'{ru(pv)} г'
+    act = c['act'].format(g=gen(g))
+    want = f'объём (н.у.) {gen(g)}' if gby == 'V' else f'массу {gen(g)}'
+    taken = 'взятой' if gnd(g) == 'f' else 'взятого'
+    q = rng.choice([f'При {act} получили {got} {gen(f)}; выход продукта составил {ru(eta)} % от теоретически возможного. '
+                    f'Рассчитайте {want}, {taken} для реакции.',
+                    f'Рассчитайте {want}, необходим{"ую" if gby == "m" else "ый"} для получения {got} {gen(f)}, если '
+                    f'практический выход продукта при {act} равен {ru(eta)} %.'])
     q += ' ' + tail(dec)
-    eqs, eq = eqp(lhs, rhs)
-    e = f'{eqs}; n({pretty(g)}) = {ru(n)} моль; n({pretty(f)}) = {ru(n)}·{k[f]}/{k[g]} = {fmt(n * k[f] / k[g], 4)} моль ⇒ {ans}.'
-    unit = _unit(f, fby)
-    wrong = W([n * unit, n * k[g] / k[f] * unit, n * k[f] / k[g] * (M(f) if fby == 'V' else VM)], dec)
-    return pcard('ch-ege-28-simple', q, ans, e, p=dict(lhs=lhs, rhs=rhs, g=g, f=f, v=str(v), gby=gby, fby=fby, dec=dec),
-                 wrong=wrong, eq=eq)
+    eqs, eq = eqp(r['lhs'], r['rhs'])
+    e = f'{eqs}; n({pretty(f)}, практ.) = {ru(nf)} моль; теоретически {fmt(nf * 100 / eta, 4)} моль; ' \
+        f'n({pretty(g)}) = {fmt(nf * 100 / eta * k[g] / k[f], 4)} моль ⇒ {ans}.'
+    unit = _unit(g, gby)
+    wrong = W([nf * eta / 100 * k[g] / k[f] * unit, nf * k[g] / k[f] * unit, nf * 100 / eta * unit if k[g] != k[f] else x * 2], dec)
+    return pcard('ch-ege-28-reverse', q, ans, e, p=dict(lhs=r['lhs'], rhs=r['rhs'], g=g, f=f, pv=str(pv), fby=fby, gby=gby,
+                                                        eta=str(eta), dec=dec), wrong=wrong, eq=eq)
 
 
 # ======================================================================= ЕГЭ 18. Скорость реакции
@@ -1385,7 +1398,7 @@ def _factors_aff(R):
         for f, ph, g in R['p']:
             if ph == 'р-р' and f != 'H2O':
                 F += [(f'внесение в систему кристаллического {g}', False)]
-            elif ph == 'тв':
+            elif ph == 'тв' and f not in ('Cu', 'Ag', 'Fe', 'Zn'):
                 F += [(f'добавление в систему {g}', False)]
     if any(ph == 'р-р' for _, ph, _ in R['r']):
         F += [('добавление к раствору индикатора', False)]
@@ -1434,7 +1447,7 @@ def g18_factor(rng):
     up = rng.random() < 0.75
     items = _factors_dir(R)
     sign = 1 if up else -1
-    ch = _pick5(rng, items, lambda x: x[1] == sign, 1, 4)
+    ch = _pick5(rng, items, lambda x: x[1] == sign, 2, 4)
     k = sum(1 for _, v in ch if v == sign)
     noun = rng.choice(['внешних воздействия', 'фактора']) if k == 2 else rng.choice(['внешние воздействия', 'факторы'])
     q = rng.choice([f'Из предложенного перечня выберите {_how_many(k)} {noun}, которые {"ускоряют" if up else "замедляют"} '
@@ -1479,8 +1492,13 @@ def _eq18(R):
     rhs = [f for f, _, _ in R['p']]
     kl, kr = balance(lhs, rhs)
     st = [ph for _, ph, _ in R['r']] + [ph for _, ph, _ in R['p']]
-    side = lambda ss, ks, sts: ' + '.join((str(k) if k > 1 else '') + pretty(s) + PH[t] for s, k, t in zip(ss, ks, sts))
+    side = lambda ss, ks, sts: ' + '.join((str(k) if k > 1 else '') + disp(s) + PH[t] for s, k, t in zip(ss, ks, sts))
     return side(lhs, kl, st[:len(lhs)]) + ' = ' + side(rhs, kr, st[len(lhs):]), (lhs, rhs, kl, kr)
+
+
+def disp(f):
+    """Формула для показа: комплексы — с квадратными скобками (Na₂[Zn(OH)₄])."""
+    return {'Na2(Zn(OH)4)': 'Na₂[Zn(OH)₄]'}.get(f, pretty(f))
 
 
 @proto('ch-ege-18-eqlist', 'ЕГЭ', 18, 'Уравнения реакций, на скорость которых влияет данный фактор',
@@ -1564,7 +1582,7 @@ def g18_subst(rng):
         for R in R18:
             if len(R['r']) != 2:
                 continue
-            txt = ' и '.join(f'{pretty(f)} {PH[ph]}' for f, ph, _ in R['r'])
+            txt = ' и '.join(f'{disp(f)} {PH[ph]}' for f, ph, _ in R['r'])
             pool.append((txt, any(ph == 'г' for _, ph, _ in R['r']), R))
         ch = _pick5(rng, pool, lambda x: x[1], 1, 4)
         truth = [v for _, v, _ in ch]
@@ -1584,7 +1602,7 @@ ACIDS18 = [('соляной кислотой', 2, 'HCl (р-р)'), ('раство
 FORMS18 = [('порошка', 2, 'порошок'), ('гранул', 1, 'гранулы')]
 FAST18 = ['NaOH (р-р) + CH₃COOH (р-р)', 'Ba(OH)₂ (р-р) + HNO₃ (р-р)', 'Na₂CO₃ (р-р) + HCl (р-р)',
           'KOH (р-р) + H₂SO₄ (р-р)']
-ALC18 = [('воды', 5, 'H₂O'), ('метанола', 4, 'CH₃OH'), ('этанола', 3, 'C₂H₅OH'), ('пропанола-1', 2, 'пропанол-1'),
+ALC18 = [('воды', 6, 'H₂O'), ('метанола', 5, 'CH₃OH'), ('этанола', 4, 'C₂H₅OH'), ('пропанола-1', 3, 'пропанол-1'),
          ('бутанола-1', 2, 'бутанол-1'), ('пропанола-2', 1, 'пропанол-2')]
 AMET18 = [('калия', 3, 'K'), ('натрия', 2, 'Na'), ('лития', 1, 'Li')]
 PAIRS18 = [  # (два раствора, реагирующие между собой; твёрдые вещества, реагирующие с одним из растворов)
@@ -1638,6 +1656,8 @@ def g18_compare(rng):
                     if (m, ac, fm) == ref:
                         continue
                     d = [m[2] - ref[0][2], ac[1] - ref[1][1], fm[1] - ref[2][1]]
+                    if (ac != ref[1] and ac[1] == ref[1][1]) or (m != ref[0] and m[2] == ref[0][2]):
+                        continue            # разные вещества одного «ранга» — сравнить нельзя
                     if all(x >= 0 for x in d) and any(x > 0 for x in d):
                         cands.append((txt(m, ac, fm), faster))
                     elif all(x <= 0 for x in d) and any(x < 0 for x in d):
@@ -1773,55 +1793,6 @@ def g21_names(rng):
     return _g21_order(rng, 'ch-ege-21-names', True)
 
 
-MED21 = {'acid': '1', 'cat': '1', 'neu': '2', 'an': '3'}
-HYD21 = [('CH3COONH4', 'ацетат аммония', 'both'), ('(NH4)2CO3', 'карбонат аммония', 'both'),
-         ('(NH4)2S', 'сульфид аммония', 'both'), ('(NH4)2SO3', 'сульфит аммония', 'both'), ('NH4F', 'фторид аммония', 'both')]
-
-
-def _solve_21_match(p):
-    return dict(p['ans'])
-
-
-@proto('ch-ege-21-medium', 'ЕГЭ', 21, 'Соответствие «соль — среда раствора» / «соль — отношение к гидролизу»',
-       invariant='тип гидролиза определяется силой основания и кислоты, образующих соль; по катиону — кислая среда, '
-                 'по аниону — щелочная, не гидролизуется — нейтральная',
-       varies='четыре соли (формулы или названия), вопрос о среде или о типе гидролиза',
-       answer_rule='цифры под буквами А–Г',
-       mistakes=['гидролиз по катиону и аниону путают с отсутствием гидролиза', 'соли аммония считают нейтральными'],
-       solve=_solve_21_match, kes=['1.10'],
-       fidelity=fid('4 цифры под буквами, цифры могут повторяться', 'как в открытом банке (КЭС 1.10, соответствие): '
-                    '«Установите соответствие между формулой (названием) соли и средой её водного раствора»; в КИМ 2027 '
-                    '№ 21 — последовательность, этот тип остаётся в банке и нужен для тренировки', 'Б', 3,
-                    'соли банка', 'по катиону/аниону/обоим', ['1.10'], '1 балл'))
-def g21_medium(rng):
-    names = rng.random() < 0.5
-    if rng.random() < 0.5:
-        rows = rng.sample([r for r in PH21 if r[2] in ('cat', 'neu', 'an') and r[0] not in ('NH3·H2O',)], 4)
-        left = [r[1] if names else pretty(r[0]) for r in rows]
-        right = ['кислая', 'нейтральная', 'щелочная']
-        ans = {'АБВГ'[i]: MED21[r[2]] for i, r in enumerate(rows)}
-        q = f'Установите соответствие между {"названием" if names else "формулой"} соли и характером среды, которую имеет ' \
-            f'её водный раствор: {MATCH_I} {MATCH_T}'
-        e = 'Гидролиз по катиону — кислая среда, по аниону — щелочная, соль сильных основания и кислоты — нейтральная.'
-    else:
-        pool = [r for r in PH21 if r[2] in ('cat', 'neu', 'an')] + [(f, n, 'both', 7.0) for f, n, _ in HYD21]
-        rows = rng.sample(pool, 4)
-        if not any(r[2] == 'both' for r in rows) and rng.random() < 0.6:
-            rows[rng.randrange(4)] = pick(rng, [(f, n, 'both', 7.0) for f, n, _ in HYD21])
-            if len({r[0] for r in rows}) < 4:
-                raise Retry
-        left = [r[1] if names else pretty(r[0]) for r in rows]
-        right = ['гидролиз идёт по катиону', 'гидролиз идёт по аниону', 'гидролиз идёт и по катиону, и по аниону',
-                 'соль гидролизу не подвергается']
-        code = {'cat': '1', 'an': '2', 'both': '3', 'neu': '4'}
-        ans = {'АБВГ'[i]: code[r[2]] for i, r in enumerate(rows)}
-        q = f'Установите соответствие между {"названием" if names else "формулой"} соли и тем, как эта соль ведёт себя при '\
-            f'растворении в воде: {MATCH_I} {MATCH_T}'
-        e = 'Слабое основание → гидролиз по катиону, слабая кислота → по аниону; оба слабых → по катиону и аниону.'
-    e += ' Ответ: ' + ''.join(ans[x] for x in 'АБВГ') + '.'
-    return pcard('ch-ege-21-medium', q, ans, e, k='match', o=match_opts(left, right), p=dict(ans=ans))
-
-
 # ======================================================================= ЕГЭ 22. Смещение равновесия
 
 SH = ['сместится в направлении прямой реакции', 'сместится в направлении обратной реакции',
@@ -1927,7 +1898,8 @@ def _g22_sys(rng, pid, pool, what):
         kinds = [x[0] for x in pick4]
         if kinds.count('T') > 1 or kinds.count('p') > 1:
             continue
-        if what == 'hetero' and not any(x[0] == 'c' and phase_of[x[1][0]] == 'тв' for x in pick4) and rng.random() < 0.7:
+        n_solid = sum(1 for x in pick4 if x[0] == 'c' and phase_of[x[1][0]] == 'тв')
+        if what == 'hetero' and (n_solid > 2 or (n_solid == 0 and rng.random() < 0.7)):
             continue
         ans = {'АБВГ'[i]: _shift(f, qs, dn, side_of, phase_of) for i, f in enumerate(pick4)}
         if len(set(ans.values())) >= 2:
@@ -2292,7 +2264,7 @@ def _sol_mass(n, f, w):
 
 def _nice_sol(rng, n, f, ws=(5, 8, 10, 12, 15, 16, 20, 24, 25, 30, 40)):
     """Подобрать массовую долю так, чтобы масса раствора была «круглой» (≤ 1 знака после запятой)."""
-    cand = [w for w in ws if nice(_sol_mass(n, f, w), 1) and _sol_mass(n, f, w) <= 800]
+    cand = [w for w in ws if nice(_sol_mass(n, f, w), 1) and _sol_mass(n, f, w) <= 800 and w_ok(f, w)]
     if not cand:
         raise Retry
     w = pick(rng, cand)
@@ -3395,8 +3367,10 @@ def _oge22_amounts(rng, f, ws=(2, 4, 5, 6, 8, 10, 12, 15, 16, 20, 25)):
     for _ in range(40):
         n = Fr(rng.choice(range(1, 61)), rng.choice([100, 50, 20]))
         w = pick(rng, ws)
+        if not w_ok(f, w):
+            w = pick(rng, [x for x in (Fr(1, 2), 1, 2, 3) if w_ok(f, x)] or [Fr(1, 10)])
         m = n * M(f) * 100 / w
-        if nice(m, 1) and 10 <= m <= 800:
+        if nice(m, 1) and 10 <= m <= 600:
             return n, w, m
     raise Retry
 

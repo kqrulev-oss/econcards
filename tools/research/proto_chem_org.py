@@ -1641,7 +1641,7 @@ def _gen_two_rk(pid, rng, pool):
     names = [_rk_text(rng, rk) for rk in rks]
     N = {f: nm(f, rng)}
     if want:
-        q = q_many('два', 'вещества', rng.choice([f'с которыми взаимодействует {N[f]}', f'с каждым из которых реагирует {N[f]}',
+        q = q_many('два', 'вещества', rng.choice([f'с каждым из которых реагирует {N[f]}',
                                               f'с которыми вступает в реакцию {N[f]}']))
     else:
         q = q_many('два', 'вещества', f'с которыми не взаимодействует {N[f]}')
@@ -2800,6 +2800,53 @@ def g16_ends(rng):
     return match_card('ch-ege-16-start-end', rng, q, ['вещество X', 'вещество Y'], names, [right.index(x),
                                                                                            right.index(y)],
                       f'{rx_eq(r1)}; {rx_eq(r2)}.', {'b': b, 'l1': l1, 'l2': l2, 'right': right},
+                      eqs=[eqt(r1), eqt(r2)], lids=XY)
+
+
+def _solve16_fwd(p):
+    cur = p['a']
+    got = []
+    for L in p['labels']:
+        nxt = {r['rhs'][0] for r in D.REACTIONS if r['lhs'][0] == cur and sig_label(dict(r, k=None)) == L}
+        cur = sorted(nxt)[0]
+        got.append(cur)
+    return {'X': str(p['right'].index(got[0]) + 1), 'Y': str(p['right'].index(got[1]) + 1)}
+
+
+@proto('ch-ege-16-forward', 'ЕГЭ', 16, 'Схема A →(реагент)→ X →(реагент)→ Y: продукты двух последовательных стадий',
+       invariant='по исходному веществу и реагентам (с условиями) на стрелках определить продукты обеих стадий',
+       varies='цепочки из двух стадий по базе, реагенты и условия, пять кандидатов (изомеры и продукты «соседних» '
+              'условий)',
+       answer_rule='провести первую реакцию, затем вторую с её продуктом',
+       mistakes=['H₂SO₄ (конц.) при t > 140 °C даёт алкен, при t < 140 °C — простой эфир',
+                 'гидратация по правилу Марковникова', 'продукт первой стадии спутан с изомером'],
+       solve=_solve16_fwd, kind='dict', kes=KES16,
+       fidelity=fid(TWO16, 'П', 3, 'банк №16: CH₃CH₂CH₂OH —(H₂SO₄, t°)→ X —(H₂O, H⁺)→ Y; CH₃COONa —(NaOH)→ X —(HNO₃)→ Y',
+                    'изомерные продукты (пропанол-1/-2, 1-/2-бромпропан)', KES16, SC1))
+def g16_forward(rng):
+    r1, r2 = _walk(rng, 2)
+    a, x, y = r1['lhs'][0], r1['rhs'][0], r2['rhs'][0]
+    l1, l2 = sig_label(r1), sig_label(r2)
+    if not l1 or not l2:
+        raise Retry
+    for r, L in ((r1, l1), (r2, l2)):
+        if len({z['rhs'][0] for z in RX if z['lhs'][0] == r['lhs'][0] and sig_label(z) == L}) != 1:
+            raise Retry
+    conf = {g for g in ORG if (brutto(g) in (brutto(x), brutto(y)) or SUB[g]['hom'] in (SUB[x]['hom'], SUB[y]['hom']))
+            and g not in (a, x, y) and g not in _POOL10_SKIP and parse_formula(g).get('C', 0) <= 10}
+    conf |= {r['rhs'][0] for r in OUT.get(a, []) + OUT.get(x, [])} - {a, x, y}
+    if len(conf) < 3:
+        raise Retry
+    right = [x, y] + rng.sample(sorted(conf), 3)
+    rng.shuffle(right)
+    names = [nm(f, rng) for f in right]
+    if len(set(names)) < 5:
+        raise Retry
+    q = (f'Задана схема превращений веществ: {nm(a)} —({l1})→ X —({l2})→ Y.\n'
+         'Определите, какие из указанных веществ являются веществами X и Y.\n'
+         'Запишите в таблицу номера выбранных веществ под соответствующими буквами.')
+    return match_card('ch-ege-16-forward', rng, q, ['вещество X', 'вещество Y'], names, [right.index(x), right.index(y)],
+                      f'{rx_eq(r1)}; {rx_eq(r2)}.', {'a': a, 'labels': [l1, l2], 'right': right},
                       eqs=[eqt(r1), eqt(r2)], lids=XY)
 
 
