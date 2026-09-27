@@ -6,6 +6,7 @@
                                   → {url} страницы оплаты ЮKassa
    GET  /pay/status?id=           проверить платёж (после возврата с оплаты)
    POST /pay/webhook              уведомление ЮKassa (payment.succeeded)
+   POST /pay/promo {code}         проверить промокод: скидка — вернёт %, дни — начислит сразу
 
    Секреты: YK_SHOP_ID, YK_SECRET (ЮKassa → Интеграция → Ключи API).
    Цены (переменные, ₽): PRICE_TUTOR_1, PRICE_TUTOR_3, PRICE_LIB_1, PRICE_LIB_3.
@@ -33,6 +34,40 @@ export function prices(env) {
 }
 
 const NAMES = { tutor: 'Студия репетитора', lib: 'Библиотека ЕГЭ' };
+
+// ---------- промокоды ----------
+/* promo:<КОД> = { code, kind: 'discount'|'days', value (% или дней), product: tutor|lib|any,
+                   maxUses (0 — без лимита), used, until (0 — бессрочно), off }
+   Каждый аккаунт использует код один раз (promouse:<КОД>:<аккаунт>).
+   Создаются командой бота /promo (только владелец). */
+export const normCode = c => String(c || '').trim().toUpperCase().replace(/[^A-Z0-9А-ЯЁ_-]/g, '').slice(0, 24);
+
+export async function savePromo(env, promo) {
+  await env.DB.put(`promo:${promo.code}`, JSON.stringify(promo));
+}
+
+async function findPromo(env, acct, raw, product) {
+  const code = normCode(raw);
+  const promo = code && await env.DB.get(`promo:${code}`, 'json');
+  const bad = msg => { throw new AuthError(400, msg); };
+  if (!promo || promo.off) bad('Такого промокода нет.');
+  if (promo.until && promo.until < Date.now()) bad('Срок действия промокода закончился.');
+  if (promo.maxUses && promo.used >= promo.maxUses) bad('Промокод уже использован максимальное число раз.');
+  if (product && promo.product !== 'any' && promo.product !== product) bad(`Этот промокод — для тарифа «${NAMES[promo.product]}».`);
+  if (await env.DB.get(`promouse:${code}:${acct.id}`)) bad('Вы уже использовали этот промокод.');
+  return promo;
+}
+
+async function markUsed(env, code, acctId) {
+  const promo = await env.DB.get(`promo:${code}`, 'json');
+  if (!promo || await env.DB.get(`promouse:${code}:${acctId}`)) return;
+  promo.used = (promo.used || 0) + 1;
+  await savePromo(env, promo);
+  await env.DB.put(`promouse:${code}:${acctId}`, String(Date.now()));
+}
+
+// Цена со скидкой: не меньше 1 ₽ (минимум ЮKassa)
+const discounted = (price, pct) => Math.max(1, Math.round(price * (100 - pct) / 100));
 
 async function yk(env, path, body, idem) {
   const r = await fetch(`https://api.yookassa.ru/v3${path}`, {
@@ -66,11 +101,13 @@ async function applyPayment(env, id) {
   const pay = await yk(env, `/payments/${encodeURIComponent(id)}`);
   const meta = pay.metadata || {};
   if (pay.status !== 'succeeded' || !meta.acct || !NAMES[meta.product]) return { status: pay.status };
-  const want = prices(env)[meta.product][meta.months];
+  const base = prices(env)[meta.product][meta.months];
+  const want = base && (meta.promo ? discounted(base, Number(meta.pct)) : base);
   if (!want || Number(pay.amount?.value) < want) return { status: 'amount_mismatch' };
   if (await env.DB.get(`paid:${id}`)) return { status: 'succeeded', already: true };
   await env.DB.put(`paid:${id}`, JSON.stringify({ at: Date.now(), ...meta, amount: pay.amount.value }));
-  const acct = await extend(env, meta.acct, meta.product, 30 * Number(meta.months), `ЮKassa ${id}`);
+  const acct = await extend(env, meta.acct, meta.product, 30 * Number(meta.months), `ЮKassa ${id}${meta.promo ? ' · ' + meta.promo : ''}`);
+  if (meta.promo) await markUsed(env, meta.promo, meta.payer || meta.acct);
   // Владельцу — уведомление в Telegram
   if (env.TG_TOKEN && env.TG_OWNER) {
     await fetch(`https://api.telegram.org/bot${env.TG_TOKEN}/sendMessage`, {
@@ -110,7 +147,10 @@ export async function handleBilling(req, env, parts) {
       if (!kids.includes(body.forAcct) || product !== 'lib') throw new AuthError(403, 'Можно оплатить только доступ своего ребёнка.');
       target = await getAccount(env, body.forAcct);
     }
-    const value = prices(env)[product][months].toFixed(2);
+    // Промокод со скидкой проверяем здесь; засчитывается он после успешной оплаты
+    const promo = body.promo ? await findPromo(env, payer, body.promo, product) : null;
+    if (promo && promo.kind !== 'discount') throw new AuthError(400, 'Этот промокод даёт бесплатные дни — активируйте его отдельно.');
+    const value = (promo ? discounted(prices(env)[product][months], promo.value) : prices(env)[product][months]).toFixed(2);
     const back = safeBack(body.back, url.origin);
     const idem = randomId(32);
     const pay = await yk(env, '/payments', {
@@ -118,11 +158,28 @@ export async function handleBilling(req, env, parts) {
       capture: true,
       confirmation: { type: 'redirect', return_url: `${back}${back.includes('?') ? '&' : '?'}paid=${idem}` },
       description: `${NAMES[product]}, ${months} мес. — ${target.name || 'аккаунт'}`.slice(0, 128),
-      metadata: { acct: target.id, payer: payer.id, product, months: String(months), ref: idem },
+      metadata: { acct: target.id, payer: payer.id, product, months: String(months), ref: idem, ...(promo ? { promo: promo.code, pct: String(promo.value) } : {}) },
     }, idem);
     // На возврате у нас есть только наш ref — запоминаем, какому платежу он соответствует
     await env.DB.put(`payref:${idem}`, pay.id, { expirationTtl: 7 * 86400 });
     return { url: pay.confirmation?.confirmation_url, id: pay.id };
+  }
+
+  if (b === 'promo' && req.method === 'POST') {
+    const acct = await sessionAccount(env, req);
+    if (!acct) throw new AuthError(401, 'Нужно войти.');
+    const lim = `lim:promo:${acct.id}:${Math.floor(Date.now() / 3600e3)}`;
+    const tries = Number(await env.DB.get(lim) || 0);
+    if (tries >= 15) throw new AuthError(429, 'Слишком много попыток. Попробуйте через час.');
+    await env.DB.put(lim, String(tries + 1), { expirationTtl: 7200 });
+    const body = await req.json().catch(() => ({}));
+    const promo = await findPromo(env, acct, body.code, body.product || null);
+    if (promo.kind === 'discount') return { code: promo.code, kind: 'discount', value: promo.value, product: promo.product };
+    // Бесплатные дни — начисляем сразу
+    const product = promo.product === 'any' ? (NAMES[body.product] ? body.product : 'lib') : promo.product;
+    await extend(env, acct.id, product, promo.value, `промокод ${promo.code}`);
+    await markUsed(env, promo.code, acct.id);
+    return { code: promo.code, kind: 'days', value: promo.value, product, applied: true };
   }
 
   if (b === 'status' && req.method === 'GET') {

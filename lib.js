@@ -98,7 +98,8 @@ export function modal(html) {
   const m = el(`<div class="modal"><div class="modal-box"><button class="modal-x" aria-label="Закрыть">✕</button>${html}</div></div>`);
   const close = () => m.remove();
   m.querySelector('.modal-x').onclick = close;
-  m.onclick = e => e.target === m && close();
+  // Только клик по фону закрывает окно; return false здесь отменил бы клики по ссылкам внутри
+  m.onclick = e => { if (e.target === m) close(); };
   document.body.append(m);
   return { box: m.querySelector('.modal-box'), close };
 }

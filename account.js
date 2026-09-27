@@ -142,14 +142,14 @@ export async function loginDialog({ why = '', onDone, role = '' } = {}) {
           catch (err) { toast(err.message); }
         };
         step.querySelector('#lg-ok').onclick = verify;
-        code.onkeydown = ev => ev.key === 'Enter' && verify();
+        code.onkeydown = ev => { if (ev.key === 'Enter') verify(); };
       } catch (err) {
         toast(err.message);
         step.querySelector('#lg-send').disabled = false;
       }
     };
     step.querySelector('#lg-send').onclick = send;
-    input.onkeydown = ev => ev.key === 'Enter' && send();
+    input.onkeydown = ev => { if (ev.key === 'Enter') send(); };
   });
 }
 
@@ -184,16 +184,42 @@ export async function payDialog({ product, forAcct = null, forName = '' }) {
     <p>${esc(info.what)}</p>
     ${pr.enabled ? `
       <div class="pay-options">
-        <button class="pay-opt" data-m="1"><b>${pr[product][1]} ₽</b><span>1 месяц</span></button>
-        <button class="pay-opt best" data-m="3"><b>${pr[product][3]} ₽</b><span>3 месяца · выгоднее на ${Math.round((1 - pr[product][3] / (pr[product][1] * 3)) * 100)}%</span></button>
+        <button class="pay-opt" data-m="1"><b data-price="1">${pr[product][1]} ₽</b><span>1 месяц</span></button>
+        <button class="pay-opt best" data-m="3"><b data-price="3">${pr[product][3]} ₽</b><span>3 месяца · выгоднее на ${Math.round((1 - pr[product][3] / (pr[product][1] * 3)) * 100)}%</span></button>
       </div>
       <p class="muted small-note">Оплата картой или через СБП на странице ЮKassa. Без автосписаний — продлеваете сами, мы напомним. <a href="${new URL('offer.html', import.meta.url)}" target="_blank" rel="noopener">Оферта</a></p>`
-    : `<p class="panel warn-box">Онлайн-оплата скоро появится. Сейчас напишите в Telegram <a href="https://t.me/trwqxp" target="_blank" rel="noopener">@trwqxp</a> — включим доступ вручную.</p>`}`);
+    : `<p class="panel warn-box">Онлайн-оплата скоро появится. Сейчас напишите в Telegram <a href="https://t.me/trwqxp" target="_blank" rel="noopener">@trwqxp</a> — включим доступ вручную.</p>`}
+    <details class="promo"><summary>Есть промокод?</summary>
+      <div class="row"><input id="promo" placeholder="Например, START20" autocapitalize="characters" autocomplete="off"><button class="btn" id="promo-ok">Применить</button></div>
+      <p class="promo-msg muted"></p>
+    </details>`);
+  let promo = null;
+  const msg = box.querySelector('.promo-msg');
+  const applyPromo = async () => {
+    const code = box.querySelector('#promo').value.trim();
+    if (!code) return;
+    try {
+      const r = await api('/pay/promo', { method: 'POST', body: { code, product } });
+      if (r.kind === 'days') {
+        msg.textContent = `Промокод активирован: +${r.value} дней. Обновляю страницу…`;
+        setTimeout(() => location.reload(), 1200);
+        return;
+      }
+      promo = r;
+      msg.textContent = `Скидка ${r.value}% применена.`;
+      box.querySelectorAll('[data-price]').forEach(n => {
+        const base = pr[product][n.dataset.price];
+        n.innerHTML = `<s>${base} ₽</s> ${Math.max(1, Math.round(base * (100 - r.value) / 100))} ₽`;
+      });
+    } catch (err) { msg.textContent = err.message; }
+  };
+  box.querySelector('#promo-ok').onclick = applyPromo;
+  box.querySelector('#promo').onkeydown = e => { if (e.key === 'Enter') applyPromo(); };
   box.querySelectorAll('[data-m]').forEach(b => b.addEventListener('click', async () => {
     b.disabled = true;
     try {
       sessionStorage.setItem('zd-pay-after', location.hash);
-      const { url } = await api('/pay/create', { method: 'POST', body: { product, months: Number(b.dataset.m), forAcct, back: location.href.split('#')[0] } });
+      const { url } = await api('/pay/create', { method: 'POST', body: { product, months: Number(b.dataset.m), forAcct, promo: promo?.code, back: location.href.split('#')[0] } });
       location.href = url;
     } catch (err) { toast(err.message); b.disabled = false; }
   }));
