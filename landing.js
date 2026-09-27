@@ -59,7 +59,7 @@ export function renderLanding(root, library) {
     <a class="ld-logo" href="./"><span class="ld-mark">М</span>Между уроками</a>
     <nav><a href="#how">Как это работает</a><a href="#prices">Тарифы</a><a href="#faq">Вопросы</a></nav>
     <a class="ld-nav-tg" href="${TG}" target="_blank" rel="noopener" aria-label="Написать в Telegram"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 4L3 11l6 2 2 6 3-4 5 4z"/><path d="M9 13l8-6"/></svg></a>
-    <a class="ld-nav-cta" href="${STUDIO}">Войти в студию</a>
+    <a class="ld-nav-cta" href="login.html">Войти</a>
   </header>
 
   <section class="ld-hero">
@@ -194,7 +194,7 @@ export function renderLanding(root, library) {
       <b>Вы ученик?</b>
       <span class="row"><input id="code" placeholder="Код от репетитора" autocapitalize="off"><button class="ld-btn primary small" id="join">Открыть</button></span>
       <a href="#/library">Открытые наборы для самостоятельной подготовки</a>
-      <a href="parent/">Я родитель — посмотреть прогресс ребёнка</a>
+      <a href="login.html?role=parent">Я родитель — посмотреть прогресс ребёнка</a>
     </div>
     <p class="ld-copy">Между уроками · тренажёр для учеников репетитора · <a href="${TG}" target="_blank" rel="noopener">Telegram @trwqxp</a></p>
   </footer>`;

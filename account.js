@@ -69,11 +69,14 @@ const MAIL_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5"
 
 /* Окно входа. onDone(account) вызывается после успешного входа.
    why — одна строка, зачем входить (своя для репетитора, ученика, родителя). */
-export async function loginDialog({ why = '', onDone, role = '', resume = null } = {}) {
+/* into — элемент страницы: форма входа рисуется прямо в нём (страница login.html),
+   иначе — во всплывающем окне. role может быть функцией (роль выбирают на странице). */
+export async function loginDialog({ why = '', onDone, role = '', resume = null, into = null } = {}) {
   let providers = { tg: true };
   try { providers = await api('/auth/providers'); } catch { /* офлайн: покажем Telegram, ошибка будет при нажатии */ }
-  const { box, close } = modal(`
-    <h3>Вход в «Между уроками»</h3>
+  const roleOf = () => (typeof role === 'function' ? role() : role);
+  const html = `
+    ${into ? '' : '<h3>Вход в «Между уроками»</h3>'}
     ${why ? `<p class="muted">${esc(why)}</p>` : ''}
     <div class="login-ways">
       ${providers.tg ? `<button class="btn big login-tg" data-way="tg">${TG_ICON}Через Telegram</button>` : ''}
@@ -82,7 +85,9 @@ export async function loginDialog({ why = '', onDone, role = '', resume = null }
         `<button class="btn big login-${id}" data-oauth="${id}">${icon}${label}</button>`).join('')}
     </div>
     <div class="login-step"></div>
-    <p class="muted small-note">Входя, вы соглашаетесь с <a href="${new URL('privacy.html', import.meta.url)}" target="_blank" rel="noopener">политикой обработки данных</a>.</p>`);
+    <p class="muted small-note">Входя, вы соглашаетесь с <a href="${new URL('privacy.html', import.meta.url)}" target="_blank" rel="noopener">политикой обработки данных</a>.</p>`;
+  let box, close;
+  if (into) { into.innerHTML = html; box = into; close = () => {}; } else ({ box, close } = modal(html));
   const step = box.querySelector('.login-step');
   let stop = false;
   const observer = new MutationObserver(() => { if (!box.isConnected) { stop = true; observer.disconnect(); } });
@@ -107,7 +112,9 @@ export async function loginDialog({ why = '', onDone, role = '', resume = null }
     step.querySelector('#tg-open').addEventListener('click', ev => {
       ev.preventDefault();
       // Новая вкладка заблокирована (частый случай на iPhone/iPad) — открываем здесь же
-      if (!window.open(link, '_blank', 'noopener')) location.href = link;
+      // (без флага noopener: с ним window.open всегда возвращает null)
+      const w = window.open(link, '_blank');
+      if (w) w.opener = null; else location.href = link;
     });
     step.querySelector('#tg-copy').addEventListener('click', () => navigator.clipboard?.writeText(cmd).then(() => toast('Скопировано')));
     const started = Date.now();
@@ -132,7 +139,7 @@ export async function loginDialog({ why = '', onDone, role = '', resume = null }
     btn.disabled = true;
     try {
       const { nonce, link } = await api('/auth/tg/start', { method: 'POST' });
-      store.set(PENDING, { nonce, link, role, at: Date.now(), after: location.hash });
+      store.set(PENDING, { nonce, link, role: roleOf(), at: Date.now(), after: location.hash });
       waitTelegram(nonce, link);
     } catch (err) {
       step.innerHTML = `<p class="muted">${esc(err.message)}</p>`;
@@ -146,7 +153,7 @@ export async function loginDialog({ why = '', onDone, role = '', resume = null }
     try {
       const { url } = await api(`/auth/oauth/${btn.dataset.oauth}`, { method: 'POST', body: { back: location.href.split('#')[0] } });
       sessionStorage.setItem('zd-login-after', location.hash);
-      sessionStorage.setItem('zd-login-role', role);
+      sessionStorage.setItem('zd-login-role', roleOf());
       location.href = url;
     } catch (err) { toast(err.message); btn.disabled = false; }
   }));

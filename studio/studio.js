@@ -64,9 +64,9 @@ async function syncCloud() {
 }
 
 function accountBar() {
-  if (!signedIn()) return '<button class="btn small primary" id="login">Войти</button>';
+  if (!signedIn()) return `<a class="btn small primary" href="${ROOT}login.html?role=tutor&next=studio/">Войти</a>`;
   const a = account();
-  return `<span class="acct-name">${esc(a?.name || a?.email || 'Аккаунт')}</span>${cloudBadge()}<button class="btn small" id="logout">Выйти</button>`;
+  return `<a class="acct-name" href="${ROOT}cabinet/#tutor" title="Личный кабинет">${esc(a?.name || a?.email || 'Аккаунт')}</a>${cloudBadge()}<button class="btn small" id="logout">Выйти</button>`;
 }
 
 // Тариф репетитора: пробный / оплачен / бесплатный с лимитами
@@ -156,7 +156,7 @@ function viewList() {
       <div class="brand-by">Между уроками · тренажёр для учеников</div></div>
       <div class="acct-bar">${accountBar()}</div></header>
     ${tariffPanel()}
-    ${signedIn() ? '' : `<section class="panel login-hint"><b>Войдите, чтобы ничего не потерять.</b> Сейчас тренажёры и доступ к ученикам хранятся только в этом браузере. С аккаунтом они сохраняются в облаке и открываются с телефона и компьютера. <button class="link-btn" id="login2">Войти через Telegram</button></section>`}
+    ${signedIn() ? '' : `<section class="panel login-hint"><b>Войдите, чтобы ничего не потерять.</b> Сейчас тренажёры и доступ к ученикам хранятся только в этом браузере. С аккаунтом они сохраняются в облаке и открываются с телефона и компьютера. <a class="link-btn" href="${ROOT}login.html?role=tutor&next=studio/">Войти</a></section>`}
     <section class="panel steps-intro">
       <ol>
         <li><b>Добавьте материалы</b> — вставьте конспект, правила или задачи с решениями, ИИ сделает из них карточки. Или возьмите готовые из библиотеки: больше 3000 заданий ЕГЭ и олимпиад с разборами.</li>
@@ -174,7 +174,6 @@ function viewList() {
         <span class="topic-meta">${isPublished(p) ? 'опубликован' : p.published ? 'есть правки' : 'черновик'}</span></a>`).join('')}` : ''}
     ${apiBase() ? '' : `<section class="panel warn-box"><b>Сервер не подключён.</b> Можно собирать наборы и смотреть их, но для ИИ, ссылок ученикам и отчётов нужен адрес сервера — укажите его в настройках тренажёра (инструкция в worker/README.md).</section>`}`;
   bindAccount($app);
-  $app.querySelector('#login2')?.addEventListener('click', () => $app.querySelector('#login').click());
   $app.querySelector('#new').onclick = () => { location.hash = `#/p/${newPack()}/add`; };
   $app.querySelector('#sample').onclick = async e => {
     e.target.disabled = true;
@@ -742,7 +741,7 @@ function studentCard(p, s) {
     const out = box.querySelector('#stu-code-out');
     try {
       const { code } = await api(`/packs/${p.id}/parent-code`, { method: 'POST', body: { sid: s.sid }, key: db.keys[p.id] });
-      out.innerHTML = `<div class="code-big">${esc(code)}</div><p class="muted">Родитель открывает ${esc(new URL(ROOT + 'parent/', location.href).href)}, входит и вводит код. Действует сутки.</p>`;
+      out.innerHTML = `<div class="code-big">${esc(code)}</div><p class="muted">Родитель открывает ${esc(new URL(ROOT + 'login.html?role=parent', location.href).href)}, входит и вводит код. Действует сутки.</p>`;
     } catch (err) { out.innerHTML = `<p class="muted">${esc(err.message)}</p>`; }
   };
   box.querySelector('#stu-rep').onclick = () => navigator.clipboard.writeText(parentReport(p, s)).then(() => toast('Отчёт скопирован'));
@@ -888,6 +887,7 @@ function viewPublish(p) {
 
 function route() {
   const [, kind, id, tab] = location.hash.split('/');
+  if (kind === 'new') { history.replaceState(null, '', `#/p/${newPack()}/add`); return route(); }
   const p = kind === 'p' && db.packs[id];
   if (!p) { document.documentElement.style.removeProperty('--accent'); return viewList(); }
   ({ cards: viewCards, add: viewAdd, students: viewStudents, settings: viewSettings, publish: viewPublish }[tab] || viewCards)(p);
