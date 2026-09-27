@@ -6,6 +6,7 @@
    PUT  /packs/:id                сохранить набор (X-Key; первый PUT задаёт ключ)
    POST /packs/:id/progress       ученик присылает сводку прогресса
    GET  /packs/:id/progress       репетитор смотрит учеников (X-Key)
+   /auth/*, /me/*                 аккаунты: вход, облачная копия (worker/auth.js)
    /tg, /tg/setup, /gh            Telegram-бот для задач Claude и Codex (worker/bot.js)
 
    Переменные (см. worker/README.md):
@@ -17,6 +18,7 @@
    ============================================================ */
 
 import { handleBot } from './bot.js';
+import { handleAuth, sessionAccount } from './auth.js';
 
 // «-latest» — псевдонимы Google на актуальную модель: конкретные версии
 // закрывают для новых ключей (так случилось с gemini-2.5-flash)
@@ -31,8 +33,8 @@ const MAX_REQUEST_AI = 15e6; // генерация с PDF и фото
 
 const cors = origin => ({
   'Access-Control-Allow-Origin': origin || '*',
-  'Access-Control-Allow-Methods': 'GET, POST, PUT, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type, X-Key',
+  'Access-Control-Allow-Methods': 'GET, POST, PUT, PATCH, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type, X-Key, Authorization',
   'Access-Control-Max-Age': '86400',
 });
 const cut = (s, n = MAX) => String(s || '').slice(0, n);
@@ -167,11 +169,15 @@ async function sha256(s) {
   return [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
+// Доступ к набору: ключ репетитора (X-Key) или вход в аккаунт, к которому набор привязан
 async function requireOwner(env, id, req) {
   const key = req.headers.get('X-Key') || '';
   const owner = await env.DB.get(`owner:${id}`);
   if (!owner) throw new HttpError(404, 'Набор не найден.');
-  if (!key || owner !== await sha256(key)) throw new HttpError(403, 'Нет доступа к набору.');
+  if (key && owner === await sha256(key)) return;
+  const acct = await sessionAccount(env, req);
+  if (acct && acct.id === await env.DB.get(`packacct:${id}`)) return;
+  throw new HttpError(403, 'Нет доступа к набору.');
 }
 
 async function limitAi(env, req) {
@@ -193,6 +199,8 @@ async function handle(req, env) {
   const url = new URL(req.url);
   const parts = url.pathname.split('/').filter(Boolean);
   if (!env.DB) throw new HttpError(500, 'На сервере не подключено хранилище DB (KV).');
+
+  if (parts[0] === 'auth' || parts[0] === 'me') return handleAuth(req, env, parts);
 
   // POST /ai и старый вызов POST / из прежнего приложения
   if (req.method === 'POST' && (parts[0] === 'ai' || !parts.length)) {
@@ -224,6 +232,9 @@ async function handle(req, env) {
     pack.updated = Date.now();
     if (!owner) await env.DB.put(`owner:${id}`, await sha256(key));
     await env.DB.put(`pack:${id}`, JSON.stringify(pack));
+    // Репетитор вошёл в аккаунт — набор привязывается к нему (доступ с любого устройства)
+    const acct = await sessionAccount(env, req);
+    if (acct) await env.DB.put(`packacct:${id}`, acct.id);
     return { ok: true, id, updated: pack.updated };
   }
 
@@ -268,8 +279,8 @@ export default {
       const out = await handle(req, env);
       res = out instanceof Response ? out : Response.json(out);
     } catch (err) {
-      const status = err instanceof HttpError ? err.status : 500;
-      res = Response.json({ error: true, message: err instanceof HttpError ? err.message : 'Ошибка сервера.' }, { status });
+      const status = err.status || 500;
+      res = Response.json({ error: true, message: err.status ? err.message : 'Ошибка сервера.' }, { status });
     }
     const headers = new Headers(res.headers);
     for (const [k, v] of Object.entries(cors(origin))) headers.set(k, v);

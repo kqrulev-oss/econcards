@@ -22,6 +22,8 @@
    Переменная GH_REPO (по умолч. kqrulev-oss/econcards).
    ============================================================ */
 
+import { confirmTelegram } from './auth.js';
+
 const MARK = '<!-- via-telegram -->'; // наши issue и комментарии — не пересылаем их обратно
 const AGENTS = { claude: 'Claude', codex: 'Codex', gemini: 'Gemini' };
 const MODELS = ['gemini-flash-latest', 'gemini-flash-lite-latest'];
@@ -273,6 +275,15 @@ export async function handleBot(req, env, ctx) {
     // Отвечаем Telegram сразу, работаем в фоне — иначе он повторит запрос
     ctx.waitUntil((async () => {
       try {
+        // Вход на сайт: «/start login_<код>» принимаем от любого человека
+        const login = /^\/start login_([a-z0-9]{24})$/.exec(upd.message?.text || '');
+        if (login && upd.message.chat.type === 'private') {
+          const ok = await confirmTelegram(env, login[1], upd.message.from);
+          await tg(env, 'sendMessage', { chat_id: chat, text: ok
+            ? '✅ Вход выполнен. Вернитесь на сайт «Между уроками» — страница откроется сама.'
+            : 'Ссылка для входа устарела. Нажмите «Войти через Telegram» на сайте ещё раз.' });
+          return;
+        }
         if (!env.TG_OWNER) {
           if (chat) await tg(env, 'sendMessage', { chat_id: chat, text: `Ваш chat id: ${chat}\nДобавьте его в секрет TG_OWNER в Cloudflare — после этого бот начнёт принимать задачи только от вас.` });
           return;
