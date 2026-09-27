@@ -160,21 +160,26 @@ EXAMS = {'ege-prof': 'ЕГЭ профиль (КИМ 2027)', 'ege-base': 'ЕГЭ 
 
 
 def proto(pid, exam, n, title, invariant, varies, answer_rule, fipi=None, mistakes=(), maxdec=2, lim=10000,
-          svg=False, card_kind='num', note=''):
-    """Регистрирует параметрический генератор прототипа."""
+          svg=False, card_kind='num', note='', kim=None):
+    """Регистрирует параметрический генератор прототипа.
+
+    kim — паспорт задания по КИМ (для проверки «экзаменационности»):
+      {'level': 'Б'|'П'|'В', 'points': 1, 'minutes': 3, 'kes': ['7.1'], 'kt': ['КТ 9'],
+       'answer': 'число' | 'цифра варианта' | 'цифры' | 'соответствие' | 'развёрнутый',
+       'style': 'чем формулировка совпадает с КИМ: «Ответ дайте в …», округление, единицы'}"""
     assert exam in EXAMS, exam
     assert pid not in PROTO, f'повтор id прототипа: {pid}'
 
     def deco(fn):
         PROTO[pid] = dict(id=pid, exam=exam, n=n, title=title, invariant=invariant, varies=varies,
                           answer_rule=answer_rule, fipi=fipi, mistakes=list(mistakes), maxdec=maxdec, lim=lim,
-                          svg=svg, card_kind=card_kind, note=note, fn=fn, gen=fn.__name__, kind='param')
+                          svg=svg, card_kind=card_kind, note=note, kim=kim or {}, fn=fn, gen=fn.__name__, kind='param')
         return fn
     return deco
 
 
 def proto_llm(pid, exam, n, title, invariant, varies, answer_rule, recipe, example, capacity, fipi=None,
-              mistakes=(), svg=False, note=''):
+              mistakes=(), svg=False, note='', kim=None):
     """Рецепт llm: recipe = {'prompt': что пишет ИИ, 'code': что задаёт код, 'check': как проверяется};
     example = {'q': наш пример, 'a': ответ, 'chk': lambda: True/False — пересчёт ответа примера};
     capacity — оценка числа разных аналогов (int) и откуда она (строка в recipe['capacity'])."""
@@ -183,7 +188,7 @@ def proto_llm(pid, exam, n, title, invariant, varies, answer_rule, recipe, examp
     assert {'prompt', 'code', 'check'} <= set(recipe), pid
     PROTO[pid] = dict(id=pid, exam=exam, n=n, title=title, invariant=invariant, varies=varies, answer_rule=answer_rule,
                       fipi=fipi, mistakes=list(mistakes), svg=svg, note=note, recipe=recipe, example=example,
-                      capacity=capacity, kind='llm')
+                      capacity=capacity, kim=kim or {}, kind='llm')
 
 
 def pcard(q, a, e='', k='num', **kw):
