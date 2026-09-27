@@ -1468,3 +1468,60 @@ def g_9m(rng):
     return card(pid, q, ans, e, k='match', o=match_opts(['X', 'Y'], [FL(*o) for o in items], lids='XY'),
                 p={'A': A, 'r1': [R1, l1], 'C': C, 'opts': [list(o) for o in items]},
                 eqs=[(r1['lhs'], r1['rhs'], *r1['k']), (r2['lhs'], r2['rhs'], *r2['k'])])
+
+
+# ================================================================= степени окисления и типы реакций
+
+def ox_of(f):
+    """Степени окисления элементов вещества: {el: int}; None, если у какого-то элемента их несколько/дробная."""
+    o = SUBS.get(f, {}).get('ox')
+    if not o:
+        return None
+    out = {}
+    for e, v in o.items():
+        if isinstance(v, list):
+            if len(set(v)) != 1:
+                return None
+            v = v[0]
+        if isinstance(v, Fr) and v.denominator != 1:
+            return None
+        out[e] = int(v)
+    return out
+
+
+def ox_changes(r):
+    """{элемент: (множество ст. ок. в реагентах, множество в продуктах)} для элементов, где они различаются;
+    None — если есть вещество со «смешанной» степенью окисления."""
+    L, Rr = {}, {}
+    for side, d in ((r['lhs'], L), (r['rhs'], Rr)):
+        for f in side:
+            o = ox_of(f)
+            if o is None:
+                return None
+            for e, v in o.items():
+                d.setdefault(e, set()).add(v)
+    return {e: (L.get(e, set()), Rr.get(e, set())) for e in set(L) | set(Rr) if L.get(e) != Rr.get(e)}
+
+
+def is_redox(r):
+    ch = ox_changes(r)
+    if ch is None:
+        return 'ОВР' in r['type']
+    return bool(ch)
+
+
+_SIMPLE = lambda f: SUBS.get(f, {}).get('cls') == 'простое вещество'
+
+
+def rtype(r):
+    L = [x for x in r['lhs']]
+    Rr = [x for x in r['rhs']]
+    if len(L) >= 2 and len(Rr) == 1:
+        return 'соединения'
+    if len(L) == 1 and len(Rr) >= 2:
+        return 'разложения'
+    if len(L) == 2 and len(Rr) == 2 and sum(map(_SIMPLE, L)) == 1 and sum(map(_SIMPLE, Rr)) == 1:
+        return 'замещения'
+    if len(L) == 2 and not any(map(_SIMPLE, L + Rr)) and not is_redox(r):
+        return 'обмена'
+    return None
