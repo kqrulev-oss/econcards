@@ -5,7 +5,8 @@ import { store, api, apiBase, ai, loadPack, loadLibrary, renderCard, esc, text, 
 
 const $app = document.getElementById('app');
 const ROOT = '../';
-const COLORS = ['#2F6BFF', '#E4572E', '#1E9E5A', '#8A4FFF', '#D6336C', '#0A9396', '#F08C00', '#343A40'];
+// Цвета тренажёра: все читаются с белым текстом и не спорят с жёлтыми кнопками
+const COLORS = ['#5B3DF5', '#0E7C86', '#2F6BFF', '#1F8A4C', '#C2185B', '#D8452B', '#8A4FFF', '#1B1440'];
 
 // Черновики наборов и ключи публикации живут в браузере репетитора, а после
 // входа в аккаунт — ещё и на сервере (не теряются при очистке браузера)
@@ -150,8 +151,9 @@ function preview(p, start = 0) {
 function viewList() {
   const packs = Object.values(db.packs).sort((a, b) => b.edited - a.edited);
   $app.innerHTML = `
-    <header class="top"><div><div class="brand-title">Студия · Между уроками</div>
-      <div class="brand-by">Тренажёр для ваших учеников за 15 минут</div></div>
+    <header class="top"><a class="ld-mark studio-mark" href="${ROOT}?about" aria-label="Между уроками — о сервисе">М</a>
+      <div><div class="brand-title">Студия</div>
+      <div class="brand-by">Между уроками · тренажёр для учеников</div></div>
       <div class="acct-bar">${accountBar()}</div></header>
     ${tariffPanel()}
     ${signedIn() ? '' : `<section class="panel login-hint"><b>Войдите, чтобы ничего не потерять.</b> Сейчас тренажёры и доступ к ученикам хранятся только в этом браузере. С аккаунтом они сохраняются в облаке и открываются с телефона и компьютера. <button class="link-btn" id="login2">Войти через Telegram</button></section>`}
@@ -229,7 +231,7 @@ function viewCards(p) {
         <span class="card-row-actions">
           <button class="btn small" data-a="view">Открыть</button>
           ${c.k === 'match' || c.k === 'stress' ? '' : '<button class="btn small" data-a="edit">Изменить</button>'}
-          ${c.k === 'stress' || !apiBase() ? '' : '<button class="btn small" data-a="more" title="ИИ сделает новые варианты этого типа">✨ Похожие</button>'}
+          ${c.k === 'stress' || !apiBase() ? '' : '<button class="btn small" data-a="more" title="ИИ сделает новые варианты этого типа">Похожие</button>'}
           <button class="btn small danger" data-a="del" aria-label="Удалить">✕</button>
         </span>
       </div>`).join('') + (cards.length > shown.length ? `<p class="muted center">Показаны первые 200 из ${cards.length} — уточните поиск</p>` : '');
@@ -258,7 +260,7 @@ async function similarCards(p, src, onAdd) {
   const material = `Образец карточки (тип "${kind}"):\nВопрос: ${src.q}${opts}\nОтвет: ${answer}${src.e ? '\nРазбор: ' + src.e : ''}\n\n`
     + 'Сделай новые карточки ТОГО ЖЕ прототипа и того же типа: та же проверяемая идея и формат ответа, '
     + 'но другие слова, числа или примеры. Не повторяй образец. Все ответы перепроверь.';
-  const { box, close } = modal(`<h3>✨ Похожие карточки</h3><p class="muted">ИИ делает новые варианты этого типа — до минуты…</p><div id="sim-out"></div>`);
+  const { box, close } = modal(`<h3>Похожие карточки</h3><p class="muted">ИИ делает новые варианты этого типа — до минуты…</p><div id="sim-out"></div>`);
   const out = box.querySelector('#sim-out');
   let r;
   try {
@@ -371,7 +373,7 @@ function viewAdd(p) {
       <p class="muted">Вставьте конспект, правила или разбор задач — или загрузите PDF и фото страниц. ИИ сделает карточки, а вы проверите их перед добавлением.</p>
       <div class="field"><label for="mat">Материал</label><textarea id="mat" rows="10" placeholder="Например: правила пунктуации при причастном обороте с примерами…"></textarea></div>
       <div class="row">
-        <label class="btn small">📎 PDF, фото или .txt<input type="file" accept=".txt,.md,.csv,.pdf,application/pdf,image/*" id="file" multiple hidden></label>
+        <label class="btn small">+ PDF, фото или .txt<input type="file" accept=".txt,.md,.csv,.pdf,application/pdf,image/*" id="file" multiple hidden></label>
         <label class="row inline">Карточек: <input id="count" type="number" min="5" max="40" value="15" style="width:80px"></label>
         <button class="btn primary" id="gen" ${apiBase() ? '' : 'disabled'}>Сделать карточки</button>
       </div>
@@ -388,7 +390,7 @@ function viewAdd(p) {
   const files = [];
   const drawAtt = () => {
     box.querySelector('#att').innerHTML = files.map((f, i) =>
-      `<span class="chip">${f.mime === 'application/pdf' ? '📄' : '🖼'} ${esc(f.name)}<button data-rm="${i}" aria-label="Убрать">✕</button></span>`).join('');
+      `<span class="chip">${f.mime === 'application/pdf' ? 'PDF' : 'Фото'} · ${esc(f.name)}<button data-rm="${i}" aria-label="Убрать">✕</button></span>`).join('');
   };
   box.querySelector('#att').onclick = e => {
     const b = e.target.closest('[data-rm]');

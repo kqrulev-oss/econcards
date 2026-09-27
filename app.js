@@ -373,7 +373,7 @@ function viewTopic(tid) {
       const ps = topicStats(tid, pr.id);
       const acc = ps.started ? ps.acc : null;
       return `<button class="proto" data-proto="${esc(pr.id)}">
-        <span class="acc-badge ${accTone(acc)}">${acc === null ? 'new' : Math.round(acc * 100) + '%'}</span>
+        <span class="acc-badge ${accTone(acc)}">${acc === null ? '—' : Math.round(acc * 100) + '%'}</span>
         <span class="proto-body"><b>${esc(pr.title)}</b>${pr.tip ? `<span class="proto-tip">${esc(pr.tip)}</span>` : ''}
           <span class="proto-meta">${ps.mastered} из ${ps.total} освоено</span></span>
         ${ICON.chevron}
@@ -570,7 +570,7 @@ function viewMe() {
     <section class="panel">
       <h2>Напоминание</h2>
       <p class="muted">Добавит в календарь телефона ежедневное событие со звуком и ссылкой на тренажёр.</p>
-      <div class="row"><input id="remind-time" type="time" value="${esc(store.get('zd-remind-time', '19:00'))}" style="width:130px">
+      <div class="row"><input id="remind-time" type="time" value="${esc(store.get('zd-remind-time', '19:00'))}" class="time-input">
         <button class="btn" id="remind">Добавить в календарь</button></div>
     </section>
     <section class="panel">

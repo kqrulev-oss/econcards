@@ -849,3 +849,11 @@ input:focus, select:focus, textarea:focus { outline: 3px solid var(--accent); ou
 .ld-price .ld-btn { justify-self: start; }
 .ld-price-note { font-weight: 700; color: var(--muted); margin-top: 16px; }
 .kid-pack .hero-stats b { font-size: 18px; white-space: nowrap; }
+
+/* ---------- полировка ---------- */
+.studio-mark { flex: none; font: 800 18px var(--display); }
+@media (max-width: 600px) {
+  .tabs { width: 100%; flex-wrap: wrap; }
+  .tabs a { flex: 1 1 auto; text-align: center; padding: 8px 10px; }
+}
+.time-input { width: 170px; flex: none; }
