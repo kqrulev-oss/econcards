@@ -3838,3 +3838,220 @@ def g21_reag(rng):
     e = 'Уравнения: ' + '; '.join(f'{LET[i]}) {eq_text(eq)}' for i, eq in enumerate(eqs)) + '. Ответ: ' + \
         ''.join(a[x] for x in LET[:3]) + '.'
     return pcard('ch-oge-21-reagents', q, a, e, k='match', o=o, eqs=eqs, p={'chain': chain, 'reag': reag})
+
+
+# ================================================================= 23. Реальный эксперимент: определение веществ в склянках
+
+BOTTLE23 = [f for f in SOL_EL if f not in EXOTIC and f not in ('HI', 'HBr', 'Ca(OH)2')]
+REAG23 = [f for f in SOL_EL if f not in EXOTIC and f not in ('HI', 'HBr')] + ['Zn', 'Cu']
+
+
+def _vis(t):
+    return t is not None and t != frozenset({'нет'})
+
+
+def _ident(r, s, other, fn):
+    """Реактив r обнаруживает вещество s: с s есть видимый признак, с другим веществом — нет."""
+    a, b = fn(s, r), fn(other, r)
+    if a is None or b is None:
+        return None
+    return _vis(a) and not _vis(b)
+
+
+def _valid_pairs23(s1, s2, reag, fn):
+    out = []
+    for i in range(3):
+        for j in range(3):
+            if i != j:
+                x, y = _ident(reag[i], s1, s2, fn), _ident(reag[j], s2, s1, fn)
+                if x is None or y is None:
+                    return None
+                if x and y:
+                    out.append(tuple(sorted((i, j))))
+    return sorted(set(out))
+
+
+@lru_cache(maxsize=None)
+def obs23(s, r):
+    """Наблюдение для задания 23; None — если признак не описывается школьными словами или продукт экзотичен."""
+    t = observe(s, r)
+    if t is None or any(x.split(':')[-1] in EXOTIC for x in t) or sign23(t) is None:
+        return None
+    return t
+
+
+def _gen23_setup(rng, need_single_event=False):
+    for _ in range(300):
+        s1, s2 = rng.sample(BOTTLE23, 2)
+        if s1 in REAG23 and False:
+            continue
+        cand = [r for r in REAG23 if r not in (s1, s2)]
+        ra = [r for r in cand if _ident(r, s1, s2, obs23)]
+        rb = [r for r in cand if _ident(r, s2, s1, obs23)]
+        if not ra or not rb:
+            continue
+        a, b = rng.choice(ra), rng.choice(rb)
+        if a == b:
+            continue
+        if need_single_event and (a in ('Zn', 'Cu') or b in ('Zn', 'Cu') or
+                                  len(_ion_events(s1, a) or ()) != 1 or len(_ion_events(s2, b) or ()) != 1):
+            continue
+        rest = [r for r in cand if r not in (a, b) and obs23(s1, r) is not None and obs23(s2, r) is not None
+                and not _ident(r, s1, s2, obs23) and not _ident(r, s2, s1, obs23)]
+        if not rest:
+            continue
+        c = rng.choice(rest)
+        reag = shuffled(rng, [a, b, c])
+        vp = _valid_pairs23(s1, s2, reag, obs23)
+        if vp and len(vp) == 1:
+            return s1, s2, reag, a, b
+    raise Retry
+
+
+def _names_list(fs):
+    ns = [gen(f) for f in fs]
+    return ', '.join(ns[:-1]) + ' и ' + ns[-1]
+
+
+def stem23(s1, s2, reag):
+    metals = [r for r in reag if r in METALS]
+    sols = [r for r in reag if r not in METALS]
+    if metals:
+        rg = 'а также три реактива: ' + ', '.join(name(m) for m in metals) + (', растворы ' + _names_list(sols) if len(sols) > 1
+                                                                            else ', раствор ' + gen(sols[0]))
+    else:
+        rg = 'а также растворы трёх реактивов: ' + _names_list(reag)
+    return (f'Для проведения эксперимента выданы склянки № 1 и № 2 с растворами {gen(s1)} и {gen(s2)}, {rg}.\n'
+            '1) только из указанных в перечне трёх реактивов выберите два, которые необходимы для определения каждого '
+            'вещества, находящегося в склянках № 1 и № 2;\n'
+            '2) составьте молекулярное, полное и сокращённое ионные уравнения реакции, которую планируете провести для '
+            'определения вещества из склянки № 1;\n'
+            '3) составьте молекулярное, полное и сокращённое ионные уравнения реакции, которую планируете провести для '
+            'определения вещества из склянки № 2.')
+
+
+def sign23(t):
+    if t is None:
+        return None
+    if t == frozenset({'нет'}):
+        return 'видимые признаки реакции отсутствуют'
+    for lvl in ('color', 'gas', 'solid'):
+        x = sign_text(t, lvl)
+        if x and x != 'выделение бесцветного газа':
+            return x
+    return sign_text(t, 'solid')
+
+
+def _solve23_reag(p):
+    vp = _valid_pairs23(p['s1'], p['s2'], p['reag'], obs_db)
+    if not vp or len(vp) != 1:
+        return f'пары реактивов: {vp}'
+    return ids_of(list(vp[0]))
+
+
+_F23 = lambda step: F('практическое задание (5 баллов: выбор реактивов, два ионных уравнения, признаки, вывод); в тренажёре — '
+                     'шаг: ' + step, 'условие — как в демоверсии 2027 №23 («Для проведения эксперимента выданы склянки '
+                     '№ 1 и № 2 …»)', 'В', 30, 'пары веществ и реактивы как в банке: HCl и CaCl2 (Zn, AgNO3, KOH), MgCl2 и '
+                     'BaCl2 (HCl, NaOH, H2SO4), K3PO4 и ZnSO4 (NaOH, MgCl2, NH4Cl)',
+                     'реактив, дающий одинаковый признак с обоими веществами', ['1.6', '4.9', '4.10', '5.5'],
+                     '5 баллов по критериям; шаг проверяется автоматически')
+
+
+@proto('ch-oge-23-choose-reagents', 'ОГЭ', 23, 'Реальный эксперимент: выбор двух реактивов для определения веществ в склянках',
+       invariant='две склянки с растворами и три реактива; выбрать два реактива, каждый из которых даёт видимый признак '
+                 'только с одним из веществ',
+       varies='вещества в склянках (соли, кислоты, щёлочи) и реактивы',
+       answer_rule='реактив подходит, если с «своим» веществом даёт осадок/газ, а с другим — нет видимых изменений',
+       mistakes=['берут реактив, дающий одинаковый осадок с обоими веществами (AgNO3 с двумя хлоридами)',
+                 'берут реактив, реакция с которым идёт без видимых признаков (нейтрализация)'],
+       solve=_solve23_reag, kind='dict', kes=['1.6', '4.9', '4.10'], fidelity=_F23('выбор двух реактивов из трёх'))
+def g23_reag(rng):
+    s1, s2, reag, a, b = _gen23_setup(rng)
+    q = stem23(s1, s2, reag) + '\n\nПроверьте себя: выберите два реактива, необходимые для определения веществ.'
+    o = opts([name(r) for r in reag])
+    ans = ids_of([reag.index(a), reag.index(b)])
+    e = (f'{name(a).capitalize()}: с {ins(s1)} — {sign23(obs23(s1, a))}, с {ins(s2)} — {sign23(obs23(s2, a))}. '
+         f'{name(b).capitalize()}: с {ins(s2)} — {sign23(obs23(s2, b))}, с {ins(s1)} — {sign23(obs23(s1, b))}. '
+         f'Ответ: {"".join(ans)}.')
+    eqs = [x for x in (_eq_of(s1, a), _eq_of(s2, b)) if x]
+    return pcard('ch-oge-23-choose-reagents', q, ans, e, k='many', o=o, eqs=eqs, p={'s1': s1, 's2': s2, 'reag': reag})
+
+
+def _solve23_signs(p):
+    a = {}
+    for i, (s, r) in enumerate(p['left']):
+        t = sign23(obs_db(s, r))
+        if t not in p['signs']:
+            return f'признак {s}+{r}: {t}'
+        a[LET[i]] = str(p['signs'].index(t) + 1)
+    return a
+
+
+ALL_SIGNS23 = sorted({x for v in EXTRA_SIGNS.values() for x in v} - {'выделение газа', 'образование осадка',
+                                                                    'растворение осадка', 'выделение бесцветного газа'})
+
+
+@proto('ch-oge-23-signs', 'ОГЭ', 23, 'Реальный эксперимент: признаки реакций веществ из склянок с выбранными реактивами',
+       invariant='две склянки и три реактива; для трёх сочетаний «вещество + реактив» указать наблюдаемый признак',
+       varies='вещества, реактивы, сочетания (включая сочетание без видимых изменений)',
+       answer_rule='признак — по продуктам ионного обмена: цвет осадка, газ и его запах, отсутствие изменений',
+       mistakes=['цвет осадка гидроксида железа', 'запах газа', 'нейтрализация «с признаком»'],
+       solve=_solve23_signs, kind='dict', kes=['1.6', '4.9', '4.10'], fidelity=_F23('признаки реакций (таблица наблюдений)'))
+def g23_signs(rng):
+    s1, s2, reag, a, b = _gen23_setup(rng)
+    combos = [(s1, a), (s2, b), rng.choice([(s1, b), (s2, a)])]
+    signs = [sign23(obs23(s, r)) for s, r in combos]
+    if None in signs:
+        raise Retry
+    extra = [x for x in ALL_SIGNS23 if x not in signs]
+    right = list(dict.fromkeys(signs))
+    right += rng.sample(extra, 4 - len(right))
+    right = shuffled(rng, right)
+    q = stem23(s1, s2, reag) + ('\n\nПроверьте себя: установите соответствие между сочетанием «вещество + реактив» '
+                                'и признаком реакции, который будет наблюдаться.')
+    o = match_opts([f'{name(s).capitalize()} + {name(r)}' for s, r in combos], right)
+    ans = {LET[i]: str(right.index(sg) + 1) for i, sg in enumerate(signs)}
+    eqs = [x for x in (_eq_of(s, r) for s, r in combos) if x]
+    e = ' '.join(f'{LET[i]}) {sg}.' for i, sg in enumerate(signs)) + (' Уравнения: ' + '; '.join(eq_text(x) for x in eqs) + '.'
+                                                                       if eqs else '') + \
+        ' Ответ: ' + ''.join(ans[x] for x in LET[:3]) + '.'
+    return pcard('ch-oge-23-signs', q, ans, e, k='match', o=o, eqs=eqs,
+                 p={'left': [list(c) for c in combos], 'signs': right})
+
+
+def _solve23_ionic(p):
+    a = {}
+    for i, (s, r) in enumerate(p['left']):
+        ne = net_ionic_db(s, r)
+        hits = [j for j, t in enumerate(p['eqs']) if ne == (t[0], t[1])]
+        if len(hits) != 1:
+            return f'уравнение для {s}+{r}: {ne}'
+        a[LET[i]] = str(hits[0] + 1)
+    return a
+
+
+@proto('ch-oge-23-ionic', 'ОГЭ', 23, 'Реальный эксперимент: сокращённые ионные уравнения реакций определения веществ',
+       invariant='две склянки и три реактива; для каждого вещества выбрать сокращённое ионное уравнение реакции, '
+                 'по которой его определяют выбранным реактивом',
+       varies='вещества, реактивы, уравнения (осадок, газ)',
+       answer_rule='в сокращённом уравнении — только ионы, образующие осадок/газ/воду, и сам этот продукт',
+       mistakes=['записывают ионы-наблюдатели', 'выбирают уравнение для другого вещества'],
+       solve=_solve23_ionic, kind='param', kes=['5.5'], fidelity=_F23('сокращённые ионные уравнения (пункты 2, 3)'))
+def g23_ionic(rng):
+    s1, s2, reag, a, b = _gen23_setup(rng, need_single_event=True)
+    t1 = _target(*next(iter(_ion_events(s1, a))))
+    t2 = _target(*next(iter(_ion_events(s2, b))))
+    if t1 == t2:
+        raise Retry
+    others = [_target(c, an) for c, an in TARGETS14]
+    others = [t for t in others if t not in (t1, t2)]
+    eqs_t = shuffled(rng, [t1, t2] + rng.sample(others, 2))
+    q = stem23(s1, s2, reag) + ('\n\nПроверьте себя: установите соответствие между веществом и сокращённым ионным '
+                                'уравнением реакции, с помощью которой его можно определить выбранным реактивом.')
+    o = match_opts([name(s1).capitalize(), name(s2).capitalize()], [ionic_eq_text(t) for t in eqs_t])
+    ans = {'А': str(eqs_t.index(t1) + 1), 'Б': str(eqs_t.index(t2) + 1)}
+    eqs = [x for x in (_eq_of(s1, a), _eq_of(s2, b)) if x]
+    e = (f'А) {name(s1)} + {name(a)}: {ionic_eq_text(t1)}. Б) {name(s2)} + {name(b)}: {ionic_eq_text(t2)}. '
+         f'Ответ: {ans["А"]}{ans["Б"]}.')
+    return pcard('ch-oge-23-ionic', q, ans, e, k='match', o=o, eqs=eqs,
+                 p={'left': [[s1, a], [s2, b]], 'eqs': [[t[0], t[1]] for t in eqs_t]})
