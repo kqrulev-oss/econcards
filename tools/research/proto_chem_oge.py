@@ -869,8 +869,8 @@ PAIRS7 = {
             ('кислая соль', 'кислота'), ('щёлочь', 'кислая соль'), ('основный оксид', 'основание'),
             ('амфотерный оксид', 'кислота'), ('амфотерный гидроксид', 'соль'), ('несолеобразующий оксид', 'соль')],
 }
-ENDS7 = ['Запишите в поле ответа сначала номер {a}, затем — номер {b}.']
-STEMS7 = ['Из предложенного перечня выберите {a} и {b}.']
+ENDS7 = ['Запишите в поле ответа номера выбранных веществ: сначала номер {a}, затем — номер {b}.']
+STEMS7 = ['Из предложенного перечня веществ выберите {a} и {b}.']
 
 
 def _gen7(rng, fam):
@@ -1401,7 +1401,7 @@ EXOTIC = {'FeSO3', 'FeSiO3', 'ZnSiO3', 'MgSiO3', 'BaSiO3', 'Fe3(PO4)2', 'FePO4',
 
 
 def _usable9(r):
-    if any(x not in SUB for x in r['lhs'] + r['rhs']) or not _cond_ok9(r):
+    if any(x not in SUB for x in r['lhs'] + r['rhs']) or not _cond_ok9(r) or 'NH4NO3' in r['rhs']:
         return False
     if _fam9(r) in ('salts', 'acidbase', 'redox') and any(x in EXOTIC for x in r['lhs'] + r['rhs']):
         return False
@@ -1422,7 +1422,7 @@ def lhs_text(r):
     ts = []
     for x in L:
         t = disp(x)
-        if tag in ('конц.', 'разб.') and x in ('HNO3', 'H2SO4'):
+        if tag in ('конц.', 'разб.') and x in ('HNO3', 'H2SO4', 'HCl'):
             t += f' ({tag})'
         if x in ALKALIS9 and set(L) & AMPH9:
             t += ' (тв.)' if tag == 'сплавление' else ' (р-р)'
@@ -1439,7 +1439,7 @@ def lhs_text(r):
     if cond_dependent(r['lhs']) and tag not in ('сплавление',) and not set(L) & AMPH9:
         w = cond_words(r.get('cond'))
         if w and 'пар' not in (r.get('cond') or '') and 'горяч' not in (r.get('cond') or ''):
-            s = s.replace(f' ({tag})', f' ({tag}, {w})') if tag in ('конц.', 'разб.') and f' ({tag})' in s else s + f' ({w})'
+            s = s.replace(f' ({tag})', f' ({tag}, {w})', 1) if tag in ('конц.', 'разб.') and f' ({tag})' in s else s + f' ({w})'
     return s
 
 
@@ -3952,7 +3952,8 @@ def _typical_eqs(chain):
     Em = edges21('my')
     eqs = []
     for i in range(3):
-        rgs = sorted(Em.get((chain[i], chain[i + 1]), ()), key=lambda x: PREF21.index(x) if x in PREF21 else 99)
+        pref = (['NaOH', 'KOH', 'Ca(OH)2'] + PREF21) if 'NH4' in chain[i] and chain[i + 1] == 'NH3' else PREF21
+        rgs = sorted(Em.get((chain[i], chain[i + 1]), ()), key=lambda x: pref.index(x) if x in pref else 99)
         done = False
         for rg in rgs:
             for r in D.REACTIONS:

@@ -39,7 +39,10 @@ def load(strict=True):
     if _cache is not None:
         return _cache
     subs, reacts, problems, seen_r = {}, [], [], {}
-    for path in sorted(glob.glob(os.path.join(HERE, 'chemdb_*.py'))):
+    order = {'chemdb_inorg': 0, 'chemdb_org': 1, 'chemdb_oge': 2, 'chemdb_calc': 3}  # основная база — первой
+    paths = sorted(glob.glob(os.path.join(HERE, 'chemdb_*.py')),
+                   key=lambda p: (order.get(os.path.basename(p)[:-3], 9), p))
+    for path in paths:
         mod = importlib.import_module(os.path.basename(path)[:-3])
         src_mod = os.path.basename(path)
         for s in getattr(mod, 'SUBSTANCES', []):

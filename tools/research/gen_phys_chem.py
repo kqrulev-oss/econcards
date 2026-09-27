@@ -1444,6 +1444,7 @@ def load_protos():
 
 
 LOAD_ERRORS = []
+GEN_CRASH = {}
 
 
 def load_fipi(subj, fipi_dir):
@@ -1469,6 +1470,9 @@ def sample_unique(m, rng, n, max_tries=None):
             c = m['fn'](rng)
         except Retry:
             continue
+        except Exception as ex:  # noqa: BLE001 — сбой генератора = ошибка прототипа, прогон продолжается
+            GEN_CRASH.setdefault(m['id'], f'{type(ex).__name__}: {ex}')
+            continue
         key = _pc.norm_key(c)
         if key in seen:
             reps += 1
@@ -1487,6 +1491,8 @@ def measure_capacity(m, seed, tries=2000):
         try:
             c = m['fn'](rng)
         except Retry:
+            continue
+        except Exception:  # noqa: BLE001
             continue
         key = _pc.norm_key(c)
         if key not in seen:
@@ -1510,6 +1516,8 @@ def proto_check(n=200, seed=2026, fipi_dir=FIPI_DIR, cap_tries=2000, only=None, 
         t0 = _time.time()
         cards, tries, reps = sample_unique(m, rng, n)
         errs = Counter()
+        if pid in GEN_CRASH:
+            errs[f'генератор падает: {GEN_CRASH[pid][:100]}'] += 1
         for c in cards:
             for e in _pc.check_card(c, m):
                 errs[e[:120]] += 1

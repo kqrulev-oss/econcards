@@ -534,6 +534,10 @@ S('(CH3)3NHCl', 'хлорид триметиламмония', 'соль ами�
 S('C2H5NH3Cl', 'хлорид этиламмония', 'соль амина', A, 'CC[NH3]Cl', view='[C2H5NH3]Cl', state='тв')
 S('(C2H5)2NH2Cl', 'хлорид диэтиламмония', 'соль амина', A, 'CC[NH2](CC)Cl', view='[(C2H5)2NH2]Cl', state='тв')
 S('C6H5NH3Cl', 'хлорид фениламмония', 'соль амина', A, 'Cl[NH3]c1ccccc1', view='[C6H5NH3]Cl', state='тв')
+S('CH3CH2CH2NH3Cl', 'хлорид пропиламмония', 'соль амина', A, 'CCC[NH3]Cl', view='[CH3CH2CH2NH3]Cl', state='тв')
+S('(CH3)2CHNH3Cl', 'хлорид изопропиламмония', 'соль амина', A, 'CC(C)[NH3]Cl', view='[(CH3)2CHNH3]Cl', state='тв')
+S('CH3NH2C2H5Cl', 'хлорид метилэтиламмония', 'соль амина', A, 'C[NH2](CC)Cl', view='[CH3NH2C2H5]Cl', state='тв')
+S('(C2H5)3NHCl', 'хлорид триэтиламмония', 'соль амина', A, 'CC[NH](CC)(CC)Cl', view='[(C2H5)3NH]Cl', state='тв')
 S('C2H5NH3Br', 'бромид этиламмония', 'соль амина', A, 'CC[NH3]Br', view='[C2H5NH3]Br', state='тв')
 S('CH3NH3Br', 'бромид метиламмония', 'соль амина', A, 'C[NH3]Br', view='[CH3NH3]Br', state='тв')
 S('(CH3NH3)2SO4', 'сульфат метиламмония', 'соль амина', A, None, view='[CH3NH3]2SO4', state='тв')
@@ -555,6 +559,8 @@ S('C6H5CH2CH(NH2)COOH', 'фенилаланин', AA, A, 'NC(Cc1ccccc1)C(=O)O', 
   view='C6H5-CH2-CH(NH2)-COOH', state='тв')
 S('H2NCH2COONa', 'глицинат натрия', 'соль аминокислоты', 'соли аминокислот', 'NCC(=O)O[Na]', view='H2N-CH2-COONa',
   state='тв')
+S('H2NCH2CH2COONa', '3-аминопропаноат натрия', 'соль аминокислоты', 'соли аминокислот', 'NCCC(=O)O[Na]',
+  view='H2N-CH2-CH2-COONa', state='тв')
 S('H2NCH2COOK', 'глицинат калия', 'соль аминокислоты', 'соли аминокислот', 'NCC(=O)O[K]', view='H2N-CH2-COOK', state='тв')
 S('CH3CH(NH2)COONa', 'аланинат натрия', 'соль аминокислоты', 'соли аминокислот', 'CC(N)C(=O)O[Na]',
   view='CH3-CH(NH2)-COONa', state='тв')
@@ -852,7 +858,7 @@ R(['CH3CH2CH2CH3'], ['CH3CH(CH3)CH3'], ['изомеризации'], 'AlCl3, t',
 R(['CH3(CH2)3CH3'], ['CH3CH(CH3)CH2CH3'], ['изомеризации'], 'AlCl3, t', rk='AlCl3')
 R(['CH3(CH2)4CH3'], ['CH3CH(CH3)(CH2)2CH3'], ['изомеризации'], 'AlCl3, t', rk='AlCl3')
 for a, p in [('C2H6', 'C2H4'), ('C3H8', 'CH2CHCH3'), ('CH3CH(CH3)CH3', 'CH2C(CH3)2'), ('C6H5C2H5', 'C6H5CHCH2')]:
-    R([a], [p, 'H2'], ['отщепления', 'дегидрирования'], 'Ni (Pt, Cr2O3), t', rk='')
+    R([a], [p, 'H2'], ['отщепления', 'дегидрирования'], 'Cr2O3 (Ni), t', rk='')
 R(['CH3CH2CH2CH3'], ['CH2CHCHCH2', 'H2'], ['отщепления', 'дегидрирования'], 'Cr2O3, Al2O3, t', rk='')
 R(['CH3CH(CH3)CH2CH3'], ['CH2C(CH3)CHCH2', 'H2'], ['отщепления', 'дегидрирования'], 'Cr2O3, Al2O3, t', rk='')
 R(['CH3(CH2)4CH3'], ['C6H6', 'H2'], ['отщепления', 'дегидрирования', 'ароматизации'], 'Pt, t', rk='',
@@ -922,7 +928,7 @@ ALK = [  # алкен, H2→, Br2→, HBr→, HCl→, H2O→, KMnO4(H2O)→ ди
     ('CH3CHCHCH2CH3', 'CH3(CH2)3CH3', None, None, None, None, None, None),
     ('CH2C(CH3)CH2CH3', 'CH3CH(CH3)CH2CH3', None, '(CH3)2CBrCH2CH3', '(CH3)2CClCH2CH3', '(CH3)2C(OH)CH2CH3', None, None),
     ('(CH3)2CCHCH3', 'CH3CH(CH3)CH2CH3', None, '(CH3)2CBrCH2CH3', '(CH3)2CClCH2CH3', '(CH3)2C(OH)CH2CH3', None, None),
-    ('CH2CHCH(CH3)2', 'CH3CH(CH3)CH2CH3', None, None, None, 'CH3CH(OH)CH(CH3)2', None, None),
+    ('CH2CHCH(CH3)2', 'CH3CH(CH3)CH2CH3', None, None, None, None, None, None),  # гидратация — с перегруппировкой, не берём
     ('CH2CH(CH2)3CH3', 'CH3(CH2)4CH3', None, None, None, None, None, None),
     ('(CH3)2CC(CH3)2', 'CH3CH(CH3)CH(CH3)CH3', None, None, None, None, None, None),
     ('C6H10', '(CH2)6', 'C6H10Br2', None, 'C6H11Cl', 'C6H11OH', 'C6H10(OH)2', None),
@@ -1006,6 +1012,7 @@ R(['C2H2', 'Br2'], ['CHBr2CHBr2'], ['присоединения', 'галоге�
   sign='обесцвечивание бромной воды')
 R(['C2H2', 'HCl'], ['CH2CHCl'], ['присоединения', 'гидрогалогенирования'], 'HgCl2, t')
 R(['C2H2', 'HCl'], ['CH3CHCl2'], ['присоединения', 'гидрогалогенирования'], 'избыток HCl', tags=['правило Марковникова'])
+R(['C2H2', 'HBr'], ['CH3CHBr2'], ['присоединения', 'гидрогалогенирования'], 'избыток HBr', tags=['правило Марковникова'])
 R(['C2H2', 'H2O'], ['CH3CHO'], ['присоединения', 'гидратации'], 'Hg2+, H+', tags=['реакция Кучерова'])
 R(['C2H2', 'HCN'], ['CH2CHCN'], ['присоединения'], 'кат.')
 R(['C2H2', 'CH3COOH'], ['CH3COOCHCH2'], ['присоединения'], 'ацетат цинка, t')
@@ -1449,6 +1456,8 @@ for fat in ['(C17H33COO)3C3H5', '(C17H31COO)3C3H5']:
 AMN = [  # амин, хлорид, бромид
     ('CH3NH2', 'CH3NH3Cl', 'CH3NH3Br'), ('(CH3)2NH', '(CH3)2NH2Cl', None), ('(CH3)3N', '(CH3)3NHCl', None),
     ('C2H5NH2', 'C2H5NH3Cl', 'C2H5NH3Br'), ('(C2H5)2NH', '(C2H5)2NH2Cl', None), ('C6H5NH2', 'C6H5NH3Cl', None),
+    ('CH3CH2CH2NH2', 'CH3CH2CH2NH3Cl', None), ('(CH3)2CHNH2', '(CH3)2CHNH3Cl', None), ('CH3NHC2H5', 'CH3NH2C2H5Cl', None),
+    ('(C2H5)3N', '(C2H5)3NHCl', None),
 ]
 for am, cl, br in AMN:
     R([am, 'HCl'], [cl], ['соединения'], '', tags=['основные свойства аминов'])
@@ -1476,6 +1485,7 @@ R(['H2NCH2COOH', 'NaOH'], ['H2NCH2COONa', 'H2O'], ['обмена', 'нейтра
 R(['H2NCH2COOH', 'KOH'], ['H2NCH2COOK', 'H2O'], ['обмена', 'нейтрализации'], '', tags=['амфотерность'])
 R(['H2NCH2COOH', 'HCl'], ['ClH3NCH2COOH'], ['соединения'], '', tags=['амфотерность'])
 R(['CH3CH(NH2)COOH', 'NaOH'], ['CH3CH(NH2)COONa', 'H2O'], ['обмена', 'нейтрализации'], '', tags=['амфотерность'])
+R(['H2NCH2CH2COOH', 'NaOH'], ['H2NCH2CH2COONa', 'H2O'], ['обмена', 'нейтрализации'], '', tags=['амфотерность'])
 R(['CH3CH(NH2)COOH', 'HCl'], ['CH3CH(NH3Cl)COOH'], ['соединения'], '', tags=['амфотерность'])
 R(['H2NCH2COOH', 'Na'], ['H2NCH2COONa', 'H2'], ['замещения', 'ОВР'], '')
 R(['H2NCH2COOH', 'NaHCO3'], ['H2NCH2COONa', 'CO2', 'H2O'], ['обмена'], '', sign='выделение газа')
