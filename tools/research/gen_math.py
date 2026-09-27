@@ -1554,7 +1554,7 @@ def run_proto(p, n, fipi=None, seed=1):
             info['drop'] += 1
             continue
         c, chk = res
-        key = c['q'] + json.dumps(c.get('o'), ensure_ascii=False)
+        key = c['q'] + json.dumps(c.get('o'), ensure_ascii=False) + c.get('svg', '')
         if key in seen:
             info['dup'] += 1
             continue
@@ -1585,7 +1585,7 @@ def run_proto(p, n, fipi=None, seed=1):
     for _ in range(CAP_TRIES):
         res = p['fn'](r2)
         if res:
-            uniq.add(res[0]['q'] + json.dumps(res[0].get('o'), ensure_ascii=False))
+            uniq.add(res[0]['q'] + json.dumps(res[0].get('o'), ensure_ascii=False) + res[0].get('svg', ''))
     info['capacity'] = len(uniq)
     info['cards'] = len(cards)
     info['answers'] = len({json.dumps(c['a'], ensure_ascii=False) for c in cards})
@@ -1636,7 +1636,7 @@ def protos_main(args):
             for c in cards[:2]:
                 print('   ', json.dumps({k: v for k, v in c.items() if k != 'svg'}, ensure_ascii=False))
     # дубли между прототипами
-    qs = Counter(c['q'] for c in allcards)
+    qs = Counter(c['q'] + json.dumps(c.get('o'), ensure_ascii=False) + c.get('svg', '') for c in allcards)
     cross = sum(v - 1 for v in qs.values() if v > 1)
     fails = sum(i['fail'] for i in infos)
     low = [i['id'] for i in infos if i['kind'] == 'param' and i['capacity'] < CAP_TARGET]
