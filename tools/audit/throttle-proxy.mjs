@@ -14,18 +14,28 @@ const UPSTREAM = process.env.UPSTREAM_PROXY ?? process.env.HTTPS_PROXY ?? '';
 const link = rate => { let free = 0; return n => { const now = Date.now(); free = Math.max(now, free) + (rate ? n / rate * 1000 : 0); return free - now; }; };
 const downLink = link(DOWN), upLink = link(UP);
 
-// Куски приходят по порядку, каждый — через задержку в одну сторону плюс ожидание полосы
+// Куски приходят по порядку, каждый — через задержку в одну сторону плюс ожидание полосы.
+// Одна очередь на направление: отдельный setTimeout на кусок может сработать не по порядку
+// (таймеры с разной длительностью), и TLS рвётся (ERR_SSL_PROTOCOL_ERROR).
 function shaped(src, dst, lk) {
-  let last = 0;
+  let last = 0, timer = null, fin = null;
+  const q = [];
+  const pump = () => {
+    timer = null;
+    while (q.length && q[0].at <= Date.now()) { const { chunk } = q.shift(); if (!dst.destroyed) dst.write(chunk); }
+    if (q.length) timer = setTimeout(pump, q[0].at - Date.now());
+    else if (fin) fin();
+  };
+  const push = item => { q.push(item); if (!timer) timer = setTimeout(pump, Math.max(0, q[0].at - Date.now())); };
   src.on('data', chunk => {
     const now = Date.now();
-    const at = Math.max(last, now + ONE_WAY + lk(chunk.length));
-    last = at;
-    setTimeout(() => { if (!dst.destroyed) dst.write(chunk); }, at - now);
+    last = Math.max(last, now + ONE_WAY + lk(chunk.length));
+    push({ at: last, chunk });
   });
-  src.on('end', () => setTimeout(() => dst.end(), Math.max(0, last - Date.now())));
+  const finish = f => { if (fin) return; fin = f; if (!q.length && !timer) f(); };
+  src.on('end', () => finish(() => dst.end()));
   src.on('error', () => dst.destroy());
-  src.on('close', () => setTimeout(() => dst.destroy(), Math.max(0, last - Date.now()) + 50));
+  src.on('close', () => finish(() => setTimeout(() => dst.destroy(), 50)));
 }
 
 function tunnel(target, cb) {
