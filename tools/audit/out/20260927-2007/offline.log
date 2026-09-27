@@ -1,0 +1,63 @@
+(node:2353) [UNDICI-EHPA] Warning: EnvHttpProxyAgent is experimental, expect them to change at any time.
+(Use `node --trace-warnings ...` to show where the warning was created)
+offline-visited-375 01 онлайн: главная (ставится service worker) | /?about | Домашка,
+от которой
+не сбегают 
+offline-visited-375 02 онлайн: библиотека ?p=ege-rus | /?p=ege-rus | Привет! 
+offline-visited-375 03 онлайн: студия | /studio/ | Студия 
+offline-visited-375 04 онлайн: вход | /login | Вход в «Между уроками» 
+offline-visited-375 05 онлайн: кабинет | /login?next=cabinet%2F | Вход в «Между уроками» 
+offline-visited-375 06 ОФЛАЙН: главная | /?about | Домашка,
+от которой
+не сбегают | ERR×2
+    requestfailed: GET /pay/prices net::ERR_INTERNET_DISCONNECTED
+    console: Failed to load resource: net::ERR_INTERNET_DISCONNECTED
+offline-visited-375 07 ОФЛАЙН: библиотека | /?p=ege-rus | Привет! 
+offline-visited-375 08 ОФЛАЙН: «Заниматься» в библиотеке | /?p=ege-rus#/s |  
+offline-visited-375 09 ОФЛАЙН: задание 4 | /?p=ege-rus#/topic/task-4 | Ударение 
+offline-visited-375 10 ОФЛАЙН: студия | /studio/ | Студия 
+offline-visited-375 11 ОФЛАЙН: вход | /login.html | Вход в «Между уроками» | ERR×2
+    requestfailed: GET /auth/providers net::ERR_INTERNET_DISCONNECTED
+    console: Failed to load resource: net::ERR_INTERNET_DISCONNECTED
+offline-visited-375 12 ОФЛАЙН: кабинет | /login.html?next=cabinet%2F | Вход в «Между уроками» | ERR×2
+    requestfailed: GET /auth/providers net::ERR_INTERNET_DISCONNECTED
+    console: Failed to load resource: net::ERR_INTERNET_DISCONNECTED
+offline-visited-375 13 ОФЛАЙН: оферта (не открывали) | /offer.html | Нет связи 
+offline-visited-375 14 ОФЛАЙН: политика (не открывали) | /privacy.html | Нет связи 
+offline-visited-375 15 ОФЛАЙН: неизвестный тренажёр | /?t=zzzz1234 |  | ERR×2
+    requestfailed: GET /packs/zzzz1234 net::ERR_INTERNET_DISCONNECTED
+    console: Failed to load resource: net::ERR_INTERNET_DISCONNECTED
+offline-visited-375 16 ОФЛАЙН: /parent/ | /login.html?role=parent&next=cabinet%2F%23parent | Вход в «Между уроками» | ERR×2
+    requestfailed: GET /auth/providers net::ERR_INTERNET_DISCONNECTED
+    console: Failed to load resource: net::ERR_INTERNET_DISCONNECTED
+offline-visited-375 17 СНОВА ОНЛАЙН: студия | /studio/ | Студия 
+offline-visited-375 в кэше 29 файлов; API в кэше: нет
+offline-landing-only-375 01 онлайн: главная (ставится service worker) | /?about | Домашка,
+от которой
+не сбегают 
+offline-landing-only-375 02 ОФЛАЙН: главная | /?about | Домашка,
+от которой
+не сбегают | ERR×2
+    requestfailed: GET /pay/prices net::ERR_INTERNET_DISCONNECTED
+    console: Failed to load resource: net::ERR_INTERNET_DISCONNECTED
+offline-landing-only-375 03 ОФЛАЙН: библиотека | /?p=ege-rus |  | ERR×2
+    requestfailed: GET /packs/ege-rus.json net::ERR_FAILED
+    console: Failed to load resource: net::ERR_FAILED
+offline-landing-only-375 04 ОФЛАЙН: задание 4 | /?p=ege-rus#/topic/task-4 |  
+offline-landing-only-375 05 ОФЛАЙН: студия | /studio/ | Студия 
+offline-landing-only-375 06 ОФЛАЙН: вход | /login.html | Вход в «Между уроками» | ERR×2
+    requestfailed: GET /auth/providers net::ERR_INTERNET_DISCONNECTED
+    console: Failed to load resource: net::ERR_INTERNET_DISCONNECTED
+offline-landing-only-375 07 ОФЛАЙН: кабинет | /login.html?next=cabinet%2F | Вход в «Между уроками» | ERR×2
+    requestfailed: GET /auth/providers net::ERR_INTERNET_DISCONNECTED
+    console: Failed to load resource: net::ERR_INTERNET_DISCONNECTED
+offline-landing-only-375 08 ОФЛАЙН: оферта (не открывали) | /offer.html | Нет связи 
+offline-landing-only-375 09 ОФЛАЙН: политика (не открывали) | /privacy.html | Нет связи 
+offline-landing-only-375 10 ОФЛАЙН: неизвестный тренажёр | /?t=zzzz1234 |  | ERR×2
+    requestfailed: GET /packs/zzzz1234 net::ERR_INTERNET_DISCONNECTED
+    console: Failed to load resource: net::ERR_INTERNET_DISCONNECTED
+offline-landing-only-375 11 ОФЛАЙН: /parent/ | /login.html?role=parent&next=cabinet%2F%23parent | Вход в «Между уроками» | ERR×2
+    requestfailed: GET /auth/providers net::ERR_INTERNET_DISCONNECTED
+    console: Failed to load resource: net::ERR_INTERNET_DISCONNECTED
+offline-landing-only-375 12 СНОВА ОНЛАЙН: студия | /studio/ | Студия 
+offline-landing-only-375 в кэше 28 файлов; API в кэше: нет

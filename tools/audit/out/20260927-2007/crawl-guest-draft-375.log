@@ -1,0 +1,67 @@
+(node:4396) [UNDICI-EHPA] Warning: EnvHttpProxyAgent is experimental, expect them to change at any time.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+== guest-draft 375 /studio/ → /studio/ 200 load 673ms, 10/10 controls
+  [a] «Между уроками — о сервисе» ../?about → full+redirect /?about 1077ms 16req 314.4KB 
+  [a] «Войти» ../login.html?role=tutor&next=studio/ → full /login?role=tutor&next=studio/ 958ms 14req 245.7KB 
+  [button] «+ Создать»  → hash /studio/#/p/gthc82xj/add 151ms 1req 1.3KB 
+  [a] «Мой черновик 1 карточка черновик» #/p/gdraft01/cards → hash /studio/#/p/gdraft01/cards 13ms 0req 0KB 
+  [button] «Русский»  → nothing /studio/ 0ms 0req 0KB NOTHING
+  [button] «Математика»  → nothing /studio/ 0ms 0req 0KB NOTHING
+  [button] «Готовый пример за 1 клик»  → hash /studio/#/p/fkaqukfi/cards 153ms 1req 11.9KB MODAL-LEFT BACK≠
+  [button] «Импорт из файла»  → nothing /studio/ 0ms 0req 0KB NOTHING
+  [a] «Войти» ../login.html?role=tutor&next=studio/ → full /login?role=tutor&next=studio/ 661ms 14req 245.7KB 
+  [a] «Напишите в Telegram @trwqxp» https://t.me/trwqxp → popup /studio/ 0ms 0req 0KB 
+
+== guest-draft 375 /studio/#/p/gdraft01/cards → /studio/#/p/gdraft01/cards 200 load 618ms, 12/12 controls
+  [a] «←» #/ → hash /studio/#/ 142ms 1req 7.4KB 
+  [a] «Попробовать» https://econcards.kqrulev.workers.dev/?t=gdraft01&preview=1 → modal /studio/#/p/gdraft01/cards 3ms 0req 0KB 
+  [a] «Карточки · 1» #/p/gdraft01/cards → nothing /studio/#/p/gdraft01/cards 0ms 0req 0KB NOTHING
+  [a] «Добавить» #/p/gdraft01/add → hash /studio/#/p/gdraft01/add 154ms 1req 1.3KB 
+  [a] «Ученики» #/p/gdraft01/students → hash /studio/#/p/gdraft01/students 12ms 0req 0KB 
+  [a] «Настройки» #/p/gdraft01/settings → hash /studio/#/p/gdraft01/settings 11ms 0req 0KB 
+  [a] «Опубликовать» #/p/gdraft01/publish → hash /studio/#/p/gdraft01/publish 10ms 0req 0KB 
+  [button] «+ Карточка»  → modal /studio/#/p/gdraft01/cards 5ms 0req 0KB 
+  [button] «Открыть»  → modal /studio/#/p/gdraft01/cards 4ms 0req 0KB 
+  [button] «Изменить»  → modal /studio/#/p/gdraft01/cards 3ms 0req 0KB 
+  [button] «Похожие»  → modal /studio/#/p/gdraft01/cards 14ms 1req 0KB WRITE-BLOCKED
+  [button] «✕»  → nothing /studio/#/p/gdraft01/cards 0ms 0req 0KB NOTHING
+
+== guest-draft 375 /studio/#/p/gdraft01/add → /studio/#/p/gdraft01/add 200 load 626ms, 13/13 controls
+  [a] «Карточки · 1» #/p/gdraft01/cards → hash /studio/#/p/gdraft01/cards 12ms 0req 0KB 
+  [a] «Добавить» #/p/gdraft01/add → nothing /studio/#/p/gdraft01/add 0ms 0req 0KB NOTHING
+  [button] «+ PDF, фото или .txt»  → nothing /studio/#/p/gdraft01/add 0ms 0req 0KB NOTHING
+  [button] «Сделать карточки»  → toast /studio/#/p/gdraft01/add 0ms 0req 0KB 
+  [button] «ЕГЭ: русский язык · 1783»  → nothing /studio/#/p/gdraft01/add 213ms 1req 250KB NOTHING
+  [button] «ЕГЭ: профильная математика · 237»  → nothing /studio/#/p/gdraft01/add 136ms 1req 54KB NOTHING
+  [button] «Олимпиадная экономика · 1229»  → nothing /studio/#/p/gdraft01/add 149ms 1req 145.7KB NOTHING
+  [button] «Ударения · 394»  → nothing /studio/#/p/gdraft01/add 146ms 1req 2.8KB NOTHING
+
+== guest-draft 375 /studio/#/p/gdraft01/course → /studio/#/p/gdraft01/course 200 load 648ms, 10/10 controls
+  [a] «Курс» #/p/gdraft01/course → nothing /studio/#/p/gdraft01/course 0ms 0req 0KB NOTHING
+  [button] «+ Урок»  → modal /studio/#/p/gdraft01/course 11ms 0req 0KB 
+  [button] «+ Эфир»  → modal /studio/#/p/gdraft01/course 4ms 0req 0KB 
+
+== guest-draft 375 /studio/#/p/gdraft01/students → /studio/#/p/gdraft01/students 200 load 634ms, 9/9 controls
+  [a] «Ученики» #/p/gdraft01/students → nothing /studio/#/p/gdraft01/students 0ms 0req 0KB NOTHING
+  [button] «Как это будет выглядеть — пример»  → same-url-screen /studio/#/p/gdraft01/students 2ms 0req 0KB 
+
+== guest-draft 375 /studio/#/p/gdraft01/settings → /studio/#/p/gdraft01/settings 200 load 590ms, 19/19 controls
+  [a] «Настройки» #/p/gdraft01/settings → nothing /studio/#/p/gdraft01/settings 0ms 0req 0KB NOTHING
+  [button] «Цвет #5B3DF5»  → nothing /studio/#/p/gdraft01/settings 1ms 0req 0KB NOTHING
+  [button] «Цвет #0E7C86»  → nothing /studio/#/p/gdraft01/settings 0ms 0req 0KB NOTHING
+  [button] «Цвет #2F6BFF»  → nothing /studio/#/p/gdraft01/settings 0ms 0req 0KB NOTHING
+  [button] «Цвет #1F8A4C»  → nothing /studio/#/p/gdraft01/settings 0ms 0req 0KB NOTHING
+  [button] «Цвет #C2185B»  → nothing /studio/#/p/gdraft01/settings 0ms 0req 0KB NOTHING
+  [button] «Цвет #D8452B»  → nothing /studio/#/p/gdraft01/settings 0ms 0req 0KB NOTHING
+  [button] «Цвет #8A4FFF»  → nothing /studio/#/p/gdraft01/settings 0ms 0req 0KB NOTHING
+  [button] «Цвет #1B1440»  → nothing /studio/#/p/gdraft01/settings 0ms 0req 0KB NOTHING
+  [button] «Сохранить»  → toast /studio/#/p/gdraft01/settings 1ms 0req 0KB 
+  [button] «Удалить»  → nothing /studio/#/p/gdraft01/settings 0ms 0req 0KB NOTHING
+  [button] «Скачать набор»  → download /studio/#/p/gdraft01/settings 0ms 0req 0KB 
+  [button] «Удалить тренажёр»  → nothing /studio/#/p/gdraft01/settings 0ms 0req 0KB NOTHING
+
+== guest-draft 375 /studio/#/p/gdraft01/publish → /studio/#/p/gdraft01/publish 200 load 748ms, 8/8 controls
+  [a] «Опубликовать» #/p/gdraft01/publish → nothing /studio/#/p/gdraft01/publish 0ms 0req 0KB NOTHING
+  [button] «Опубликовать»  → modal /studio/#/p/gdraft01/publish 150ms 1req 0.9KB 
+DONE guest-draft 375

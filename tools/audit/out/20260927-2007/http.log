@@ -1,0 +1,47 @@
+(node:1938) [UNDICI-EHPA] Warning: EnvHttpProxyAgent is experimental, expect them to change at any time.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✓ 200  /                                          304ms     2100B br public, max-age=0, must-revalidate
+✓ 200  /?about                                     85ms     2100B br public, max-age=0, must-revalidate
+✓ 200  /studio/                                    80ms     1931B br public, max-age=0, must-revalidate
+✓ 200  /cabinet/                                   73ms     1311B br public, max-age=0, must-revalidate
+✗ 307  /login.html                                 61ms        0B - - → /login  ✗ статус 307, ожидали 200; тип «», ожидали text/html
+✗ 307  /offer.html                                197ms        0B - - → /offer  ✗ статус 307, ожидали 200; тип «», ожидали text/html
+✗ 307  /privacy.html                               53ms        0B - - → /privacy  ✗ статус 307, ожидали 200; тип «», ожидали text/html
+✗ 307  /offline.html                               63ms        0B - - → /offline  ✗ статус 307, ожидали 200; тип «», ожидали text/html
+✓ 307  /studio                                     52ms        0B - - → /studio/
+✓ 307  /cabinet                                    54ms        0B - - → /cabinet/
+✓ 200  /login                                      64ms     1259B br public, max-age=0, must-revalidate
+✓ 200  /parent/                                    89ms      871B br public, max-age=0, must-revalidate
+✓ 307  /parent                                     59ms        0B - - → /parent/
+✓ 307  /index.html                                 67ms        0B - - → /
+✓ 404  /no-such-page-audit                         65ms       60B br -
+✓ 200  /app.js                                     76ms    86863B br public, max-age=0, must-revalidate
+✓ 200  /lib.js                                     58ms    26219B br public, max-age=0, must-revalidate
+✓ 200  /account.js                                 62ms    29422B br public, max-age=0, must-revalidate
+✓ 200  /landing.js                                 63ms    21721B br public, max-age=0, must-revalidate
+✓ 200  /app.css                                    69ms    88128B br public, max-age=0, must-revalidate
+✓ 200  /sw.js                                      59ms     8516B br public, max-age=0, must-revalidate
+✓ 200  /manifest.webmanifest                       65ms      784B br public, max-age=0, must-revalidate
+✓ 200  /studio/studio.js                           71ms   121973B br public, max-age=0, must-revalidate
+✓ 200  /cabinet/cabinet.js                         78ms    32083B br public, max-age=0, must-revalidate
+✓ 200  /login.js                                   59ms     8663B br public, max-age=0, must-revalidate
+✓ 200  /fonts/nunito-cyrillic.woff2                68ms    20776B - public, max-age=0, must-revalidate
+✓ 200  /fonts/unbounded-cyrillic.woff2             66ms    31424B - public, max-age=0, must-revalidate
+✓ 200  /vendor/qrcode.js                           61ms    56694B br public, max-age=0, must-revalidate
+✓ 200  /packs/index.json                           68ms     1294B br public, max-age=0, must-revalidate
+✓ 200  /packs/ege-rus.json                        139ms  1192935B br no-cache
+✓ 200  /packs/ege-rus.free.json                   107ms  1192935B br public, max-age=0, must-revalidate
+✓ 304  /packs/ege-rus.json                         66ms        0B - no-cache
+✓ 200  /packs/ege-math.json                       116ms   247275B br no-cache
+✓ 200  /packs/ege-math.free.json                   82ms   247275B br public, max-age=0, must-revalidate
+✓ 304  /packs/ege-math.json                        60ms        0B - no-cache
+✓ 200  /packs/sample-rus.json                      62ms    44739B br public, max-age=0, must-revalidate
+✓ 200  /packs/sample-math.json                     68ms    30207B br public, max-age=0, must-revalidate
+✓ 200  /auth/providers                             55ms       64B br -
+✓ 200  /pay/prices                                 58ms      129B br -
+✓ 401  /me                                         54ms       49B - -
+✓ 404  /packs/zzzz1234                            161ms      107B br -
+✓ 404  /packs/zzzz1234/progress                   149ms       56B br -
+
+Всего 42 проблем 4 | перенаправления: /login.html → 307 /login, /offer.html → 307 /offer, /privacy.html → 307 /privacy, /offline.html → 307 /offline, /studio → 307 /studio/, /cabinet → 307 /cabinet/, /parent → 307 /parent/, /index.html → 307 /, /packs/ege-rus.json → 304 , /packs/ege-math.json → 304  | без сжатия: нет
+Способы входа: {"tg":true,"email":true,"yandex":true,"vk":false,"google":false} | библиотека: {"ege-rus":{"guestCards":1199,"guestTopics":27,"freeFile":200,"freeCards":1199,"same":true},"ege-math":{"guestCards":111,"guestTopics":19,"freeFile":200,"freeCards":111,"same":true}}

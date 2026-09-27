@@ -1,0 +1,108 @@
+(node:3675) [UNDICI-EHPA] Warning: EnvHttpProxyAgent is experimental, expect them to change at any time.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+== guest 375 / → / 200 load 1384ms, 28/28 controls
+  [a] «Между уроками» ./ → full / 1248ms 16req 314.3KB BACK≠
+  [a] «Войти» login.html → full /login 1222ms 14req 245.7KB 
+  [a] «СОБРАТЬ ТРЕНАЖЁР» studio/ → full /studio/ 676ms 11req 233.2KB 
+  [a] «ПОПРОБОВАТЬ» studio/#/sample → full /studio/#/sample 826ms 10req 225.8KB 
+  [button] «н»  → nothing / 1ms 0req 0KB NOTHING
+  [button] «нн»  → nothing / 1ms 0req 0KB NOTHING
+  [a] «СОЗДАТЬ СВОЮ КАРТОЧКУ» studio/ → full /studio/ 743ms 11req 233.1KB 
+  [a] «ПОПРОБОВАТЬ БЕСПЛАТНО» studio/ → full /studio/ 771ms 11req 233.2KB 
+  [a] «НАЧАТЬ ЗАНИМАТЬСЯ» ?p=ege-rus → full+redirect /?p=ege-rus 1058ms 12req 475.9KB 
+  [a] «Оферта» offer.html → full /offer 542ms 7req 166.4KB 
+  [a] «Персональные данные» privacy.html → full /privacy 572ms 7req 167.2KB 
+  [summary] «Какие предметы подходят?»  → nothing / 2ms 0req 0KB NOTHING
+  [summary] «А если ИИ ошибётся в карточке?»  → nothing / 1ms 0req 0KB NOTHING
+  [summary] «Сколько времени это займёт у учени»  → nothing / 2ms 0req 0KB NOTHING
+  [summary] «Что видят родители?»  → nothing / 2ms 0req 0KB NOTHING
+  [summary] «Какие данные хранятся?»  → nothing / 2ms 0req 0KB NOTHING
+  [a] «» privacy.html → nothing / 0ms 0req 0KB NOTHING NOCLICK
+  [summary] «Как вернуть деньги?»  → nothing / 2ms 0req 0KB NOTHING
+  [a] «» offer.html → nothing / 0ms 0req 0KB NOTHING NOCLICK
+  [a] «НАПИСАТЬ В TELEGRAM» https://t.me/trwqxp → popup / 0ms 0req 0KB 
+  [button] «ОТКРЫТЬ»  → toast / 0ms 0req 0KB 
+  [a] «Открытые наборы для самостоятельно» #/library → hash /#/library 150ms 1req 1.3KB 
+  [a] «Я родитель — посмотреть прогресс р» login.html?role=parent → full /login?role=parent 1181ms 14req 245.8KB 
+  [a] «Telegram @trwqxp» https://t.me/trwqxp → popup / 0ms 0req 0KB 
+  [a] «kqrulev@yandex.ru» mailto:kqrulev@yandex.ru → nothing / 4ms 0req 0KB NOTHING
+
+== guest 375 /?about → /?about 200 load 1171ms, 28/28 controls
+
+== guest 375 /#/library → /#/library 200 load 780ms, 7/7 controls
+  [a] «←» ./ → full+redirect / 1357ms 16req 314.4KB 
+  [button] «Открыть»  → toast /#/library 0ms 0req 0KB 
+  [a] «ЕГЭ: русский язык Все тестовые зад» ?p=ege-rus → full+redirect /?p=ege-rus 887ms 12req 475.7KB 
+  [a] «ЕГЭ: профильная математика Все 19 » ?p=ege-math → full+redirect /?p=ege-math 1041ms 12req 279.9KB 
+  [a] «Олимпиадная экономика Задачи ВсОШ,» ?p=econ-olymp → full+redirect /?p=econ-olymp 1193ms 12req 371.5KB 
+  [a] «Ударения Орфоэпический минимум ФИП» ?p=udarenie → full+redirect /?p=udarenie 978ms 12req 228.6KB 
+  [a] «Я репетитор — собрать свой тренажё» studio/ → full /studio/ 734ms 11req 233.2KB 
+
+== guest 375 /login.html → /login 200 load 1230ms, 9/9 controls
+  [a] «Между уроками» ./?about → full+redirect /?about 1288ms 16req 314.5KB 
+  [a] «О сервисе» ./?about → full+redirect /?about 1062ms 16req 314.3KB 
+  [button] «Репетитор»  → nothing /login 169ms 1req 43.9KB NOTHING
+  [button] «Ученик»  → same-url-screen /login 159ms 1req 43.9KB 
+  [button] «Родитель»  → same-url-screen /login 137ms 1req 43.9KB 
+  [button] «ЧЕРЕЗ TELEGRAM»  → nothing /login 12ms 1req 0KB WRITE-BLOCKED NOTHING
+  [button] «КОД НА ПОЧТУ»  → nothing /login 2ms 0req 0KB NOTHING
+  [button] «ЯНДЕКС ID»  → toast /login 12ms 1req 0KB WRITE-BLOCKED
+  [a] «политикой обработки данных» https://econcards.kqrulev.workers.dev/privacy.html → popup /login 0ms 0req 0KB 
+
+== guest 375 /login.html?role=parent → /login?role=parent 200 load 1015ms, 9/9 controls
+  [button] «Репетитор»  → same-url-screen /login?role=parent 137ms 1req 43.9KB 
+  [button] «Родитель»  → nothing /login?role=parent 138ms 1req 43.9KB NOTHING
+
+== guest 375 /login.html?next=%2Fcabinet%2F → /login?next=%2Fcabinet%2F 200 load 1158ms, 9/9 controls
+
+== guest 375 /studio/ → /studio/ 200 load 602ms, 9/9 controls
+  [a] «Между уроками — о сервисе» ../?about → full+redirect /?about 1197ms 16req 314.3KB 
+  [a] «Войти» ../login.html?role=tutor&next=studio/ → full /login?role=tutor&next=studio/ 917ms 14req 245.8KB 
+  [button] «ИЗ СВОИХ МАТЕРИАЛОВ»  → hash /studio/#/p/q58d7rmk/add 161ms 1req 1.3KB 
+  [button] «ГОТОВЫЕ ЗАДАНИЯ ЕГЭ»  → hash /studio/#/p/s2sq77ss/add/lib 154ms 1req 1.3KB 
+  [button] «Русский»  → nothing /studio/ 0ms 0req 0KB NOTHING
+  [button] «Математика»  → nothing /studio/ 0ms 0req 0KB NOTHING
+  [button] «Готовый пример за 1 клик»  → hash /studio/#/p/jd638yjt/cards 192ms 1req 11.9KB MODAL-LEFT BACK≠
+  [button] «Импорт из файла»  → nothing /studio/ 0ms 0req 0KB NOTHING
+  [a] «Напишите в Telegram @trwqxp» https://t.me/trwqxp → popup /studio/ 0ms 0req 0KB 
+
+== guest 375 /studio/#/sample → /studio/#/sample 200 load 709ms, 5/5 controls
+  [a] «←» #/ → hash /studio/#/ 159ms 1req 7.4KB 
+  [button] «РУССКИЙ ЯЗЫК»  → hash /studio/#/p/xgth75pq/cards 150ms 1req 11.9KB MODAL-LEFT BACK≠
+  [button] «МАТЕМАТИКА»  → hash /studio/#/p/nrbiq22s/cards 148ms 1req 7.6KB MODAL-LEFT BACK≠
+  [a] «соберите свой тренажёр» #/new → hash /studio/#/p/nryjnqdu/add 158ms 1req 1.3KB 
+
+== guest 375 /cabinet/ → /login?next=cabinet%2F 200 load 1521ms, 9/9 controls
+
+== guest 375 /cabinet/#parent → /login?role=parent&next=cabinet%2F%23parent 200 load 1359ms, 9/9 controls
+
+== guest 375 /parent/ → /login?role=parent&next=cabinet%2F%23parent 200 load 1828ms, 9/9 controls
+
+== guest 375 /offer.html → /offer 200 load 550ms, 2/2 controls
+  [a] «←» ./?about → full+redirect /?about 1036ms 16req 314.4KB 
+  [a] «политике обработки персональных да» privacy.html → full /privacy 568ms 7req 167.2KB 
+
+== guest 375 /privacy.html → /privacy 200 load 596ms, 1/1 controls
+
+== guest 375 /?p=ege-rus → /?p=ege-rus 200 load 843ms, 8/33 controls
+  [a] «Профиль» #/me → hash /?p=ege-rus#/me 12ms 0req 0KB 
+  [button] «ЗАНИМАТЬСЯ · 6 МИН»  → hash /?p=ege-rus#/s 3ms 0req 0KB BACK≠
+  [button] «Пробный вариант»  → hash /?p=ege-rus#/s 3ms 0req 0KB BACK≠
+  [button] «Открыть бесплатно»  → modal /?p=ege-rus 116ms 1req 0.9KB 
+  [a] «1 новое» #/topic/task-1 → hash /?p=ege-rus#/topic/task-1 17ms 0req 0KB 
+  [a] «Другие наборы» #/library → hash /?p=ege-rus#/library 146ms 1req 1.3KB 
+  [a] «Для репетиторов» ./?about → full+redirect /?about 1141ms 16req 314.4KB 
+
+== guest 375 /?p=ege-math → /?p=ege-math 200 load 935ms, 8/25 controls
+  [a] «1 новое» #/topic/m-task-1 → hash /?p=ege-math#/topic/m-task-1 12ms 0req 0KB 
+
+== guest 375 /?t=zzzz1234 → /?t=zzzz1234 200 load 722ms, 1/1 controls ERR console: Failed to load resource: the server responded with a status of 404 (Not Found) | http404: GET /packs/zzzz1234
+  [a] «К наборам» ./#/library → full+redirect /#/library 773ms 12req 227.2KB 
+
+== guest 375 /offline.html → /offline 200 load 624ms, 5/5 controls
+  [button] «ПОВТОРИТЬ»  → full /offline 442ms 7req 173.4KB BACK≠
+  [a] «Тренажёр ученика Занятия сохранятс» ./ → full+redirect / 1207ms 16req 314.4KB 
+  [a] «Студия репетитора Тренажёры из это» studio/ → full /studio/ 861ms 11req 233.1KB 
+  [a] «Личный кабинет Ученики и отчёты об» cabinet/ → full+redirect /login?next=cabinet%2F 1424ms 23req 369.7KB DUP
+DONE guest 375

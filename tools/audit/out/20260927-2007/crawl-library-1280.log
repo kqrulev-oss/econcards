@@ -1,0 +1,58 @@
+(node:4674) [UNDICI-EHPA] Warning: EnvHttpProxyAgent is experimental, expect them to change at any time.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+== library 1280 /?p=ege-rus#/ → /?p=ege-rus#/ 200 load 893ms, 8/33 controls
+  [a] «Профиль» #/me → hash /?p=ege-rus#/me 8ms 0req 0KB 
+  [button] «ПРОДОЛЖИТЬ · 3 МИН»  → hash /?p=ege-rus#/s 3ms 0req 0KB BACK≠
+  [button] «Пробный вариант»  → hash /?p=ege-rus#/s 3ms 0req 0KB BACK≠
+  [button] «Открыть бесплатно»  → modal /?p=ege-rus#/ 132ms 1req 0.9KB 
+  [a] «1 новое» #/topic/task-1 → hash /?p=ege-rus#/topic/task-1 16ms 0req 0KB 
+  [a] «Другие наборы» #/library → hash /?p=ege-rus#/library 152ms 1req 1.3KB 
+  [a] «Для репетиторов» ./?about → full+redirect /?about 1123ms 16req 354.8KB 
+
+== library 1280 /?p=ege-rus#/topic/task-4 → /?p=ege-rus#/topic/task-4 200 load 948ms, 7/7 controls
+  [a] «←» #/ → hash /?p=ege-rus#/ 13ms 0req 0KB 
+  [button] «Тренировать все»  → hash /?p=ege-rus#/s 2ms 0req 0KB BACK≠
+  [button] «— Ударение в именах существительны»  → hash /?p=ege-rus#/s 1ms 0req 0KB BACK≠
+  [button] «— Ударение в глаголах В глаголах п»  → hash /?p=ege-rus#/s 2ms 0req 0KB BACK≠
+  [button] «Открыть бесплатно»  → modal /?p=ege-rus#/topic/task-4 123ms 1req 0.9KB 
+  [a] «Фонетика, буквы, звуки и ударение » #/lesson/RU002 → hash /?p=ege-rus#/lesson/RU002 12ms 0req 0KB 
+  [a] «Ударение: подготовка к заданию 4 1» #/lesson/RU018 → hash /?p=ege-rus#/lesson/RU018 12ms 0req 0KB 
+
+== library 1280 /?p=ege-rus#/topic/task-26 → /?p=ege-rus#/topic/task-26 200 load 910ms, 5/5 controls
+  [button] «— Рецензия и средства выразительно»  → hash /?p=ege-rus#/s 2ms 0req 0KB BACK≠
+  [button] «— Связь предложений в тексте Опред»  → hash /?p=ege-rus#/s 1ms 0req 0KB BACK≠
+  [a] «Средства связи предложений: задани» #/lesson/RU016 → hash /?p=ege-rus#/lesson/RU016 10ms 0req 0KB 
+
+== library 1280 /?p=ege-rus#/me → /?p=ege-rus#/me 200 load 891ms, 5/5 controls
+  [button] «Войти»  → modal /?p=ege-rus#/me 290ms 2req 51.3KB 
+  [button] «Сохранить»  → toast /?p=ege-rus#/me 0ms 0req 0KB 
+  [button] «Добавить в календарь»  → download /?p=ege-rus#/me 0ms 0req 0KB 
+  [button] «Сбросить прогресс по набору»  → nothing /?p=ege-rus#/me 0ms 0req 0KB NOTHING
+
+== library 1280 /?p=ege-rus#/library → /?p=ege-rus#/library 200 load 1024ms, 8/8 controls
+  [a] «←» ./ → full+redirect / 867ms 12req 475.6KB 
+  [button] «Открыть»  → toast /?p=ege-rus#/library 0ms 0req 0KB 
+  [a] «ЕГЭ: русский язык» ?p=ege-rus → full+redirect /?p=ege-rus 981ms 12req 475.9KB 
+  [a] «ЕГЭ: русский язык Все тестовые зад» ?p=ege-rus → full+redirect /?p=ege-rus 921ms 12req 475.7KB 
+  [a] «ЕГЭ: профильная математика Все 19 » ?p=ege-math → full+redirect /?p=ege-math 852ms 12req 280KB 
+  [a] «Олимпиадная экономика Задачи ВсОШ,» ?p=econ-olymp → full+redirect /?p=econ-olymp 1009ms 12req 371.6KB 
+  [a] «Ударения Орфоэпический минимум ФИП» ?p=udarenie → full+redirect /?p=udarenie 842ms 12req 228.5KB 
+  [a] «Я репетитор — собрать свой тренажё» studio/ → full /studio/ 665ms 11req 233.2KB 
+
+== library 1280 /?p=ege-rus#/go → /?p=ege-rus#/s 200 load 855ms, 4/4 controls
+  [button] «✕»  → hash /?p=ege-rus#/ 4ms 0req 0KB BACK≠
+
+== library 1280 / → / 200 load 864ms, 8/33 controls
+
+== library 1280 /cabinet/ → /login?next=cabinet%2F 200 load 1515ms, 9/9 controls
+  [a] «Между уроками» ./?about → full+redirect /?about 961ms 16req 354.8KB 
+  [a] «О сервисе» ./?about → full+redirect /?about 1290ms 16req 354.7KB 
+  [button] «Репетитор»  → nothing /login?next=cabinet%2F 134ms 1req 43.9KB NOTHING
+  [button] «Ученик»  → same-url-screen /login?next=cabinet%2F 156ms 1req 43.9KB 
+  [button] «Родитель»  → same-url-screen /login?next=cabinet%2F 136ms 1req 43.9KB 
+  [button] «ЧЕРЕЗ TELEGRAM»  → nothing /login?next=cabinet%2F 14ms 1req 0KB WRITE-BLOCKED NOTHING
+  [button] «КОД НА ПОЧТУ»  → nothing /login?next=cabinet%2F 1ms 0req 0KB NOTHING
+  [button] «ЯНДЕКС ID»  → toast /login?next=cabinet%2F 12ms 1req 0KB WRITE-BLOCKED
+  [a] «политикой обработки данных» https://econcards.kqrulev.workers.dev/privacy.html → nothing /login?next=cabinet%2F 0ms 0req 0KB NOTHING
+DONE library 1280

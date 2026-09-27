@@ -1,0 +1,65 @@
+(node:2102) [UNDICI-EHPA] Warning: EnvHttpProxyAgent is experimental, expect them to change at any time.
+(Use `node --trace-warnings ...` to show where the warning was created)
+tutor-1280-light 01 главная | / | Домашка,
+от которой
+не сбегают 
+tutor-1280-light 02 «Попробовать» | /studio/#/sample | Готовый пример 
+tutor-1280-light 03 выбор предмета (если спрашивают) → Русский | /studio/#/p/ewnr4qc3/cards | Пример: русский, ЕГЭ | MODAL×1
+tutor-1280-light 04 пример открыт: карточки | /studio/#/p/ewnr4qc3/cards | Пример: русский, ЕГЭ | MODAL×1
+tutor-1280-light 05 «Глазами ученика» | /studio/#/p/ewnr4qc3/cards | Пример: русский, ЕГЭ | FAIL MODAL×1
+    FAIL locator.click: Timeout 4000ms exceeded.
+tutor-1280-light 06 закрыть просмотр (Esc) | /studio/#/p/ewnr4qc3/cards | Пример: русский, ЕГЭ 
+tutor-1280-light 07 вкладка «Ученики» | /studio/#/p/ewnr4qc3/students | Пример: русский, ЕГЭ 
+tutor-1280-light 08 «Отчёт родителям» у ученика-примера | /studio/#/p/ewnr4qc3/students | Пример: русский, ЕГЭ | MODAL×1
+tutor-1280-light 09 телефонное «назад» закрывает окно | /studio/#/p/ewnr4qc3/students | Пример: русский, ЕГЭ 
+tutor-1280-light 10 вкладка «Публикация» / «Опубликовать» | /studio/#/p/ewnr4qc3/publish | Пример: русский, ЕГЭ 
+tutor-1280-light 11 «Опубликовать» без входа → вход | /studio/#/p/ewnr4qc3/publish | Пример: русский, ЕГЭ | MODAL×1
+tutor-1280-light 12 «назад» из входа → студия, пример на месте | /studio/#/p/ewnr4qc3/publish | Пример: русский, ЕГЭ 
+tutor-1280-light 13 перезагрузка студии | /studio/#/p/ewnr4qc3/publish | Пример: русский, ЕГЭ 
+tutor-1280-light 14 путь в кабинет из студии | /studio/#/p/ewnr4qc3/publish | Пример: русский, ЕГЭ | FAIL
+    FAIL не нашёл: a[href*="cabinet"] | a:has-text("Кабинет")
+library-1280-light 01 библиотека ЕГЭ: русский | /?p=ege-rus | Привет! 
+library-1280-light 02 задание 4 | /?p=ege-rus#/topic/task-4 | Ударение 
+library-1280-light 03 теория задания | /?p=ege-rus#/lesson/RU002 | Фонетика, буквы, звуки и ударение 
+library-1280-light 04 «назад» → задание | /?p=ege-rus#/topic/task-4 | Ударение 
+library-1280-light 05 «назад» → главная тренажёра | /?p=ege-rus | Привет! 
+library-1280-light 06 «Заниматься» | /?p=ege-rus#/s |  
+library-1280-light 07 ответить на 5 карточек | /?p=ege-rus#/s |  
+library-1280-light 08 телефонное «назад» посреди занятия (отказаться выходить) | /?p=ege-rus#/s |  
+library-1280-light 09 доиграть до «Готово» | /?p=ege-rus#/s | Серия 1 день! 
+library-1280-light 10 «назад» после «Готово» не возвращает в занятие | /?p=ege-rus | Привет! 
+library-1280-light 11 профиль | /?p=ege-rus#/me | Профиль 
+library-1280-light 12 все наборы | /?p=ege-rus#/library | Открытые наборы 
+library-1280-light 13 ЕГЭ: математика | /?p=ege-math | Привет! 
+library-1280-light 14 перезагрузка | /?p=ege-math | Привет! 
+nav-1280-light 01 главная | / | Домашка,
+от которой
+не сбегают 
+nav-1280-light 02 якорь #how | /#how | Домашка,
+от которой
+не сбегают 
+nav-1280-light 03 якорь #prices | /#prices | Домашка,
+от которой
+не сбегают 
+nav-1280-light 04 якорь #faq | /#faq | Домашка,
+от которой
+не сбегают 
+nav-1280-light 05 пустой код «Открыть» | /#faq | Домашка,
+от которой
+не сбегают 
+nav-1280-light 06 «Войти» | /login | Вход в «Между уроками» 
+nav-1280-light 07 «назад» с входа | /#faq | Домашка,
+от которой
+не сбегают 
+nav-1280-light 08 кабинет без входа | /login?next=cabinet%2F | Вход в «Между уроками» 
+nav-1280-light 09 кабинет родителя без входа | /login?role=parent&next=cabinet%2F%23parent | Вход в «Между уроками» 
+nav-1280-light 10 /parent/ (старый адрес) | /login?role=parent&next=cabinet%2F%23parent | Вход в «Между уроками» 
+nav-1280-light 11 оферта | /offer | Публичная оферта 
+nav-1280-light 12 политика | /privacy | Политика обработки персональных данных 
+nav-1280-light 13 неизвестный код тренажёра | /?t=zzzz1234 |  | ERR×2
+    console: Failed to load resource: the server responded with a status of 404 (Not Found)
+    http404: GET /packs/zzzz1234
+nav-1280-light 14 «К наборам» / выход с неизвестного кода | /#/library | Открытые наборы 
+nav-1280-light 15 несуществующая страница | /no-such-page-audit |  | ERR×2
+    console: Failed to load resource: the server responded with a status of 404 (Not Found)
+    http404: GET /no-such-page-audit

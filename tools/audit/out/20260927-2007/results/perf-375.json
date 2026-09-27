@@ -1,0 +1,980 @@
+[
+ {
+  "name": "Главная: первое открытие",
+  "mode": "сеть",
+  "first": 685,
+  "settle": 1120,
+  "timedOut": false,
+  "n": 16,
+  "kb": 314,
+  "sw": 0,
+  "api": [
+   "GET /pay/prices"
+  ],
+  "big": [
+   "/fonts/unbounded-latin.woff2 50KB"
+  ],
+  "dups": [],
+  "errs": [],
+  "url": "/"
+ },
+ {
+  "name": "Главная: первое открытие",
+  "mode": "3G",
+  "first": 4805,
+  "settle": 7154,
+  "timedOut": false,
+  "n": 16,
+  "kb": 314,
+  "sw": 0,
+  "api": [
+   "GET /pay/prices"
+  ],
+  "big": [
+   "/fonts/unbounded-latin.woff2 50KB"
+  ],
+  "dups": [],
+  "errs": [],
+  "url": "/"
+ },
+ {
+  "name": "Главная: первое открытие",
+  "mode": "3G повт.",
+  "first": 4366,
+  "settle": 5791,
+  "timedOut": false,
+  "n": 16,
+  "kb": 9,
+  "sw": 0,
+  "api": [
+   "GET /pay/prices"
+  ],
+  "big": [],
+  "dups": [],
+  "errs": [],
+  "url": "/"
+ },
+ {
+  "name": "Главная: первое открытие",
+  "mode": "3G+SW",
+  "first": 1387,
+  "settle": 2790,
+  "timedOut": false,
+  "n": 16,
+  "kb": 1,
+  "sw": 15,
+  "api": [
+   "GET /pay/prices"
+  ],
+  "big": [],
+  "dups": [],
+  "errs": [],
+  "url": "/"
+ },
+ {
+  "name": "Главная → «Попробовать»",
+  "mode": "сеть",
+  "first": 499,
+  "settle": 504,
+  "timedOut": false,
+  "n": 10,
+  "kb": 41,
+  "sw": 0,
+  "api": [],
+  "big": [],
+  "dups": [],
+  "errs": [],
+  "url": "/studio/#/sample"
+ },
+ {
+  "name": "Главная → «Попробовать»",
+  "mode": "3G",
+  "first": 3044,
+  "settle": 3049,
+  "timedOut": false,
+  "n": 10,
+  "kb": 41,
+  "sw": 0,
+  "api": [],
+  "big": [],
+  "dups": [],
+  "errs": [],
+  "url": "/studio/#/sample"
+ },
+ {
+  "name": "Главная → «Попробовать»",
+  "mode": "3G повт.",
+  "first": 3179,
+  "settle": 3179,
+  "timedOut": false,
+  "n": 10,
+  "kb": 5,
+  "sw": 0,
+  "api": [],
+  "big": [],
+  "dups": [],
+  "errs": [],
+  "url": "/studio/#/sample"
+ },
+ {
+  "name": "Главная → «Попробовать»",
+  "mode": "3G+SW",
+  "first": 2772,
+  "settle": 2772,
+  "timedOut": false,
+  "n": 10,
+  "kb": 5,
+  "sw": 0,
+  "api": [],
+  "big": [],
+  "dups": [],
+  "errs": [],
+  "url": "/studio/#/sample"
+ },
+ {
+  "name": "Главная → «Войти»",
+  "mode": "сеть",
+  "first": 558,
+  "settle": 700,
+  "timedOut": false,
+  "n": 14,
+  "kb": 11,
+  "sw": 0,
+  "api": [
+   "GET /auth/providers"
+  ],
+  "big": [],
+  "dups": [],
+  "errs": [],
+  "url": "/login"
+ },
+ {
+  "name": "Главная → «Войти»",
+  "mode": "3G",
+  "first": 4319,
+  "settle": 5721,
+  "timedOut": false,
+  "n": 14,
+  "kb": 11,
+  "sw": 0,
+  "api": [
+   "GET /auth/providers"
+  ],
+  "big": [],
+  "dups": [],
+  "errs": [],
+  "url": "/login"
+ },
+ {
+  "name": "Главная → «Войти»",
+  "mode": "3G повт.",
+  "first": 4330,
+  "settle": 5729,
+  "timedOut": false,
+  "n": 14,
+  "kb": 8,
+  "sw": 0,
+  "api": [
+   "GET /auth/providers"
+  ],
+  "big": [],
+  "dups": [],
+  "errs": [],
+  "url": "/login"
+ },
+ {
+  "name": "Главная → «Войти»",
+  "mode": "3G+SW",
+  "first": 2571,
+  "settle": 3924,
+  "timedOut": false,
+  "n": 14,
+  "kb": 1,
+  "sw": 13,
+  "api": [
+   "GET /auth/providers"
+  ],
+  "big": [],
+  "dups": [],
+  "errs": [],
+  "url": "/login"
+ },
+ {
+  "name": "Главная → якорь «Тарифы»",
+  "mode": "сеть",
+  "first": null,
+  "settle": -335,
+  "timedOut": false,
+  "n": 0,
+  "kb": 0,
+  "sw": 0,
+  "api": [],
+  "big": [],
+  "dups": [],
+  "errs": [],
+  "url": "/#prices"
+ },
+ {
+  "name": "Главная → якорь «Тарифы»",
+  "mode": "3G",
+  "first": null,
+  "settle": -326,
+  "timedOut": false,
+  "n": 0,
+  "kb": 0,
+  "sw": 0,
+  "api": [],
+  "big": [],
+  "dups": [],
+  "errs": [],
+  "url": "/#prices"
+ },
+ {
+  "name": "Главная → якорь «Тарифы»",
+  "mode": "3G повт.",
+  "first": null,
+  "settle": -308,
+  "timedOut": false,
+  "n": 0,
+  "kb": 0,
+  "sw": 0,
+  "api": [],
+  "big": [],
+  "dups": [],
+  "errs": [],
+  "url": "/#prices"
+ },
+ {
+  "name": "Главная → якорь «Тарифы»",
+  "mode": "3G+SW",
+  "first": null,
+  "settle": -307,
+  "timedOut": false,
+  "n": 0,
+  "kb": 0,
+  "sw": 0,
+  "api": [],
+  "big": [],
+  "dups": [],
+  "errs": [],
+  "url": "/#prices"
+ },
+ {
+  "name": "Библиотека ЕГЭ: первое открытие",
+  "mode": "сеть",
+  "first": 794,
+  "settle": 958,
+  "timedOut": false,
+  "n": 12,
+  "kb": 476,
+  "sw": 0,
+  "api": [],
+  "big": [
+   "/packs/ege-rus.json 250KB",
+   "/fonts/unbounded-latin.woff2 50KB"
+  ],
+  "dups": [],
+  "errs": [],
+  "url": "/?p=ege-rus"
+ },
+ {
+  "name": "Библиотека ЕГЭ: первое открытие",
+  "mode": "3G",
+  "first": 6242,
+  "settle": 8086,
+  "timedOut": false,
+  "n": 12,
+  "kb": 476,
+  "sw": 0,
+  "api": [],
+  "big": [
+   "/packs/ege-rus.json 250KB",
+   "/fonts/unbounded-latin.woff2 50KB"
+  ],
+  "dups": [],
+  "errs": [],
+  "url": "/?p=ege-rus"
+ },
+ {
+  "name": "Библиотека ЕГЭ: первое открытие",
+  "mode": "3G повт.",
+  "first": 4380,
+  "settle": 4381,
+  "timedOut": false,
+  "n": 12,
+  "kb": 6,
+  "sw": 0,
+  "api": [],
+  "big": [],
+  "dups": [],
+  "errs": [],
+  "url": "/?p=ege-rus"
+ },
+ {
+  "name": "Библиотека ЕГЭ: первое открытие",
+  "mode": "3G+SW",
+  "first": 4616,
+  "settle": 4616,
+  "timedOut": false,
+  "n": 12,
+  "kb": 6,
+  "sw": 0,
+  "api": [],
+  "big": [],
+  "dups": [],
+  "errs": [],
+  "url": "/?p=ege-rus"
+ },
+ {
+  "name": "Библиотека: главная → задание 4",
+  "mode": "сеть",
+  "first": 15,
+  "settle": 16,
+  "timedOut": false,
+  "n": 0,
+  "kb": 0,
+  "sw": 0,
+  "api": [],
+  "big": [],
+  "dups": [],
+  "errs": [],
+  "url": "/?p=ege-rus#/topic/task-4"
+ },
+ {
+  "name": "Библиотека: главная → задание 4",
+  "mode": "3G",
+  "first": 15,
+  "settle": 15,
+  "timedOut": false,
+  "n": 0,
+  "kb": 0,
+  "sw": 0,
+  "api": [],
+  "big": [],
+  "dups": [],
+  "errs": [],
+  "url": "/?p=ege-rus#/topic/task-4"
+ },
+ {
+  "name": "Библиотека: главная → задание 4",
+  "mode": "3G повт.",
+  "first": 17,
+  "settle": 18,
+  "timedOut": false,
+  "n": 0,
+  "kb": 0,
+  "sw": 0,
+  "api": [],
+  "big": [],
+  "dups": [],
+  "errs": [],
+  "url": "/?p=ege-rus#/topic/task-4"
+ },
+ {
+  "name": "Библиотека: главная → задание 4",
+  "mode": "3G+SW",
+  "first": 17,
+  "settle": 17,
+  "timedOut": false,
+  "n": 0,
+  "kb": 0,
+  "sw": 0,
+  "api": [],
+  "big": [],
+  "dups": [],
+  "errs": [],
+  "url": "/?p=ege-rus#/topic/task-4"
+ },
+ {
+  "name": "Библиотека: задание → теория",
+  "mode": "сеть",
+  "first": 11,
+  "settle": 11,
+  "timedOut": false,
+  "n": 0,
+  "kb": 0,
+  "sw": 0,
+  "api": [],
+  "big": [],
+  "dups": [],
+  "errs": [],
+  "url": "/?p=ege-rus#/lesson/RU002"
+ },
+ {
+  "name": "Библиотека: задание → теория",
+  "mode": "3G",
+  "first": 10,
+  "settle": 10,
+  "timedOut": false,
+  "n": 0,
+  "kb": 0,
+  "sw": 0,
+  "api": [],
+  "big": [],
+  "dups": [],
+  "errs": [],
+  "url": "/?p=ege-rus#/lesson/RU002"
+ },
+ {
+  "name": "Библиотека: задание → теория",
+  "mode": "3G повт.",
+  "first": 12,
+  "settle": 12,
+  "timedOut": false,
+  "n": 0,
+  "kb": 0,
+  "sw": 0,
+  "api": [],
+  "big": [],
+  "dups": [],
+  "errs": [],
+  "url": "/?p=ege-rus#/lesson/RU002"
+ },
+ {
+  "name": "Библиотека: задание → теория",
+  "mode": "3G+SW",
+  "first": 12,
+  "settle": 12,
+  "timedOut": false,
+  "n": 0,
+  "kb": 0,
+  "sw": 0,
+  "api": [],
+  "big": [],
+  "dups": [],
+  "errs": [],
+  "url": "/?p=ege-rus#/lesson/RU002"
+ },
+ {
+  "name": "Библиотека: «Заниматься» → карточка",
+  "mode": "сеть",
+  "first": 2,
+  "settle": 2,
+  "timedOut": false,
+  "n": 0,
+  "kb": 0,
+  "sw": 0,
+  "api": [],
+  "big": [],
+  "dups": [],
+  "errs": [],
+  "url": "/?p=ege-rus#/s"
+ },
+ {
+  "name": "Библиотека: «Заниматься» → карточка",
+  "mode": "3G",
+  "first": 2,
+  "settle": 2,
+  "timedOut": false,
+  "n": 0,
+  "kb": 0,
+  "sw": 0,
+  "api": [],
+  "big": [],
+  "dups": [],
+  "errs": [],
+  "url": "/?p=ege-rus#/s"
+ },
+ {
+  "name": "Библиотека: «Заниматься» → карточка",
+  "mode": "3G повт.",
+  "first": 1,
+  "settle": 1,
+  "timedOut": false,
+  "n": 0,
+  "kb": 0,
+  "sw": 0,
+  "api": [],
+  "big": [],
+  "dups": [],
+  "errs": [],
+  "url": "/?p=ege-rus#/s"
+ },
+ {
+  "name": "Библиотека: «Заниматься» → карточка",
+  "mode": "3G+SW",
+  "first": 1,
+  "settle": 1,
+  "timedOut": false,
+  "n": 0,
+  "kb": 0,
+  "sw": 0,
+  "api": [],
+  "big": [],
+  "dups": [],
+  "errs": [],
+  "url": "/?p=ege-rus#/s"
+ },
+ {
+  "name": "Студия (гость): открытие",
+  "mode": "сеть",
+  "first": 615,
+  "settle": 775,
+  "timedOut": false,
+  "n": 11,
+  "kb": 233,
+  "sw": 0,
+  "api": [],
+  "big": [
+   "/fonts/unbounded-latin.woff2 50KB"
+  ],
+  "dups": [],
+  "errs": [],
+  "url": "/studio/"
+ },
+ {
+  "name": "Студия (гость): открытие",
+  "mode": "3G",
+  "first": 3237,
+  "settle": 5238,
+  "timedOut": false,
+  "n": 11,
+  "kb": 233,
+  "sw": 0,
+  "api": [],
+  "big": [
+   "/fonts/unbounded-latin.woff2 50KB"
+  ],
+  "dups": [],
+  "errs": [],
+  "url": "/studio/"
+ },
+ {
+  "name": "Студия (гость): открытие",
+  "mode": "3G повт.",
+  "first": 3047,
+  "settle": 4437,
+  "timedOut": false,
+  "n": 11,
+  "kb": 6,
+  "sw": 0,
+  "api": [],
+  "big": [],
+  "dups": [],
+  "errs": [],
+  "url": "/studio/"
+ },
+ {
+  "name": "Студия (гость): открытие",
+  "mode": "3G+SW",
+  "first": 3300,
+  "settle": 4642,
+  "timedOut": false,
+  "n": 11,
+  "kb": 6,
+  "sw": 0,
+  "api": [],
+  "big": [],
+  "dups": [],
+  "errs": [],
+  "url": "/studio/"
+ },
+ {
+  "name": "Студия: готовый пример по ссылке",
+  "mode": "сеть",
+  "first": 578,
+  "settle": 731,
+  "timedOut": false,
+  "n": 10,
+  "kb": 226,
+  "sw": 0,
+  "api": [],
+  "big": [
+   "/fonts/unbounded-latin.woff2 50KB"
+  ],
+  "dups": [],
+  "errs": [],
+  "url": "/studio/#/sample"
+ },
+ {
+  "name": "Студия: готовый пример по ссылке",
+  "mode": "3G",
+  "first": 3215,
+  "settle": 5163,
+  "timedOut": false,
+  "n": 10,
+  "kb": 226,
+  "sw": 0,
+  "api": [],
+  "big": [
+   "/fonts/unbounded-latin.woff2 50KB"
+  ],
+  "dups": [],
+  "errs": [],
+  "url": "/studio/#/sample"
+ },
+ {
+  "name": "Студия: готовый пример по ссылке",
+  "mode": "3G повт.",
+  "first": 2917,
+  "settle": 2917,
+  "timedOut": false,
+  "n": 10,
+  "kb": 5,
+  "sw": 0,
+  "api": [],
+  "big": [],
+  "dups": [],
+  "errs": [],
+  "url": "/studio/#/sample"
+ },
+ {
+  "name": "Студия: готовый пример по ссылке",
+  "mode": "3G+SW",
+  "first": 3147,
+  "settle": 3147,
+  "timedOut": false,
+  "n": 10,
+  "kb": 5,
+  "sw": 0,
+  "api": [],
+  "big": [],
+  "dups": [],
+  "errs": [],
+  "url": "/studio/#/sample"
+ },
+ {
+  "name": "Кабинет (гость): открытие",
+  "mode": "сеть",
+  "first": 1140,
+  "settle": 1457,
+  "timedOut": false,
+  "n": 23,
+  "kb": 267,
+  "sw": 0,
+  "api": [
+   "GET /auth/providers"
+  ],
+  "big": [
+   "/fonts/unbounded-latin.woff2 50KB"
+  ],
+  "dups": [
+   "GET /app.css ×2",
+   "GET /lib.js ×2",
+   "GET /account.js ×2",
+   "GET /config.js ×2",
+   "GET /fonts/nunito-cyrillic.woff2 ×2",
+   "GET /fonts/nunito-latin.woff2 ×2"
+  ],
+  "errs": [],
+  "url": "/login?next=cabinet%2F"
+ },
+ {
+  "name": "Кабинет (гость): открытие",
+  "mode": "3G",
+  "first": 7677,
+  "settle": 9836,
+  "timedOut": false,
+  "n": 23,
+  "kb": 267,
+  "sw": 0,
+  "api": [
+   "GET /auth/providers"
+  ],
+  "big": [
+   "/fonts/unbounded-latin.woff2 50KB"
+  ],
+  "dups": [
+   "GET /app.css ×2",
+   "GET /lib.js ×2",
+   "GET /account.js ×2",
+   "GET /config.js ×2",
+   "GET /fonts/nunito-cyrillic.woff2 ×2",
+   "GET /fonts/nunito-latin.woff2 ×2"
+  ],
+  "errs": [],
+  "url": "/login?next=cabinet%2F"
+ },
+ {
+  "name": "Кабинет (гость): открытие",
+  "mode": "3G повт.",
+  "first": 7296,
+  "settle": 8687,
+  "timedOut": false,
+  "n": 25,
+  "kb": 13,
+  "sw": 0,
+  "api": [
+   "GET /auth/providers"
+  ],
+  "big": [],
+  "dups": [
+   "GET /app.css ×2",
+   "GET /lib.js ×2",
+   "GET /account.js ×2",
+   "GET /config.js ×2",
+   "GET /fonts/nunito-cyrillic.woff2 ×2",
+   "GET /fonts/nunito-latin.woff2 ×2",
+   "GET /fonts/unbounded-cyrillic.woff2 ×2",
+   "GET /fonts/unbounded-latin.woff2 ×2"
+  ],
+  "errs": [],
+  "url": "/login?next=cabinet%2F"
+ },
+ {
+  "name": "Кабинет (гость): открытие",
+  "mode": "3G+SW",
+  "first": 8764,
+  "settle": 11761,
+  "timedOut": false,
+  "n": 25,
+  "kb": 13,
+  "sw": 0,
+  "api": [
+   "GET /auth/providers"
+  ],
+  "big": [],
+  "dups": [
+   "GET /app.css ×2",
+   "GET /lib.js ×2",
+   "GET /account.js ×2",
+   "GET /config.js ×2",
+   "GET /fonts/nunito-cyrillic.woff2 ×2",
+   "GET /fonts/nunito-latin.woff2 ×2",
+   "GET /fonts/unbounded-cyrillic.woff2 ×2",
+   "GET /fonts/unbounded-latin.woff2 ×2"
+  ],
+  "errs": [],
+  "url": "/login?next=cabinet%2F"
+ },
+ {
+  "name": "Вход: открытие",
+  "mode": "сеть",
+  "first": 639,
+  "settle": 1108,
+  "timedOut": false,
+  "n": 14,
+  "kb": 246,
+  "sw": 0,
+  "api": [
+   "GET /auth/providers"
+  ],
+  "big": [
+   "/fonts/unbounded-latin.woff2 50KB"
+  ],
+  "dups": [],
+  "errs": [],
+  "url": "/login"
+ },
+ {
+  "name": "Вход: открытие",
+  "mode": "3G",
+  "first": 4416,
+  "settle": 7578,
+  "timedOut": false,
+  "n": 14,
+  "kb": 246,
+  "sw": 0,
+  "api": [
+   "GET /auth/providers"
+  ],
+  "big": [
+   "/fonts/unbounded-latin.woff2 50KB"
+  ],
+  "dups": [],
+  "errs": [],
+  "url": "/login"
+ },
+ {
+  "name": "Вход: открытие",
+  "mode": "3G повт.",
+  "first": 4357,
+  "settle": 5808,
+  "timedOut": false,
+  "n": 14,
+  "kb": 7,
+  "sw": 0,
+  "api": [
+   "GET /auth/providers"
+  ],
+  "big": [],
+  "dups": [],
+  "errs": [],
+  "url": "/login"
+ },
+ {
+  "name": "Вход: открытие",
+  "mode": "3G+SW",
+  "first": 4488,
+  "settle": 6154,
+  "timedOut": false,
+  "n": 14,
+  "kb": 7,
+  "sw": 0,
+  "api": [
+   "GET /auth/providers"
+  ],
+  "big": [],
+  "dups": [],
+  "errs": [],
+  "url": "/login"
+ },
+ {
+  "name": "/parent/ → кабинет родителя",
+  "mode": "сеть",
+  "first": 1239,
+  "settle": 1625,
+  "timedOut": false,
+  "n": 24,
+  "kb": 268,
+  "sw": 0,
+  "api": [
+   "GET /auth/providers"
+  ],
+  "big": [
+   "/fonts/unbounded-latin.woff2 50KB"
+  ],
+  "dups": [
+   "GET /app.css ×2",
+   "GET /lib.js ×2",
+   "GET /account.js ×2",
+   "GET /config.js ×2",
+   "GET /fonts/nunito-cyrillic.woff2 ×2",
+   "GET /fonts/nunito-latin.woff2 ×2"
+  ],
+  "errs": [],
+  "url": "/login?role=parent&next=cabinet%2F%23parent"
+ },
+ {
+  "name": "/parent/ → кабинет родителя",
+  "mode": "3G",
+  "first": 8945,
+  "settle": 11085,
+  "timedOut": false,
+  "n": 24,
+  "kb": 268,
+  "sw": 0,
+  "api": [
+   "GET /auth/providers"
+  ],
+  "big": [
+   "/fonts/unbounded-latin.woff2 50KB"
+  ],
+  "dups": [
+   "GET /app.css ×2",
+   "GET /lib.js ×2",
+   "GET /account.js ×2",
+   "GET /config.js ×2",
+   "GET /fonts/nunito-cyrillic.woff2 ×2",
+   "GET /fonts/nunito-latin.woff2 ×2"
+  ],
+  "errs": [],
+  "url": "/login?role=parent&next=cabinet%2F%23parent"
+ },
+ {
+  "name": "/parent/ → кабинет родителя",
+  "mode": "3G повт.",
+  "first": 8506,
+  "settle": 9908,
+  "timedOut": false,
+  "n": 26,
+  "kb": 14,
+  "sw": 0,
+  "api": [
+   "GET /auth/providers"
+  ],
+  "big": [],
+  "dups": [
+   "GET /app.css ×2",
+   "GET /lib.js ×2",
+   "GET /account.js ×2",
+   "GET /config.js ×2",
+   "GET /fonts/nunito-cyrillic.woff2 ×2",
+   "GET /fonts/nunito-latin.woff2 ×2",
+   "GET /fonts/unbounded-cyrillic.woff2 ×2",
+   "GET /fonts/unbounded-latin.woff2 ×2"
+  ],
+  "errs": [],
+  "url": "/login?role=parent&next=cabinet%2F%23parent"
+ },
+ {
+  "name": "/parent/ → кабинет родителя",
+  "mode": "3G+SW",
+  "first": 10509,
+  "settle": 11906,
+  "timedOut": false,
+  "n": 26,
+  "kb": 14,
+  "sw": 0,
+  "api": [
+   "GET /auth/providers"
+  ],
+  "big": [],
+  "dups": [
+   "GET /lib.js ×2",
+   "GET /account.js ×2",
+   "GET /app.css ×2",
+   "GET /config.js ×2",
+   "GET /fonts/nunito-cyrillic.woff2 ×2",
+   "GET /fonts/nunito-latin.woff2 ×2",
+   "GET /fonts/unbounded-cyrillic.woff2 ×2",
+   "GET /fonts/unbounded-latin.woff2 ×2"
+  ],
+  "errs": [],
+  "url": "/login?role=parent&next=cabinet%2F%23parent"
+ },
+ {
+  "name": "Оферта",
+  "mode": "сеть",
+  "first": 237,
+  "settle": 584,
+  "timedOut": false,
+  "n": 7,
+  "kb": 166,
+  "sw": 0,
+  "api": [],
+  "big": [
+   "/fonts/unbounded-latin.woff2 50KB"
+  ],
+  "dups": [],
+  "errs": [],
+  "url": "/offer"
+ },
+ {
+  "name": "Оферта",
+  "mode": "3G",
+  "first": 2724,
+  "settle": 6394,
+  "timedOut": false,
+  "n": 7,
+  "kb": 166,
+  "sw": 0,
+  "api": [],
+  "big": [
+   "/fonts/unbounded-latin.woff2 50KB"
+  ],
+  "dups": [],
+  "errs": [],
+  "url": "/offer"
+ },
+ {
+  "name": "Оферта",
+  "mode": "3G повт.",
+  "first": 2721,
+  "settle": 4075,
+  "timedOut": false,
+  "n": 7,
+  "kb": 4,
+  "sw": 0,
+  "api": [],
+  "big": [],
+  "dups": [],
+  "errs": [],
+  "url": "/offer"
+ },
+ {
+  "name": "Оферта",
+  "mode": "3G+SW",
+  "first": 2764,
+  "settle": 4123,
+  "timedOut": false,
+  "n": 7,
+  "kb": 4,
+  "sw": 0,
+  "api": [],
+  "big": [],
+  "dups": [],
+  "errs": [],
+  "url": "/offer"
+ }
+]
