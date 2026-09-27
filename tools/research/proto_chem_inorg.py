@@ -1579,7 +1579,7 @@ def attrs(r):
     a['эндотермическая'] = None if heat is None else heat == 'эндо'
     if r.get('rev'):
         rv = True
-    elif tags & _IRREV_TAGS:
+    elif tags & _IRREV_TAGS and not ('кислота+основание' in tags and not set(r['lhs']) & I.STRONG_ACIDS):
         rv = False
     else:
         rv = None
@@ -1624,8 +1624,7 @@ def describe(r):
     return f'взаимодействие {gen(a)} с {_ins_form(b, FORM_OF(r, b) or "")}'
 
 
-POOL17 = [r for r in RX if describe(r) and 'электролиз' not in r['type'] and
-          len({describe(x) for x in RX if describe(x) == describe(r)}) >= 1]
+POOL17 = [r for r in RX if 'электролиз' not in r['type'] and describe(r)]
 _DESC_COUNT = Counter(describe(r) for r in POOL17)
 POOL17 = [r for r in POOL17 if _DESC_COUNT[describe(r)] == 1]   # описание однозначно задаёт реакцию
 ATTR_NAMES = ['соединения', 'разложения', 'замещения', 'обмена', 'окислительно-восстановительная', 'гомогенная',
@@ -1799,7 +1798,7 @@ def _solve_17pairs(p):
 def g_17pairs(rng):
     pid = 'ch-ege-17-pairs'
     T = rng.choice(['соединения', 'замещения', 'обмена', 'окислительно-восстановительная', 'нейтрализации'])
-    cand = [r for r in POOL17 if _pair_desc(r) and len(r['lhs']) <= 3]
+    cand = [r for r in POOL17 if _pair_desc(r) and len(r['lhs']) <= 3 and not set(r['lhs']) & {'H2CO3', 'H2SO3'}]
     yes, no = [], []
     for r in shuffled(rng, cand):
         vals = {attrs(x).get(T) for x in _pair_rxs(r['rid'])}
@@ -1917,7 +1916,7 @@ def g_17reag(rng):
     T = rng.choice(['нейтрализации', 'окислительно-восстановительная', 'обмена', 'соединения'])
     yes, no = [], []
     for x, v in shuffled(rng, list(know(R + ('|' + RL if RL else '')).items())):
-        if not v:
+        if not v or x[0] in ('H2CO3', 'H2SO3'):
             continue
         rs = pos_rx(R, RL, x[0], x[1])
         vals = {attrs(r).get(T) for r in rs}
