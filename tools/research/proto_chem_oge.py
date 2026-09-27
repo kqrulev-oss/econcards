@@ -267,8 +267,10 @@ def _r_nonmetal(n, y):
     if k == 'nh3':
         return True if n == 'O2' else (False if n in ('H2', 'N2') else None)
     if k in ('oxb', 'oxam', 'oxa', 'oxn'):
+        if y == 'ZnO' and n in ('H2', 'C'):
+            return None
         if n == 'H2':
-            if y in ('CuO', 'FeO', 'Fe2O3', 'ZnO'):
+            if y in ('CuO', 'FeO', 'Fe2O3'):
                 return True
             return False if y in OX_ACT + ['MgO', 'Al2O3', 'CO2', 'SiO2', 'P2O5', 'SO3'] else None
         if n == 'C':
@@ -392,7 +394,9 @@ def _r_oxide(x, y):
             return None
         if 'CO' in s:
             other = (s - {'CO'}).pop()
-            if other in ('CuO', 'FeO', 'Fe2O3', 'ZnO'):
+            if other == 'ZnO':
+                return None
+            if other in ('CuO', 'FeO', 'Fe2O3'):
                 return True
             if other in OX_ACT + ['MgO', 'Al2O3', 'CO2', 'SiO2', 'P2O5', 'SO3']:
                 return False
