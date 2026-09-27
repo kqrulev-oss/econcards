@@ -374,7 +374,7 @@ export async function handleAuth(req, env, parts) {
     if (b === 'oauth' && OAUTH[c] && m === 'POST') {
       const prov = OAUTH[c];
       if (!prov.on(env)) throw new AuthError(503, 'Этот способ входа пока не настроен.');
-      await limit(env, 'oauth', ip(req), 30);
+      await limit(env, 'oauth', ip(req), 120); // класс за одним адресом, как у Telegram
       const origin = new URL(req.url).origin;
       const body = await readBody(req);
       const state = randomId(32);

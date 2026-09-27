@@ -2,7 +2,7 @@
 // темы с теорией, работа над ошибками и отправка прогресса репетитору.
 import { store, api, apiBase, loadPack, loadLibrary, renderCard, esc, safeHtml, text, day, dueDay, dueText, whenText, uid, plural, el, toast, modal, videoEmbed, courseStats, mergeLes } from './lib.js';
 import { renderLanding, openCode } from './landing.js';
-import { signedIn, account, loginDialog, logout, addRole, finishRedirectLogin, finishPayment, payDialog, planOf, TG_ICON } from './account.js';
+import { signedIn, account, loginDialog, signOut, addRole, finishRedirectLogin, finishPayment, payDialog, planOf, TG_ICON } from './account.js';
 
 const $app = document.getElementById('app');
 const INTERVALS = [0, 1, 3, 7, 14, 30, 60]; // дни до повтора по «коробкам»
@@ -1022,7 +1022,13 @@ function viewMe() {
     why: 'Прогресс, серия и ошибки сохранятся в аккаунте.',
     onDone: async () => { await addRole('student'); await pullProg(); sync(true); if (pack.limited) location.reload(); else viewMe(); },
   }));
-  $app.querySelector('#logout')?.addEventListener('click', async () => { if (progDirty && prog) await pushProg(); await logout(); viewMe(); });
+  // Выход: если всё уже в облаке, копии на устройстве стираются (signOut) — тогда начинаем с главной;
+  // если что-то не сохранилось, signOut сам спросит: скачать копию, оставить или не выходить
+  $app.querySelector('#logout')?.addEventListener('click', async () => {
+    if (progDirty && prog) await pushProg();
+    const { out, wiped } = await signOut();
+    if (wiped) location.replace('./'); else if (out) viewMe();
+  });
   $app.querySelector('#pcode')?.addEventListener('click', async () => {
     try {
       const { code } = await api('/me/parent-code', { method: 'POST' });
