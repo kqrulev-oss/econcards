@@ -5,7 +5,7 @@
 ОГЭ 2027: задания 1–6 (1 — элемент/простое/сложное вещество, 2 — модель атома «X, Y», 3 — ряд из трёх элементов,
 4 — соответствие «формула — степень окисления» (2 балла), 5 — вид связи, 6 — характеристика элементов).
 
-Справочные данные (элементы 1–36 + Sr, Ag, I, Ba, Pb; вещества с видом связи и решёткой) — в этом модуле.
+Справочные данные (элементы 1–36 + Rb, Sr, Ag, I, Cs, Ba, Pb; вещества с видом связи и решёткой) — в этом модуле.
 Генераторы берут готовые поля таблиц (конфигурация строкой, период, группа, степени окисления, связи);
 solve() пересчитывает ответ ДРУГИМ путём: электронную конфигурацию — по правилу Клечковского (с «провалом»
 электрона у Cr, Cu, Ag) из одного Z; положение в ПСХЭ, металличность, высшую/низшую степень окисления —
@@ -60,9 +60,11 @@ As 33 мышьяк мышьяка 4 5 A [Ar]3d10_4s2_4p3 2.18 -3,3,5 т n
 Se 34 селен селена 4 6 A [Ar]3d10_4s2_4p4 2.55 -2,4,6 т n
 Br 35 бром брома 4 7 A [Ar]3d10_4s2_4p5 2.96 -1,1,3,5,7 ж n
 Kr 36 криптон криптона 4 8 A [Ar]3d10_4s2_4p6 3.00 2 г g
+Rb 37 рубидий рубидия 5 1 A [Kr]5s1 0.82 1 т m
 Sr 38 стронций стронция 5 2 A [Kr]5s2 0.95 2 т m
 Ag 47 серебро серебра 5 1 B [Kr]4d10_5s1 1.93 1 т m
 I 53 иод иода 5 7 A [Kr]4d10_5s2_5p5 2.66 -1,1,3,5,7 т n
+Cs 55 цезий цезия 6 1 A [Xe]6s1 0.79 1 т m
 Ba 56 барий бария 6 2 A [Xe]6s2 0.89 2 т m
 Pb 82 свинец свинца 6 4 A [Xe]4f14_5d10_6s2_6p2 2.33 2,4 т m
 """
@@ -75,6 +77,10 @@ for _ln in _EL.strip().splitlines():
                  en=None if _en == '-' else float(_en), ox=() if _ox == '-' else tuple(int(x) for x in _ox.split(',')),
                  state=_st, kind=_kind)
 BY_Z = {v['Z']: k for k, v in E.items()}
+_DAT = dict(Li='литию', Be='бериллию', B='бору', C='углероду', N='азоту', O='кислороду', F='фтору', Na='натрию',
+            Mg='магнию', Al='алюминию', Si='кремнию', P='фосфору', S='сере', Cl='хлору', K='калию', Ca='кальцию')
+for _s, _d in _DAT.items():
+    E[_s]['dat'] = _d
 ROMAN = {1: 'I', 2: 'II', 3: 'III', 4: 'IV', 5: 'V', 6: 'VI', 7: 'VII', 8: 'VIII'}
 LNAME = 'spdf'
 
@@ -318,13 +324,17 @@ def val_text(sym):
 def fid(n, exam, *, trap, scale, kes, fmt_=None, style=None):
     if exam == 'ЕГЭ':
         return dict(answer_format=fmt_ or 'две цифры — номера элементов/веществ, порядок не важен (как в КИМ 2027)',
-                    style=style or 'условие КИМ: ряд из пяти элементов/перечень пяти веществ, «Определите…»/«Из числа '
-                                   'указанных… выберите…»; справочные данные — ПСХЭ',
+                    style=style or 'официально-деловой стиль КИМ («Укажите два элемента ряда…», «в невозбуждённом '
+                                   'состоянии», «Номера выбранных элементов запишите в поле ответа»); ряд из пяти '
+                                   'элементов (в карточке — свой ряд, в КИМ он общий для заданий 1–3) или перечень пяти '
+                                   'веществ; справочные данные — только ПСХЭ; формулировки перефразированы (сходство с '
+                                   'банком < 0,3)',
                     level='Б', time_min=2.5, scale=scale, trap=trap, kes=kes,
                     score='1 балл, ответ засчитывается только при полном совпадении')
     lv = {4: 'П'}.get(n, 'Б')
     return dict(answer_format=fmt_ or 'две цифры — номера выбранных ответов, порядок не важен',
-                style=style or 'формулировка КИМ ОГЭ 2027: «Выберите два…», справочные данные — ПСХЭ',
+                style=style or 'стиль КИМ ОГЭ 2027 («Выберите два…», «Укажите два…»), пять вариантов, справочные '
+                               'данные — ПСХЭ; формулировки перефразированы (сходство с банком < 0,3)',
                 level=lv, time_min=7 if n == 4 else 3, scale=scale, trap=trap, kes=kes,
                 score='2 балла; 1 балл при одной ошибке в позиции' if n == 4 else '1 балл, полное совпадение')
 
@@ -332,118 +342,300 @@ def fid(n, exam, *, trap, scale, kes, fmt_=None, style=None):
 MAIN = [s for s, e in E.items() if e['sub'] == 'A' and e['kind'] != 'g' and s not in ('Pb',)]
 DBLK = ['Sc', 'Ti', 'V', 'Cr', 'Mn', 'Fe', 'Co', 'Ni', 'Cu', 'Zn']
 DCOMMON = ['Cr', 'Mn', 'Fe', 'Cu', 'Zn']
-ROW_TAIL = ['Запишите номера выбранных элементов.', 'Запишите в поле ответа номера выбранных элементов.',
-            'В ответ запишите номера двух элементов.']
+# ================================================================= ЕГЭ 1. Строение электронных оболочек атомов
+K1 = ['1.1']
+TIME_E1 = ('ряд из пяти элементов (главные подгруппы периодов 1–5, d-элементы 4-го периода), как в заданиях 1–3 банка '
+           'и демоверсии 2027')
+TAILS = ['Номера выбранных элементов запишите в поле ответа.', 'В ответ запишите номера двух элементов.',
+         'Запишите в ответ номера этих элементов.']
+GS = 'в невозбуждённом состоянии'
 
 
 def row_card(pid, rng, items, pred, q, e_lines, p):
     ans = ids_of(items, pred)
     if len(ans) != 2:
         raise Retry
-    e = '; '.join(e_lines) + f'. Условию отвечают элементы под номерами {", ".join(ans)}.'
-    return pcard(pid, q + ' ' + rng.choice(ROW_TAIL), ans, e, k='many', o=opts(items), p=dict(p, row=items))
+    e = '; '.join(e_lines) + f'. Условию отвечают элементы {items[int(ans[0]) - 1]} и {items[int(ans[1]) - 1]}; ' \
+                             f'ответ {"".join(ans)}.'
+    return pcard(pid, q + ' ' + rng.choice(TAILS), ans, e, k='many', o=opts(items), p=dict(p, row=items))
 
 
-# ================================================================= ЕГЭ 1. Строение электронных оболочек атомов
-K1 = ['1.1']
-TIME_E1 = 'ряд из пяти элементов (главные подгруппы I–VII периодов 1–5, иногда Cr, Mn, Fe, Cu, Zn), как в банке'
+def pick_pair(rng, pool, f):
+    """Ряд: ровно два элемента с одинаковым значением f, у остальных трёх значения разные и другие."""
+    by = {}
+    for s in pool:
+        by.setdefault(f(s), []).append(s)
+    vs = [v for v, xs in by.items() if len(xs) >= 2]
+    if not vs:
+        raise Retry
+    v = rng.choice(vs)
+    others = [w for w in by if w != v]
+    if len(others) < 3:
+        raise Retry
+    items = rng.sample(by[v], 2) + [rng.choice(by[w]) for w in rng.sample(others, 3)]
+    rng.shuffle(items)
+    return items, v
+
+
+def pair_pred(items, f):
+    vals = [f(s) for s in items]
+    return lambda s: vals.count(f(s)) == 2
+
+
+def sub_unpaired(cells, l=None, outer=False):
+    n0 = outer_n(cells)
+    return sum(min(c, 2 * (2 * ll + 1) - c) for (n, ll), c in cells.items()
+               if (l is None or ll == l) and (not outer or n == n0))
+
+
+def r_unp(Z, l=None, outer=False):
+    """Второй путь: электроны раскладываются по орбиталям подуровня по одному (правило Хунда)."""
+    occ, _ = aufbau(Z)
+    n0 = r_period(Z)
+    tot = 0
+    for (n, ll), c in occ.items():
+        if (l is not None and ll != l) or (outer and n != n0):
+            continue
+        boxes = [0] * (2 * ll + 1)
+        for i in range(c):
+            boxes[i % len(boxes)] += 1
+        tot += boxes.count(1)
+    return tot
+
+
+UNP_MODES = ['count', 'count', 'zero', 'same', 'outer1', 's', 'p1', 'donly', 'dsame']
 
 
 def _solve_unpaired(p):
-    v = p['v']
-    return ids_of(p['row'], lambda s: r_unpaired(z_of(s)) == v)
+    m, row = p['mode'], p['row']
+    zs = {s: z_of(s) for s in row}
+    if m == 'count':
+        f = lambda s: r_unp(zs[s]) == p['v']
+    elif m == 'zero':
+        f = lambda s: r_unp(zs[s]) == 0
+    elif m == 'same':
+        vals = [r_unp(zs[s]) for s in row]
+        f = lambda s: vals.count(r_unp(zs[s])) == 2
+    elif m == 'outer1':
+        f = lambda s: r_unp(zs[s], outer=True) == 1
+    elif m == 's':
+        f = lambda s: r_unp(zs[s], l=0) > 0
+    elif m == 'p1':
+        f = lambda s: r_unp(zs[s], l=1) == 1
+    elif m == 'donly':
+        f = lambda s: r_unp(zs[s]) > 0 and r_unp(zs[s], l=2) == r_unp(zs[s])
+    else:
+        vals = [r_unp(zs[s], l=2) for s in row]
+        f = lambda s: vals.count(r_unp(zs[s], l=2)) == 2
+    return ids_of(row, f)
 
 
-@proto('ch-ege-01-unpaired', 'ЕГЭ', 1, 'Число неспаренных электронов в основном состоянии',
-       invariant='по электронной конфигурации (правило Хунда) найти число неспаренных электронов у каждого атома ряда',
-       varies='ряд из пяти элементов, требуемое число неспаренных электронов (0–3) или атом-эталон',
-       answer_rule='выбрать два элемента, у атомов которых неспаренных электронов ровно столько, сколько требуется',
-       mistakes=['спаривают p-электроны до заполнения всех орбиталей (у N считают 1)',
-                 'у Cr и Cu забывают «провал» электрона', 'путают число неспаренных с числом внешних электронов'],
+@proto('ch-ege-01-unpaired', 'ЕГЭ', 1, 'Неспаренные электроны атома в основном состоянии',
+       invariant='записать электронную конфигурацию (валентные подуровни) и разместить электроны по орбиталям '
+                 'по правилу Хунда; сосчитать неспаренные (всего, на внешнем уровне, на s-, p- или d-подуровне)',
+       varies='ряд из пяти элементов; что спрашивают: число неспаренных (0–3), «одинаковое число», один неспаренный '
+              'на внешнем уровне, неспаренный s-электрон, один неспаренный p-электрон, неспаренные только на d, '
+              'одинаковое число неспаренных d-электронов',
+       answer_rule='выбрать два элемента, удовлетворяющих условию; у Cr и Cu учесть «провал» (4s¹)',
+       mistakes=['спаривают p-электроны до заполнения всех орбиталей (у N считают один неспаренный)',
+                 'у Cr и Cu забывают «провал» электрона', 'путают число неспаренных с числом внешних электронов',
+                 'у Fe, Mn ищут неспаренные на внешнем 4s-подуровне'],
        solve=_solve_unpaired, kes=K1,
-       fidelity=fid(1, 'ЕГЭ', trap='правило Хунда: N, P — 3 неспаренных; O, S — 2; d-элементы Cr (6), Mn (5)',
-                    scale=TIME_E1, kes=['1.1']))
+       fidelity=fid(1, 'ЕГЭ', trap='правило Хунда (N, P — 3; O, S — 2); d-элементы: неспаренные только на 3d у Mn, Fe; '
+                                    'у Cr, Cu — неспаренный 4s-электрон', scale=TIME_E1, kes=['1.1']))
 def g_unpaired(rng):
     pid = 'ch-ege-01-unpaired'
-    pool = MAIN + (DCOMMON if rng.random() < 0.4 else [])
-    v = rng.choice([0, 1, 2, 3, 3, 2])
-    u = lambda s: unpaired_hund(cfg_cells(s))
-    items = pick_row(rng, [s for s in pool if u(s) == v], [s for s in pool if u(s) != v])
-    mode = rng.randrange(3)
-    if mode == 0 and v:
-        q = (f'Определите, у атомов каких двух из указанных в ряду элементов в основном состоянии '
-             f'{v} {plural(v, "неспаренный электрон", "неспаренных электрона", "неспаренных электронов")}.')
-    elif mode == 1 or not v:
-        q = ('Определите, атомы каких двух из указанных в ряду элементов в основном состоянии не содержат неспаренных '
-             'электронов.' if not v else
-             f'Какие два из указанных в ряду элементов в основном состоянии атома имеют по '
-             f'{v} {plural(v, "неспаренному электрону", "неспаренных электрона", "неспаренных электронов")}?')
+    mode = rng.choice(UNP_MODES)
+    cf = {s: cfg_cells(s) for s in E}
+    u = lambda s: sub_unpaired(cf[s])
+    if mode in ('count', 'zero'):
+        pool = MAIN + (DCOMMON if rng.random() < 0.4 else [])
+        v = 0 if mode == 'zero' else rng.choice([1, 2, 3])
+        pred = lambda s: u(s) == v
+        items = pick_row(rng, [s for s in pool if pred(s)], [s for s in pool if not pred(s)])
+        if v == 0:
+            q = rng.choice([f'Укажите два элемента ряда, атомы которых {GS} не имеют ни одного неспаренного электрона.',
+                            f'У атомов каких двух элементов ряда {GS} все электроны спарены?'])
+        else:
+            w = {1: 'один неспаренный электрон', 2: 'два неспаренных электрона', 3: 'три неспаренных электрона'}[v]
+            q = rng.choice([f'Укажите два элемента ряда, атомы которых {GS} имеют ровно {w}.',
+                            f'У атомов каких двух элементов ряда {GS} число неспаренных электронов равно {v}?'])
+        lines = [f'{s} ({val_text(s)}) — {u(s)}' for s in items]
+        head = 'Неспаренные электроны: '
+    elif mode == 'same':
+        pool = MAIN + (DCOMMON if rng.random() < 0.4 else [])
+        items, v = pick_pair(rng, pool, u)
+        pred = pair_pred(items, u)
+        q = rng.choice([f'Укажите два элемента ряда, у атомов которых {GS} равное число неспаренных электронов.',
+                        f'Атомы каких двух элементов ряда {GS} имеют одно и то же число неспаренных электронов?'])
+        lines = [f'{s} ({val_text(s)}) — {u(s)}' for s in items]
+        head = 'Неспаренные электроны: '
+    elif mode == 'outer1':
+        pool = MAIN + DCOMMON
+        f = lambda s: sub_unpaired(cf[s], outer=True)
+        pred = lambda s: f(s) == 1
+        items = pick_row(rng, [s for s in pool if pred(s)], [s for s in pool if not pred(s)])
+        q = rng.choice([f'Укажите два элемента ряда, у атомов которых {GS} на внешнем уровне находится ровно один '
+                        f'неспаренный электрон.',
+                        f'У атомов каких двух элементов ряда {GS} внешний энергетический уровень содержит единственный '
+                        f'неспаренный электрон?'])
+        lines = [f'{s} ({val_text(s)}) — {f(s)}' for s in items]
+        head = 'Неспаренные электроны внешнего уровня: '
+    elif mode == 's':
+        pool = MAIN + DCOMMON
+        f = lambda s: sub_unpaired(cf[s], l=0)
+        pred = lambda s: f(s) > 0
+        items = pick_row(rng, [s for s in pool if pred(s)], [s for s in pool if not pred(s)])
+        q = f'Укажите два элемента ряда, у атомов которых {GS} есть неспаренный электрон на s-подуровне.'
+        lines = [f'{s} ({val_text(s)})' for s in items]
+        head = 'Валентные подуровни: '
+    elif mode == 'p1':
+        pool = MAIN
+        f = lambda s: sub_unpaired(cf[s], l=1)
+        pred = lambda s: f(s) == 1
+        items = pick_row(rng, [s for s in pool if pred(s)], [s for s in pool if not pred(s)])
+        q = f'Укажите два элемента ряда, у атомов которых {GS} на p-подуровне находится ровно один неспаренный электрон.'
+        lines = [f'{s} ({val_text(s)}) — {f(s)}' for s in items]
+        head = 'Неспаренные p-электроны: '
+    elif mode == 'donly':
+        pool = [s for s in MAIN if u(s) > 0] + DBLK
+        pred = lambda s: u(s) > 0 and sub_unpaired(cf[s], l=2) == u(s)
+        items = pick_row(rng, [s for s in pool if pred(s)], [s for s in pool if not pred(s)])
+        q = f'Укажите два элемента ряда, у атомов которых {GS} все неспаренные электроны расположены на d-подуровне.'
+        lines = [f'{s} ({val_text(s)})' for s in items]
+        head = 'Валентные подуровни: '
     else:
-        refs = [s for s in MAIN + DBLK if u(s) == v and s not in items]
-        ref = rng.choice(refs)
-        q = (f'Определите, атомы каких двух из указанных в ряду элементов в основном состоянии имеют столько же '
-             f'неспаренных электронов, сколько атом {E[ref]["gen"]}.')
-    lines = [f'{s} ({val_text(s)}) — {u(s)}' for s in items]
-    return row_card(pid, rng, items, lambda s: u(s) == v, q, ['Неспаренные электроны: ' + lines[0]] + lines[1:], {'v': v})
+        f = lambda s: sub_unpaired(cf[s], l=2)
+        items, v = pick_pair(rng, DBLK, f)
+        pred = pair_pred(items, f)
+        q = f'Укажите два элемента ряда, атомы которых {GS} содержат одинаковое число неспаренных d-электронов.'
+        lines = [f'{s} ({val_text(s)}) — {f(s)}' for s in items]
+        head = 'Неспаренные d-электроны: '
+    p = {'mode': mode}
+    if mode == 'count':
+        p['v'] = v
+    return row_card(pid, rng, items, pred, q, [head + lines[0]] + lines[1:], p)
+
+
+def valence_e(s):
+    """Валентные электроны: s/p-элементы — внешний слой, d-элементы — (n−1)d + ns (только до d⁵)."""
+    cells = cfg_cells(s)
+    n = outer_n(cells)
+    if E[s]['sub'] == 'B':
+        return cells.get((n, 0), 0) + cells.get((n - 1, 2), 0)
+    return outer_count(cells)
+
+
+OUT_MODES = ['count', 'same', 'same', 'formula', 'valence', 'valsame', 'sonly']
+DVAL = ['Sc', 'Ti', 'V', 'Cr', 'Mn']
 
 
 def _solve_outer(p):
-    mode = p['mode']
-    if mode == 'lack':
-        return ids_of(p['row'], lambda s: 8 - r_outer(z_of(s)) == p['v'])
-    if mode == 'formula':
-        return ids_of(p['row'], lambda s: r_block(z_of(s)) != 'd' and r_outer(z_of(s)) == p['v'])
-    return ids_of(p['row'], lambda s: r_outer(z_of(s)) == p['v'])
+    m, row = p['mode'], p['row']
+    zs = {s: z_of(s) for s in row}
+
+    def val(Z):
+        occ, _ = aufbau(Z)
+        n = r_period(Z)
+        return occ.get((n, 0), 0) + occ.get((n - 1, 2), 0) if r_block(Z) == 'd' else r_outer(Z)
+    if m == 'count':
+        f = lambda s: r_outer(zs[s]) == p['v']
+    elif m == 'same':
+        vals = [r_outer(zs[s]) for s in row]
+        f = lambda s: vals.count(r_outer(zs[s])) == 2
+    elif m == 'formula':
+        f = lambda s: r_block(zs[s]) != 'd' and r_outer(zs[s]) == p['v']
+    elif m == 'valence':
+        f = lambda s: val(zs[s]) == p['v']
+    elif m == 'valsame':
+        vals = [val(zs[s]) for s in row]
+        f = lambda s: vals.count(val(zs[s])) == 2
+    else:
+        f = lambda s: r_block(zs[s]) == 's'
+    return ids_of(row, f)
 
 
-@proto('ch-ege-01-outer', 'ЕГЭ', 1, 'Число электронов внешнего уровня / его формула',
-       invariant='по положению в ПСХЭ (группа, подгруппа) определить число электронов на внешнем энергетическом уровне',
-       varies='ряд; требуемое число внешних электронов, формула внешнего слоя ns^a np^b, «не хватает до завершения», '
-              'атом-эталон',
-       answer_rule='у элементов главных подгрупп внешних электронов = номер группы; у d-элементов внешний уровень — ns '
-                   '(1 у Cr и Cu, 2 у остальных)',
+@proto('ch-ege-01-outer', 'ЕГЭ', 1, 'Электроны внешнего уровня и валентные электроны',
+       invariant='по положению в ПСХЭ определить число электронов внешнего уровня (формулу внешнего уровня) или число '
+                 'валентных электронов',
+       varies='ряд; что спрашивают: заданное число внешних электронов, «одинаковое число» (пара), формула внешнего '
+              'уровня ns¹ / ns² / ns²np⁴…, число валентных электронов (в т. ч. у d-элементов), все валентные '
+              'электроны на s-подуровне',
+       answer_rule='у элементов главных подгрупп внешних (валентных) электронов = номер группы; у d-элементов внешний '
+                   'уровень — ns (1 у Cr и Cu, 2 у остальных), валентные — (n−1)d + ns',
        mistakes=['у d-элементов считают внешними и d-электроны', 'путают номер периода и число внешних электронов',
-                 'не учитывают «провал» электрона у Cr, Cu'],
+                 'считают Zn s-элементом', 'не учитывают «провал» электрона у Cr, Cu'],
        solve=_solve_outer, kes=K1,
-       fidelity=fid(1, 'ЕГЭ', trap='d-элементы: у Fe, Mn, Zn на внешнем уровне 2 электрона, у Cr и Cu — 1',
-                    scale=TIME_E1, kes=['1.1']))
+       fidelity=fid(1, 'ЕГЭ', trap='у Fe, Mn, Zn на внешнем уровне 2 электрона (как у Mg), у Cr и Cu — 1 (как у Na); '
+                                    'у Cr 6 валентных электронов, как у S', scale=TIME_E1, kes=['1.1']))
 def g_outer(rng):
     pid = 'ch-ege-01-outer'
     oc = lambda s: outer_count(cfg_cells(s))
-    mode = rng.choice(['count', 'count', 'formula', 'lack', 'ref'])
-    if mode == 'formula':
-        pool = MAIN
+    mode = rng.choice(OUT_MODES)
+    p = {'mode': mode}
+    if mode == 'count':
+        pool = MAIN + (DCOMMON if rng.random() < 0.5 else [])
         v = rng.randint(1, 7)
         pred = lambda s: oc(s) == v
-        a, b = min(v, 2), max(v - 2, 0)
-        f = f'ns{str(a).translate(SUP)}' + (f'np{str(b).translate(SUP)}' if b else '')
-        q = f'Определите, атомы каких двух из указанных в ряду элементов имеют электронную формулу внешнего уровня {f}.'
-    elif mode == 'lack':
-        pool = [s for s in MAIN if s != 'H']
-        v = rng.randint(1, 4)
-        pred = lambda s: 8 - oc(s) == v
-        q = (f'Определите, атомам каких двух из указанных в ряду элементов до завершения внешнего энергетического '
-             f'уровня недостаёт {v} {plural(v, "электрона", "электронов", "электронов")}.')
-    else:
+        items = pick_row(rng, [s for s in pool if pred(s)], [s for s in pool if not pred(s)])
+        q = (f'Укажите два элемента ряда, у атомов которых {GS} на внешнем энергетическом уровне находится '
+             f'{v} {plural(v, "электрон", "электрона", "электронов")}.')
+        p['v'] = v
+        f = oc
+    elif mode == 'same':
         pool = MAIN + (DCOMMON if rng.random() < 0.5 else [])
-        v = rng.randint(1, 7) if rng.random() < 0.7 else rng.choice([1, 2])
+        items, v = pick_pair(rng, pool, oc)
+        pred = pair_pred(items, oc)
+        q = rng.choice([f'Укажите два элемента ряда, атомы которых {GS} имеют равное число электронов на внешнем '
+                        f'энергетическом уровне.',
+                        f'Атомы каких двух элементов ряда {GS} имеют сходное строение внешнего энергетического '
+                        f'уровня (одинаковое число внешних электронов)?'])
+        f = oc
+    elif mode == 'formula':
+        v = rng.randint(1, 7)
         pred = lambda s: oc(s) == v
-        if mode == 'count':
-            q = (f'Определите, у атомов каких двух из указанных в ряду элементов на внешнем энергетическом уровне '
-                 f'находится {v} {plural(v, "электрон", "электрона", "электронов")}.')
-        else:
-            refs = [s for s in MAIN if oc(s) == v]
-            ref = rng.choice(refs)
-            q = (f'Определите, атомы каких двух из указанных в ряду элементов имеют на внешнем энергетическом уровне '
-                 f'столько же электронов, сколько атом {E[ref]["gen"]} в основном состоянии.')
-            mode = 'count'
-    items = pick_row(rng, [s for s in pool if pred(s)], [s for s in pool if not pred(s)])
-    lines = [f'{s}: {val_text(s)} — {oc(s)}' for s in items]
-    return row_card(pid, rng, items, pred, q, ['Электроны внешнего уровня: ' + lines[0]] + lines[1:], {'mode': mode, 'v': v})
+        items = pick_row(rng, [s for s in MAIN if pred(s)], [s for s in MAIN if not pred(s)])
+        a, b = min(v, 2), max(v - 2, 0)
+        fm = f'ns{str(a).translate(SUP)}' + (f'np{str(b).translate(SUP)}' if b else '')
+        q = rng.choice([f'Укажите два элемента ряда, для атомов которых {GS} внешний электронный уровень описывается '
+                        f'формулой {fm}.',
+                        f'Электронная формула внешнего уровня атомов каких двух элементов ряда {GS} имеет вид {fm}?'])
+        p['v'] = v
+        f = oc
+    elif mode == 'valence':
+        pool = MAIN + DVAL
+        v = rng.choice([3, 4, 5, 6, 7])
+        pred = lambda s: valence_e(s) == v
+        items = pick_row(rng, [s for s in pool if pred(s)], [s for s in pool if not pred(s)])
+        q = (f'Укажите два элемента ряда, атомы которых {GS} имеют {v} '
+             f'{plural(v, "валентный электрон", "валентных электрона", "валентных электронов")}.')
+        p['v'] = v
+        f = valence_e
+    elif mode == 'valsame':
+        pool = MAIN + DVAL
+        items, v = pick_pair(rng, pool, valence_e)
+        pred = pair_pred(items, valence_e)
+        q = f'Укажите два элемента ряда, у атомов которых {GS} одинаковое число валентных электронов.'
+        f = valence_e
+    else:
+        pool = MAIN + ['Sc', 'Ti', 'V', 'Mn', 'Fe', 'Co', 'Ni']
+        pred = lambda s: block_of(s) == 's'
+        items = pick_row(rng, [s for s in pool if pred(s)], [s for s in pool if not pred(s)])
+        q = f'Укажите два элемента ряда, у атомов которых {GS} все валентные электроны находятся на s-подуровне.'
+        f = valence_e
+    lines = [f'{s}: {val_text(s)} — {f(s)}' for s in items]
+    return row_card(pid, rng, items, pred, q, ['Внешние (валентные) электроны: ' + lines[0]] + lines[1:], p)
+
+
+def block_of(s):
+    e = E[s]
+    if e['sub'] == 'B':
+        return 'd'
+    return 's' if e['group'] <= 2 and s != 'He' else 'p'
 
 
 NOBLE = {'He': 2, 'Ne': 10, 'Ar': 18, 'Kr': 36}
-ION_POOL = ['Li', 'Na', 'K', 'Be', 'Mg', 'Ca', 'Sr', 'Ba', 'Al', 'N', 'O', 'F', 'P', 'S', 'Cl', 'Se', 'Br', 'I']
+ION_POOL = ['Li', 'Na', 'K', 'Be', 'Mg', 'Ca', 'Sr', 'Ba', 'Al', 'N', 'O', 'F', 'P', 'S', 'Cl', 'Se', 'Br', 'I', 'As']
 
 
 def ion_q(s):
@@ -458,52 +650,64 @@ def ion_str(s, q=None):
 
 
 def _solve_ion(p):
-    zn = {'He': 2, 'Ne': 10, 'Ar': 18, 'Kr': 36}[p['gas']]
-    return ids_of(p['row'], lambda s: r_ion_charge(z_of(s)) is not None and z_of(s) - r_ion_charge(z_of(s)) == zn)
+    zn = {'Ne': 10, 'Ar': 18, 'Kr': 36}[p['gas']]
+    sign = p['sign']
+
+    def ok(s):
+        q = r_ion_charge(z_of(s))
+        if q is None or (sign > 0 and q < 0) or (sign < 0 and q > 0):
+            return False
+        return z_of(s) - q == zn
+    return ids_of(p['row'], ok)
 
 
-@proto('ch-ege-01-ion', 'ЕГЭ', 1, 'Ион с электронной конфигурацией благородного газа',
+@proto('ch-ege-01-ion', 'ЕГЭ', 1, 'Катионы/анионы с электронной конфигурацией благородного газа',
        invariant='построить простой ион элемента (металл отдаёт внешние электроны, неметалл достраивает октет) и '
                  'сравнить его конфигурацию с конфигурацией благородного газа',
-       varies='ряд, благородный газ (Ne, Ar, Kr), способ задать конфигурацию (название газа или электронная формула)',
-       answer_rule='число электронов иона Z − q должно совпасть с Z благородного газа',
-       mistakes=['путают заряд иона неметалла (берут +, а не −)', 'выбирают элемент, чей атом (а не ион) похож на газ',
-                 'у ионов d-элементов ищут конфигурацию благородного газа'],
+       varies='ряд; благородный газ (Ne, Ar, Kr); какие ионы (катионы, анионы, любые); как задана конфигурация '
+              '(название газа, полная формула, формула внешнего уровня)',
+       answer_rule='число электронов иона Z − q совпадает с Z благородного газа; учитывать знак иона',
+       mistakes=['берут атом, а не ион', 'выбирают неметалл, когда спрашивают о катионах',
+                 'соседние по Z элементы дают ионы разных газов'],
        solve=_solve_ion, kes=K1,
-       fidelity=fid(1, 'ЕГЭ', trap='изоэлектронные частицы: S²⁻, Cl⁻, K⁺, Ca²⁺ — как у Ar; соседние по Z элементы '
-                                    'дают ионы разных газов', scale=TIME_E1, kes=['1.1']))
+       fidelity=fid(1, 'ЕГЭ', trap='изоэлектронные частицы: S²⁻, Cl⁻, K⁺, Ca²⁺ — как у Ar; в ряду есть анион того же '
+                                    'газа, когда спрашивают о катионах', scale=TIME_E1, kes=['1.1']))
 def g_ion(rng):
     pid = 'ch-ege-01-ion'
-    gas = rng.choice(['Ne', 'Ne', 'Ar', 'Ar', 'Kr'])
+    sign = rng.choice([1, -1, 0])
+    gases = {1: ['Ne', 'Ar'], -1: ['Ne', 'Ar', 'Kr'], 0: ['Ne', 'Ar', 'Kr']}[sign]
+    gas = rng.choice(gases)
     zn = NOBLE[gas]
-    pred = lambda s: s in ION_POOL and E[s]['Z'] - ion_q(s) == zn
+    pred = lambda s: E[s]['Z'] - ion_q(s) == zn and (sign == 0 or sign * ion_q(s) > 0)
     no = [s for s in ION_POOL if not pred(s)] + (['Fe', 'Cu', 'Zn'] if rng.random() < 0.3 else [])
     items = pick_row(rng, [s for s in ION_POOL if pred(s)], no)
-    mode = rng.randrange(3)
-    full = cfg_text(cfg_cells(gas) if gas in E else _core_cells(gas))
-    if mode == 0:
-        q = (f'Определите, какие два из указанных в ряду элементов образуют простые ионы с такой же электронной '
-             f'конфигурацией, как у атома {E[gas]["gen"]}.')
-    elif mode == 1:
-        q = (f'Определите, атомы каких двух из указанных в ряду элементов, приняв или отдав электроны до завершения '
-             f'внешнего уровня, образуют ионы с электронной формулой {full}.')
+    who = {1: 'катионы', -1: 'анионы', 0: 'простые ионы'}[sign]
+    full = cfg_text(_core_cells(gas))
+    outer = ''.join(x for x in re.findall(r'\d[spd][⁰¹²³⁴⁵⁶⁷⁸⁹]+', full)[-2:])
+    form = rng.randrange(3)
+    if form == 0:
+        cond = f'имеют такую же электронную конфигурацию, как атом {E[gas]["gen"]}'
+    elif form == 1:
+        cond = f'имеют электронную конфигурацию {full}'
     else:
-        q = (f'Определите, для каких двух из указанных в ряду элементов электронная конфигурация иона, характерного '
-             f'для их соединений, совпадает с конфигурацией атома {E[gas]["gen"]} ({full}).')
+        cond = f'имеют конфигурацию внешнего энергетического уровня {outer}'
+    q = rng.choice([f'Укажите два элемента ряда, {who} которых {cond}.',
+                    f'Для каких двух элементов ряда {who}, образуемые в соединениях, {cond}?'])
     lines = []
     for s in items:
         if s in ION_POOL:
-            lines.append(f'{ion_str(s)} — {E[s]["Z"] - ion_q(s)} электронов')
+            lines.append(f'{ion_str(s)} — {E[s]["Z"] - ion_q(s)} e')
         else:
             lines.append(f'{s} — d-элемент, его ионы не имеют конфигурации благородного газа')
-    return row_card(pid, rng, items, pred, q, [f'У {gas} {zn} электронов; ' + lines[0]] + lines[1:], {'gas': gas})
+    return row_card(pid, rng, items, pred, q, [f'У атома {gas} {zn} электронов; ' + lines[0]] + lines[1:],
+                    {'gas': gas, 'sign': sign})
 
 
 REF_PARTICLES = [('Na', 1), ('Mg', 2), ('Al', 3), ('K', 1), ('Ca', 2), ('F', -1), ('O', -2), ('Cl', -1), ('S', -2),
                  ('N', -3), ('Li', 1), ('Fe', 2), ('Fe', 3), ('Mn', 2), ('Cu', 1), ('Zn', 2), ('Cr', 3), ('Ne', 0),
                  ('Ar', 0), ('Na', 0), ('Mg', 0), ('K', 0), ('Ca', 0), ('P', 0), ('Cl', 0), ('Be', 0), ('Cr', 0),
                  ('Cu', 0), ('Br', -1), ('Se', -2)]
-SUB_WORD = {'s': 's-электронов', 'p': 'p-электронов', 'd': 'd-электронов'}
+SUB_GEN = {'s': 's-электронов', 'p': 'p-электронов', 'd': 'd-электронов'}
 
 
 def counts(sym, q=0):
@@ -520,44 +724,85 @@ def counts(sym, q=0):
 def particle_name(sym, q):
     if q == 0:
         return f'атом {E[sym]["gen"]}'
-    kind = 'катион' if q > 0 else 'анион'
-    return f'{kind} {ion_str(sym, q)}'
+    return f'{"катион" if q > 0 else "анион"} {ion_str(sym, q)}'
 
 
 def _solve_sublevel(p):
-    ref = r_counts(z_of(p['ref'][0]), p['ref'][1])[p['sub']]
-    return ids_of(p['row'], lambda s: r_counts(z_of(s))[p['sub']] == ref)
+    sub, row, m = p['sub'], p['row'], p['mode']
+    if m == 'ref':
+        ref = r_counts(z_of(p['ref'][0]), p['ref'][1])[sub]
+        return ids_of(row, lambda s: r_counts(z_of(s))[sub] == ref)
+    if m == 'ionref':
+        ref = r_counts(z_of(p['ref'][0]), p['ref'][1])[sub]
+        return ids_of(row, lambda s: r_ion_charge(z_of(s)) is not None and
+                      r_counts(z_of(s), r_ion_charge(z_of(s)))[sub] == ref)
+    if m == 'exact':
+        return ids_of(row, lambda s: r_counts(z_of(s))[sub] == p['v'])
+    vals = [r_counts(z_of(s))[sub] for s in row]
+    return ids_of(row, lambda s: vals.count(r_counts(z_of(s))[sub]) == 2)
 
 
-@proto('ch-ege-01-sublevel', 'ЕГЭ', 1, 'Число s-, p- или d-электронов как у атома/иона-эталона',
-       invariant='записать полную электронную конфигурацию атомов ряда и частицы-эталона, сосчитать электроны '
-                 'одного типа подуровня',
-       varies='ряд, тип подуровня (s, p, d), частица-эталон (атом, катион, анион)',
+@proto('ch-ege-01-sublevel', 'ЕГЭ', 1, 'Число s-, p- или d-электронов атома/иона',
+       invariant='записать полную электронную конфигурацию и сосчитать все электроны одного типа подуровня '
+                 '(s, p или d) у атома или иона',
+       varies='ряд; тип подуровня; условие: как у частицы-эталона (атом, катион, анион), «одинаковое число» (пара), '
+              'заданное число d-электронов (5, 10), ионы элементов ряда против атома-эталона',
        answer_rule='совпадает суммарное число электронов на всех подуровнях данного типа',
-       mistakes=['считают только внешний подуровень, а не все s (p, d) подуровни', 'забывают снять/добавить электроны '
-                 'у иона', 'у Cr, Cu не учитывают провал (s-электронов на один меньше)'],
+       mistakes=['считают только внешний подуровень, а не все s (p, d)', 'забывают снять/добавить электроны у иона',
+                 'у Cr, Cu не учитывают провал (s-электронов на один меньше)'],
        solve=_solve_sublevel, kes=K1,
-       fidelity=fid(1, 'ЕГЭ', trap='как в демоверсии 2027: число s-электронов как у катиона натрия; провал у Cr/Cu; '
-                                    'у ионов d-элементов сначала уходят 4s-электроны', scale=TIME_E1, kes=['1.1']))
+       fidelity=fid(1, 'ЕГЭ', trap='как в демоверсии 2027: число s-электронов как у катиона натрия; Cr и Mn — по пять '
+                                    'd-электронов', scale=TIME_E1, kes=['1.1']))
 def g_sublevel(rng):
     pid = 'ch-ege-01-sublevel'
+    mode = rng.choice(['ref', 'ref', 'ionref', 'exact', 'same'])
     sub = rng.choice(['s', 's', 'p', 'p', 'd'])
-    refs = [r for r in REF_PARTICLES if counts(*r)[sub] > 0]
-    ref = rng.choice(refs)
-    v = counts(*ref)[sub]
-    pool = [s for s in MAIN + DBLK if s != ref[0] or ref[1] != 0]
-    pred = lambda s: counts(s)[sub] == v
-    items = pick_row(rng, [s for s in pool if pred(s)], [s for s in pool if not pred(s)])
-    pn = particle_name(*ref)
-    if rng.random() < 0.5:
-        q = (f'Определите, атомы каких двух из указанных в ряду элементов в основном состоянии содержат такое же '
-             f'общее число {SUB_WORD[sub]}, как и {pn}.')
+    pool = MAIN + DBLK
+    p = {'mode': mode, 'sub': sub}
+    if mode in ('ref', 'ionref'):
+        refs = [r for r in REF_PARTICLES if counts(*r)[sub] > 0]
+        ref = rng.choice(refs)
+        v = counts(*ref)[sub]
+        pn = particle_name(*ref)
+        if mode == 'ref':
+            pool = [s for s in pool if not (s == ref[0] and ref[1] == 0)]
+            f = lambda s: counts(s)[sub]
+            q = rng.choice([f'Укажите два элемента ряда, в атомах которых {GS} суммарно столько же {SUB_GEN[sub]}, '
+                            f'сколько у частицы — {pn}.',
+                            f'У атомов каких двух элементов ряда {GS} общее число {SUB_GEN[sub]} равно их числу у '
+                            f'частицы {pn.split(" ", 1)[1]}?'])
+        else:
+            pool = [s for s in ION_POOL if s != ref[0]]
+            f = lambda s: counts(s, ion_q(s))[sub]
+            q = (f'Укажите два элемента ряда, простые ионы которых (в их типичных соединениях) содержат столько же '
+                 f'{SUB_GEN[sub]}, сколько {pn}.')
+        pred = lambda s: f(s) == v
+        items = pick_row(rng, [s for s in pool if pred(s)], [s for s in pool if not pred(s)])
+        p['ref'] = list(ref)
+        head = f'{pn[0].upper() + pn[1:]}: {v}; '
+    elif mode == 'exact':
+        sub = 'd'
+        p['sub'] = 'd'
+        v = rng.choice([5, 10])
+        f = lambda s: counts(s)['d']
+        pred = lambda s: f(s) == v
+        pool = DBLK + [s for s in MAIN if E[s]['period'] >= 4 or rng.random() < 0.3]
+        items = pick_row(rng, [s for s in pool if pred(s)], [s for s in pool if not pred(s)])
+        q = rng.choice([f'Укажите два элемента ряда, атомы которых {GS} содержат ровно {v} d-электронов.',
+                        f'В атомах каких двух элементов ряда {GS} общее число d-электронов равно {v}?'])
+        p['v'] = v
+        head = ''
     else:
-        q = (f'Определите, в атомах каких двух из указанных в ряду элементов (основное состояние) суммарное число '
-             f'{SUB_WORD[sub]} равно числу {SUB_WORD[sub]} частицы {pn.split(" ", 1)[1]}.')
-    lines = [f'{s} — {counts(s)[sub]}' for s in items]
-    return row_card(pid, rng, items, pred, q, [f'{pn[0].upper() + pn[1:]}: {v} {sub}-электронов; у атомов: ' + lines[0]]
-                    + lines[1:], {'sub': sub, 'ref': list(ref)})
+        f = lambda s: counts(s)[sub]
+        items, v = pick_pair(rng, [s for s in pool if f(s) > 0], f)
+        pred = pair_pred(items, f)
+        q = f'Укажите два элемента ряда, в атомах которых {GS} одинаковое общее число {SUB_GEN[sub]}.'
+        head = ''
+    if mode == 'ionref':
+        lines = [f'{ion_str(s)} — {f(s)}' for s in items]
+    else:
+        lines = [f'{s} — {f(s)}' for s in items]
+    return row_card(pid, rng, items, pred, q, [head + f'{sub}-электронов: ' + lines[0]] + lines[1:], p)
 
 
 EXC = {2: 'ns¹np¹', 3: 'ns¹np²', 4: 'ns¹np³'}
@@ -566,315 +811,278 @@ EXC = {2: 'ns¹np¹', 3: 'ns¹np²', 4: 'ns¹np³'}
 def _solve_excited(p):
     if p['mode'] == 'formula':
         return ids_of(p['row'], lambda s: r_block(z_of(s)) != 'd' and r_outer(z_of(s)) == p['g'])
-    # число неспаренных растёт при возбуждении: есть пара на внешнем уровне и свободная орбиталь того же уровня
-    def can(s):
-        Z = z_of(s)
+    # число неспаренных в возбуждённом состоянии: один s-электрон переходит на свободную p-орбиталь того же уровня
+    def exc(Z):
         occ, _ = aufbau(Z)
         n = r_period(Z)
-        paired = occ.get((n, 0), 0) == 2 or occ.get((n, 1), 0) > 3
-        free = occ.get((n, 1), 0) < 3 if occ.get((n, 0), 0) == 2 and occ.get((n, 1), 0) < 3 else n >= 3
-        return r_outer(Z) not in (1, 8) and paired and free
-    return ids_of(p['row'], can)
-
-
-def can_excite(s):
-    """Возбуждение увеличивает число неспаренных: у групп II–IV — за счёт свободных p-орбиталей того же слоя;
-    у V–VII — только при наличии d-подуровня на внешнем слое (с 3-го периода)."""
-    g = E[s]['group']
-    if g in (2, 3, 4):
-        return True
-    if g in (5, 6, 7):
-        return E[s]['period'] >= 3
-    return False
+        s_, p_ = occ.get((n, 0), 0), occ.get((n, 1), 0)
+        if s_ == 2 and p_ < 3 and Z > 2:
+            return 2 + p_
+        return None
+    return ids_of(p['row'], lambda s: exc(z_of(s)) == p['v'])
 
 
 @proto('ch-ege-01-excited', 'ЕГЭ', 1, 'Возбуждённое состояние атома',
-       invariant='распарить s-электроны внешнего уровня на свободные орбитали того же уровня (p, для периода ≥ 3 — d)',
-       varies='ряд; вопрос: формула внешнего уровня в возбуждённом состоянии (ns¹np¹/ns¹np²/ns¹np³) или '
-              '«может ли число неспаренных электронов увеличиться при возбуждении»',
-       answer_rule='ns¹np^(k−1) в возбуждённом состоянии — у элементов группы k (II–IV); у N, O, F нет свободных орбиталей '
-                   'на втором уровне, у щелочных металлов распаривать нечего',
-       mistakes=['считают, что азот может стать пятивалентным за счёт возбуждения', 'путают основное и возбуждённое '
-                 'состояния', 'забывают про d-орбитали у P, S, Cl'],
+       invariant='при возбуждении один электрон ns-подуровня переходит на свободную np-орбиталь того же уровня',
+       varies='ряд; вопрос: формула внешнего уровня в возбуждённом состоянии (ns¹np¹, ns¹np², ns¹np³) или число '
+              'неспаренных электронов в возбуждённом состоянии (2, 3, 4)',
+       answer_rule='ns¹np^(k−1) и k неспаренных электронов — у элементов II–IV групп главных подгрупп',
+       mistakes=['путают основное и возбуждённое состояния', 'считают, что у N, O, F число неспаренных при '
+                 'возбуждении растёт', 'берут элементы соседней группы'],
        solve=_solve_excited, kes=K1,
-       fidelity=fid(1, 'ЕГЭ', trap='N, O, F не имеют возбуждённых состояний с большим числом неспаренных электронов; '
-                                    'Be, B, C — имеют', scale=TIME_E1, kes=['1.1']))
+       fidelity=fid(1, 'ЕГЭ', trap='в основном состоянии у C и Si два неспаренных, в возбуждённом — четыре',
+                    scale=TIME_E1, kes=['1.1']))
 def g_excited(rng):
     pid = 'ch-ege-01-excited'
-    if rng.random() < 0.55:
-        g = rng.choice([2, 3, 4])
-        pool = [s for s in MAIN if s not in ('H',) and E[s]['kind'] != 'x' or s == 'Ge']
-        pred = lambda s: E[s]['group'] == g and s != 'H'
+    g = rng.choice([2, 3, 4])
+    pool = [s for s in MAIN if s not in ('H',)]
+    if rng.random() < 0.5:
+        pool = [s for s in pool if E[s]['group'] in (1, 2, 3, 4) or s in ('P', 'As')]
+        pred = lambda s: E[s]['group'] == g
         items = pick_row(rng, [s for s in pool if pred(s)], [s for s in pool if not pred(s)])
-        q = rng.choice([f'Определите, атомы каких двух из указанных в ряду элементов в возбуждённом состоянии имеют '
-                        f'электронную формулу внешнего энергетического уровня {EXC[g]}.',
-                        f'Определите, для атомов каких двух из указанных в ряду элементов возбуждённому состоянию '
-                        f'соответствует конфигурация внешнего уровня {EXC[g]}.'])
+        q = rng.choice([f'Укажите два элемента ряда, атомы которых в возбуждённом состоянии имеют {g} '
+                        f'{plural(g, "неспаренный электрон", "неспаренных электрона", "неспаренных электронов")}.',
+                        f'У атомов каких двух элементов ряда при переходе в возбуждённое состояние число неспаренных '
+                        f'электронов становится равным {g}?'])
         lines = [f'{s}: {val_text(s)}' for s in items]
-        return row_card(pid, rng, items, pred, q, [f'{EXC[g]} получается из ns²np^{g - 2} (группа {ROMAN[g]}); ' + lines[0]]
-                        + lines[1:], {'mode': 'formula', 'g': g})
-    pool = [s for s in MAIN if s != 'H']
-    items = pick_row(rng, [s for s in pool if can_excite(s)], [s for s in pool if not can_excite(s)] + ['H'])
-    q = rng.choice(['Определите, атомы каких двух из указанных в ряду элементов могут перейти в возбуждённое состояние '
-                    'с увеличением числа неспаренных электронов.',
-                    'Определите, у атомов каких двух из указанных в ряду элементов при переходе в возбуждённое состояние '
-                    'возрастает число неспаренных электронов.'])
-    lines = [f'{s} ({val_text(s)}) — {"да" if can_excite(s) else "нет"}' for s in items]
-    return row_card(pid, rng, items, can_excite, q, ['Нужны спаренные электроны и свободные орбитали того же уровня: '
-                                                     + lines[0]] + lines[1:], {'mode': 'unpair'})
-
-
-def _solve_block(p):
-    if p['mode'] == 'layers':
-        return ids_of(p['row'], lambda s: r_period(z_of(s)) == p['v'])
-    return ids_of(p['row'], lambda s: r_block(z_of(s)) == p['v'])
-
-
-def block_of(s):
-    e = E[s]
-    if e['sub'] == 'B':
-        return 'd'
-    return 's' if e['group'] <= 2 and s != 'He' else 'p'
-
-
-@proto('ch-ege-01-block', 'ЕГЭ', 1, 'Электронное семейство (s, p, d) и число энергетических уровней',
-       invariant='определить, какой подуровень заполняется последним (семейство) или сколько энергетических уровней '
-                 'занято электронами',
-       varies='ряд, семейство (s-, p-, d-элементы) или число уровней (= номер периода)',
-       answer_rule='s-элементы — IA, IIA (и H, He); p-элементы — IIIA–VIIIA; d-элементы — побочные подгруппы; '
-                   'число уровней = номер периода',
-       mistakes=['относят Zn, Cu к s-элементам (по внешним 4s)', 'относят Ga к d-элементам', 'путают номер группы и '
-                 'число уровней'],
-       solve=_solve_block, kes=K1,
-       fidelity=fid(1, 'ЕГЭ', trap='Zn, Cu — d-элементы при внешнем 4s; He — s-элемент', scale=TIME_E1, kes=['1.1']))
-def g_block(rng):
-    pid = 'ch-ege-01-block'
-    if rng.random() < 0.7:
-        v = rng.choice(['s', 'p', 'd'])
-        pool = MAIN + DBLK
-        pred = lambda s: block_of(s) == v
-        items = pick_row(rng, [s for s in pool if pred(s)], [s for s in pool if not pred(s)])
-        q = rng.choice([f'Определите, какие два из указанных в ряду элементов относятся к {v}-элементам.',
-                        f'Определите, в атомах каких двух из указанных в ряду элементов последним заполняется '
-                        f'{v}-подуровень.'])
-        lines = [f'{s} — {block_of(s)}' for s in items]
-        return row_card(pid, rng, items, pred, q, ['Семейства: ' + lines[0]] + lines[1:], {'mode': 'block', 'v': v})
-    v = rng.choice([2, 3, 4])
-    pool = MAIN + DCOMMON
-    pred = lambda s: E[s]['period'] == v
+        return row_card(pid, rng, items, pred, q, [f'Распаривание ns²: {g} неспаренных у элементов группы {ROMAN[g]}A; '
+                                                   + lines[0]] + lines[1:], {'mode': 'unp', 'v': g})
+    pred = lambda s: E[s]['group'] == g
     items = pick_row(rng, [s for s in pool if pred(s)], [s for s in pool if not pred(s)])
-    q = (f'Определите, в атомах каких двух из указанных в ряду элементов электроны в основном состоянии занимают '
-         f'{v} энергетических {plural(v, "уровень", "уровня", "уровней")}.')
-    lines = [f'{s} — период {E[s]["period"]}' for s in items]
-    return row_card(pid, rng, items, pred, q, ['Число уровней равно номеру периода: ' + lines[0]] + lines[1:],
-                    {'mode': 'layers', 'v': v})
+    q = rng.choice([f'Укажите два элемента ряда, для атомов которых в возбуждённом состоянии внешний уровень '
+                    f'описывается формулой {EXC[g]}.',
+                    f'Для атомов каких двух элементов ряда возбуждённому состоянию соответствует конфигурация внешнего '
+                    f'уровня {EXC[g]}?'])
+    lines = [f'{s}: {val_text(s)}' for s in items]
+    return row_card(pid, rng, items, pred, q, [f'{EXC[g]} получается из ns²np{str(g - 2).translate(SUP) if g > 2 else "⁰"} '
+                                               f'(группа {ROMAN[g]}A); ' + lines[0]] + lines[1:], {'mode': 'formula', 'g': g})
 
 
 # ================================================================= ЕГЭ 2. Закономерности изменения свойств (последовательность)
+K2 = ['1.2']
 LINES_P = {2: ['Li', 'Be', 'B', 'C', 'N', 'O', 'F'], 3: ['Na', 'Mg', 'Al', 'Si', 'P', 'S', 'Cl'],
            4: ['K', 'Ca', 'Ga', 'Ge', 'As', 'Se', 'Br']}
 LINES_G = {1: ['Li', 'Na', 'K'], 2: ['Be', 'Mg', 'Ca', 'Sr', 'Ba'], 3: ['B', 'Al', 'Ga'], 4: ['C', 'Si', 'Ge'],
            5: ['N', 'P', 'As'], 6: ['O', 'S', 'Se'], 7: ['F', 'Cl', 'Br', 'I']}
-NO_OXIDE = {'O', 'F'}
-HYDR = {'N', 'O', 'F', 'P', 'S', 'Cl', 'As', 'Se', 'Br', 'I'}
-# свойство: (родительный падеж для «в порядке возрастания …», знак изменения вдоль периода (слева направо),
-#            вдоль группы (сверху вниз), фильтр элементов, можно ли в группе, можно ли в периоде)
-PROPS2 = {
-    'radius': ('радиуса атома', -1, +1, None),
-    'en': ('электроотрицательности', +1, -1, lambda s: s not in ('Ga', 'Ge')),
-    'nonmet': ('неметаллических свойств', +1, -1, lambda s: s not in ('Ga', 'Ge')),
-    'oxid': ('окислительных свойств соответствующих простых веществ', +1, -1, lambda s: E[s]['kind'] == 'n'),
-    'metal': ('металлических свойств', -1, +1, None),
-    'reduc': ('восстановительных свойств', -1, +1, lambda s: E[s]['kind'] == 'm'),
-    'acid_ox': ('кислотных свойств высших оксидов', +1, -1, lambda s: s not in NO_OXIDE),
-    'base_hyd': ('основных свойств высших гидроксидов', -1, +1, lambda s: s not in NO_OXIDE),
-    'hyd_acid': ('кислотных свойств водородных соединений', +1, +1, lambda s: s in HYDR),
-    'hyd_red': ('восстановительных свойств водородных соединений', -1, +1, lambda s: s in HYDR),
-    'outer': ('числа электронов на внешнем энергетическом уровне', +1, 0, None),
-    'hiox': ('высшей степени окисления', +1, 0, lambda s: s not in NO_OXIDE),
+HYDR = {'C', 'Si', 'N', 'O', 'F', 'P', 'S', 'Cl', 'As', 'Se', 'Br', 'I'}
+POOL2 = [s for s in MAIN if s not in ('H', 'Ge')] + ['Sc', 'Ti', 'V', 'Cr', 'Mn', 'Zn']
+# отбор трёх элементов: подпись в условии и признак (путь генератора — по таблице)
+SEL = {
+    'period': ('три элемента, расположенных в одном периоде', None),
+    'group': ('три элемента одной группы (главной подгруппы)', None),
+    'p': ('три p-элемента', lambda s: E[s]['sub'] == 'A' and E[s]['group'] >= 3),
+    's': ('три s-элемента', lambda s: E[s]['sub'] == 'A' and E[s]['group'] <= 2),
+    'd': ('три d-элемента', lambda s: E[s]['sub'] == 'B'),
+    'metal': ('три элемента-металла', lambda s: E[s]['kind'] == 'm'),
+    'nonmetal': ('три элемента-неметалла', lambda s: E[s]['kind'] == 'n'),
+    'small': ('три элемента малых периодов', lambda s: E[s]['period'] <= 3),
+    'hydride': ('три элемента, образующих летучие водородные соединения', lambda s: s in HYDR),
 }
-GROUP_OK = {'acid_ox': {1, 2, 3, 4, 5, 7}, 'base_hyd': {1, 2, 3}, 'hyd_acid': {6, 7}, 'hyd_red': {6, 7},
-            'reduc': {1, 2}, 'oxid': {5, 6, 7}}
+# свойство: (фразы «в порядке … <фраза>» для возрастания/убывания, знак вдоль периода, вдоль группы (None — число),
+#            допустимые способы отбора, фильтр элементов)
+PROPS2 = {
+    'radius': (('возрастания', 'уменьшения'), 'атомного радиуса', -1, 1,
+               ['period', 'group', 'p', 's', 'metal', 'nonmetal', 'small'], lambda s: E[s]['sub'] == 'A'),
+    'en': (('возрастания', 'уменьшения'), 'электроотрицательности', 1, -1,
+           ['period', 'group', 'p', 'nonmetal', 'small', 'hydride'], lambda s: E[s]['sub'] == 'A' and s not in ('Ga', 'Ge')),
+    'reduc_m': (('усиления', 'ослабления'), 'восстановительных свойств образуемых ими простых веществ', -1, 1,
+                ['period', 'group', 's', 'metal'], lambda s: E[s]['kind'] == 'm' and E[s]['sub'] == 'A'),
+    'reduc_n': (('усиления', 'ослабления'), 'восстановительных свойств соответствующих им простых веществ', -1, 1,
+                ['nonmetal', 'p', 'group'], lambda s: E[s]['kind'] == 'n' and s not in ('H', 'B')),
+    'oxid': (('усиления', 'ослабления'), 'окислительной способности образуемых ими простых веществ', 1, -1,
+             ['nonmetal', 'p', 'period', 'group'], lambda s: E[s]['kind'] == 'n' and s not in ('H', 'B')),
+    'acid_ox': (('усиления', 'ослабления'), 'кислотных свойств образуемых ими высших оксидов', 1, -1,
+                ['period', 'nonmetal', 'p', 'group'], lambda s: E[s]['sub'] == 'A' and s not in ('O', 'F', 'H')),
+    'base': (('усиления', 'ослабления'), 'осно́вных свойств образуемых ими гидроксидов', -1, 1,
+             ['period', 'group', 's', 'metal'], lambda s: E[s]['kind'] == 'm' and E[s]['sub'] == 'A'),
+    'hyd_acid': (('усиления', 'ослабления'), 'кислотных свойств образуемых ими летучих водородных соединений', 1, 1,
+                 ['hydride', 'period', 'group', 'nonmetal'], lambda s: s in HYDR and s not in ('C', 'Si')),
+    'hyd_val': (('возрастания', 'уменьшения'), 'валентности в летучих водородных соединениях', None, None,
+                ['hydride', 'p', 'nonmetal', 'period'], lambda s: s in HYDR),
+    'hiox': (('возрастания', 'уменьшения'), 'степени окисления в высших оксидах', None, None,
+             ['d', 'metal', 'period', 'p', 'small'], lambda s: s not in ('O', 'F', 'H', 'Fe', 'Co', 'Ni', 'Cu')),
+}
+GROUP_OK = {'acid_ox': {1, 2, 3, 4, 5, 7}, 'base': {1, 2}, 'hyd_acid': {6, 7}, 'reduc_n': {6, 7}, 'oxid': {5, 6, 7},
+            'reduc_m': {1, 2}}
 
 
-def _order_ids(items, triple, key, asc):
-    seq = sorted(triple, key=key, reverse=not asc)
-    return ''.join(str(items.index(s) + 1) for s in seq)
+def num_val(prop, s):
+    return 8 - E[s]['group'] if prop == 'hyd_val' else ox_max(s)
+
+
+def chain_order(els, key_cmp):
+    """Единственный порядок по возрастанию; None, если правило не определяет его однозначно."""
+    good = []
+    for perm in itertools.permutations(els):
+        if all((c := key_cmp(perm[i], perm[j])) is None or c < 0
+               for i in range(len(perm)) for j in range(i + 1, len(perm))):
+            good.append(perm)
+    return list(good[0]) if len(good) == 1 else None
+
+
+def rule_cmp(dp, dg, per, grp):
+    def cmp(a, b):
+        if per(a) == per(b):
+            return None if grp(a) == grp(b) else (dp if grp(a) > grp(b) else -dp)
+        if grp(a) == grp(b):
+            return dg if per(a) > per(b) else -dg
+        return None
+    return cmp
 
 
 def _solve_seq(p):
-    """Второй путь: период/группа — из электронной конфигурации (Z); направление — из своей таблицы правил."""
-    rules = {'radius': (-1, 1), 'en': (1, -1), 'nonmet': (1, -1), 'oxid': (1, -1), 'metal': (-1, 1), 'reduc': (-1, 1),
-             'acid_ox': (1, -1), 'base_hyd': (-1, 1), 'hyd_acid': (1, 1), 'hyd_red': (-1, 1), 'outer': (1, 0),
-             'hiox': (1, 0)}
-    row = p['row']
-    zs = [z_of(s) for s in row]
-    if p['along'] == 'period':
-        groups = {}
-        for i, Z in enumerate(zs):
-            groups.setdefault(r_period(Z), []).append(i)
-        trip = [g for g in groups.values() if len(g) == 3]
-        pos = lambda i: r_valence(zs[i])
-        d = rules[p['prop']][0]
+    """Второй путь: отбор и порядок по электронной конфигурации (Z → период, группа, семейство, металличность)."""
+    row, sel, prop = p['row'], p['sel'], p['prop']
+    zs = {s: z_of(s) for s in row}
+    per = lambda s: r_period(zs[s])
+    grp = lambda s: r_valence(zs[s])
+    blk = lambda s: r_block(zs[s])
+    if sel in ('period', 'group'):
+        key = per if sel == 'period' else (lambda s: (grp(s), blk(s) == 'd'))
+        cnt = {}
+        for s in row:
+            cnt.setdefault(key(s), []).append(s)
+        trip = [v for v in cnt.values() if len(v) == 3][0]
     else:
-        groups = {}
-        for i, Z in enumerate(zs):
-            if r_block(Z) != 'd':
-                groups.setdefault(r_valence(Z), []).append(i)
-        trip = [g for g in groups.values() if len(g) == 3]
-        pos = lambda i: r_period(zs[i])
-        d = rules[p['prop']][1]
-    assert len(trip) == 1
-    seq = sorted(trip[0], key=lambda i: d * pos(i), reverse=not p['asc'])
-    return ''.join(str(i + 1) for i in seq)
+        test = {'p': lambda s: blk(s) == 'p', 's': lambda s: blk(s) == 's', 'd': lambda s: blk(s) == 'd',
+                'metal': lambda s: r_metal(zs[s]), 'nonmetal': lambda s: not r_metal(zs[s]),
+                'small': lambda s: per(s) <= 3,
+                'hydride': lambda s: not r_metal(zs[s]) and r_outer(zs[s]) >= 4}[sel]
+        trip = [s for s in row if test(s)]
+    assert len(trip) == 3
+    rules = {'radius': (-1, 1), 'en': (1, -1), 'reduc_m': (-1, 1), 'reduc_n': (-1, 1), 'oxid': (1, -1),
+             'acid_ox': (1, -1), 'base': (-1, 1), 'hyd_acid': (1, 1)}
+    if prop in rules:
+        order = chain_order(trip, rule_cmp(*rules[prop], per, grp))
+    else:
+        val = (lambda s: 8 - r_outer(zs[s])) if prop == 'hyd_val' else (lambda s: r_higher_ox(zs[s]))
+        order = sorted(trip, key=val)
+    if not p['asc']:
+        order = order[::-1]
+    return ''.join(str(row.index(s) + 1) for s in order)
 
 
 def seq_card(pid, rng, props):
     prop = rng.choice(props)
-    word, dp, dg, flt = PROPS2[prop]
-    along = rng.choice(['period', 'group']) if dg else 'period'
-    if along == 'group' and prop in GROUP_OK:
-        lines = {g: v for g, v in LINES_G.items() if g in GROUP_OK[prop]}
+    (up, down), word, dp, dg, sels, flt = PROPS2[prop]
+    sel = rng.choice(sels)
+    per = lambda s: E[s]['period']
+    grp = lambda s: E[s]['group']
+    pool = POOL2
+    if sel in ('period', 'group'):
+        attr = 'period' if sel == 'period' else 'group'
+        lines = {}
+        for s in pool:
+            if E[s]['sub'] == 'A' and flt(s):
+                lines.setdefault(E[s][attr], []).append(s)
+        if sel == 'group' and prop in GROUP_OK:
+            lines = {k: v for k, v in lines.items() if k in GROUP_OK[prop]}
+        lines = {k: v for k, v in lines.items() if len(v) >= 3}
+        if not lines:
+            raise Retry
+        k = rng.choice(list(lines))
+        triple = rng.sample(lines[k], 3)
+        if sel == 'period':
+            others = [s for s in pool if E[s]['period'] != k]
+        else:
+            others = [s for s in pool if not (E[s]['group'] == k and E[s]['sub'] == 'A')]
+        two = rng.sample(others, 2)
     else:
-        lines = LINES_G if along == 'group' else LINES_P
-    cand = []
-    for k, line in lines.items():
-        good = [s for s in line if flt is None or flt(s)]
-        if len(good) >= 3:
-            cand.append((k, good))
-    if not cand:
-        raise Retry
-    k, good = rng.choice(cand)
-    triple = rng.sample(good, 3)
-    attr = 'period' if along == 'period' else 'group'
-    others = [s for s in MAIN if E[s][attr] != E[triple[0]][attr] and s not in triple and s != 'H']
-    two = rng.sample(others, 2)
-    if E[two[0]][attr] == E[two[1]][attr] and rng.random() < 0.5:
-        raise Retry
+        test = SEL[sel][1]
+        yes = [s for s in pool if test(s) and flt(s)]
+        no = [s for s in pool if not test(s) and not (sel == 'hydride' and s == 'B')]
+        if len(yes) < 3:
+            raise Retry
+        triple = rng.sample(yes, 3)
+        two = rng.sample(no, 2)
+    if dp is None:
+        vals = [num_val(prop, s) for s in triple]
+        if len(set(vals)) < 3:
+            raise Retry
+        order = sorted(triple, key=lambda s: num_val(prop, s))
+    else:
+        order = chain_order(triple, rule_cmp(dp, dg, per, grp))
+        if order is None:
+            raise Retry
     items = triple + two
     rng.shuffle(items)
-    # в ряду ровно одна тройка с общим периодом/группой
-    cnt = {}
-    for s in items:
-        cnt[E[s][attr]] = cnt.get(E[s][attr], 0) + 1
-    if sorted(cnt.values(), reverse=True)[0] != 3 or list(cnt.values()).count(3) != 1:
-        raise Retry
     asc = rng.random() < 0.5
-    pos = (lambda s: E[s]['group']) if along == 'period' else (lambda s: E[s]['period'])
-    d = dp if along == 'period' else dg
-    ans = _order_ids(items, triple, lambda s: d * pos(s), asc)
-    where = rng.choice(['в одном периоде', 'в одном периоде Периодической системы']) if along == 'period' else \
-        rng.choice(['в одной группе (главной подгруппе)', 'в одной группе Периодической системы'])
-    how = ('возрастания' if asc else 'уменьшения') if prop in ('radius', 'en', 'outer', 'hiox') else \
-        ('усиления' if asc else 'ослабления')
-    q = rng.choice([
-        f'Из указанных в ряду химических элементов выберите три элемента, расположенных {where}. '
-        f'Расположите выбранные элементы в порядке {how} {word}.',
-        f'Выберите из числа указанных в ряду элементов три элемента, которые находятся {where}, и расположите '
-        f'их в порядке {how} {word}.',
-    ]) + ' ' + rng.choice(['Запишите номера выбранных элементов в нужной последовательности.',
-                           'Запишите в поле ответа номера выбранных элементов в нужной последовательности.'])
-    trip_sorted = sorted(triple, key=lambda s: pos(s))
-    dir_word = {1: 'растёт', -1: 'уменьшается'}
-    if along == 'period':
-        rule = f'{"-".join(trip_sorted)} — {E[triple[0]]["period"]}-й период; слева направо {word} {dir_word[d]}'
+    seq = order if asc else order[::-1]
+    ans = ''.join(str(items.index(s) + 1) for s in seq)
+    how = up if asc else down
+    q = rng.choice([f'Среди элементов ряда найдите {SEL[sel][0]}. Запишите их номера в порядке {how} {word}.',
+                    f'Отберите из ряда {SEL[sel][0]}. Запишите номера отобранных элементов так, чтобы они шли в '
+                    f'порядке {how} {word}.'])
+    q += ' ' + rng.choice(['Порядок цифр в ответе важен.', 'Цифры записывайте в нужной последовательности.'])
+    desc = ', '.join(f'{s} ({E[s]["period"]}-й период, {ROMAN[E[s]["group"]]}{E[s]["sub"]})' for s in triple)
+    if dp is None:
+        rule = '; '.join(f'{s}: {num_val(prop, s)}' for s in triple)
     else:
-        rule = f'{"-".join(trip_sorted)} — {ROMAN[E[triple[0]]["group"]]}A-группа; сверху вниз {word} {dir_word[d]}'
-    e = f'{rule}. Порядок {how}: ' + ' → '.join(sorted(triple, key=lambda s: d * pos(s), reverse=not asc)) + f'. Ответ: {ans}.'
-    rev = ans[::-1]
-    return pcard(pid, q, ans, e, k='num', o=opts(items),
-                 p={'row': items, 'prop': prop, 'along': along, 'asc': asc},
-                 wrong=[rev, ans[1] + ans[0] + ans[2], ans[0] + ans[2] + ans[1]])
+        rule = ('в периоде слева направо ' + ('растёт' if dp > 0 else 'уменьшается') + ', в группе сверху вниз ' +
+                ('растёт' if dg > 0 else 'уменьшается'))
+    e = f'Отбор: {desc}. {word[0].upper() + word[1:]}: {rule}. Порядок {how}: {" → ".join(seq)}; ответ {ans}.'
+    return pcard(pid, q, ans, e, k='num', o=opts(items), p={'row': items, 'prop': prop, 'sel': sel, 'asc': asc},
+                 wrong=[ans[::-1], ans[1] + ans[0] + ans[2], ans[0] + ans[2] + ans[1]])
 
 
 FID2 = dict(fmt_='три цифры — номера элементов в нужной последовательности (порядок важен), как в КИМ 2027')
-K2 = ['1.2']
+SC2 = ('ряд из пяти элементов; отбор по признаку (один период/группа, p-, s-, d-элементы, металлы, неметаллы, '
+       'малые периоды, летучие водородные соединения), как в банке')
 
 
-@proto('ch-ege-02-radius', 'ЕГЭ', 2, 'Три элемента периода/группы: порядок изменения радиуса атома',
-       invariant='найти в ряду три элемента одного периода (группы) и упорядочить по радиусу атома',
-       varies='ряд из пяти элементов, период или группа, возрастание или уменьшение',
-       answer_rule='в периоде слева направо радиус уменьшается, в группе сверху вниз — увеличивается',
-       mistakes=['считают, что в периоде радиус растёт с зарядом ядра', 'путают направление («уменьшения»)',
-                 'берут тройку не из одного периода'],
-       solve=_solve_seq, kes=K2,
-       fidelity=fid(2, 'ЕГЭ', trap='направление изменения в периоде и группе противоположно; лишние два элемента из '
-                                    'других периодов', scale=TIME_E1, kes=['1.2'], **FID2))
-def g_seq_radius(rng):
-    return seq_card('ch-ege-02-radius', rng, ['radius'])
+def _p2(pid, title, props, invariant, answer_rule, mistakes, trap):
+    def gen(rng):
+        return seq_card(pid, rng, props)
+    gen.__name__ = 'g_' + pid.replace('-', '_')
+    proto(pid, 'ЕГЭ', 2, title, invariant=invariant,
+          varies='ряд из пяти элементов, признак отбора трёх элементов, свойство, возрастание/убывание',
+          answer_rule=answer_rule, mistakes=mistakes, solve=_solve_seq, kes=K2,
+          fidelity=fid(2, 'ЕГЭ', trap=trap, scale=SC2, kes=['1.2'], **FID2))(gen)
 
 
-@proto('ch-ege-02-en', 'ЕГЭ', 2, 'Порядок изменения ЭО, неметаллических и окислительных свойств',
-       invariant='найти три элемента одного периода (группы) и упорядочить по электроотрицательности '
-                 '(неметаллическим/окислительным свойствам)',
-       varies='ряд, период/группа, свойство (ЭО, неметаллические, окислительные свойства), направление',
-       answer_rule='в периоде слева направо ЭО и неметаллические свойства растут, в группе сверху вниз — ослабевают',
-       mistakes=['путают направление в группе', 'считают кислород электроотрицательнее фтора'],
-       solve=_solve_seq, kes=K2,
-       fidelity=fid(2, 'ЕГЭ', trap='направления изменения в периоде и группе противоположны', scale=TIME_E1,
-                    kes=['1.2'], **FID2))
-def g_seq_en(rng):
-    return seq_card('ch-ege-02-en', rng, ['en', 'nonmet', 'oxid'])
+_p2('ch-ege-02-radius', 'Отбор трёх элементов и порядок изменения атомного радиуса', ['radius'],
+    'отобрать три элемента по признаку и упорядочить по радиусу атома (правила периода и группы, при необходимости — '
+    'через общий элемент)',
+    'в периоде слева направо радиус уменьшается, в группе сверху вниз — увеличивается',
+    ['считают, что в периоде радиус растёт с зарядом ядра', 'путают направление («уменьшения»)',
+     'отбирают не те три элемента'],
+    'направление в периоде и группе противоположно; отбор p-/s-элементов или металлов вместо «одного периода»')
+_p2('ch-ege-02-en', 'Порядок изменения электроотрицательности и окислительных свойств', ['en', 'oxid'],
+    'отобрать три элемента и упорядочить по ЭО атомов (окислительной способности простых веществ)',
+    'в периоде слева направо ЭО и окислительные свойства растут, в группе сверху вниз — уменьшаются',
+    ['путают направление в группе', 'считают кислород электроотрицательнее фтора'],
+    'направления в периоде и группе противоположны')
+_p2('ch-ege-02-reduc', 'Порядок изменения восстановительных (металлических) свойств простых веществ',
+    ['reduc_m', 'reduc_n'],
+    'отобрать три металла (неметалла) и упорядочить по восстановительным свойствам простых веществ',
+    'восстановительные свойства усиливаются справа налево в периоде и сверху вниз в группе',
+    ['путают усиление и ослабление', 'в периоде ставят металл с большим зарядом ядра активнее'],
+    'у неметаллов восстановительные свойства растут вниз по группе (I₂ > Br₂ > Cl₂)')
+_p2('ch-ege-02-acidbase', 'Порядок изменения кислотно-основных свойств высших оксидов и гидроксидов',
+    ['acid_ox', 'base'],
+    'отобрать три элемента и упорядочить по кислотным свойствам высших оксидов (основным свойствам гидроксидов)',
+    'в периоде слева направо кислотные свойства высших оксидов/гидроксидов усиливаются, основные ослабевают; в группе '
+    'сверху вниз — наоборот',
+    ['переносят рост кислотности водородных соединений в группе на оксиды', 'путают оксиды и гидроксиды'],
+    'кислотность высших оксидов в группе падает, а водородных соединений — растёт')
+_p2('ch-ege-02-hydrides', 'Летучие водородные соединения: кислотные свойства и валентность', ['hyd_acid', 'hyd_val'],
+    'отобрать три элемента, образующих летучие водородные соединения, и упорядочить по кислотным свойствам этих '
+    'соединений или по валентности элемента в них',
+    'кислотные свойства растут и слева направо, и сверху вниз; валентность в летучем водородном соединении = 8 − N',
+    ['переносят закономерность ЭО на кислотность (HF считают самой сильной)', 'валентность = N вместо 8 − N'],
+    'HF — самая слабая из галогеноводородных кислот; CH₄ — валентность IV, NH₃ — III')
+_p2('ch-ege-02-hiox', 'Порядок изменения степени окисления (валентности) в высших оксидах', ['hiox'],
+    'отобрать три элемента (в т. ч. d-элементы) и упорядочить по степени окисления в высших оксидах',
+    'степень окисления в высшем оксиде = номер группы (Sc +3, Ti +4, V +5, Cr +6, Mn +7, Zn +2)',
+    ['для d-элементов берут число внешних электронов', 'путают направление'],
+    'd-элементы: Mn (+7) выше Cr (+6), хотя оба имеют d⁵')
 
 
-@proto('ch-ege-02-metal', 'ЕГЭ', 2, 'Порядок изменения металлических и восстановительных свойств',
-       invariant='три элемента одного периода (группы) упорядочить по металлическим (восстановительным) свойствам',
-       varies='ряд, период/группа, свойство, направление (усиление/ослабление)',
-       answer_rule='металлические и восстановительные свойства усиливаются справа налево в периоде и сверху вниз в группе',
-       mistakes=['путают усиление и ослабление', 'в периоде ставят металл с большим зарядом ядра активнее'],
-       solve=_solve_seq, kes=K2,
-       fidelity=fid(2, 'ЕГЭ', trap='направление в периоде обратно направлению в группе', scale=TIME_E1, kes=['1.2'],
-                    **FID2))
-def g_seq_metal(rng):
-    return seq_card('ch-ege-02-metal', rng, ['metal', 'reduc'])
-
-
-@proto('ch-ege-02-oxides', 'ЕГЭ', 2, 'Порядок изменения кислотно-основных свойств высших оксидов и гидроксидов',
-       invariant='три элемента одного периода (группы) упорядочить по кислотным свойствам высших оксидов '
-                 '(основным свойствам гидроксидов)',
-       varies='ряд, период/группа, кислотные или основные свойства, направление',
-       answer_rule='в периоде слева направо кислотные свойства высших оксидов/гидроксидов усиливаются, основные '
-                   'ослабевают; в группе сверху вниз — наоборот',
-       mistakes=['переносят рост кислотности водородных соединений в группе на оксиды', 'путают оксиды и гидроксиды'],
-       solve=_solve_seq, kes=K2,
-       fidelity=fid(2, 'ЕГЭ', trap='кислотность высших оксидов в группе падает, а водородных соединений — растёт',
-                    scale=TIME_E1, kes=['1.2'], **FID2))
-def g_seq_oxides(rng):
-    return seq_card('ch-ege-02-oxides', rng, ['acid_ox', 'base_hyd'])
-
-
-@proto('ch-ege-02-hydrides', 'ЕГЭ', 2, 'Порядок изменения свойств водородных соединений неметаллов',
-       invariant='три неметалла одного периода (группы) упорядочить по кислотным (восстановительным) свойствам '
-                 'их водородных соединений',
-       varies='ряд, период/группа (VIA, VIIA), кислотные или восстановительные свойства, направление',
-       answer_rule='кислотные свойства водородных соединений растут и слева направо, и сверху вниз; восстановительные '
-                   'растут сверху вниз и справа налево',
-       mistakes=['переносят закономерность ЭО на кислотность (HF считают самой сильной)', 'путают с оксидами'],
-       solve=_solve_seq, kes=K2,
-       fidelity=fid(2, 'ЕГЭ', trap='HF — самая слабая из галогеноводородных кислот', scale=TIME_E1, kes=['1.2'],
-                    **FID2))
-def g_seq_hydrides(rng):
-    return seq_card('ch-ege-02-hydrides', rng, ['hyd_acid', 'hyd_red'])
-
-
-@proto('ch-ege-02-count', 'ЕГЭ', 2, 'Порядок изменения числа внешних электронов / высшей степени окисления',
-       invariant='три элемента одного периода упорядочить по числу электронов внешнего уровня или высшей степени окисления',
-       varies='ряд, период, величина (внешние электроны, высшая степень окисления), направление',
-       answer_rule='в периоде слева направо число внешних электронов и высшая степень окисления растут (равны номеру группы)',
-       mistakes=['для кислорода и фтора берут высшую степень окисления по номеру группы', 'путают направление'],
-       solve=_solve_seq, kes=K2,
-       fidelity=fid(2, 'ЕГЭ', trap='номер группы = число внешних электронов = высшая степень окисления', scale=TIME_E1,
-                    kes=['1.2'], **FID2))
-def g_seq_count(rng):
-    return seq_card('ch-ege-02-count', rng, ['outer', 'hiox'])
-
-
-# ================================================================= ЕГЭ 3. Степень окисления, валентность, ЭО
+# ================================================================= ЕГЭ 3. Степень окисления, валентность
 K3 = ['1.3']
-POOL3 = [s for s in MAIN if s not in ('O', 'F', 'Ge', 'B')] + ['Cr', 'Mn', 'Zn', 'V', 'Ti']
 OXIDE_T = {1: 'Э₂O', 2: 'ЭO', 3: 'Э₂O₃', 4: 'ЭO₂', 5: 'Э₂O₅', 6: 'ЭO₃', 7: 'Э₂O₇'}
 HYD_T = {4: 'ЭH₄', 5: 'ЭH₃', 6: 'H₂Э', 7: 'HЭ'}
-NONMET3 = ['H', 'C', 'Si', 'N', 'P', 'As', 'O', 'S', 'Se', 'Cl', 'Br', 'I']
+POOL3 = [s for s in MAIN if s not in ('Ge', 'B')] + ['Cr', 'Mn', 'Zn', 'V', 'Ti', 'Sc']
 
 
 def _ox_line(s):
@@ -882,181 +1090,379 @@ def _ox_line(s):
     return f'{s}: ' + (', '.join(signed(x) for x in ox) if ox else '0')
 
 
+def r_hi(Z):
+    """Высшая степень окисления (второй путь): номер группы; у O — +2 (OF₂), у F — 0."""
+    return {8: 2, 9: 0}.get(Z, r_higher_ox(Z))
+
+
 def _solve_maxox(p):
-    return ids_of(p['row'], lambda s: r_higher_ox(z_of(s)) == p['v'])
+    if p['mode'] == 'same':
+        vals = [r_hi(z_of(s)) for s in p['row']]
+        return ids_of(p['row'], lambda s: vals.count(r_hi(z_of(s))) == 2)
+    return ids_of(p['row'], lambda s: r_hi(z_of(s)) == p['v'])
 
 
-@proto('ch-ege-03-maxox', 'ЕГЭ', 3, 'Высшая степень окисления (+N)',
-       invariant='высшая степень окисления элемента равна номеру группы (числу валентных электронов)',
-       varies='ряд (главные и побочные подгруппы: Cr, Mn, V, Ti, Zn), значение высшей степени окисления, формулировка '
-              '(высшая степень окисления / степень окисления в высшем оксиде)',
-       answer_rule='выбрать два элемента, номер группы которых совпадает с требуемой степенью окисления',
-       mistakes=['для d-элементов берут число внешних электронов (Mn → +2)', 'путают высшую и низшую степени окисления'],
+@proto('ch-ege-03-maxox', 'ЕГЭ', 3, 'Степень окисления в высших оксидах (гидроксидах)',
+       invariant='высшая степень окисления элемента (в высшем оксиде и гидроксиде) равна номеру группы',
+       varies='ряд (главные и побочные подгруппы: Cr, Mn, V, Ti, Sc, Zn), значение +1…+7 или «одинаковая» (пара), '
+              'формулировка (в высших оксидах / в высших гидроксидах)',
+       answer_rule='выбрать два элемента с нужным номером группы (для пары — два элемента одной группы, в т. ч. A и B)',
+       mistakes=['для d-элементов берут число внешних электронов (Mn → +2)', 'путают высшую и низшую степени '
+                 'окисления'],
        solve=_solve_maxox, kes=K3,
        fidelity=fid(3, 'ЕГЭ', trap='элементы побочных подгрупп: Cr +6 как у S, Mn +7 как у Cl', scale=TIME_E1,
                     kes=['1.3']))
 def g_maxox(rng):
     pid = 'ch-ege-03-maxox'
-    v = rng.randint(1, 7)
-    pred = lambda s: ox_max(s) == v
-    items = pick_row(rng, [s for s in POOL3 if pred(s)], [s for s in POOL3 if not pred(s)])
-    q = rng.choice([f'Определите, какие два из указанных в ряду элементов проявляют высшую степень окисления, равную {signed(v)}.',
-                    f'Из числа указанных в ряду элементов выберите два элемента, которые в высших оксидах имеют '
-                    f'степень окисления {signed(v)}.',
-                    f'Определите, для каких двух из указанных в ряду элементов высшая степень окисления равна {signed(v)}.'])
+    pool = [s for s in POOL3 if s not in ('O', 'F')]
+    if rng.random() < 0.35:
+        items, v = pick_pair(rng, pool, ox_max)
+        pred = pair_pred(items, ox_max)
+        q = rng.choice(['Укажите два элемента ряда, которые в высших оксидах имеют одну и ту же степень окисления.',
+                        'Для каких двух элементов ряда степени окисления в высших оксидах совпадают?'])
+        p = {'mode': 'same'}
+    else:
+        v = rng.randint(1, 7)
+        pred = lambda s: ox_max(s) == v
+        items = pick_row(rng, [s for s in pool if pred(s)], [s for s in pool if not pred(s)])
+        q = rng.choice([f'Укажите два элемента ряда, степень окисления которых в высших оксидах составляет {signed(v)}.',
+                        f'Для каких двух элементов ряда степень окисления в высших гидроксидах равна {signed(v)}?',
+                        f'Укажите два элемента ряда, высшая степень окисления которых равна {signed(v)}.'])
+        p = {'mode': 'v', 'v': v}
     lines = [f'{s} — {signed(ox_max(s))}' for s in items]
-    return row_card(pid, rng, items, pred, q, ['Высшие степени окисления: ' + lines[0]] + lines[1:], {'v': v})
+    return row_card(pid, rng, items, pred, q, ['Высшие степени окисления: ' + lines[0]] + lines[1:], p)
 
 
 def _solve_minox(p):
-    return ids_of(p['row'], lambda s: r_lower_ox(z_of(s)) == -p['v'])
+    lo = lambda s: r_lower_ox(z_of(s))
+    if p['mode'] == 'same':
+        vals = [lo(s) for s in p['row']]
+        return ids_of(p['row'], lambda s: lo(s) < 0 and vals.count(lo(s)) == 2)
+    return ids_of(p['row'], lambda s: lo(s) == -p['v'])
 
 
 @proto('ch-ege-03-minox', 'ЕГЭ', 3, 'Низшая (отрицательная) степень окисления',
        invariant='низшая степень окисления неметалла = номер группы − 8; металлы отрицательных степеней не имеют',
-       varies='ряд, значение низшей степени окисления (−1…−4), формулировка (низшая степень окисления / в соединениях '
-              'с водородом или металлами)',
-       answer_rule='выбрать два неметалла нужной группы (VII → −1, VI → −2, V → −3, IV → −4)',
+       varies='ряд, значение низшей степени окисления (−1…−4), формулировки: «низшая равна», «в соединениях с '
+              'металлами (литием) одинаковая» (пара)',
+       answer_rule='VII → −1, VI → −2, V → −3, IV → −4; водород −1 (гидриды)',
        mistakes=['приписывают металлам отрицательную степень окисления', 'путают −(8 − N) и −N'],
        solve=_solve_minox, kes=K3,
-       fidelity=fid(3, 'ЕГЭ', trap='водород: низшая −1 (гидриды) — как у галогенов', scale=TIME_E1, kes=['1.3']))
+       fidelity=fid(3, 'ЕГЭ', trap='водород: −1 в гидридах — как у галогенов', scale=TIME_E1, kes=['1.3']))
 def g_minox(rng):
     pid = 'ch-ege-03-minox'
-    v = rng.randint(1, 4)
     pool = [s for s in MAIN if s not in ('B', 'Ge')] + ['Cr', 'Fe', 'Zn', 'Cu']
-    pred = lambda s: ox_min(s) == -v
-    items = pick_row(rng, [s for s in pool if pred(s)], [s for s in pool if not pred(s)])
-    q = rng.choice([f'Определите, какие два из указанных в ряду элементов имеют низшую степень окисления, равную {signed(-v)}.',
-                    f'Из числа указанных в ряду элементов выберите два элемента, низшая степень окисления которых '
-                    f'равна {signed(-v)}.'])
+    if rng.random() < 0.35:
+        nm = [s for s in pool if ox_min(s) < 0]
+        met = [s for s in pool if ox_min(s) >= 0]
+        by = {}
+        for s in nm:
+            by.setdefault(ox_min(s), []).append(s)
+        v = rng.choice([k for k, xs in by.items() if len(xs) >= 2])
+        rest_vals = [k for k in by if k != v]
+        k_nm = rng.randint(1, min(3, len(rest_vals)))
+        items = rng.sample(by[v], 2) + [rng.choice(by[w]) for w in rng.sample(rest_vals, k_nm)] + \
+            rng.sample(met, 3 - k_nm)
+        rng.shuffle(items)
+        vals = [ox_min(s) for s in items]
+        pred = lambda s: ox_min(s) < 0 and vals.count(ox_min(s)) == 2
+        q = rng.choice(['Укажите два элемента ряда, которые в соединениях с литием проявляют одну и ту же степень '
+                        'окисления.',
+                        'Для каких двух элементов ряда низшие степени окисления совпадают?'])
+        p = {'mode': 'same'}
+    else:
+        v = rng.randint(1, 4)
+        pred = lambda s: ox_min(s) == -v
+        items = pick_row(rng, [s for s in pool if pred(s)], [s for s in pool if not pred(s)])
+        q = rng.choice([f'Укажите два элемента ряда, низшая степень окисления которых составляет {signed(-v)}.',
+                        f'Для каких двух элементов ряда наименьшая возможная степень окисления равна {signed(-v)}?'])
+        p = {'mode': 'v', 'v': v}
     lines = [f'{s} — {signed(min(ox_min(s), 0))}' for s in items]
-    return row_card(pid, rng, items, pred, q, ['Низшие степени окисления (у металлов 0): ' + lines[0]] + lines[1:],
-                    {'v': v})
+    return row_card(pid, rng, items, pred, q, ['Низшие степени окисления (у металлов 0): ' + lines[0]] + lines[1:], p)
 
 
-def _solve_both(p):
-    def ok(s):
+def _solve_sign(p):
+    def kind(s):
         Z = z_of(s)
-        lo, hi = r_lower_ox(Z), r_higher_ox(Z)
-        if Z == 8:   # кислород: +2 во фториде кислорода OF2
-            hi = 2
-        return lo is not None and hi is not None and lo < 0 < hi
-    return ids_of(p['row'], ok)
+        lo, hi = r_lower_ox(Z), r_hi(Z)
+        return lo, hi
+    m = p['mode']
+    if m == 'both':
+        return ids_of(p['row'], lambda s: kind(s)[0] < 0 < kind(s)[1])
+    if m == 'neg':
+        return ids_of(p['row'], lambda s: kind(s)[0] < 0)
+    return ids_of(p['row'], lambda s: kind(s)[0] == 0)
 
 
-@proto('ch-ege-03-bothsign', 'ЕГЭ', 3, 'Может проявлять и положительную, и отрицательную степень окисления',
-       invariant='неметаллы (кроме фтора) в соединениях с более электроотрицательными элементами имеют положительные, '
-                 'с менее электроотрицательными — отрицательные степени окисления; металлы — только положительные',
-       varies='ряд из металлов и неметаллов (в т. ч. H, O, F)',
-       answer_rule='выбрать два неметалла, отличных от фтора (кислород: +2 в OF₂; водород: −1 в гидридах)',
-       mistakes=['выбирают фтор', 'не считают кислород (OF₂)', 'выбирают металл с переменной степенью окисления'],
-       solve=_solve_both, kes=K3,
+@proto('ch-ege-03-sign', 'ЕГЭ', 3, 'Знак степени окисления: положительная и/или отрицательная',
+       invariant='металлы в соединениях имеют только положительные степени окисления; неметаллы (кроме фтора) — и '
+                 'положительные, и отрицательные; фтор — только −1',
+       varies='ряд; вопрос: «и положительную, и отрицательную», «может быть отрицательной», «не проявляют '
+              'отрицательной»',
+       answer_rule='выбрать два неметалла (кроме F — для «обеих») или два металла (для «не проявляют отрицательной»)',
+       mistakes=['выбирают фтор в вопросе про обе степени', 'не считают кислород (+2 в OF₂)',
+                 'выбирают металл с переменной степенью окисления'],
+       solve=_solve_sign, kes=K3,
        fidelity=fid(3, 'ЕГЭ', trap='как в демоверсии 2027: O (+2 в OF₂) и Si (−4 в силицидах); F только −1',
                     scale=TIME_E1, kes=['1.3']))
-def g_bothsign(rng):
-    pid = 'ch-ege-03-bothsign'
+def g_sign(rng):
+    pid = 'ch-ege-03-sign'
     pool = [s for s in MAIN if s not in ('B', 'Ge', 'Ga')] + (['Cr', 'Mn', 'Fe', 'Cu', 'Zn'] if rng.random() < .4 else [])
-    pred = lambda s: E[s]['kind'] == 'n' and min(E[s]['ox']) < 0 < max(E[s]['ox'])
+    mode = rng.choice(['both', 'both', 'neg', 'pos'])
+    if mode == 'both':
+        pred = lambda s: E[s]['kind'] == 'n' and min(E[s]['ox']) < 0 < max(E[s]['ox'])
+        q = rng.choice(['Укажите два элемента ряда, которые в различных соединениях проявляют как положительные, так '
+                        'и отрицательные степени окисления.',
+                        'Какие два элемента ряда способны иметь в соединениях и положительную, и отрицательную '
+                        'степень окисления?'])
+    elif mode == 'neg':
+        pred = lambda s: E[s]['kind'] == 'n'
+        q = rng.choice(['Укажите два элемента ряда, у которых в соединениях возможна отрицательная степень окисления.',
+                        'Какие два элемента ряда в некоторых своих соединениях имеют отрицательную степень окисления?'])
+    else:
+        pred = lambda s: E[s]['kind'] == 'm'
+        q = rng.choice(['Укажите два элемента ряда, которые ни в одном соединении не имеют отрицательной степени '
+                        'окисления.',
+                        'Какие два элемента ряда во всех своих соединениях имеют только положительные степени '
+                        'окисления?'])
     yes = [s for s in pool if pred(s)]
     no = [s for s in pool if not pred(s)]
-    if rng.random() < 0.5:
+    if mode == 'both' and rng.random() < 0.5:
         no += ['F', 'F']
     items = pick_row(rng, yes, no)
-    q = rng.choice(['Из числа указанных в ряду элементов выберите два элемента, которые в соединениях могут иметь как '
-                    'положительную, так и отрицательную степень окисления.',
-                    'Определите, какие два из указанных в ряду элементов способны проявлять в соединениях и '
-                    'положительные, и отрицательные степени окисления.'])
     return row_card(pid, rng, items, pred, q, ['Степени окисления в соединениях: ' + _ox_line(items[0])]
-                    + [_ox_line(s) for s in items[1:]], {})
+                    + [_ox_line(s) for s in items[1:]], {'mode': mode})
 
 
-SUM_POOL = ['C', 'Si', 'N', 'P', 'As', 'S', 'Se', 'Cl', 'Br', 'I']
+def diff_of(s):
+    ox = list(E[s]['ox']) + [0]
+    hi = max(ox) if s not in ('F',) else 0
+    return hi - min(ox)
 
 
-def _solve_sum(p):
-    return ids_of(p['row'], lambda s: r_higher_ox(z_of(s)) + r_lower_ox(z_of(s)) == p['v'])
+DIFF_POOL = [s for s in MAIN if s not in ('B', 'Ge', 'Ga')] + ['Cr', 'Mn', 'Zn', 'Ti', 'V', 'Sc']
 
 
-@proto('ch-ege-03-sum', 'ЕГЭ', 3, 'Сумма (разность) высшей и низшей степеней окисления',
-       invariant='высшая степень окисления неметалла = N (группа), низшая = N − 8; сумма = 2N − 8',
-       varies='ряд неметаллов IV–VII групп; сумма (0, +2, +4, +6) или разность «высшая − |низшая|»',
-       answer_rule='выбрать два неметалла одной группы (сумма 0 → IV, +2 → V, +4 → VI, +6 → VII)',
-       mistakes=['берут модуль низшей степени окисления и складывают', 'для кислорода/фтора считают по номеру группы'],
-       solve=_solve_sum, kes=K3,
-       fidelity=fid(3, 'ЕГЭ', trap='сумма с учётом знака: у серы +6 + (−2) = +4', scale=TIME_E1, kes=['1.3']))
-def g_sum(rng):
-    pid = 'ch-ege-03-sum'
-    g = rng.choice([4, 5, 6, 7])
-    v = 2 * g - 8
-    pred = lambda s: ox_max(s) + ox_min(s) == v
-    items = pick_row(rng, [s for s in SUM_POOL if pred(s)], [s for s in SUM_POOL if not pred(s)])
-    if rng.random() < 0.6:
-        q = (f'Определите, для каких двух из указанных в ряду элементов сумма высшей и низшей степеней окисления '
-             f'равна {signed(v) if v else "нулю"}.')
+def _solve_diff(p):
+    d = lambda s: r_hi(z_of(s)) - min(r_lower_ox(z_of(s)), 0)
+    if p['mode'] == 'same':
+        vals = [d(s) for s in p['row']]
+        return ids_of(p['row'], lambda s: vals.count(d(s)) == 2)
+    return ids_of(p['row'], lambda s: d(s) == p['v'])
+
+
+@proto('ch-ege-03-diff', 'ЕГЭ', 3, 'Разность высшей и низшей степеней окисления',
+       invariant='найти высшую (номер группы; у O +2, у F 0) и низшую (N − 8 у неметаллов, 0 у металлов) степени '
+                 'окисления и их разность',
+       varies='ряд из металлов и неметаллов; «одинаковая разность» (пара) или «разность равна k»',
+       answer_rule='неметаллы IV–VII групп: разность 8; O: 4; F: 1; H: 2; металлы: равна высшей степени окисления',
+       mistakes=['для металлов берут отрицательную низшую степень', 'для кислорода и фтора берут номер группы',
+                 'складывают вместо вычитания'],
+       solve=_solve_diff, kes=K3,
+       fidelity=fid(3, 'ЕГЭ', trap='у всех неметаллов IV–VII групп разность одинакова (8); у металлов низшая = 0',
+                    scale=TIME_E1, kes=['1.3']))
+def g_diff(rng):
+    pid = 'ch-ege-03-diff'
+    if rng.random() < 0.65:
+        items, v = pick_pair(rng, DIFF_POOL, diff_of)
+        pred = pair_pred(items, diff_of)
+        q = rng.choice(['Укажите два элемента ряда, у которых разность между высшей и низшей степенями окисления '
+                        'одинакова.',
+                        'Для каких двух элементов ряда разность значений высшей и низшей степеней окисления '
+                        'совпадает?'])
+        p = {'mode': 'same'}
     else:
-        q = (f'Из числа указанных в ряду элементов выберите два элемента, у которых высшая степень окисления '
-             f'по абсолютной величине {"равна низшей" if v == 0 else f"на {v} больше абсолютной величины низшей"}.')
-    lines = [f'{s}: {signed(ox_max(s))} и {signed(ox_min(s))}' for s in items]
-    return row_card(pid, rng, items, pred, q, ['Высшая и низшая степени окисления — ' + lines[0]] + lines[1:], {'v': v})
+        v = rng.choice([1, 2, 3, 4])
+        pred = lambda s: diff_of(s) == v
+        items = pick_row(rng, [s for s in DIFF_POOL if pred(s)], [s for s in DIFF_POOL if not pred(s)])
+        q = f'Укажите два элемента ряда, у каждого из которых высшая степень окисления больше низшей на {v}.'
+        p = {'mode': 'v', 'v': v}
+    lines = [f'{s}: {signed(max(list(E[s]["ox"]) + [0]) if s != "F" else 0)} и {signed(min(list(E[s]["ox"]) + [0]))} '
+             f'(разность {diff_of(s)})' for s in items]
+    return row_card(pid, rng, items, pred, q, ['Высшая и низшая степени окисления — ' + lines[0]] + lines[1:], p)
 
 
-def _solve_oxide(p):
-    return ids_of(p['row'], lambda s: r_higher_ox(z_of(s)) == p['g'])
+# «может проявлять степень окисления v»: элементы, для которых значение бесспорно есть / бесспорно нет (школьный курс)
+OXVAL = {
+    4: ('C Si S Se Mn Pb Ti N', 'Li Na K Mg Ca Ba Al Zn F B Ga H Cu Ag'),
+    3: ('N P As Al B Cr Fe Ga Sc Co', 'Li Na K Mg Ca Ba Zn F O Si H Cu Ag'),
+    6: ('S Se Cr Mn', 'N P C Si Al Mg Na K Ca Zn Cu F O B H As Ti V'),
+    2: ('Mg Ca Ba Be Zn Fe Cu Mn Cr C N Pb Co Ni Sr O', 'Li Na K Al F H B'),
+    5: ('N P As Cl Br I V', 'C Si S O F H Li Na K Mg Ca Al Zn Fe Cu B Ba'),
+    1: ('H Li Na K Cu Ag N Cl Br I', 'Mg Ca Ba Al Zn F Fe Si'),
+    -1: ('H F Cl Br I O', 'Li Na K Mg Ca Al Zn Fe Cu Cr Mn B Si'),
+    -2: ('O S Se', 'Li Na K Mg Ca Al Zn Fe Cu F H Cl Br I B'),
+    -3: ('N P As', 'F Cl Br I O S H Li Na K Mg Ca Al Zn Fe Cu Se'),
+    -4: ('C Si', 'N P S Cl O F H Li Na K Mg Ca Al Zn Fe Cu As Se Br I'),
+}
 
 
-@proto('ch-ege-03-oxide', 'ЕГЭ', 3, 'Состав высшего оксида (валентность в высшем оксиде)',
-       invariant='высшая валентность (степень окисления) = номер группы; состав высшего оксида из неё',
-       varies='ряд, общая формула высшего оксида (Э₂O…Э₂O₇) или высшая валентность в оксиде',
-       answer_rule='Э₂O — I, ЭO — II, Э₂O₃ — III, ЭO₂ — IV, Э₂O₅ — V, ЭO₃ — VI, Э₂O₇ — VII группа '
-                   '(включая побочные подгруппы: CrO₃, Mn₂O₇)',
-       mistakes=['путают ЭO₃ и Э₂O₃', 'для Cr, Mn берут низшие оксиды'],
-       solve=_solve_oxide, kes=K3,
-       fidelity=fid(3, 'ЕГЭ', trap='d-элементы: Cr → CrO₃ (как S), Mn → Mn₂O₇ (как Cl)', scale=TIME_E1, kes=['1.3']))
-def g_oxide(rng):
-    pid = 'ch-ege-03-oxide'
-    pool = [s for s in POOL3 if s != 'H']
-    g = rng.randint(1, 7)
-    pred = lambda s: ox_max(s) == g
-    items = pick_row(rng, [s for s in pool if pred(s)], [s for s in pool if not pred(s)])
+def _solve_oxval(p):
+    v = p['v']
+    return ids_of(p['row'], lambda s: v in E[s]['ox'])
+
+
+@proto('ch-ege-03-oxval', 'ЕГЭ', 3, 'Может проявлять в соединениях заданную степень окисления',
+       invariant='знать типичные степени окисления элементов (по группе, металл/неметалл, переменная валентность '
+                 'd-элементов)',
+       varies='ряд; значение степени окисления (−4…+6)',
+       answer_rule='выбрать два элемента, для которых это значение типично (C, Si, S, N, Mn… для +4 и т. д.)',
+       mistakes=['считают, что степень окисления бывает только высшей и низшей', 'приписывают металлам IA/IIA '
+                 'переменную степень окисления'],
+       solve=_solve_oxval, kes=K3,
+       fidelity=fid(3, 'ЕГЭ', trap='промежуточные степени окисления: N +2, +4; S +4; Mn +4; C +2',
+                    scale=TIME_E1, kes=['1.3']))
+def g_oxval(rng):
+    pid = 'ch-ege-03-oxval'
+    v = rng.choice(list(OXVAL))
+    yes, no = (x.split() for x in OXVAL[v])
+    items = pick_row(rng, yes, no)
+    q = rng.choice([f'Укажите два элемента ряда, которые в соединениях могут иметь степень окисления {signed(v)}.',
+                    f'Для каких двух элементов ряда в соединениях возможна степень окисления {signed(v)}?'])
+    return row_card(pid, rng, items, lambda s: s in yes, q, ['Типичные степени окисления: ' + _ox_line(items[0])]
+                    + [_ox_line(s) for s in items[1:]], {'v': v})
+
+
+# кислородсодержащие анионы: элемент → [(формула аниона, заряд, степень окисления)]
+ANIONS = {
+    'S': [('SO3', 2), ('SO4', 2)], 'Se': [('SeO3', 2), ('SeO4', 2)], 'Cr': [('CrO4', 2), ('CrO2', 1)],
+    'Mn': [('MnO4', 2), ('MnO4', 1)], 'C': [('CO3', 2)], 'Si': [('SiO3', 2)], 'N': [('NO3', 1), ('NO2', 1)],
+    'P': [('PO4', 3)], 'Cl': [('ClO', 1), ('ClO2', 1), ('ClO3', 1), ('ClO4', 1)], 'Br': [('BrO', 1), ('BrO3', 1)],
+    'I': [('IO3', 1), ('IO4', 1)], 'Al': [('AlO2', 1)], 'Zn': [('ZnO2', 2)], 'B': [('BO2', 1)],
+    'As': [('AsO4', 3)], 'Fe': [('FeO4', 2)],
+}
+AN_POOL = list(ANIONS) + ['Na', 'K', 'Mg', 'Ca', 'F']
+
+
+def an_ox(f, q):
+    comp = parse_formula(f)
+    el = [x for x in comp if x != 'O'][0]
+    return el, (2 * comp['O'] - q) // comp[el]
+
+
+def an_states(s, form=None):
+    """Степени окисления s в его кислородсодержащих анионах (form: 2 — только ЭOₓ²⁻, 1 — ЭOₓ⁻)."""
+    return {an_ox(f, q)[1] for f, q in ANIONS.get(s, []) if form is None or q == form}
+
+
+def an_view(f, q):
+    return pretty(f) + ((str(q) if q > 1 else '') + '−').translate(SUP)
+
+
+def _solve_anion(p):
+    def states(s):
+        # второй путь: заряд аниона = 2·nO − n·x … пересчитываем по каждой формуле из электронейтральности
+        out = set()
+        for f, q in ANIONS.get(s, []):
+            comp = parse_formula(f)
+            if p['form'] and q != p['form']:
+                continue
+            out.add(Fr(-q + 2 * comp['O'], comp[s]))
+        return out
+    if p['mode'] == 'same':
+        row = p['row']
+        return sorted(str(i + 1) for i, s in enumerate(row)
+                      if any(states(s) & states(t) for t in row if t != s))
+    return ids_of(p['row'], lambda s: p['v'] in states(s))
+
+
+@proto('ch-ege-03-anion', 'ЕГЭ', 3, 'Степень окисления элемента в кислородсодержащих анионах',
+       invariant='степень окисления элемента в анионе ЭOₓ^(n−) из электронейтральности (O −2, сумма = заряд иона)',
+       varies='ряд (неметаллы, амфотерные и переходные металлы); вопрос: «одинаковая степень окисления в анионах '
+              'ЭOₓ²⁻ (ЭOₓ⁻)», «в анионах могут иметь +5»',
+       answer_rule='перебрать известные анионы элементов ряда (SO₄²⁻, CrO₄²⁻, MnO₄⁻, NO₃⁻, ClO₃⁻…) и сравнить '
+                   'степени окисления',
+       mistakes=['не учитывают заряд аниона', 'путают MnO₄⁻ (+7) и MnO₄²⁻ (+6)', 'забывают анионы переходных металлов'],
+       solve=_solve_anion, kes=K3,
+       fidelity=fid(3, 'ЕГЭ', trap='S и Cr (SO₄²⁻, CrO₄²⁻: +6), C и Si (+4); N, P, Cl — +5', scale=TIME_E1,
+                    kes=['1.3']))
+def g_anion(rng):
+    pid = 'ch-ege-03-anion'
     if rng.random() < 0.6:
-        q = rng.choice([f'Определите, какие два из указанных в ряду элементов образуют высший оксид состава {OXIDE_T[g]}.',
-                        f'Из числа указанных в ряду элементов выберите два элемента, высшие оксиды которых имеют общую '
-                        f'формулу {OXIDE_T[g]}.'])
+        form = rng.choice([2, 2, 1, None])
+        for _ in range(60):
+            items = rng.sample(AN_POOL, 5)
+            st = {s: an_states(s, form) for s in items}
+            pairs = [(a, b) for a, b in itertools.combinations(items, 2) if st[a] & st[b]]
+            if len(pairs) == 1:
+                break
+        else:
+            raise Retry
+        a, b = pairs[0]
+        pred = lambda s: s in (a, b)
+        where = {2: 'в анионах с общей формулой ЭOₓ²⁻', 1: 'в анионах с общей формулой ЭOₓ⁻',
+                 None: 'в составе кислородсодержащих анионов'}[form]
+        q = rng.choice([f'Укажите два элемента ряда, которые {where} могут иметь одинаковую степень окисления.',
+                        f'Для каких двух элементов ряда возможна одна и та же степень окисления {where}?'])
+        p = {'mode': 'same', 'form': form}
     else:
-        q = f'Определите, какие два из указанных в ряду элементов в высших оксидах проявляют валентность {ROMAN[g]}.'
-    lines = [f'{s} — {ROMAN[ox_max(s)]}, {OXIDE_T[ox_max(s)]}' for s in items]
-    return row_card(pid, rng, items, pred, q, ['Высшая валентность и оксид: ' + lines[0]] + lines[1:], {'g': g})
+        v = rng.choice([5, 6, 4, 7, 3])
+        pred = lambda s: v in an_states(s)
+        items = pick_row(rng, [s for s in AN_POOL if pred(s)], [s for s in AN_POOL if not pred(s)])
+        q = f'Укажите два элемента ряда, которые в образуемых ими кислородсодержащих анионах могут иметь степень ' \
+            f'окисления {signed(v)}.'
+        p = {'mode': 'v', 'v': v, 'form': None}
+    lines = [f'{s}: ' + (', '.join(f'{an_view(f, qq)} ({signed(an_ox(f, qq)[1])})' for f, qq in ANIONS[s]
+                                   if p['form'] is None or qq == p['form']) or 'нет') if s in ANIONS
+             else f'{s}: анионов не образует' for s in items]
+    return row_card(pid, rng, items, pred, q, ['Анионы: ' + lines[0]] + lines[1:], p)
 
 
-def _solve_hydride(p):
-    return ids_of(p['row'], lambda s: not r_metal(z_of(s)) and z_of(s) != 1 and r_outer(z_of(s)) == p['g'])
+VAL1_YES = 'H F Cl Br I Li Na K Cu Ag'.split()
+VAL1_NO = 'Mg Ca Ba Al C Si O Zn B Be'.split()
+NOTGROUP_YES = ['N', 'O', 'F']
+NOTGROUP_NO = 'Li Na K Mg Ca Al C Si P S Cl Br I'.split()
+SAMEVAL_YES = ['C', 'Si']
+SAMEVAL_NO = 'N P S Cl O F Br I As Se'.split()
 
 
-@proto('ch-ege-03-hydride', 'ЕГЭ', 3, 'Летучее водородное соединение (состав, валентность)',
-       invariant='неметалл группы N образует летучее водородное соединение с валентностью 8 − N',
-       varies='ряд, формула (ЭH₄, ЭH₃, H₂Э, HЭ) или валентность в водородном соединении',
-       answer_rule='IV → ЭH₄, V → ЭH₃, VI → H₂Э, VII → HЭ; металлы летучих водородных соединений не образуют',
-       mistakes=['путают формулу ЭH₃ и группу III', 'выбирают металлы (гидриды — нелетучие ионные вещества)'],
-       solve=_solve_hydride, kes=K3,
-       fidelity=fid(3, 'ЕГЭ', trap='валентность в водородном соединении = 8 − N, а не N', scale=TIME_E1, kes=['1.3']))
-def g_hydride(rng):
-    pid = 'ch-ege-03-hydride'
-    g = rng.choice([4, 5, 6, 7])
-    pool = NONMET3[1:] + ['Na', 'Mg', 'Al', 'K', 'Ca', 'Li', 'Ba']
-    pool = [s for s in pool if s != 'O' or g == 6]
-    pred = lambda s: E[s]['kind'] == 'n' and E[s]['group'] == g
-    items = pick_row(rng, [s for s in pool if pred(s)], [s for s in pool if not pred(s)])
-    if rng.random() < 0.6:
-        q = rng.choice([f'Определите, какие два из указанных в ряду элементов образуют летучие водородные соединения '
-                        f'состава {HYD_T[g]}.',
-                        f'Из числа указанных в ряду элементов выберите два элемента, летучие водородные соединения '
-                        f'которых имеют общую формулу {HYD_T[g]}.'])
+def _solve_valence(p):
+    def maxval(Z):
+        # максимальная валентность: у элементов 2-го периода не больше 4 (нет d-орбиталей), F — 1, O — 2
+        if Z == 9:
+            return 1
+        if Z == 8:
+            return 2
+        if r_period(Z) == 2 and not r_metal(Z):
+            return min(r_outer(Z), 4)
+        return r_valence(Z)
+    m = p['mode']
+    if m == 'one':
+        return ids_of(p['row'], lambda s: r_valence(z_of(s)) == 1 or (not r_metal(z_of(s)) and r_outer(z_of(s)) == 7)
+                      or z_of(s) == 1)
+    if m == 'notgroup':
+        return ids_of(p['row'], lambda s: maxval(z_of(s)) != r_valence(z_of(s)))
+    return ids_of(p['row'], lambda s: not r_metal(z_of(s)) and r_valence(z_of(s)) == 8 - r_valence(z_of(s)))
+
+
+@proto('ch-ege-03-valence', 'ЕГЭ', 3, 'Валентность элементов в соединениях',
+       invariant='валентность — число связей атома; высшая = номер группы (кроме N, O, F), в водородном соединении — '
+                 '8 − N',
+       varies='ряд; вопрос: «могут проявлять валентность I», «не проявляют валентности, равной номеру группы», '
+              '«валентность в высшем оксиде и летучем водородном соединении одинакова»',
+       answer_rule='валентность I: H, галогены, щелочные металлы, Cu, Ag; ≠ номеру группы: N (IV), O (II), F (I); '
+                   'одинаковая в оксиде и водородном соединении: IVA (C, Si)',
+       mistakes=['азоту приписывают валентность V', 'путают валентность и степень окисления'],
+       solve=_solve_valence, kes=K3,
+       fidelity=fid(3, 'ЕГЭ', trap='N: высшая валентность IV при степени окисления +5', scale=TIME_E1, kes=['1.3']))
+def g_valence3(rng):
+    pid = 'ch-ege-03-valence'
+    mode = rng.choice(['one', 'notgroup', 'same'])
+    if mode == 'one':
+        yes, no = VAL1_YES, VAL1_NO
+        q = rng.choice(['Укажите два элемента ряда, для которых в соединениях характерна валентность I.',
+                        'Какие два элемента ряда образуют соединения, в которых их валентность равна I?'])
+    elif mode == 'notgroup':
+        yes, no = NOTGROUP_YES, NOTGROUP_NO
+        q = rng.choice(['Укажите два элемента ряда, высшая валентность которых не совпадает с номером группы.',
+                        'Для каких двух элементов ряда высшая валентность меньше номера группы?'])
     else:
-        q = (f'Определите, какие два из указанных в ряду элементов проявляют в летучих водородных соединениях '
-             f'валентность {ROMAN[8 - g]}.')
-    lines = [f'{s} — {HYD_T[E[s]["group"]] if E[s]["kind"] == "n" and E[s]["group"] >= 4 else "нет летучего водородного соединения"}'
-             for s in items]
-    return row_card(pid, rng, items, pred, q, ['Водородные соединения: ' + lines[0]] + lines[1:], {'g': g})
+        yes, no = SAMEVAL_YES, SAMEVAL_NO
+        q = ('Укажите два элемента ряда, у каждого из которых валентность в высшем оксиде такая же, как в летучем '
+             'водородном соединении.')
+    items = pick_row(rng, yes, no)
+    lines = [f'{s} — группа {ROMAN[E[s]["group"]]}' for s in items]
+    return row_card(pid, rng, items, lambda s: s in yes, q, ['Положение: ' + lines[0]] + lines[1:], {'mode': mode})
 
 
 CONST_YES = ['Li', 'Na', 'K', 'Be', 'Mg', 'Ca', 'Sr', 'Ba', 'Al', 'Zn']
@@ -1064,8 +1470,7 @@ CONST_NO = ['Cr', 'Mn', 'Fe', 'Cu', 'Pb', 'N', 'S', 'Cl', 'P', 'C', 'Br', 'I', '
 
 
 def _solve_const(p):
-    # постоянная: металл главной подгруппы I–III (одна возможная — все внешние электроны) или d¹⁰s² (Zn)
-    def ok(s):
+    def const(s):
         Z = z_of(s)
         if not r_metal(Z):
             return False
@@ -1073,24 +1478,1797 @@ def _solve_const(p):
             occ, _ = aufbau(Z)
             return occ.get((r_period(Z) - 1, 2), 0) == 10 and r_outer(Z) == 2
         return r_outer(Z) <= 3
-    return ids_of(p['row'], ok)
+    want = p['mode'] == 'const'
+    return ids_of(p['row'], lambda s: const(s) == want)
 
 
-@proto('ch-ege-03-const', 'ЕГЭ', 3, 'Постоянная степень окисления в соединениях',
-       invariant='металлы IA, IIA групп, алюминий и цинк проявляют в соединениях одну (постоянную) степень окисления; '
-                 'неметаллы и большинство d-металлов — переменную',
-       varies='ряд из металлов с постоянной и переменной степенью окисления и неметаллов',
-       answer_rule='выбрать два элемента из IA/IIA, Al, Zn',
-       mistakes=['относят к постоянным Fe или Cr', 'выбирают F, путая «постоянную» и «только отрицательную»'],
+@proto('ch-ege-03-const', 'ЕГЭ', 3, 'Постоянная или переменная степень окисления',
+       invariant='металлы IA, IIA групп, алюминий и цинк проявляют в соединениях одну степень окисления; неметаллы и '
+                 'большинство d-металлов — переменную',
+       varies='ряд; вопрос о постоянной или о переменной степени окисления',
+       answer_rule='постоянная: IA, IIA, Al, Zn; переменная: неметаллы, Cr, Mn, Fe, Cu, Pb',
+       mistakes=['относят к постоянным Fe или Cr', 'считают Zn элементом с переменной степенью окисления'],
        solve=_solve_const, kes=K3,
        fidelity=fid(3, 'ЕГЭ', trap='Zn — d-элемент, но степень окисления постоянная (+2); Cu, Fe, Cr — переменная',
                     scale=TIME_E1, kes=['1.3']))
 def g_const(rng):
     pid = 'ch-ege-03-const'
-    items = pick_row(rng, CONST_YES, CONST_NO)
-    q = rng.choice(['Определите, какие два из указанных в ряду элементов проявляют в соединениях постоянную '
-                    'положительную степень окисления.',
-                    'Из числа указанных в ряду элементов выберите два элемента, которые во всех своих соединениях '
-                    'имеют одну и ту же степень окисления.'])
-    return row_card(pid, rng, items, lambda s: s in CONST_YES, q,
-                    ['Степени окисления: ' + _ox_line(items[0])] + [_ox_line(s) for s in items[1:]], {})
+    mode = rng.choice(['const', 'const', 'var'])
+    yes, no = (CONST_YES, CONST_NO) if mode == 'const' else (CONST_NO, CONST_YES)
+    items = pick_row(rng, yes, no)
+    if mode == 'const':
+        q = rng.choice(['Укажите два элемента ряда, которые во всех соединениях имеют одну и ту же степень окисления.',
+                        'Какие два элемента ряда проявляют в соединениях единственную (постоянную) степень '
+                        'окисления?'])
+    else:
+        q = rng.choice(['Укажите два элемента ряда, для которых характерны несколько различных степеней окисления.',
+                        'Какие два элемента ряда проявляют в соединениях переменную степень окисления?'])
+    return row_card(pid, rng, items, lambda s: s in yes, q,
+                    ['Степени окисления: ' + _ox_line(items[0])] + [_ox_line(s) for s in items[1:]], {'mode': mode})
+
+
+# ================================================================= вещества: вид связи, решётка, водородные связи
+# (формула, название, связи: i — ионная, p — ковалентная полярная, n — ковалентная неполярная, m — металлическая,
+#  d — есть связь по донорно-акцепторному механизму; решётка: ion/mol/atom/met; hb — водородные связи между молекулами;
+#  lvl: o — годится для ОГЭ (неорганика 8–9 кл.), e — только ЕГЭ)
+_SUBS = """
+Na|натрий|m|met||o
+K|калий|m|met||o
+Li|литий|m|met||o
+Mg|магний|m|met||o
+Ca|кальций|m|met||o
+Ba|барий|m|met||o
+Al|алюминий|m|met||o
+Fe|железо|m|met||o
+Cu|медь|m|met||o
+Zn|цинк|m|met||o
+Ag|серебро|m|met||o
+Cr|хром|m|met||e
+H2|водород|n|mol||o
+O2|кислород|n|mol||o
+N2|азот|n|mol||o
+Cl2|хлор|n|mol||o
+F2|фтор|n|mol||o
+Br2|бром|n|mol||o
+I2|иод|n|mol||o
+O3|озон|n|mol||o
+S8|сера (ромбическая)|n|mol||o
+P4|белый фосфор|n|mol||o
+C|алмаз|n|atom||o
+C|графит|n|atom||e
+Si|кремний|n|atom||o
+B|бор|n|atom||e
+SiO2|оксид кремния(IV)|p|atom||o
+SiC|карбид кремния|p|atom||e
+HCl|хлороводород|p|mol||o
+HBr|бромоводород|p|mol||o
+HI|иодоводород|p|mol||o
+HF|фтороводород|p|mol|hb|o
+H2O|вода|p|mol|hb|o
+NH3|аммиак|p|mol|hb|o
+H2S|сероводород|p|mol||o
+PH3|фосфин|p|mol||o
+CH4|метан|p|mol||o
+CO2|оксид углерода(IV)|p|mol||o
+SO2|оксид серы(IV)|p|mol||o
+SO3|оксид серы(VI)|p|mol||o
+P2O5|оксид фосфора(V)|p|mol||o
+CCl4|тетрахлорметан|p|mol||e
+NO|оксид азота(II)|p|mol||o
+CO|оксид углерода(II)|pd|mol||o
+H2SO4|серная кислота|p|mol|hb|o
+HNO3|азотная кислота|p|mol|hb|o
+H3PO4|ортофосфорная кислота|p|mol|hb|e
+H2O2|пероксид водорода|pn|mol|hb|e
+CH3OH|метанол|p|mol|hb|e
+C2H5OH|этанол|pn|mol|hb|e
+CH3COOH|уксусная кислота|pn|mol|hb|e
+HCOOH|муравьиная кислота|p|mol|hb|e
+C2H6|этан|pn|mol||e
+C2H4|этилен|pn|mol||e
+C2H2|ацетилен|pn|mol||e
+C6H6|бензол|pn|mol||e
+CH3OCH3|диметиловый эфир|p|mol||e
+CH2O|формальдегид|p|mol||e
+CH3CHO|уксусный альдегид|pn|mol||e
+CH3NH2|метиламин|p|mol|hb|e
+C6H5OH|фенол|pn|mol|hb|e
+NaCl|хлорид натрия|i|ion||o
+KCl|хлорид калия|i|ion||o
+KBr|бромид калия|i|ion||o
+NaI|иодид натрия|i|ion||o
+CaCl2|хлорид кальция|i|ion||o
+MgCl2|хлорид магния|i|ion||o
+BaCl2|хлорид бария|i|ion||o
+NaF|фторид натрия|i|ion||o
+CaF2|фторид кальция|i|ion||o
+Na2O|оксид натрия|i|ion||o
+K2O|оксид калия|i|ion||o
+Li2O|оксид лития|i|ion||o
+CaO|оксид кальция|i|ion||o
+MgO|оксид магния|i|ion||o
+BaO|оксид бария|i|ion||o
+Na2S|сульфид натрия|i|ion||o
+K2S|сульфид калия|i|ion||o
+NaH|гидрид натрия|i|ion||e
+CaH2|гидрид кальция|i|ion||e
+Li3N|нитрид лития|i|ion||o
+Mg3N2|нитрид магния|i|ion||o
+Na3N|нитрид натрия|i|ion||o
+CaC2|карбид кальция|in|ion||e
+Na2O2|пероксид натрия|in|ion||e
+BaO2|пероксид бария|in|ion||e
+NaOH|гидроксид натрия|ip|ion||o
+KOH|гидроксид калия|ip|ion||o
+Ca(OH)2|гидроксид кальция|ip|ion||o
+Ba(OH)2|гидроксид бария|ip|ion||o
+LiOH|гидроксид лития|ip|ion||o
+Na2SO4|сульфат натрия|ip|ion||o
+K2SO4|сульфат калия|ip|ion||o
+K2CO3|карбонат калия|ip|ion||o
+Na2CO3|карбонат натрия|ip|ion||o
+CaCO3|карбонат кальция|ip|ion||o
+NaNO3|нитрат натрия|ip|ion||o
+KNO3|нитрат калия|ip|ion||o
+K3PO4|фосфат калия|ip|ion||o
+Na3PO4|фосфат натрия|ip|ion||o
+Na2SiO3|силикат натрия|ip|ion||o
+KMnO4|перманганат калия|ip|ion||e
+NaHCO3|гидрокарбонат натрия|ip|ion||o
+KHSO4|гидросульфат калия|ip|ion||e
+KClO3|хлорат калия|ip|ion||e
+NH4Cl|хлорид аммония|ipd|ion||o
+NH4Br|бромид аммония|ipd|ion||o
+NH4NO3|нитрат аммония|ipd|ion||o
+(NH4)2SO4|сульфат аммония|ipd|ion||o
+(NH4)2CO3|карбонат аммония|ipd|ion||e
+CH3COONa|ацетат натрия|ipn|ion||e
+C2H5ONa|этилат натрия|ipn|ion||e
+CH3ONa|метилат натрия|ip|ion||e
+HCOONa|формиат натрия|ip|ion||e
+C6H5ONa|фенолят натрия|ipn|ion||e
+CH3COOK|ацетат калия|ipn|ion||e
+CH3NH3Cl|хлорид метиламмония|ipd|ion||e
+SCl2|хлорид серы(II)|p|mol||e
+CH2Cl2|дихлорметан|p|mol||e
+CH3Cl|хлорметан|p|mol||e
+PCl3|хлорид фосфора(III)|p|mol||e
+SF6|фторид серы(VI)|p|mol||e
+SiH4|силан|p|mol||e
+C3H5(OH)3|глицерин|pn|mol|hb|e
+C2H4(OH)2|этиленгликоль|pn|mol|hb|e
+HCOOCH3|метилформиат|p|mol||e
+CH3COOCH3|метилацетат|pn|mol||e
+CH3COCH3|ацетон|pn|mol||e
+C6H5CH3|толуол|pn|mol||e
+C4H6|бутадиен-1,3|pn|mol||e
+C2H5OC2H5|диэтиловый эфир|pn|mol||e
+NH4F|фторид аммония|ipd|ion||e
+NH4HCO3|гидрокарбонат аммония|ipd|ion||e
+CH3COONH4|ацетат аммония|ipnd|ion||e
+NaNO2|нитрит натрия|ip|ion||o
+Li3PO4|фосфат лития|ip|ion||o
+MgSO4|сульфат магния|ip|ion||o
+CaSiO3|силикат кальция|ip|ion||e
+Na2C2|ацетиленид натрия|in|ion||e
+Cs|цезий|m|met||e
+RbCl|хлорид рубидия|i|ion||e
+"""
+SUBS = []
+for _ln in _SUBS.strip().splitlines():
+    _f, _nm, _b, _lat, _hb, _lv = _ln.split('|')
+    SUBS.append(dict(f=_f, name=_nm, bonds=set(_b), lat=_lat, hb=_hb == 'hb', lvl=_lv, key=_f + ':' + _nm))
+SUBK = {s['key']: s for s in SUBS}
+# формулы с неоднозначной школьной трактовкой донорно-акцепторной связи (N→O, O₃) — в прототип «д/а» не берём
+DA_AMBIG = {'HNO3', 'NaNO3', 'KNO3', 'NH4NO3', 'O3', 'NO', 'SO3', 'P2O5', 'H3PO4', 'H2SO4', 'Na2SO4', 'K2SO4', 'KHSO4',
+            'K3PO4', 'Na3PO4', 'KMnO4', 'KClO3'}
+
+
+def sub_view(s, names):
+    """Как вещество показано в перечне: по названию (ЕГЭ, как в демоверсии) или по формуле."""
+    if names:
+        return s['name']
+    f = pretty(s['f'])
+    if s['f'] in ('C', 'S8', 'P4', 'B', 'Si'):
+        return f'{f} ({s["name"]})' if s['f'] in ('C', 'P4') else f
+    return f
+
+
+def _metal_el(el):
+    return r_metal(z_of(el))
+
+
+ETHERS = {'CH3OCH3', 'HCOOCH3'}   # два атома C, но связи C–C нет
+
+
+def solve_bonds(f):
+    """Второй путь: вид связи по составу формулы."""
+    comp = parse_formula(f)
+    mets = [el for el in comp if _metal_el(el)]
+    if len(mets) == len(comp):
+        return {'m'}
+    ammon = 'NH4' in f or 'NH3Cl' in f
+    ionic = bool(mets) or ammon
+    b = set()
+    nm = {el: n for el, n in comp.items() if not _metal_el(el)}
+    if ionic:
+        b.add('i')
+        if sum(nm.values()) >= 2 and len(nm) >= 2:
+            b.add('p')
+        if len(mets) >= 2 and 'O' in nm:
+            b.add('p')    # оксоанион переходного металла (MnO₄⁻, CrO₄²⁻): связи M–O ковалентные полярные
+        elif len(nm) == 1:
+            el, n = next(iter(nm.items()))
+            charge = sum(r_outer(z_of(m)) * comp[m] for m in mets)
+            if n >= 2 and Fr(-charge, n) != r_lower_ox(z_of(el)):
+                b.add('n')    # пероксид O₂²⁻, карбид C₂²⁻
+        if comp.get('C', 0) >= 2:
+            b.add('n')
+    else:
+        if len(comp) == 1:
+            b.add('n')
+        else:
+            b.add('p')
+            if comp.get('C', 0) >= 2 and f not in ETHERS:
+                b.add('n')
+            if set(comp) == {'H', 'O'} and comp['O'] >= 2:
+                b.add('n')
+    if ammon or f == 'CO':
+        b.add('d')
+    return b
+
+
+def solve_lattice(f):
+    comp = parse_formula(f)
+    b = solve_bonds(f)
+    if b == {'m'}:
+        return 'met'
+    if 'i' in b:
+        return 'ion'
+    if set(comp) <= {'B', 'C', 'Si'} and len(comp) == 1 or ('Si' in comp and 'H' not in comp):
+        return 'atom'
+    return 'mol'
+
+
+def solve_hb(f):
+    return solve_lattice(f) == 'mol' and ('OH' in f or 'NH' in f or f in ('H2O', 'HF', 'H2O2', 'H2SO4', 'HNO3', 'H3PO4'))
+
+
+BOND_TXT = {'i': 'ионная', 'p': 'ковалентная полярная', 'n': 'ковалентная неполярная', 'm': 'металлическая'}
+LAT_TXT = {'ion': 'ионная', 'mol': 'молекулярная', 'atom': 'атомная', 'met': 'металлическая'}
+
+
+def sub_desc(s):
+    b = ', '.join(BOND_TXT[x] for x in 'ipnm' if x in s['bonds'])
+    return f'{pretty(s["f"])} — {b}'
+
+
+def list_card(pid, rng, pool, pred, q, p_extra, explain=sub_desc, names=None, k=2, tail=None):
+    yes = [s for s in pool if pred(s)]
+    no = [s for s in pool if not pred(s)]
+    if len(yes) < k or len(no) < 5 - k:
+        raise Retry
+    items = rng.sample(yes, k) + rng.sample(no, 5 - k)
+    if len({s['f'] for s in items}) < 5:
+        raise Retry
+    rng.shuffle(items)
+    names = (rng.random() < 0.5) if names is None else names
+    view = [sub_view(s, names) for s in items]
+    ans = ids_of(items, pred)
+    tail = tail or rng.choice(['Номера выбранных веществ запишите в поле ответа.', 'В ответ запишите номера двух веществ.'])
+    e = '; '.join(explain(s) for s in items) + f'. Ответ: {"".join(ans)}.'
+    return pcard(pid, q + ' ' + tail, ans, e, k='many', o=opts(view), p=dict(p_extra, subs=[s['f'] for s in items]))
+
+
+def pool_for(level):
+    return [s for s in SUBS if level == 'e' or s['lvl'] == 'o']
+
+
+def _solve_bond(p):
+    return ids_of(p['subs'], lambda f: p['b'] in solve_bonds(f))
+
+
+K4 = ['1.4']
+SC4 = 'пять веществ: простые вещества, бинарные соединения, соли, кислоты, основания, несложная органика (как в банке и демо)'
+
+
+def bond_q(rng, b, exam):
+    t = {'i': 'ионная', 'p': 'ковалентная полярная', 'n': 'ковалентная неполярная', 'm': 'металлическая'}[b]
+    ins = {'i': 'ионной', 'p': 'ковалентной полярной', 'n': 'ковалентной неполярной', 'm': 'металлической'}[b]
+    if exam == 'ЕГЭ':
+        return rng.choice([f'Укажите два вещества из перечня, в которых имеется {t} химическая связь.',
+                           f'В каких двух веществах из приведённого перечня есть {t} связь?',
+                           f'Отметьте два вещества перечня, в состав которых входят атомы (ионы), соединённые {ins} '
+                           f'связью.'])
+    return rng.choice([f'Укажите два вещества, в которых имеется {t} химическая связь.',
+                       f'Какие два из перечисленных веществ образованы за счёт {ins} связи?',
+                       f'Отметьте два вещества, для которых характерна {t} связь.'])
+
+
+def _bond_gen(pid, exam, letters):
+    def gen(rng):
+        b = rng.choice(letters)
+        pool = pool_for('e' if exam == 'ЕГЭ' else 'o')
+        return list_card(pid, rng, pool, lambda s: b in s['bonds'], bond_q(rng, b, exam), {'b': b},
+                         names=None if exam == 'ЕГЭ' else False)
+    return gen
+
+
+for _pid, _title, _lt, _trap in [
+        ('ch-ege-04-ionic', 'Вещества с ионной связью', 'i',
+         'соли аммония и аминов — ионные, хотя металла нет; AlCl₃, BeCl₂ в задания не берём'),
+        ('ch-ege-04-polar', 'Вещества с ковалентной полярной связью', 'p',
+         'полярные связи есть и внутри сложных ионов (соли кислородсодержащих кислот, щёлочи, алкоголяты)'),
+        ('ch-ege-04-nonpolar', 'Вещества с ковалентной неполярной связью', 'n',
+         'неполярная связь в пероксидах (O–O), карбиде кальция и ацетиленидах (C≡C), органике (C–C)')]:
+    proto(_pid, 'ЕГЭ', 4, _title,
+          invariant='по составу вещества (металл/неметалл, сложные ионы, одинаковые атомы) определить виды связи',
+          varies='перечень из пяти веществ (названия или формулы: неорганические и органические), вид связи',
+          answer_rule='ионная — металл + неметалл или катион аммония (алкиламмония); ковалентная неполярная — связь '
+                      'одинаковых атомов неметалла; полярная — разных неметаллов',
+          mistakes=['не видят ковалентных связей внутри сложного иона', 'не считают соли аммония ионными',
+                    'пропускают связь O–O в пероксидах и C–C в органике'],
+          solve=_solve_bond, kes=K4,
+          fidelity=fid(4, 'ЕГЭ', trap=_trap, scale=SC4, kes=['1.4']))(_bond_gen(_pid, 'ЕГЭ', [_lt]))
+
+MIX = {'ic': (lambda b: 'i' in b and bool(b & {'p', 'n'}), 'и ионная, и ковалентная связь'),
+       'in': (lambda b: 'i' in b and 'n' in b, 'одновременно ионная и ковалентная неполярная связь'),
+       'pn': (lambda b: 'p' in b and 'n' in b, 'одновременно ковалентная полярная и ковалентная неполярная связь')}
+
+
+def _solve_mixed(p):
+    t = {'ic': lambda b: 'i' in b and bool(b & {'p', 'n'}), 'in': lambda b: {'i', 'n'} <= b,
+         'pn': lambda b: {'p', 'n'} <= b}[p.get('mode', 'ic')]
+    return ids_of(p['subs'], lambda f: t(solve_bonds(f)))
+
+
+def _mixed_gen(pid, exam):
+    def gen(rng):
+        pool = pool_for('e' if exam == 'ЕГЭ' else 'o')
+        mode = rng.choice(['ic', 'ic', 'in', 'pn']) if exam == 'ЕГЭ' else 'ic'
+        test, words = MIX[mode]
+        pred = lambda s: test(s['bonds'])
+        q = rng.choice([f'Укажите два вещества из перечня, в каждом из которых присутствует {words}.',
+                        f'В каких двух веществах из перечня имеется {words}?'])
+        return list_card(pid, rng, pool, pred, q, {'mode': mode}, names=None if exam == 'ЕГЭ' else False)
+    return gen
+
+
+proto('ch-ege-04-mixed', 'ЕГЭ', 4, 'Вещества с двумя видами связи одновременно',
+      invariant='ионная связь между ионами + ковалентная внутри сложного иона; полярная + неполярная — в молекулах с '
+                'цепочками одинаковых атомов',
+      varies='сочетание (ионная + ковалентная, ионная + ковалентная неполярная, полярная + неполярная), перечень',
+      answer_rule='выбрать два вещества, где есть оба вида связи (сложный ион; O–O, C–C вместе с полярными связями)',
+      mistakes=['выбирают бинарные соли (NaCl)', 'выбирают кислоты (только ковалентные связи)',
+                'не замечают C–C в этаноле, уксусной кислоте'],
+      solve=_solve_mixed, kes=K4,
+      fidelity=fid(4, 'ЕГЭ', trap='H₂SO₄ — только ковалентные связи, Na₂SO₄ — ионная и ковалентная; Na₂O₂ — ионная и '
+                                  'неполярная', scale=SC4, kes=['1.4']))(_mixed_gen('ch-ege-04-mixed', 'ЕГЭ'))
+
+
+def _solve_lat(p):
+    L = p['L']
+    if L == 'nonmol':
+        return ids_of(p['subs'], lambda f: solve_lattice(f) != 'mol')
+    return ids_of(p['subs'], lambda f: solve_lattice(f) == L)
+
+
+@proto('ch-ege-04-lattice', 'ЕГЭ', 4, 'Тип кристаллической решётки (молекулярное/немолекулярное строение)',
+       invariant='по виду связи и составу определить тип кристаллической решётки в твёрдом состоянии',
+       varies='перечень, тип решётки (ионная, молекулярная, атомная) или «немолекулярное строение»',
+       answer_rule='ионные соединения — ионная; металлы — металлическая; алмаз, графит, кремний, бор, SiO₂, SiC — '
+                   'атомная; остальные ковалентные — молекулярная',
+       mistakes=['CO₂ и SiO₂ относят к одному типу решётки', 'считают атомной решётку белого фосфора или иода'],
+       solve=_solve_lat, kes=K4,
+       fidelity=fid(4, 'ЕГЭ', trap='SiO₂ — атомная, CO₂ — молекулярная; соли аммония — ионная', scale=SC4, kes=['1.4']))
+def g_lattice(rng):
+    L = rng.choice(['ion', 'mol', 'atom', 'atom', 'nonmol'])
+    pool = pool_for('e')
+    pred = (lambda s: s['lat'] != 'mol') if L == 'nonmol' else (lambda s: s['lat'] == L)
+    if L == 'nonmol':
+        q = rng.choice(['Укажите два вещества из перечня, имеющие немолекулярное строение.',
+                        'Какие два вещества из перечня в твёрдом состоянии построены не из молекул?'])
+    else:
+        q = rng.choice([f'Укажите два вещества из перечня, для которых в твёрдом состоянии характерна {LAT_TXT[L]} '
+                        f'кристаллическая решётка.',
+                        f'Какие два вещества из перечня образуют кристаллы с {LAT_TXT[L][:-2]}ой решёткой?'])
+    return list_card('ch-ege-04-lattice', rng, pool, pred, q, {'L': L},
+                     explain=lambda s: f'{pretty(s["f"])} — {LAT_TXT[s["lat"]]}')
+
+
+def _solve_hb(p):
+    return ids_of(p['subs'], solve_hb)
+
+
+@proto('ch-ege-04-hbond', 'ЕГЭ', 4, 'Водородные связи между молекулами',
+       invariant='водородная связь возникает между молекулами, где атом H связан с N, O или F',
+       varies='перечень молекулярных (и немолекулярных) веществ: спирты, кислоты, амины, вода, аммиак, HF против '
+              'эфиров, альдегидов, кетонов, углеводородов, H₂S, HCl',
+       answer_rule='выбрать два вещества с группами O–H, N–H или H–F',
+       mistakes=['выбирают H₂S и HCl (H связан не с N/O/F)', 'выбирают альдегиды и эфиры (O есть, но H не при O)',
+                 'выбирают ионные вещества'],
+       solve=_solve_hb, kes=K4,
+       fidelity=fid(4, 'ЕГЭ', trap='эфиры, ацетон, формальдегид содержат кислород, но водородных связей между '
+                                    'молекулами не образуют', scale=SC4, kes=['1.4']))
+def g_hbond(rng):
+    pool = [s for s in pool_for('e') if s['lat'] == 'mol' or rng.random() < 0.15]
+    q = rng.choice(['Укажите два вещества из перечня, молекулы которых связаны друг с другом водородными связями.',
+                    'Для каких двух веществ из перечня характерна водородная связь между молекулами?'])
+    return list_card('ch-ege-04-hbond', rng, pool, lambda s: s['hb'], q, {},
+                     explain=lambda s: f'{pretty(s["f"])} — {"есть" if s["hb"] else "нет"}')
+
+
+def _solve_da(p):
+    return ids_of(p['subs'], lambda f: 'd' in solve_bonds(f))
+
+
+@proto('ch-ege-04-da', 'ЕГЭ', 4, 'Связь по донорно-акцепторному механизму',
+       invariant='донорно-акцепторная связь: неподелённая пара N (O, C) + свободная орбиталь H⁺ (катион аммония, '
+                 'алкиламмония) или C≡O в угарном газе',
+       varies='перечень: соли аммония и аминов, CO против обычных ионных и ковалентных веществ',
+       answer_rule='выбрать два вещества с катионом NH₄⁺ (RNH₃⁺) или молекулой CO',
+       mistakes=['выбирают аммиак (в молекуле NH₃ связи обменные)', 'выбирают любые соли'],
+       solve=_solve_da, kes=K4,
+       fidelity=fid(4, 'ЕГЭ', trap='NH₃ — нет, NH₄Cl — есть', scale=SC4, kes=['1.4']))
+def g_da(rng):
+    pool = [s for s in pool_for('e') if s['f'] not in DA_AMBIG]
+    q = rng.choice(['Укажите два соединения из перечня, в которых одна из ковалентных связей возникла по '
+                    'донорно-акцепторному механизму.',
+                    'В каких двух соединениях из перечня есть связь, образованная по донорно-акцепторному механизму?'])
+    return list_card('ch-ege-04-da', rng, pool, lambda s: 'd' in s['bonds'], q, {},
+                     explain=lambda s: f'{pretty(s["f"])} — {"есть" if "d" in s["bonds"] else "нет"}')
+
+
+COMBOS = [('p', 'ion'), ('p', 'atom'), ('n', 'atom'), ('n', 'mol'), ('p', 'mol'), ('n', 'ion'), ('p', 'nonmol'),
+          ('n', 'nonmol'), ('c', 'nonmol'), ('-n', 'nonmol'), ('pn', 'mol')]
+BOND_GEN = {'p': 'ковалентная полярная связь', 'n': 'ковалентная неполярная связь', 'c': 'ковалентная связь',
+            '-n': None, 'pn': 'и полярная, и неполярная ковалентные связи'}
+
+
+def _has(b, bonds):
+    if b == 'c':
+        return bool(bonds & {'p', 'n'})
+    if b == '-n':
+        return 'n' not in bonds
+    if b == 'pn':
+        return {'p', 'n'} <= bonds
+    return b in bonds
+
+
+def _lat_ok(L, lat):
+    return lat != 'mol' if L == 'nonmol' else lat == L
+
+
+def _solve_combo(p):
+    return ids_of(p['subs'], lambda f: _has(p['b'], solve_bonds(f)) and _lat_ok(p['L'], solve_lattice(f)))
+
+
+@proto('ch-ege-04-combo', 'ЕГЭ', 4, 'Вид связи и тип решётки (строение) одновременно',
+       invariant='проверить у каждого вещества два признака: наличие (отсутствие) связи данного вида и тип '
+                 'кристаллической решётки / молекулярное или немолекулярное строение',
+       varies='сочетание (ковалентная полярная + ионная решётка, неполярная + атомная, ковалентная + немолекулярное '
+              'строение и т. д.), перечень',
+       answer_rule='выбрать вещества, удовлетворяющие обоим признакам; вещества с одним признаком — ловушки',
+       mistakes=['проверяют только один признак', 'забывают о ковалентных связях внутри сложных ионов'],
+       solve=_solve_combo, kes=K4,
+       fidelity=fid(4, 'ЕГЭ', trap='как в демоверсии 2027: ковалентная полярная связь + ионная решётка (алкоголяты, '
+                                    'щёлочи), рядом — хлорид магния и аммиак', scale=SC4, kes=['1.4']))
+def g_combo(rng):
+    b, L = rng.choice(COMBOS)
+    pool = pool_for('e')
+    pred = lambda s: _has(b, s['bonds']) and _lat_ok(L, s['lat'])
+    part = [s for s in pool if not pred(s) and (_has(b, s['bonds']) or _lat_ok(L, s['lat']))]
+    rest = [s for s in pool if not pred(s) and s not in part]
+    yes = [s for s in pool if pred(s)]
+    if len(yes) < 2 or len(part) < 2:
+        raise Retry
+    k_rest = 1 if rest else 0
+    items = rng.sample(yes, 2) + rng.sample(part, 3 - k_rest) + rng.sample(rest, k_rest)
+    if len({s['f'] for s in items}) < 5:
+        raise Retry
+    rng.shuffle(items)
+    struct = {'ion': 'с ионной кристаллической решёткой', 'atom': 'с атомной кристаллической решёткой',
+              'mol': 'молекулярного строения', 'nonmol': 'немолекулярного строения'}[L]
+    if b == '-n':
+        cond = 'в которых нет ковалентной неполярной связи'
+    else:
+        cond = f'в которых имеется {BOND_GEN[b]}'
+    q = rng.choice([f'Укажите два вещества {struct}, {cond}.',
+                    f'Среди перечисленных веществ отметьте два вещества {struct}, {cond}.'])
+    names = rng.random() < 0.6
+    ans = ids_of(items, pred)
+    e = '; '.join(f'{pretty(s["f"])} — {", ".join(BOND_TXT[x] for x in "ipnm" if x in s["bonds"])}, решётка '
+                  f'{LAT_TXT[s["lat"]]}' for s in items) + f'. Ответ: {"".join(ans)}.'
+    return pcard('ch-ege-04-combo', q + ' ' + rng.choice(['Номера выбранных веществ запишите в поле ответа.',
+                                                          'В ответ запишите номера двух веществ.']), ans, e, k='many',
+                 o=opts([sub_view(s, names) for s in items]), p={'b': b, 'L': L, 'subs': [s['f'] for s in items]})
+
+
+# свойства веществ с разными кристаллическими решётками: признак → чем обусловлен (частицы в узлах/связь)
+LAT_PROPS = [
+    ('высокая электропроводность в твёрдом состоянии', 'free_e'), ('пластичность (ковкость)', 'free_e'),
+    ('металлический блеск', 'free_e'), ('высокая теплопроводность', 'free_e'),
+    ('хрупкость кристаллов', 'ions'), ('растворы и расплавы проводят электрический ток', 'ions'),
+    ('высокая температура плавления', 'strong'), ('нелетучесть', 'strong'),
+    ('низкая температура плавления', 'weak'), ('летучесть', 'weak'), ('малая твёрдость', 'weak'),
+    ('у многих веществ есть запах', 'weak'),
+    ('очень высокая твёрдость', 'covnet'), ('нерастворимость в воде и других растворителях', 'covnet'),
+]
+# свойства, которые у части веществ данного типа всё же встречаются, — в дистракторы не берём
+PROPS_AMBIG = {'met': {'низкая температура плавления', 'малая твёрдость', 'очень высокая твёрдость',
+                       'нерастворимость в воде и других растворителях', 'высокая температура плавления', 'нелетучесть',
+                       'хрупкость кристаллов'},
+               'ion': {'нерастворимость в воде и других растворителях', 'очень высокая твёрдость'},
+               'mol': {'хрупкость кристаллов', 'нерастворимость в воде и других растворителях'},
+               'atom': {'металлический блеск', 'высокая электропроводность в твёрдом состоянии', 'хрупкость кристаллов',
+                        'высокая теплопроводность'}}
+LAT_ACC = {'ion': 'ионную', 'met': 'металлическую', 'mol': 'молекулярную', 'atom': 'атомную'}
+LAT_FEAT = {'met': {'free_e'}, 'ion': {'ions', 'strong'}, 'mol': {'weak'}, 'atom': {'covnet', 'strong'}}
+
+
+def _solve_props(p):
+    # второй путь: что находится в узлах решётки и чем связаны частицы
+    nodes = {'met': ('катионы металла и обобществлённые электроны', {'free_e'}),
+             'ion': ('катионы и анионы, прочная ионная связь', {'ions', 'strong'}),
+             'mol': ('молекулы, слабое межмолекулярное взаимодействие', {'weak'}),
+             'atom': ('атомы, прочные ковалентные связи во всём кристалле', {'covnet', 'strong'})}[p['L']][1]
+    return sorted(str(i + 1) for i, need in enumerate(p['needs']) if need in nodes)
+
+
+@proto('ch-ege-04-props', 'ЕГЭ', 4, 'Свойства веществ с данным типом кристаллической решётки',
+       invariant='по частицам в узлах решётки и силе связи между ними предсказать физические свойства вещества',
+       varies='тип решётки (ионная, металлическая, молекулярная, атомная), набор из пяти свойств',
+       answer_rule='металлическая — электро- и теплопроводность, пластичность, блеск; ионная — тугоплавкость, '
+                   'хрупкость, проводимость растворов/расплавов; молекулярная — летучесть, легкоплавкость, малая '
+                   'твёрдость; атомная — очень высокая твёрдость, тугоплавкость, нерастворимость',
+       mistakes=['приписывают ионным кристаллам электропроводность в твёрдом состоянии', 'путают атомную и '
+                 'молекулярную решётку'],
+       solve=_solve_props, kind='dict', kes=K4,
+       fidelity=fid(4, 'ЕГЭ', trap='высокая температура плавления — и у ионных, и у атомных кристаллов; '
+                                    'электропроводность в твёрдом виде — только у металлов',
+                    scale='пять свойств, тип решётки — как в банке (3 задания из 77)', kes=['1.4']))
+def g_props(rng):
+    L = rng.choice(['met', 'ion', 'mol', 'atom'])
+    feat = LAT_FEAT[L]
+    yes = [x for x in LAT_PROPS if x[1] in feat]
+    ambig = PROPS_AMBIG[L]
+    no = [x for x in LAT_PROPS if x[1] not in feat and x[0] not in ambig]
+    items = rng.sample(yes, 2) + rng.sample(no, 3)
+    if len({x[1] for x in items[2:]}) < 2:
+        raise Retry
+    rng.shuffle(items)
+    q = rng.choice([f'Укажите два свойства, характерные для веществ с {LAT_TXT[L][:-2]}ой кристаллической решёткой.',
+                    f'Какие два из перечисленных свойств присущи веществам, имеющим {LAT_ACC[L]} кристаллическую '
+                    f'решётку?'])
+    ans = sorted(str(i + 1) for i, x in enumerate(items) if x[1] in feat)
+    e = {'met': 'В узлах — катионы металла, между ними свободные электроны: отсюда электро- и теплопроводность, '
+                'пластичность, блеск.',
+         'ion': 'В узлах — ионы, связанные прочной ионной связью: кристаллы тугоплавки, нелетучи, хрупки; ток проводят '
+                'растворы и расплавы.',
+         'mol': 'В узлах — молекулы, связанные слабо: вещества летучи, легкоплавки, мягкие, часто имеют запах.',
+         'atom': 'В узлах — атомы, связанные прочными ковалентными связями по всему кристаллу: очень твёрдые, '
+                 'тугоплавкие, нерастворимые.'}[L] + f' Ответ: {"".join(ans)}.'
+    return pcard('ch-ege-04-props', q + ' Запишите номера выбранных ответов.', ans, e, k='many',
+                 o=opts([x[0] for x in items]), p={'L': L, 'needs': [x[1] for x in items]})
+
+
+# ================================================================= ОГЭ 1. Химический элемент / простое вещество / сложное вещество
+# Высказывания составлены самостоятельно (факты школьного курса). E — об элементе, S — о простом веществе.
+FACTS = {
+    'O': ('кислороде', [
+        'Кислород входит в состав молекул воды и углекислого газа.',
+        'Почти половину массы земной коры составляет кислород.',
+        'В оксидах кислород проявляет степень окисления −2.',
+        'Ядро атома кислорода содержит 8 протонов.'], [
+        'Тлеющая лучинка, внесённая в сосуд с кислородом, ярко вспыхивает.',
+        'Кислород плохо растворяется в воде.',
+        'Кислород из баллонов подают больным при затруднённом дыхании.',
+        'Кислород получают в лаборатории разложением перманганата калия.']),
+    'N': ('азоте', [
+        'Азот входит в состав белков и нуклеиновых кислот.',
+        'В аммиаке азот имеет степень окисления −3.',
+        'Недостаток азота в почве восполняют внесением селитры.',
+        'На внешнем электронном слое атома азота находится пять электронов.'], [
+        'Азот занимает около 78 % объёма воздуха.',
+        'Жидкий азот кипит при температуре −196 °C.',
+        'Азот при комнатной температуре реагирует с литием.',
+        'Азотом заполняют упаковки с продуктами, чтобы замедлить их порчу.']),
+    'H': ('водороде', [
+        'Водород входит в состав всех кислот.',
+        'В гидридах металлов водород имеет степень окисления −1.',
+        'Водород — самый распространённый элемент во Вселенной.',
+        'Массовая доля водорода в метане составляет 25 %.'], [
+        'Водород — самый лёгкий газ.',
+        'Смесь водорода с кислородом взрывается при поджигании.',
+        'При нагревании водород восстанавливает медь из оксида меди(II).',
+        'Водород рассматривают как экологически чистое топливо для автомобилей.']),
+    'Cl': ('хлоре', [
+        'Хлор входит в состав поваренной соли.',
+        'В составе соляной кислоты хлор присутствует в желудочном соке.',
+        'В хлорной кислоте хлор проявляет степень окисления +7.',
+        'Атом хлора имеет семь электронов на внешнем слое.'], [
+        'Хлор при обычных условиях — газ жёлто-зелёного цвета с удушливым запахом.',
+        'Хлор вытесняет бром из раствора бромида калия.',
+        'Хлором обеззараживают водопроводную воду.',
+        'Раскалённая железная проволока сгорает в хлоре.']),
+    'S': ('сере', [
+        'Сера входит в состав некоторых аминокислот.',
+        'В сероводороде сера проявляет степень окисления −2.',
+        'Массовая доля серы в сульфиде железа(II) превышает 36 %.',
+        'Атомы серы и кислорода имеют одинаковое число внешних электронов.'], [
+        'Сера — твёрдое вещество жёлтого цвета, не смачиваемое водой.',
+        'Сера горит синим пламенем.',
+        'Сера реагирует с ртутью уже при комнатной температуре.',
+        'Серу применяют для вулканизации каучука.']),
+    'P': ('фосфоре', [
+        'Фосфор входит в состав костной ткани в виде фосфата кальция.',
+        'В ортофосфорной кислоте фосфор имеет степень окисления +5.',
+        'Фосфор относится к элементам питания растений, его вносят с суперфосфатом.',
+        'Ядро атома фосфора содержит 15 протонов.'], [
+        'Белый фосфор светится в темноте.',
+        'Красный фосфор входит в состав намазки спичечного коробка.',
+        'При горении фосфора образуется густой белый дым.',
+        'Белый фосфор хранят под слоем воды.']),
+    'Si': ('кремнии', [
+        'Кремний — второй по распространённости элемент земной коры.',
+        'Кремний входит в состав песка и глины.',
+        'В силикатах кремний проявляет степень окисления +4.',
+        'Электроны в атоме кремния расположены на трёх электронных слоях.'], [
+        'Кристаллический кремний — полупроводник, из него изготавливают солнечные батареи.',
+        'Кремний растворяется в концентрированных растворах щелочей с выделением водорода.',
+        'Кремний — твёрдое вещество серого цвета с металлическим блеском.',
+        'Кремний получают восстановлением оксида кремния(IV) магнием.']),
+    'Na': ('натрии', [
+        'Натрий входит в состав поваренной соли и питьевой соды.',
+        'Ионы натрия участвуют в передаче нервных импульсов.',
+        'В соединениях натрий проявляет степень окисления +1.',
+        'В ядре атома натрия содержится 11 протонов.'], [
+        'Натрий хранят под слоем керосина.',
+        'Натрий настолько мягкий, что режется ножом.',
+        'Натрий бурно реагирует с водой с выделением водорода.',
+        'Натрий плавится при температуре ниже 100 °C.']),
+    'K': ('калии', [
+        'Калий необходим растениям, его вносят в почву с калийными удобрениями.',
+        'Калий входит в состав поташа.',
+        'Ионы калия необходимы для работы сердечной мышцы.',
+        'В соединениях калий имеет степень окисления +1.'], [
+        'Калий — мягкий серебристый металл.',
+        'Калий реагирует с водой ещё энергичнее, чем натрий.',
+        'Калий хранят без доступа воздуха под слоем минерального масла.',
+        'Калий плавится при температуре около 63 °C.']),
+    'Mg': ('магнии', [
+        'Магний входит в состав хлорофилла.',
+        'Массовая доля магния в оксиде магния составляет 60 %.',
+        'В соединениях магний проявляет степень окисления +2.',
+        'Соли магния, растворённые в воде, обусловливают её жёсткость.'], [
+        'Магний горит ослепительно белым пламенем.',
+        'Из сплавов магния изготавливают лёгкие детали самолётов.',
+        'Магний вытесняет медь из раствора сульфата меди(II).',
+        'Магний медленно реагирует с горячей водой.']),
+    'Ca': ('кальции', [
+        'Кальций входит в состав костей и зубов.',
+        'Кальций содержится в меле, мраморе и известняке.',
+        'В соединениях кальций проявляет степень окисления +2.',
+        'Массовая доля кальция в карбонате кальция равна 40 %.'], [
+        'Кальций — серебристо-белый металл, который хранят без доступа воздуха.',
+        'Кальций реагирует с водой с выделением водорода.',
+        'При нагревании на воздухе кальций сгорает.',
+        'Кальций применяют как восстановитель при получении некоторых редких металлов.']),
+    'Al': ('алюминии', [
+        'Алюминий — самый распространённый металл в земной коре.',
+        'Алюминий входит в состав глины и корунда.',
+        'В соединениях алюминий проявляет степень окисления +3.',
+        'Массовая доля алюминия в оксиде алюминия составляет около 53 %.'], [
+        'На воздухе алюминий покрывается тонкой прочной оксидной плёнкой.',
+        'Из алюминия изготавливают фольгу и лёгкую посуду.',
+        'Алюминий растворяется в растворах щелочей.',
+        'Алюминий — лёгкий серебристый металл, хорошо проводящий электрический ток.']),
+    'Fe': ('железе', [
+        'Железо входит в состав гемоглобина крови.',
+        'В оксидах железо проявляет степени окисления +2 и +3.',
+        'Массовая доля железа в оксиде железа(III) составляет 70 %.',
+        'Железо входит в состав минералов магнетита и гематита.'], [
+        'Железо притягивается магнитом.',
+        'Во влажном воздухе железо ржавеет.',
+        'Железо сгорает в кислороде, разбрасывая искры.',
+        'Железо вытесняет медь из раствора сульфата меди(II).']),
+    'Cu': ('меди', [
+        'Медь входит в состав медного купороса.',
+        'В оксиде меди(II) медь проявляет степень окисления +2.',
+        'Медь относится к микроэлементам, необходимым организму человека.',
+        'Массовая доля меди в оксиде меди(II) равна 80 %.'], [
+        'Медь — металл красноватого цвета, хорошо проводящий электрический ток.',
+        'Медь не вытесняет водород из разбавленной серной кислоты.',
+        'Медь растворяется в концентрированной азотной кислоте.',
+        'Из меди изготавливают электрические провода.']),
+    'Zn': ('цинке', [
+        'Цинк необходим организму для работы многих ферментов.',
+        'В соединениях цинк проявляет степень окисления +2.',
+        'Цинк входит в состав минерала цинковой обманки.',
+        'Массовая доля цинка в оксиде цинка составляет около 80 %.'], [
+        'Цинк вытесняет водород из соляной кислоты.',
+        'Цинком покрывают стальные листы для защиты от коррозии.',
+        'Цинк реагирует с растворами щелочей.',
+        'Цинк — голубовато-серебристый металл.']),
+    'I': ('иоде', [
+        'Иод необходим для нормальной работы щитовидной железы.',
+        'Иод содержится в морских водорослях.',
+        'Для профилактики нехватки иода в пищу добавляют иодированную соль.',
+        'В иодиде калия иод имеет степень окисления −1.'], [
+        'Иод образует тёмно-фиолетовые кристаллы с металлическим блеском.',
+        'При нагревании иод переходит в пар, минуя жидкое состояние.',
+        'Иод окрашивает крахмал в синий цвет.',
+        'Спиртовым раствором иода обрабатывают края царапин.']),
+}
+K_OGE1 = ['1.1', '1.2']
+
+
+def _solve_elem_simple(p):
+    # код высказывания «элемент:категория:номер»; категория задана при составлении банка
+    want = p['cat']
+    return sorted(str(i + 1) for i, c in enumerate(p['codes']) if c.split(':')[1] == want)
+
+
+@proto('ch-oge-01-element', 'ОГЭ', 1, 'Химический элемент или простое вещество',
+       invariant='отличить высказывания о химическом элементе (состав, строение атома, степень окисления, '
+                 'распространённость) от высказываний о простом веществе (физические свойства, реакции, применение)',
+       varies='элемент (16 металлов и неметаллов), что спрашивают (элемент или простое вещество), набор высказываний',
+       answer_rule='элемент — «входит в состав», «массовая доля», «степень окисления», «ядро атома»; простое '
+                   'вещество — агрегатное состояние, цвет, реагирует, применяют',
+       mistakes=['«входит в состав» принимают за простое вещество', 'распространённость в воздухе (азот, кислород) '
+                 'относят к элементу, хотя речь о простом веществе'],
+       solve=_solve_elem_simple, kind='dict', kes=K_OGE1,
+       fidelity=fid(1, 'ОГЭ', trap='«азот составляет 78 % воздуха» — простое вещество; «кальций входит в состав костей» '
+                                    '— элемент', scale='16 распространённых элементов школьного курса, 5 высказываний',
+                    kes=['1.1', '1.2']))
+def g_elem_simple(rng):
+    el = rng.choice(list(FACTS))
+    prep, fe, fs = FACTS[el]
+    cat = rng.choice(['E', 'S'])
+    good, bad = (fe, fs) if cat == 'E' else (fs, fe)
+    gi = rng.sample(range(4), 2)
+    bi = rng.sample(range(4), 3)
+    items = [(good[i], f'{el}:{cat}:{i}') for i in gi] + [(bad[i], f'{el}:{"S" if cat == "E" else "E"}:{i}') for i in bi]
+    rng.shuffle(items)
+    what = 'химическом элементе' if cat == 'E' else 'простом веществе'
+    q = rng.choice([f'Выберите два высказывания, в которых говорится о {prep} как о {what}.',
+                    f'В каких двух высказываниях речь идёт о {prep} как о {what}?',
+                    f'Укажите два высказывания, в которых {FACTS_NOM[el]} упоминается как '
+                    f'{"химический элемент" if cat == "E" else "простое вещество"}.'])
+    codes = [c for _, c in items]
+    ans = sorted(str(i + 1) for i, c in enumerate(codes) if c.split(':')[1] == cat)
+    e = ('Об элементе говорят, когда речь о составе веществ, строении атома, степени окисления, массовой доле; '
+         'о простом веществе — когда описаны его физические свойства, реакции, применение. Ответ: ' + ''.join(ans) + '.')
+    return pcard('ch-oge-01-element', q + ' Запишите номера выбранных ответов.', ans, e, k='many',
+                 o=opts([t for t, _ in items]), p={'cat': cat, 'codes': codes})
+
+
+FACTS_NOM = {s: E[s]['nom'] for s in FACTS}
+
+# предложения с выделенным (в кавычках-ёлочках) названием вещества; формула — для независимой проверки
+SENT = [
+    ('O2', 'При горении свечи расходуется «кислород» воздуха.'),
+    ('O3', 'Слой «озона» в стратосфере задерживает жёсткое ультрафиолетовое излучение.'),
+    ('N2', 'Жидкий «азот» применяют для быстрой заморозки продуктов.'),
+    ('H2', 'Оболочки первых дирижаблей наполняли «водородом».'),
+    ('He', 'Праздничные воздушные шары наполняют «гелием».'),
+    ('Cl2', 'На водопроводных станциях воду обеззараживают «хлором».'),
+    ('I2', 'Кристаллы «иода» при нагревании превращаются в фиолетовый пар.'),
+    ('S', 'Порошком «серы» обрабатывают виноградники от грибковых болезней.'),
+    ('C', 'Стержень простого карандаша изготавливают из «графита» с добавкой глины.'),
+    ('C', 'Стеклорез снабжён маленьким кристаллом «алмаза».'),
+    ('Fe', 'Гвоздь из «железа» во влажном воздухе покрывается ржавчиной.'),
+    ('Cu', 'Обмотку электродвигателей делают из «меди».'),
+    ('Al', 'Фольгу для запекания изготавливают из «алюминия».'),
+    ('Ag', 'Столовые приборы из «серебра» со временем темнеют.'),
+    ('Ne', 'Газоразрядные трубки, заполненные «неоном», светятся красным светом.'),
+    ('Zn', 'Стальные вёдра покрывают тонким слоем «цинка».'),
+    ('P', 'В намазку спичечного коробка добавляют «красный фосфор».'),
+    ('Mg', 'Лента «магния» сгорает ослепительно ярким пламенем.'),
+    ('Hg', 'В старых термометрах столбик «ртути» поднимался при нагревании.'),
+    ('H2O', 'При электролизе «вода» разлагается на два газа.'),
+    ('NH3', 'Нашатырный спирт — это водный раствор «аммиака».'),
+    ('CH4', 'Основным компонентом природного газа является «метан».'),
+    ('CO2', 'Газированные напитки насыщают «углекислым газом».'),
+    ('NaCl', 'Для засолки огурцов используют «поваренную соль».'),
+    ('NaHCO3', 'Тесто разрыхляют «питьевой содой».'),
+    ('CaCO3', 'Школьный «мел» оставляет на доске белый след.'),
+    ('C6H12O6', 'Раствор «глюкозы» вводят больным для поддержания сил.'),
+    ('C2H5OH', 'Медицинским «этиловым спиртом» обрабатывают кожу перед уколом.'),
+    ('C3H8O3', 'В увлажняющие кремы добавляют «глицерин».'),
+    ('H2SO4', 'Автомобильные аккумуляторы заливают раствором «серной кислоты».'),
+    ('H2S', 'Запах тухлых яиц обусловлен «сероводородом».'),
+    ('CaO', 'При гашении «негашёной извести» выделяется много теплоты.'),
+    ('H2O2', 'Раствором «пероксида водорода» обрабатывают ссадины.'),
+    ('C12H22O11', 'Из сахарной свёклы получают «сахарозу».'),
+    ('CO', 'При неполном сгорании топлива образуется ядовитый «угарный газ».'),
+    ('CH3COOH', 'Для маринада используют разбавленный раствор «уксусной кислоты».'),
+]
+
+
+def _solve_simple_complex(p):
+    want_simple = p['cat'] == 'simple'
+    return sorted(str(i + 1) for i, f in enumerate(p['fs']) if (len(parse_formula(f)) == 1) == want_simple)
+
+
+@proto('ch-oge-01-simple', 'ОГЭ', 1, 'Простое или сложное вещество в тексте',
+       invariant='определить, из атомов скольких элементов состоит названное в предложении вещество',
+       varies='пять предложений о применении/свойствах веществ, спрашивают простые или сложные вещества',
+       answer_rule='простое — из атомов одного элемента (в т. ч. озон, графит, алмаз), сложное — из разных',
+       mistakes=['считают озон или графит сложными веществами', 'считают простым веществом бытовое название '
+                 '(«сода», «мел»)'],
+       solve=_solve_simple_complex, kind='dict', kes=K_OGE1,
+       fidelity=fid(1, 'ОГЭ', trap='аллотропные модификации (озон, алмаз, графит) — простые вещества',
+                    scale='вещества повседневной жизни, 5 предложений, выделенное слово', kes=['1.1', '1.2']))
+def g_simple_complex(rng):
+    cat = rng.choice(['simple', 'complex'])
+    is_simple = lambda f: len(parse_formula(f)) == 1
+    yes = [s for s in SENT if is_simple(s[0]) == (cat == 'simple')]
+    no = [s for s in SENT if is_simple(s[0]) != (cat == 'simple')]
+    items = rng.sample(yes, 2) + rng.sample(no, 3)
+    rng.shuffle(items)
+    w = 'простое' if cat == 'simple' else 'сложное'
+    q = rng.choice([f'Выберите два предложения, в которых выделенное кавычками слово обозначает {w} вещество.',
+                    f'В каких двух предложениях выделенным (взятым в кавычки) словом названо {w} вещество?'])
+    ans = ids_of([f for f, _ in items], lambda f: is_simple(f) == (cat == 'simple'))
+    e = '; '.join(f'{t[t.index("«") + 1:t.index("»")]} — {pretty(f)}, {"простое" if is_simple(f) else "сложное"}'
+                  for f, t in items) + f'. Ответ: {"".join(ans)}.'
+    return pcard('ch-oge-01-simple', q + ' Запишите номера выбранных ответов.', ans, e, k='many',
+                 o=opts([t for _, t in items]), p={'cat': cat, 'fs': [f for f, _ in items]})
+
+
+# ================================================================= ОГЭ 2. Модель атома / ячейка ПСХЭ → «X Y»
+K_OGE2 = ['2.1', '2.2']
+OGE_EL = [s for s in E if E[s]['Z'] <= 20]
+QTY = {'period': 'номер периода', 'group': 'номер группы', 'charge': 'заряд ядра',
+       'electrons': 'общее число электронов', 'outer': 'число электронов на внешнем электронном слое',
+       'neutrons': 'число нейтронов в ядре'}
+QTY_X = {'period': 'номер периода Периодической системы, где находится элемент, — {v}',
+         'group': 'номер группы, к которой относится элемент, — {v}',
+         'charge': 'заряд ядра атома — {v}',
+         'electrons': 'общее число электронов в атоме — {v}',
+         'outer': 'число электронов внешнего слоя атома — {v}',
+         'neutrons': 'число нейтронов в ядре — {v}'}
+
+
+def _val(s, what, A=None):
+    e = E[s]
+    return {'period': e['period'], 'group': e['group'], 'charge': e['Z'], 'electrons': e['Z'],
+            'outer': outer_count(cfg_cells(s)), 'neutrons': None if A is None else A - e['Z']}[what]
+
+
+def _solve_model(p):
+    if p['model'] == 'layers':
+        Z = sum(p['layers'])
+    elif p['model'] == 'nucleus':
+        Z = p['protons']
+    else:
+        Z = p['Z']
+    A = p.get('A')
+    def v(w):
+        return {'period': r_period(Z), 'group': r_valence(Z), 'charge': Z, 'electrons': Z, 'outer': r_outer(Z),
+                'neutrons': None if A is None else A - Z}[w]
+    return f'{v(p["x"])}{v(p["y"])}'
+
+
+def model_card(pid, rng, model):
+    s = rng.choice([x for x in OGE_EL if model == 'layers' or x != 'Cl'])
+    e = E[s]
+    cells = cfg_cells(s)
+    layers = [sum(c for (n, l), c in cells.items() if n == k) for k in range(1, outer_n(cells) + 1)]
+    A = int(AR[s]) if s in AR and s != 'Cl' else None
+    opts_q = ['period', 'group', 'charge', 'outer']
+    if model in ('nucleus', 'cell') and A:
+        opts_q += ['neutrons', 'electrons']
+    if model == 'layers':
+        opts_q = ['period', 'group', 'charge']
+    x, y = rng.sample(opts_q, 2)
+    if model == 'nucleus' and 'charge' in (x, y):
+        raise Retry
+    if s in ('He', 'Ne', 'Ar') and 'group' in (x, y):
+        raise Retry
+    p = {'model': model, 'x': x, 'y': y}
+    if model == 'layers':
+        lay = ', '.join(str(v) for v in layers)
+        intro = rng.choice([f'Модель атома химического элемента: вокруг ядра расположены электронные слои, на которых '
+                            f'находится соответственно {lay} {plural(layers[-1], "электрон", "электрона", "электронов")} '
+                            f'(от ядра к периферии).',
+                            f'В модели атома некоторого химического элемента электроны распределены по электронным слоям '
+                            f'так: {lay} (начиная от ядра).'])
+        p['layers'] = layers
+    elif model == 'nucleus':
+        n = A - e['Z']
+        intro = rng.choice([f'Модель ядра атома некоторого химического элемента: в ядре {e["Z"]} '
+                            f'{plural(e["Z"], "протон", "протона", "протонов")} и {n} '
+                            f'{plural(n, "нейтрон", "нейтрона", "нейтронов")}.',
+                            f'Ядро атома химического элемента состоит из {e["Z"]} '
+                            f'{plural(e["Z"], "протона", "протонов", "протонов")} и {n} '
+                            f'{plural(n, "нейтрона", "нейтронов", "нейтронов")}.'])
+        p['protons'] = e['Z']
+        p['A'] = A
+    else:
+        intro = (f'Ячейка Периодической системы содержит сведения о химическом элементе: {e["Z"]} — порядковый номер, '
+                 f'{s} — символ, {A if A else AR[s]} — относительная атомная масса (округлённая).')
+        p['Z'] = e['Z']
+        if A:
+            p['A'] = A
+    q = (f'{intro} Определите {QTY_X[x].format(v="X")} и {QTY_X[y].format(v="Y")}. '
+         f'{rng.choice(["В ответ запишите подряд сначала X, затем Y (арабскими цифрами).", "Ответ: X и Y — числа, записанные подряд без пробела."])}')
+    vx, vy = _val(s, x, A), _val(s, y, A)
+    ans = f'{vx}{vy}'
+    e_txt = (f'Это {e["nom"]} ({s}): Z = {e["Z"]}, период {e["period"]}, группа {ROMAN[e["group"]]}A, '
+             f'на внешнем слое {outer_count(cells)} e' + (f', нейтронов {A - e["Z"]}' if A else '') +
+             f'. X = {vx}, Y = {vy}; ответ {ans}.')
+    wrong = [f'{vy}{vx}', f'{_val(s, "period", A)}{e["Z"]}' if ans != f'{e["period"]}{e["Z"]}' else f'{e["group"]}{e["Z"]}',
+             f'{vx}{e["Z"] + 1}']
+    return pcard(pid, q, ans, e_txt, k='num', p=p, wrong=wrong)
+
+
+FID_OGE2 = dict(fmt_='две величины X и Y арабскими цифрами подряд (как в таблице ответа КИМ)',
+                style='как в КИМ ОГЭ: две величины X и Y по модели атома/ядра или ячейке ПСХЭ; рисунок модели '
+                      'заменён словесным описанием с теми же числами; формулировка перефразирована')
+
+
+@proto('ch-oge-02-layers', 'ОГЭ', 2, 'Модель атома (распределение электронов по слоям) → период/группа/заряд',
+       invariant='по числу электронов на слоях найти Z (сумма), период (число слоёв), группу (электроны внешнего слоя)',
+       varies='элемент Z ≤ 20, пара величин X и Y (период, группа, заряд ядра)',
+       answer_rule='Z = сумма электронов; период = число слоёв; группа (A) = электроны внешнего слоя',
+       mistakes=['записывают X и Y в обратном порядке', 'за номер группы берут число слоёв'],
+       solve=_solve_model, kes=K_OGE2,
+       fidelity=fid(2, 'ОГЭ', trap='порядок X и Y; период ↔ группа', scale='элементы первых трёх периодов, K, Ca',
+                    kes=['2.1', '2.2'], **FID_OGE2))
+def g_model_layers(rng):
+    return model_card('ch-oge-02-layers', rng, 'layers')
+
+
+@proto('ch-oge-02-nucleus', 'ОГЭ', 2, 'Модель ядра (протоны и нейтроны) → положение и строение атома',
+       invariant='число протонов = Z; по Z найти период, группу, число внешних электронов; нейтроны даны отдельно',
+       varies='элемент Z ≤ 20, пара величин (период, группа, внешние электроны, электроны, нейтроны)',
+       answer_rule='Z = число протонов; электроны = Z; дальше — по ПСХЭ',
+       mistakes=['за Z принимают число нейтронов или массовое число', 'путают X и Y'],
+       solve=_solve_model, kes=K_OGE2,
+       fidelity=fid(2, 'ОГЭ', trap='нейтроны не определяют положение элемента', scale='элементы Z ≤ 20',
+                    kes=['2.1', '2.2'], **FID_OGE2))
+def g_model_nucleus(rng):
+    return model_card('ch-oge-02-nucleus', rng, 'nucleus')
+
+
+@proto('ch-oge-02-cell', 'ОГЭ', 2, 'Ячейка ПСХЭ → заряд ядра, период, группа, нейтроны',
+       invariant='по данным ячейки (порядковый номер, символ, Ar) найти заряд ядра, положение, число нейтронов',
+       varies='элемент Z ≤ 20, пара величин X и Y',
+       answer_rule='заряд ядра = порядковый номер; нейтроны = округлённая Ar − Z',
+       mistakes=['нейтроны = Ar, а не Ar − Z', 'путают X и Y'],
+       solve=_solve_model, kes=K_OGE2,
+       fidelity=fid(2, 'ОГЭ', trap='Ar округляют до целого; нейтроны = A − Z', scale='элементы Z ≤ 20 (Cl не берём '
+                                                                                     'из-за Ar = 35,5)',
+                    kes=['2.1', '2.2'], **FID_OGE2))
+def g_model_cell(rng):
+    return model_card('ch-oge-02-cell', rng, 'cell')
+
+
+# ================================================================= ОГЭ 3. Ряд из трёх элементов: последовательность
+K_OGE3 = ['2.3']
+OGE3_EL = [s for s in E if E[s]['Z'] <= 20 and E[s]['kind'] in ('m', 'n') and s != 'H']
+# свойство: (фраза «в порядке …», знак вдоль периода слева направо, знак вдоль группы сверху вниз, фильтр)
+PROPS3 = {
+    'radius': (['увеличения радиуса атома', 'уменьшения радиуса атома', 'увеличения атомного радиуса',
+                'уменьшения атомного радиуса'], -1, +1, None),
+    'en': (['возрастания электроотрицательности', 'уменьшения электроотрицательности'], +1, -1, None),
+    'nonmet': (['усиления неметаллических свойств образуемых ими простых веществ',
+                'ослабления неметаллических свойств образуемых ими простых веществ'], +1, -1,
+               lambda s: E[s]['kind'] == 'n'),
+    'metal': (['усиления металлических свойств образуемых ими простых веществ',
+               'ослабления металлических свойств образуемых ими простых веществ'], -1, +1, lambda s: E[s]['kind'] == 'm'),
+    'reduc': (['увеличения восстановительных свойств образуемых ими простых веществ',
+               'уменьшения восстановительных свойств образуемых ими простых веществ'], -1, +1,
+              lambda s: E[s]['kind'] == 'm'),
+    'oxid': (['усиления окислительных свойств образуемых ими простых веществ',
+              'ослабления окислительных свойств образуемых ими простых веществ'], +1, -1, lambda s: E[s]['kind'] == 'n'),
+    'acid': (['усиления кислотных свойств образуемых ими высших оксидов',
+              'ослабления кислотных свойств образуемых ими высших оксидов'], +1, -1,
+             lambda s: E[s]['kind'] == 'n' and s not in ('O', 'F')),
+    'base': (['усиления основных свойств образуемых ими высших гидроксидов',
+              'ослабления основных свойств образуемых ими высших гидроксидов'], -1, +1, lambda s: E[s]['kind'] == 'm'),
+}
+
+
+PHR3 = {'radius': ('радиус их атомов', 'увеличивался', 'уменьшался'),
+        'en': ('электроотрицательность', 'возрастала', 'уменьшалась'),
+        'nonmet': ('неметаллические свойства образуемых ими простых веществ', 'усиливались', 'ослабевали'),
+        'metal': ('металлические свойства образуемых ими простых веществ', 'усиливались', 'ослабевали'),
+        'reduc': ('восстановительная активность соответствующих металлов', 'возрастала', 'уменьшалась'),
+        'oxid': ('окислительная способность соответствующих простых веществ', 'возрастала', 'уменьшалась'),
+        'acid': ('кислотный характер их высших оксидов', 'усиливался', 'ослабевал'),
+        'base': ('основный характер их высших гидроксидов', 'усиливался', 'ослабевал')}
+
+
+def _cmp_rule(a, b, dp, dg, per, grp):
+    """+1 если свойство у a больше, −1 — меньше, None — правилом не сравнить (разные период и группа)."""
+    if per(a) == per(b):
+        return (dp if grp(a) > grp(b) else -dp) if grp(a) != grp(b) else 0
+    if grp(a) == grp(b):
+        return dg if per(a) > per(b) else -dg
+    return None
+
+
+def _unique_order(els, cmp):
+    """Единственный порядок по возрастанию свойства, совместимый со всеми сравнимыми парами (или None)."""
+    good = []
+    for perm in itertools.permutations(els):
+        ok = True
+        for i in range(3):
+            for j in range(i + 1, 3):
+                c = cmp(perm[i], perm[j])
+                if c is None:
+                    continue
+                if c >= 0:
+                    ok = False
+        if ok:
+            good.append(perm)
+    return good[0] if len(good) == 1 else None
+
+
+def _solve_order3(p):
+    rules = {'radius': (-1, 1), 'en': (1, -1), 'nonmet': (1, -1), 'metal': (-1, 1), 'reduc': (-1, 1), 'oxid': (1, -1),
+             'acid': (1, -1), 'base': (-1, 1)}
+    dp, dg = rules[p['prop']]
+    names = p['els']
+    per = lambda s: r_period(z_of(s))
+    grp = lambda s: r_valence(z_of(s))
+    order = _unique_order(names, lambda a, b: _cmp_rule(a, b, dp, dg, per, grp))
+    seq = list(order) if p['asc'] else list(order)[::-1]
+    return ''.join(str(names.index(s) + 1) for s in seq)
+
+
+def order3_card(pid, rng, props):
+    prop = rng.choice(props)
+    phrases, dp, dg, flt = PROPS3[prop]
+    pool = [s for s in OGE3_EL if flt is None or flt(s)]
+    per = lambda s: E[s]['period']
+    grp = lambda s: E[s]['group']
+    cmp = lambda a, b: _cmp_rule(a, b, dp, dg, per, grp)
+    for _ in range(40):
+        els = rng.sample(pool, 3)
+        pairs = [cmp(a, b) for a, b in itertools.combinations(els, 2)]
+        if pairs.count(None) > 1 or 0 in pairs:
+            continue
+        order = _unique_order(els, cmp)
+        if order:
+            break
+    else:
+        raise Retry
+    idx = rng.randrange(len(phrases))
+    phrase = phrases[idx]
+    asc = phrase.split()[0] in ('увеличения', 'возрастания', 'усиления')
+    seq = list(order) if asc else list(order)[::-1]
+    ans = ''.join(str(els.index(s) + 1) for s in seq)
+    noun, vu, vd = PHR3[prop]
+    verb = vu if asc else vd
+    q = rng.choice([f'Запишите номера химических элементов в такой последовательности, чтобы {noun} {verb}.',
+                    f'Упорядочьте химические элементы так, чтобы {noun} {verb}. Запишите их номера в полученной '
+                    f'последовательности.'])
+    e = ('; '.join(f'{E[s]["nom"]} — {E[s]["period"]}-й период, {ROMAN[E[s]["group"]]}A' for s in els) +
+         '. В периоде слева направо радиус и металлические свойства уменьшаются, ЭО и неметаллические свойства '
+         f'растут; в группе сверху вниз — наоборот. Порядок: {" → ".join(E[s]["nom"] for s in seq)}; ответ {ans}.')
+    return pcard(pid, q, ans, e, k='num', o=opts([E[s]['nom'] for s in els]),
+                 p={'els': els, 'prop': prop, 'asc': asc}, wrong=[ans[::-1], ans[1] + ans[0] + ans[2], ans[0] + ans[2] + ans[1]])
+
+
+FID_OGE3 = dict(fmt_='три цифры — номера элементов в нужном порядке',
+                style='как в КИМ ОГЭ: три элемента (названия), последовательность по свойству; формулировка '
+                      'перефразирована («Запишите номера химических элементов в такой последовательности, чтобы …»)')
+
+
+@proto('ch-oge-03-radius', 'ОГЭ', 3, 'Три элемента: порядок изменения радиуса атома',
+       invariant='по положению в ПСХЭ (период, группа) упорядочить три элемента по радиусу атома',
+       varies='три элемента Z ≤ 20 (одного периода, одной группы или «уголком»), увеличение/уменьшение',
+       answer_rule='в периоде слева направо радиус уменьшается, в группе сверху вниз увеличивается',
+       mistakes=['путают направление в периоде', 'записывают порядок наоборот'],
+       solve=_solve_order3, kes=K_OGE3,
+       fidelity=fid(3, 'ОГЭ', trap='«уголок» (F, O, S): сравнение через общий элемент', scale='элементы 2–4 периодов '
+                    '(Z ≤ 20)', kes=['2.3'], **FID_OGE3))
+def g_o3_radius(rng):
+    return order3_card('ch-oge-03-radius', rng, ['radius'])
+
+
+@proto('ch-oge-03-en', 'ОГЭ', 3, 'Три элемента: электроотрицательность, неметаллические и окислительные свойства',
+       invariant='упорядочить три элемента по ЭО (неметаллическим/окислительным свойствам простых веществ)',
+       varies='три элемента, свойство, направление',
+       answer_rule='в периоде слева направо растут, в группе сверху вниз ослабевают',
+       mistakes=['путают направление в группе', 'путают «усиления» и «ослабления»'],
+       solve=_solve_order3, kes=K_OGE3,
+       fidelity=fid(3, 'ОГЭ', trap='направления в периоде и группе противоположны', scale='элементы Z ≤ 20',
+                    kes=['2.3'], **FID_OGE3))
+def g_o3_en(rng):
+    return order3_card('ch-oge-03-en', rng, ['en', 'nonmet', 'oxid'])
+
+
+@proto('ch-oge-03-metal', 'ОГЭ', 3, 'Три элемента: металлические и восстановительные свойства',
+       invariant='упорядочить три металла (элемента) по металлическим/восстановительным свойствам простых веществ',
+       varies='три элемента, свойство, направление',
+       answer_rule='металлические и восстановительные свойства усиливаются сверху вниз и справа налево',
+       mistakes=['считают бериллий активнее кальция', 'путают направление'],
+       solve=_solve_order3, kes=K_OGE3,
+       fidelity=fid(3, 'ОГЭ', trap='Be–Mg–Ca: восстановительные свойства растут вниз по группе', scale='элементы Z ≤ 20',
+                    kes=['2.3'], **FID_OGE3))
+def g_o3_metal(rng):
+    return order3_card('ch-oge-03-metal', rng, ['metal', 'reduc'])
+
+
+@proto('ch-oge-03-oxides', 'ОГЭ', 3, 'Три элемента: кислотные свойства высших оксидов / основные свойства гидроксидов',
+       invariant='упорядочить элементы по кислотно-основным свойствам их высших оксидов (гидроксидов)',
+       varies='три элемента (неметаллы — кислотные оксиды, металлы — основные гидроксиды), направление',
+       answer_rule='кислотные свойства высших оксидов растут слева направо и ослабевают сверху вниз; основные — наоборот',
+       mistakes=['переносят рост радиуса на кислотность', 'путают оксиды и водородные соединения'],
+       solve=_solve_order3, kes=K_OGE3,
+       fidelity=fid(3, 'ОГЭ', trap='в группе кислотные свойства высших оксидов ослабевают', scale='элементы Z ≤ 20',
+                    kes=['2.3'], **FID_OGE3))
+def g_o3_oxides(rng):
+    return order3_card('ch-oge-03-oxides', rng, ['acid', 'base'])
+
+
+# ================================================================= ОГЭ 4. Степень окисления / валентность (соответствие)
+K_OGE4 = ['1.3']
+# (формула, элемент, степень окисления) — данные генератора; solve считает заново из электронейтральности
+OXD = """
+N: NH3 -3; NH4Cl -3; Li3N -3; Mg3N2 -3; Ca3N2 -3; N2O 1; NO 2; N2O3 3; HNO2 3; NaNO2 3; KNO2 3; NO2 4; N2O5 5; HNO3 5; KNO3 5; Ca(NO3)2 5; N2 0; (NH4)2SO4 -3; NH4NO2? ; N2H4 -2; NH2OH -1
+S: H2S -2; Na2S -2; K2S -2; Al2S3 -2; SO2 4; Na2SO3 4; H2SO3 4; K2SO3 4; SO3 6; H2SO4 6; Na2SO4 6; CaSO4 6; SF6 6; S8 0; NaHSO3 4; KHSO4 6
+Cl: HCl -1; NaCl -1; CaCl2 -1; Cl2 0; Cl2O 1; HClO 1; NaClO 1; HClO2 3; NaClO2 3; KClO3 5; HClO3 5; Cl2O7 7; HClO4 7; KClO4 7; ClO2 4
+P: PH3 -3; Ca3P2 -3; Na3P -3; Mg3P2 -3; PH4I -3; P2O3 3; H3PO3 3; PCl3 3; P2O5 5; H3PO4 5; Na3PO4 5; Ca3(PO4)2 5; PCl5 5; K2HPO4 5; (NH4)2HPO4 5; NaH2PO4 5; P4 0
+C: CH4 -4; Al4C3 -4; Be2C -4; CaC2 -1; CO 2; CO2 4; H2CO3 4; Na2CO3 4; CaCO3 4; CCl4 4; NaHCO3 4; Ca(HCO3)2 4; (NH4)2CO3 4; HCOOH 2; CH3OH -2; CH2O 0; CS2? 
+Mn: MnO 2; MnCl2 2; MnSO4 2; Mn(OH)2 2; Mn2O3 3; MnO2 4; K2MnO4 6; KMnO4 7; Mn2O7 7; NaMnO4 7
+Cr: CrO 2; CrCl2 2; Cr2O3 3; Cr(OH)3 3; CrCl3 3; Cr2(SO4)3 3; NaCrO2 3; K3Cr(OH)6 3; CrO3 6; K2CrO4 6; K2Cr2O7 6; Na2CrO4 6
+Fe: FeO 2; FeCl2 2; FeSO4 2; Fe(OH)2 2; Fe2O3 3; FeCl3 3; Fe(OH)3 3; Fe2(SO4)3 3; Fe(NO3)3 3; K2FeO4 6; Na2FeO4 6
+Br: HBr -1; KBr -1; Br2 0; HBrO 1; NaBrO 1; NaBrO2 3; BrF3 3; KBrO3 5; HBrO3 5; HBrO4 7; KBrO4 7
+I: HI -1; KI -1; I2 0; HIO 1; NaIO 1; ICl 1; HIO3 5; KIO3 5; IF5 5; HIO4 7; NaIO4 7; IF7 7
+Si: Mg2Si -4; Ca2Si -4; SiO2 4; H2SiO3 4; Na2SiO3 4; SiCl4 4; SiF4 4; SiC 4; K2SiO3 4; Si 0
+O: H2O -2; Na2O -2; H2O2 -1; Na2O2 -1; BaO2 -1; OF2 2; O2F2 1; O2 0; O3 0
+H: H2O 1; HCl 1; H2S 1; HF 1; NaH -1; CaH2 -1; LiH -1; KH -1; H2 0
+Cu: Cu2O 1; CuCl 1; Cu2S 1; CuO 2; CuSO4 2; Cu(OH)2 2; Cu(NO3)2 2; CuCl2 2
+"""
+OX_DATA = {}
+for _ln in OXD.strip().splitlines():
+    _el, _rest = _ln.split(':', 1)
+    rows = []
+    for _it in _rest.split(';'):
+        _it = _it.strip()
+        if not _it or _it.endswith('?'):
+            continue
+        _f, _v = _it.split()
+        rows.append((_f, int(_v)))
+    OX_DATA[_el] = rows
+NONMET4 = ['N', 'S', 'Cl', 'P', 'C', 'Br', 'I', 'Si', 'O', 'H']
+METAL4 = ['Mn', 'Cr', 'Fe', 'Cu']
+
+GROUPS_OX = [('H2PO4', -1), ('HPO4', -2), ('HCO3', -1), ('HSO4', -1), ('HSO3', -1), ('NH4', 1), ('NO3', -1),
+             ('NO2', -1), ('SO4', -2), ('SO3', -2), ('CO3', -2), ('PO4', -3), ('OH', -1)]
+FIX1 = {'Li', 'Na', 'K'}
+FIX2 = {'Be', 'Mg', 'Ca', 'Sr', 'Ba', 'Zn'}
+
+
+def solve_ox(f, el):
+    """Степень окисления el в f из электронейтральности; известные группы (NH₄⁺, SO₄²⁻, OH⁻…) снимаются целиком,
+    если el в них не входит; остальным атомам — постоянные степени окисления."""
+    rest, total = f, 0
+    for g, q in GROUPS_OX:
+        if el in parse_formula(g):
+            continue
+        for m in list(re.finditer(r'\(' + g + r'\)(\d*)', rest)):
+            total += q * int(m.group(1) or 1)
+        rest = re.sub(r'\(' + g + r'\)(\d*)', '', rest)
+        if re.search(g + r'(?![a-z])', rest) and g != 'OH' or (g == 'OH' and rest.endswith('OH')):
+            n = len(re.findall(g + r'(?![a-z])', rest)) if g != 'OH' else 1
+            total += q * n
+            rest = re.sub(g + r'(?![a-z])', '', rest, count=n) if g != 'OH' else rest[:-2]
+    comp = parse_formula(rest) if rest else {}
+    if el not in comp:
+        raise ValueError(f'{f}: {el} потерян при разборе')
+    others = [x for x in comp if x != el]
+    metals_only = all(x in FIX1 | FIX2 | {'Al'} for x in others)
+    for x in others:
+        n = comp[x]
+        if x in FIX1:
+            v = 1
+        elif x in FIX2:
+            v = 2
+        elif x == 'Al':
+            v = 3
+        elif x == 'F':
+            v = -1
+        elif x == 'O':
+            v = -2
+        elif x == 'H':
+            v = -1 if metals_only and E[el]['kind'] == 'm' else 1
+        elif x in ('Cl', 'Br', 'I'):
+            v = -1
+        elif x == 'S':
+            v = -2
+        elif x == 'N':
+            v = -3
+        elif x == 'C':
+            v = -4
+        else:
+            raise ValueError(f'{f}: нет правила для {x}')
+        total += v * n
+    return Fr(-total, comp[el])
+
+
+def ox_view(v):
+    return '0' if v == 0 else (f'+{v}' if v > 0 else f'−{-v}')
+
+
+def _solve_ox_match(p):
+    right = {r['id']: r['v'] for r in p['right']}
+    out = {}
+    for L, f in zip('АБВГ', p['fs']):
+        v = solve_ox(f, p['el'])
+        out[L] = next(k for k, x in right.items() if Fr(x) == v)
+    return out
+
+
+def ox_match_card(pid, rng, elems, names=False):
+    el = rng.choice(elems)
+    rows = OX_DATA[el]
+    vals = sorted({v for _, v in rows})
+    if len(vals) < 3:
+        raise Retry
+    picked = rng.sample(rows, 3)
+    need = sorted({v for _, v in picked})
+    extra = [v for v in vals if v not in need]
+    rng.shuffle(extra)
+    right_vals = need + extra[:4 - len(need)]
+    if len(right_vals) < 4:
+        cand = [v for v in (-4, -3, -2, -1, 1, 2, 3, 4, 5, 6, 7) if v not in right_vals]
+        right_vals += rng.sample(cand, 4 - len(right_vals))
+    rng.shuffle(right_vals)
+    right = [ox_view(v) for v in right_vals]
+    left = [pretty(f) for f, _ in picked]
+    o = match_opts(left, right, rids='1234')
+    ans = {L: str(right_vals.index(v) + 1) for L, (_, v) in zip('АБВ', picked)}
+    gen = E[el]['gen']
+    q = rng.choice([f'Для каждой формулы вещества (А–В) подберите степень окисления {gen} в этом веществе (1–4).',
+                    f'Сопоставьте формулы соединений (А–В) со степенями окисления атомов {gen} в них (1–4).'])
+    e = '; '.join(f'{pretty(f)}: {el} {ox_view(v)}' for f, v in picked) + \
+        '. Сумма степеней окисления в соединении равна нулю. Ответ: ' + ''.join(ans[L] for L in 'АБВ') + '.'
+    return pcard(pid, q + ' Цифры в ответе могут повторяться.', ans, e, k='match', o=o,
+                 p={'el': el, 'fs': [f for f, _ in picked], 'right': [{'id': str(i + 1), 'v': v} for i, v in
+                                                                      enumerate(right_vals)]})
+
+
+FID_OGE4 = dict(fmt_='три цифры под буквами А, Б, В (соответствие; цифры могут повторяться)',
+                style='задание на соответствие как в КИМ ОГЭ 2027 (А–В → 1–4, цифры могут повторяться); формулировка '
+                      'перефразирована («Для каждой формулы вещества подберите степень окисления …»)')
+
+
+@proto('ch-oge-04-ox-nonmetal', 'ОГЭ', 4, 'Степень окисления неметалла в веществах (соответствие)',
+       invariant='степень окисления элемента в формуле из электронейтральности (H +1, O −2, металлы IA/IIA/Al — '
+                 'постоянные), в т. ч. в солях аммония, гидридах, пероксидах',
+       varies='элемент-неметалл (N, S, Cl, P, C, Br, I, Si, O, H), три формулы, четыре значения',
+       answer_rule='сумма степеней окисления = 0; для каждой формулы найти значение и номер в правом столбце',
+       mistakes=['в солях аммония считают азот +3 или +5', 'в фосфидах/карбидах ставят положительную степень',
+                 'в пероксидах берут кислород −2', 'в гидридах металлов водород +1'],
+       solve=_solve_ox_match, kes=K_OGE4,
+       fidelity=fid(4, 'ОГЭ', trap='PH₄I, (NH₄)₂HPO₄, Al₄C₃, Ca₃P₂ — как в банке и демо', scale='3 формулы, 4 степени '
+                    'окисления, неорганика 8–9 кл.', kes=['1.3'], **FID_OGE4))
+def g_ox_nonmetal(rng):
+    return ox_match_card('ch-oge-04-ox-nonmetal', rng, NONMET4)
+
+
+@proto('ch-oge-04-ox-metal', 'ОГЭ', 4, 'Степень окисления переходного металла (Mn, Cr, Fe, Cu) в веществах',
+       invariant='степень окисления металла из электронейтральности формулы (оксиды, гидроксиды, соли, оксоанионы)',
+       varies='металл (Mn, Cr, Fe, Cu), три формулы (MnO₂, KMnO₄, K₂Cr₂O₇, Fe₂(SO₄)₃…), четыре значения',
+       answer_rule='сумма степеней окисления = 0; в оксоанионах металл положительный (+6, +7)',
+       mistakes=['в перманганате/дихромате ставят +2/+3', 'не учитывают индекс металла (Cr₂O₇²⁻)'],
+       solve=_solve_ox_match, kes=K_OGE4,
+       fidelity=fid(4, 'ОГЭ', trap='KMnO₄ (+7) и K₂MnO₄ (+6); K₂Cr₂O₇ (+6) — два атома хрома', scale='3 формулы, '
+                    '4 степени окисления', kes=['1.3'], **FID_OGE4))
+def g_ox_metal(rng):
+    return ox_match_card('ch-oge-04-ox-metal', rng, METAL4)
+
+
+VAL_DATA = """
+S: H2S 2; SO2 4; SO3 6; Na2S 2; CS2 2; SF6 6; Al2S3 2
+P: PH3 3; P2O3 3; P2O5 5; PCl3 3; PCl5 5; Ca3P2 3
+C: CH4 4; CO2 4; CCl4 4; Al4C3 4; SiC 4
+Cl: HCl 1; Cl2O 1; Cl2O7 7; ClO2 4; Cl2O3 3
+N: NH3 3; Li3N 3; Mg3N2 3; NCl3 3
+Mn: MnO 2; MnO2 4; Mn2O7 7; Mn2O3 3; MnCl2 2
+Cr: CrO 2; Cr2O3 3; CrO3 6; CrCl3 3
+Fe: FeO 2; Fe2O3 3; FeCl3 3; FeCl2 2; FeS 2
+Si: SiO2 4; SiH4 4; SiCl4 4; Mg2Si 4
+Cu: Cu2O 1; CuO 2; CuCl2 2; CuCl 1; Cu2S 1
+"""
+VAL = {}
+for _ln in VAL_DATA.strip().splitlines():
+    _el, _rest = _ln.split(':', 1)
+    VAL[_el] = [(x.split()[0], int(x.split()[1])) for x in _rest.split(';') if x.strip()]
+PARTNER_VAL = {'O': 2, 'H': 1, 'Cl': 1, 'F': 1, 'S': 2, 'N': 3, 'P': 3, 'C': 4, 'Na': 1, 'Li': 1, 'Mg': 2, 'Ca': 2,
+               'Al': 3, 'Si': 4}
+
+
+def _solve_val(p):
+    right = {r['id']: r['v'] for r in p['right']}
+    out = {}
+    for L, f in zip('АБВ', p['fs']):
+        comp = parse_formula(f)
+        other = [x for x in comp if x != p['el']][0]
+        v = Fr(PARTNER_VAL[other] * comp[other], comp[p['el']])
+        out[L] = next(k for k, x in right.items() if x == v)
+    return out
+
+
+@proto('ch-oge-04-valence', 'ОГЭ', 4, 'Валентность элемента в бинарных соединениях (соответствие)',
+       invariant='валентность элемента по формуле бинарного соединения: произведение валентности на индекс '
+                 'одинаково у обоих элементов',
+       varies='элемент (S, P, C, Cl, N, Mn, Cr, Fe, Si, Cu), три бинарных соединения (оксиды, хлориды, гидриды, '
+              'сульфиды, нитриды, фосфиды, карбиды), четыре значения валентности',
+       answer_rule='валентность = (валентность партнёра × его индекс) / индекс элемента',
+       mistakes=['путают валентность и степень окисления (пишут знак)', 'не учитывают индексы'],
+       solve=_solve_val, kes=K_OGE4,
+       fidelity=fid(4, 'ОГЭ', trap='Mn₂O₇ — VII, Cl₂O — I; валентность без знака', scale='3 бинарных соединения, '
+                    'римские цифры', kes=['1.3'], **FID_OGE4))
+def g_valence(rng):
+    el = rng.choice(list(VAL))
+    rows = VAL[el]
+    picked = rng.sample(rows, 3)
+    need = sorted({v for _, v in picked})
+    pool = [v for v in range(1, 8) if v not in need]
+    right_vals = need + rng.sample(pool, 4 - len(need))
+    rng.shuffle(right_vals)
+    o = match_opts([pretty(f) for f, _ in picked], [ROMAN[v] for v in right_vals], rids='1234')
+    ans = {L: str(right_vals.index(v) + 1) for L, (_, v) in zip('АБВ', picked)}
+    q = (f'Для каждой формулы вещества (А–В) подберите валентность {E[el]["gen"]} в этом веществе (1–4). '
+         f'Цифры в ответе могут повторяться.')
+    e = '; '.join(f'{pretty(f)}: {ROMAN[v]}' for f, v in picked) + '. Ответ: ' + ''.join(ans[L] for L in 'АБВ') + '.'
+    return pcard('ch-oge-04-valence', q, ans, e, k='match', o=o,
+                 p={'el': el, 'fs': [f for f, _ in picked], 'right': [{'id': str(i + 1), 'v': v} for i, v in
+                                                                      enumerate(right_vals)]})
+
+
+# ================================================================= ОГЭ 5. Вид химической связи
+K_OGE5 = ['3.1']
+SC5 = 'пять формул неорганических веществ 8–9 кл. (простые вещества, бинарные соединения, соли, кислоты, щёлочи)'
+for _pid, _title, _lt, _trap in [
+        ('ch-oge-05-bond', 'Вещества с заданным видом связи (ионная, ковалентная полярная/неполярная, металлическая)',
+         'ipnm', 'S₈, P₄ — ковалентная неполярная; соли аммония — ионная; металлы — металлическая')]:
+    proto(_pid, 'ОГЭ', 5, _title,
+          invariant='по составу вещества определить вид химической связи',
+          varies='вид связи, перечень из пяти формул',
+          answer_rule='металл + неметалл (или NH₄⁺) — ионная; одинаковые атомы неметалла — ковалентная неполярная; '
+                      'разные неметаллы — ковалентная полярная; металл — металлическая',
+          mistakes=['считают связь в Na металлической и ионной одновременно', 'путают полярную и неполярную',
+                    'не относят соли аммония к ионным'],
+          solve=_solve_bond, kes=K_OGE5,
+          fidelity=fid(5, 'ОГЭ', trap=_trap, scale=SC5, kes=['3.1']))(_bond_gen(_pid, 'ОГЭ', list(_lt)))
+
+proto('ch-oge-05-mixed', 'ОГЭ', 5, 'Вещества, содержащие и ионную, и ковалентную связь',
+      invariant='ионная связь между ионами и ковалентная внутри сложного иона',
+      varies='перечень формул: соли кислородсодержащих кислот, щёлочи, соли аммония против бинарных солей и '
+             'молекулярных веществ',
+      answer_rule='выбрать вещества со сложным ионом (SO₄²⁻, NO₃⁻, OH⁻, NH₄⁺, CO₃²⁻, PO₄³⁻)',
+      mistakes=['выбирают NaCl или кислоты'],
+      solve=_solve_mixed, kes=K_OGE5,
+      fidelity=fid(5, 'ОГЭ', trap='HNO₃ — только ковалентная, KNO₃ — ионная и ковалентная', scale=SC5, kes=['3.1']))(
+    _mixed_gen('ch-oge-05-mixed', 'ОГЭ'))
+
+
+# ================================================================= ОГЭ 6. Характеристика элементов (два утверждения)
+K_OGE6 = ['2.2', '2.3']
+OGE6_EL = [s for s in E if E[s]['Z'] <= 20 and E[s]['kind'] in ('m', 'n') and s != 'H']
+STATE_TXT = {'г': 'газообразно', 'т': 'твёрдое', 'ж': 'жидкое'}
+OX_CHAR = {'Li': 'осн', 'Na': 'осн', 'K': 'осн', 'Mg': 'осн', 'Ca': 'осн', 'Be': 'амф', 'Al': 'амф', 'B': 'кисл',
+           'C': 'кисл', 'Si': 'кисл', 'N': 'кисл', 'P': 'кисл', 'S': 'кисл', 'Cl': 'кисл'}
+CHAR_TXT = {'осн': 'основными', 'амф': 'амфотерными', 'кисл': 'кислотными'}
+
+
+def stmt_text(tid, v):
+    if tid == 'layers':
+        return f'Атом элемента содержит {v} электронных слоя.'
+    if tid == 'outer':
+        return f'Внешний электронный слой атома содержит {v} {plural(v, "электрон", "электрона", "электронов")}.'
+    if tid == 'lack':
+        return f'Для завершения внешнего слоя атому недостаёт {v} {plural(v, "электрона", "электронов", "электронов")}.'
+    if tid == 'metal':
+        return 'Элемент относится к металлам.' if v else 'Элемент относится к неметаллам.'
+    if tid == 'state':
+        return ('Простое вещество, образованное элементом, при обычных условиях — '
+                f'{"газ" if v == "г" else "твёрдое вещество"}.')
+    if tid == 'hyd':
+        return 'Элемент образует летучее соединение с водородом.'
+    if tid == 'hydf':
+        return f'Формула летучего водородного соединения элемента — {HYD_T[v]}.'
+    if tid == 'hiox':
+        return f'Высшая степень окисления элемента составляет {signed(v)}.'
+    if tid == 'oxide':
+        return f'Формула высшего оксида элемента — {OXIDE_T[v]}.'
+    if tid == 'charge':
+        return f'Ядро атома имеет заряд +{v}.'
+    if tid == 'char':
+        return f'Высший оксид элемента обладает {CHAR_TXT[v]} свойствами.'
+    if tid == 'hival':
+        return f'Высшая валентность элемента — {ROMAN[v]}.'
+    raise KeyError(tid)
+
+
+def stmt_true(tid, v, s):
+    e = E[s]
+    oc = outer_count(cfg_cells(s))
+    if tid == 'layers':
+        return e['period'] == v
+    if tid == 'outer':
+        return oc == v
+    if tid == 'lack':
+        return e['kind'] == 'n' and 8 - oc == v
+    if tid == 'metal':
+        return (e['kind'] == 'm') == bool(v)
+    if tid == 'state':
+        return e['state'] == v
+    if tid == 'hyd':
+        return e['kind'] == 'n' and e['group'] >= 4
+    if tid == 'hydf':
+        return e['kind'] == 'n' and e['group'] == v
+    if tid in ('hiox', 'hival'):
+        return s not in ('O', 'F') and ox_max(s) == v
+    if tid == 'oxide':
+        return s not in ('O', 'F') and ox_max(s) == v
+    if tid == 'charge':
+        return e['Z'] == v
+    if tid == 'char':
+        return OX_CHAR.get(s) == v
+    raise KeyError(tid)
+
+
+def r_stmt(tid, v, s):
+    """Второй путь: истинность утверждения из Z (электронная конфигурация по правилу Клечковского)."""
+    Z = z_of(s)
+    per, out, met = r_period(Z), r_outer(Z), r_metal(Z)
+    if tid == 'layers':
+        return per == v
+    if tid == 'outer':
+        return out == v
+    if tid == 'lack':
+        return not met and 8 - out == v
+    if tid == 'metal':
+        return met == bool(v)
+    if tid == 'state':
+        return {'г': Z in (1, 2, 7, 8, 9, 10, 17, 18), 'т': Z not in (1, 2, 7, 8, 9, 10, 17, 18, 35)}[v]
+    if tid == 'hyd':
+        return not met and out >= 4
+    if tid == 'hydf':
+        return not met and out == v
+    if tid in ('hiox', 'hival', 'oxide'):
+        return r_higher_ox(Z) == v
+    if tid == 'charge':
+        return Z == v
+    if tid == 'char':
+        if not met:
+            return v == 'кисл' and Z not in (8, 9)
+        return v == ('амф' if out == per else 'осн')
+    raise KeyError(tid)
+
+
+def all_stmts(els):
+    out = [('layers', k) for k in (2, 3, 4)] + [('outer', k) for k in range(1, 8)] + \
+          [('lack', k) for k in (1, 2, 3, 4)] + [('metal', 1), ('metal', 0), ('state', 'г'), ('state', 'т'), ('hyd', 1)] + \
+          [('hydf', g) for g in (4, 5, 6, 7)] + [('hiox', k) for k in range(1, 8)] + [('oxide', k) for k in range(1, 8)] + \
+          [('charge', E[s]['Z']) for s in els] + [('char', c) for c in ('осн', 'амф', 'кисл')] + \
+          [('hival', k) for k in range(1, 8)]
+    return out
+
+
+def _solve_pair(p):
+    a, b = p['a'], p['b']
+    res = []
+    for i, (tid, v) in enumerate(p['st']):
+        ta, tb = r_stmt(tid, v, a), r_stmt(tid, v, b)
+        ok = (ta and tb) if p['mode'] == 'both' else (ta and not tb)
+        if ok:
+            res.append(str(i + 1))
+    return res
+
+
+def pair_card(pid, rng, mode):
+    kind = rng.random()
+    if kind < 0.5:
+        g = rng.choice([1, 2, 3, 4, 5, 6, 7])
+        cand = [s for s in OGE6_EL if E[s]['group'] == g]
+    else:
+        pr = rng.choice([2, 3])
+        cand = [s for s in OGE6_EL if E[s]['period'] == pr]
+    if len(cand) < 2:
+        raise Retry
+    a, b = rng.sample(cand, 2)
+    sts = all_stmts([a, b])
+    rng.shuffle(sts)
+    good, near, far = [], [], []
+    for tid, v in sts:
+        ta, tb = stmt_true(tid, v, a), stmt_true(tid, v, b)
+        ok = (ta and tb) if mode == 'both' else (ta and not tb)
+        if ok:
+            good.append((tid, v))
+        elif ta or tb:
+            near.append((tid, v))
+        else:
+            far.append((tid, v))
+    # не больше одного утверждения одного типа среди верных и не повторять тип hiox/hival/oxide
+    def distinct(xs, k):
+        out, used = [], set()
+        for tid, v in xs:
+            key = 'ox' if tid in ('hiox', 'hival', 'oxide') else ('hyd' if tid in ('hyd', 'hydf') else tid)
+            if key in used:
+                continue
+            used.add(key)
+            out.append((tid, v))
+            if len(out) == k:
+                break
+        return out, used
+    g2, used = distinct(good, 2)
+    if len(g2) < 2:
+        raise Retry
+    rest = [x for x in near if x not in g2]
+    rest_far = [x for x in far]
+    bad = []
+    usedb = set(used)
+    for tid, v in rest[:] + rest_far:
+        key = 'ox' if tid in ('hiox', 'hival', 'oxide') else ('hyd' if tid in ('hyd', 'hydf') else tid)
+        if key in usedb:
+            continue
+        if tid == 'charge' and rng.random() < 0.5:
+            continue
+        usedb.add(key)
+        bad.append((tid, v))
+        if len(bad) == 3:
+            break
+    if len(bad) < 3:
+        raise Retry
+    st = g2 + bad
+    rng.shuffle(st)
+    A, B = E[a], E[b]
+    if mode == 'both':
+        q = rng.choice([f'Какие два утверждения справедливы и для {A["gen"]}, и для {B["gen"]}?',
+                        f'Выберите два утверждения, которые одинаково подходят к {A["dat"]} и к {B["dat"]}.'])
+    else:
+        q = rng.choice([f'Какие два утверждения относятся к {A["dat"]}, но не относятся к {B["dat"]}?',
+                        f'Выберите два утверждения, которые верны для {A["gen"]}, но не верны для {B["gen"]}.'])
+    fit = (lambda t, v: stmt_true(t, v, a) and stmt_true(t, v, b)) if mode == 'both' else \
+        (lambda t, v: stmt_true(t, v, a) and not stmt_true(t, v, b))
+    ans = sorted(str(i + 1) for i, (tid, v) in enumerate(st) if fit(tid, v))
+    if len(ans) != 2:
+        raise Retry
+    e = (f'{A["nom"].capitalize()}: период {A["period"]}, группа {ROMAN[A["group"]]}A, внешних электронов '
+         f'{outer_count(cfg_cells(a))}; {B["nom"]}: период {B["period"]}, группа {ROMAN[B["group"]]}A, внешних '
+         f'электронов {outer_count(cfg_cells(b))}. Ответ: {"".join(ans)}.')
+    return pcard(pid, q + ' Запишите номера выбранных ответов.', ans, e, k='many', o=opts([stmt_text(*x) for x in st]),
+                 p={'a': a, 'b': b, 'mode': mode, 'st': [list(x) for x in st]})
+
+
+FID6 = dict(style='как в КИМ ОГЭ 2027, задание 6: пять утверждений о строении атома и свойствах элементов, выбрать два; '
+                  'формулировка перефразирована')
+
+
+@proto('ch-oge-06-both', 'ОГЭ', 6, 'Утверждения, верные для обоих элементов',
+       invariant='по положению двух элементов в ПСХЭ проверить каждое утверждение (строение атома, металл/неметалл, '
+                 'водородное соединение, высший оксид, агрегатное состояние простого вещества) для обоих',
+       varies='пара элементов Z ≤ 20 (одна группа или один период), набор утверждений',
+       answer_rule='выбрать два утверждения, истинные для обоих элементов',
+       mistakes=['проверяют только один элемент', 'для кислорода и фтора берут высшую степень окисления по группе'],
+       solve=_solve_pair, kes=K_OGE6,
+       fidelity=fid(6, 'ОГЭ', trap='у элементов одной группы одинаково число внешних электронов, но разное число слоёв',
+                    scale='элементы 2–3 периодов, K, Ca; пять утверждений', kes=['2.2', '2.3'], **FID6))
+def g_pair_both(rng):
+    return pair_card('ch-oge-06-both', rng, 'both')
+
+
+@proto('ch-oge-06-anotb', 'ОГЭ', 6, 'Утверждения, верные для одного элемента и неверные для другого',
+       invariant='проверить утверждения для двух элементов, выбрать верные для первого и неверные для второго',
+       varies='пара элементов, набор утверждений',
+       answer_rule='выбрать два утверждения: для A — истина, для B — ложь',
+       mistakes=['выбирают утверждения, верные для обоих', 'путают, для какого элемента утверждение должно быть '
+                 'верным'],
+       solve=_solve_pair, kes=K_OGE6,
+       fidelity=fid(6, 'ОГЭ', trap='как в демоверсии 2027: натрий против хлора (три слоя у обоих)', scale='элементы '
+                    '2–3 периодов, K, Ca; пять утверждений', kes=['2.2', '2.3'], **FID6))
+def g_pair_anotb(rng):
+    return pair_card('ch-oge-06-anotb', rng, 'anotb')
+
+
+# ---- ряд «X → Y → Z»: верные продолжения
+TREND = {
+    'radius': ('радиус атомов', 'увеличивается', 'уменьшается'),
+    'en': ('электроотрицательность', 'возрастает', 'уменьшается'),
+    'metal': ('металлические свойства соответствующих простых веществ', 'усиливаются', 'ослабевают'),
+    'outer': ('число электронов на внешнем электронном слое атомов', 'увеличивается', 'уменьшается'),
+    'layers': ('число электронных слоёв в атомах', 'увеличивается', 'уменьшается'),
+    'charge': ('заряд ядер атомов', 'увеличивается', 'уменьшается'),
+    'hiox': ('высшая степень окисления', 'возрастает', 'уменьшается'),
+    'acid': ('кислотный характер высших оксидов', 'усиливается', 'ослабевает'),
+}
+
+
+def trend_dir(key, seq):
+    """+1 растёт, −1 убывает, 0 не меняется (по таблице: период/группа)."""
+    per = [E[s]['period'] for s in seq]
+    grp = [E[s]['group'] for s in seq]
+    along_period = len(set(per)) == 1
+    step = (grp[1] - grp[0]) if along_period else (per[1] - per[0])
+    sgn = 1 if step > 0 else -1
+    d = {'radius': (-1, 1), 'en': (1, -1), 'metal': (-1, 1), 'outer': (1, 0), 'layers': (0, 1), 'charge': (1, 1),
+         'hiox': (1, 0), 'acid': (1, -1)}[key]
+    return sgn * (d[0] if along_period else d[1])
+
+
+def _solve_row(p):
+    seq = p['seq']
+    zs = [z_of(s) for s in seq]
+    def val(key, Z):
+        per, gr = r_period(Z), r_valence(Z)
+        return {'radius': per * 10 - gr, 'en': -per * 10 + gr, 'metal': per * 10 - gr, 'outer': r_outer(Z),
+                'layers': per, 'charge': Z, 'hiox': r_higher_ox(Z), 'acid': -per * 10 + gr}[key]
+    res = []
+    for i, (key, word) in enumerate(p['st']):
+        vs = [val(key, Z) for Z in zs]
+        if all(x == vs[0] for x in vs):
+            d = 0
+        elif all(vs[j] < vs[j + 1] for j in range(2)):
+            d = 1
+        elif all(vs[j] > vs[j + 1] for j in range(2)):
+            d = -1
+        else:
+            d = None
+        if d == {'up': 1, 'down': -1, 'same': 0}[word]:
+            res.append(str(i + 1))
+    return res
+
+
+@proto('ch-oge-06-row', 'ОГЭ', 6, 'Верные продолжения утверждения о ряде элементов X → Y → Z',
+       invariant='определить направление изменения свойств в ряду элементов одного периода или одной группы',
+       varies='ряд из трёх элементов (период или группа, по возрастанию или убыванию заряда ядра), набор продолжений',
+       answer_rule='период слева направо: радиус и металличность ↓, ЭО, внешние электроны, высшая степень окисления, '
+                   'кислотность оксидов ↑, слоёв — без изменений; группа вниз: радиус, металличность, число слоёв ↑, '
+                   'ЭО и кислотность оксидов ↓, внешние электроны — без изменений',
+       mistakes=['не замечают, что ряд записан в обратном порядке', 'путают «не изменяется» и «увеличивается» для '
+                 'числа слоёв и внешних электронов'],
+       solve=_solve_row, kes=K_OGE6,
+       fidelity=fid(6, 'ОГЭ', trap='ряд справа налево (Cl → S → P) меняет все направления', scale='элементы Z ≤ 20, '
+                    'три элемента подряд', kes=['2.2', '2.3'], **FID6))
+def g_row(rng):
+    if rng.random() < 0.5:
+        line = rng.choice([LINES_P[2][:], LINES_P[3][:]])
+        i = rng.randrange(len(line) - 2)
+        seq = line[i:i + 3]
+    else:
+        g = rng.choice([1, 2, 3, 4, 5, 6, 7])
+        line = [s for s in LINES_G[g] if E[s]['Z'] <= 20]
+        if len(line) < 3:
+            raise Retry
+        seq = line[:3]
+    if rng.random() < 0.35:
+        seq = seq[::-1]
+    keys = list(TREND)
+    if any(s in ('O', 'F') for s in seq):
+        keys = [k for k in keys if k not in ('hiox', 'acid')]
+    if any(E[s]['kind'] == 'm' for s in seq) and any(E[s]['kind'] == 'n' for s in seq):
+        pass
+    cands = []
+    for k in keys:
+        d = trend_dir(k, seq)
+        for w in ('up', 'down', 'same'):
+            if w == 'same' and k not in ('outer', 'layers', 'hiox'):
+                continue
+            truth = {'up': 1, 'down': -1, 'same': 0}[w] == d
+            cands.append((k, w, truth))
+    rng.shuffle(cands)
+    good, bad, used = [], [], set()
+    for k, w, t in cands:
+        if k in used:
+            continue
+        if t and len(good) < 2:
+            good.append((k, w)); used.add(k)
+        elif not t and len(bad) < 3:
+            bad.append((k, w)); used.add(k)
+    if len(good) < 2 or len(bad) < 3:
+        raise Retry
+    st = good + bad
+    rng.shuffle(st)
+    def txt(k, w):
+        noun, up, down = TREND[k]
+        verb = {'up': up, 'down': down, 'same': 'не изменяется' if not noun.endswith('ва') else 'не изменяются'}[w]
+        if k == 'metal' and w == 'same':
+            verb = 'не изменяются'
+        return f'{verb} {noun}'
+    q = rng.choice([f'Выберите два утверждения, верно описывающие изменения в ряду химических элементов '
+                    f'{" → ".join(seq)}.',
+                    f'Какие два из приведённых продолжений верны для ряда химических элементов {" → ".join(seq)}?'])
+    ans = sorted(str(i + 1) for i, x in enumerate(st) if x in good)
+    e = (f'{"-".join(seq)}: ' + ('один период' if len({E[s]["period"] for s in seq}) == 1 else 'одна группа') +
+         '; ' + '; '.join(f'{TREND[k][0]} — {({1: TREND[k][1], -1: TREND[k][2], 0: "не изменяется"})[trend_dir(k, seq)]}'
+                          for k, _ in st) + f'. Ответ: {"".join(ans)}.')
+    return pcard('ch-oge-06-row', q + ' Запишите номера выбранных ответов.', ans, e, k='many',
+                 o=opts([txt(*x) for x in st]), p={'seq': seq, 'st': [list(x) for x in st]})
+
+
+# ---- «Среди элементов X, Y, Z …»
+def _solve_among(p):
+    els = p['els']
+    zs = {s: z_of(s) for s in els}
+    res = []
+    for i, (tid, s) in enumerate(p['st']):
+        per = {x: r_period(zs[x]) for x in els}
+        gr = {x: r_valence(zs[x]) for x in els}
+        rad = {x: per[x] * 10 - gr[x] for x in els}
+        en = {x: -rad[x] for x in els}
+        ok = {'maxr': rad[s] == max(rad.values()), 'minr': rad[s] == min(rad.values()),
+              'maxen': en[s] == max(en.values()), 'minen': en[s] == min(en.values()),
+              'onlymetal': r_metal(zs[s]) and sum(r_metal(zs[x]) for x in els) == 1,
+              'onlynonmetal': not r_metal(zs[s]) and sum(not r_metal(zs[x]) for x in els) == 1,
+              'maxox': r_higher_ox(zs[s]) == max(r_higher_ox(zs[x]) or 0 for x in els)}[tid]
+        if ok:
+            res.append(str(i + 1))
+    return res
+
+
+AMONG_TXT = {'maxr': 'наибольший радиус имеют атомы {g}', 'minr': 'наименьший радиус имеют атомы {g}',
+             'maxen': 'наибольшую электроотрицательность имеет {n}', 'minen': 'наименьшую электроотрицательность имеет {n}',
+             'onlymetal': 'простое вещество-металл образует только {n}',
+             'onlynonmetal': 'простое вещество-неметалл образует только {n}',
+             'maxox': 'наибольшую высшую степень окисления имеет {n}'}
+
+
+@proto('ch-oge-06-among', 'ОГЭ', 6, 'Сравнение трёх элементов: «среди элементов X, Y, Z …»',
+       invariant='сравнить три элемента одного периода (группы) по радиусу, ЭО, металличности, высшей степени окисления',
+       varies='три элемента, набор утверждений «наибольший/наименьший …», «только … является металлом»',
+       answer_rule='применить закономерности периода/группы к каждому утверждению',
+       mistakes=['путают наибольший и наименьший радиус', 'считают, что металлом может быть только один элемент ряда'],
+       solve=_solve_among, kes=K_OGE6,
+       fidelity=fid(6, 'ОГЭ', trap='в периоде наибольший радиус — у левого элемента', scale='элементы Z ≤ 20',
+                    kes=['2.2', '2.3'], **FID6))
+def g_among(rng):
+    if rng.random() < 0.6:
+        line = rng.choice([LINES_P[2][:6], LINES_P[3]])
+        els = sorted(rng.sample(line, 3), key=lambda s: E[s]['Z'])
+        along = 'p'
+    else:
+        g = rng.choice([1, 2, 4, 5, 6, 7])
+        els = [s for s in LINES_G[g] if E[s]['Z'] <= 20][:3]
+        if len(els) < 3:
+            raise Retry
+        along = 'g'
+    per = lambda s: E[s]['period']
+    grp = lambda s: E[s]['group']
+    rad = {s: (-grp(s) if along == 'p' else per(s)) for s in els}
+    en = {s: -rad[s] for s in els}
+    mets = [s for s in els if E[s]['kind'] == 'm']
+    truth = {}
+    for s in els:
+        truth[('maxr', s)] = rad[s] == max(rad.values())
+        truth[('minr', s)] = rad[s] == min(rad.values())
+        truth[('maxen', s)] = en[s] == max(en.values())
+        truth[('minen', s)] = en[s] == min(en.values())
+        truth[('onlymetal', s)] = E[s]['kind'] == 'm' and len(mets) == 1
+        truth[('onlynonmetal', s)] = E[s]['kind'] == 'n' and len(els) - len(mets) == 1
+        if not any(x in ('O', 'F') for x in els):
+            truth[('maxox', s)] = ox_max(s) == max(ox_max(x) for x in els)
+    keys = list(truth)
+    rng.shuffle(keys)
+    good = [k for k in keys if truth[k]]
+    bad = [k for k in keys if not truth[k]]
+    g2, b3, used = [], [], set()
+    for k in good:
+        if k[0] not in used and len(g2) < 2:
+            g2.append(k); used.add(k[0])
+    for k in bad:
+        if k[0] not in used and len(b3) < 3:
+            b3.append(k); used.add(k[0])
+    if len(g2) < 2 or len(b3) < 3:
+        raise Retry
+    st = g2 + b3
+    rng.shuffle(st)
+    texts = [AMONG_TXT[t].format(g=E[s]['gen'], n=E[s]['nom']) for t, s in st]
+    q = rng.choice([f'Выберите два верных утверждения о химических элементах {", ".join(els)}: среди этих элементов …',
+                    f'Для химических элементов {", ".join(els)} выберите два верных утверждения.'])
+    ans = sorted(str(i + 1) for i, k in enumerate(st) if truth[k])
+    e = ('; '.join(f'{s}: {E[s]["period"]}-й период, {ROMAN[E[s]["group"]]}A' for s in els) +
+         '. В периоде слева направо радиус уменьшается, ЭО растёт; в группе сверху вниз — наоборот. Ответ: ' +
+         ''.join(ans) + '.')
+    return pcard('ch-oge-06-among', q + ' Запишите номера выбранных ответов.', ans, e, k='many', o=opts(texts),
+                 p={'els': els, 'st': [list(k) for k in st]})

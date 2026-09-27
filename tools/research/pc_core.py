@@ -435,9 +435,13 @@ def shingles(t, k=5):
 
 class Similarity:
     """Индекс шинглов локальных текстов ФИПИ. score(text) = доля шинглов карточки, найденных в ОДНОМ тексте ФИПИ
-    (максимум по текстам). Числа заменены на '#', чтобы «те же слова, другие числа» считались совпадением."""
+    (максимум по текстам). Числа заменены на '#', чтобы «те же слова, другие числа» считались совпадением.
 
-    def __init__(self, texts, k=5):
+    Типовые инструкции КИМ («Из предложенного перечня выберите два…», «Запишите в таблицу выбранные цифры…») —
+    это шинглы, встречающиеся во многих разных заданиях банка (df ≥ boiler_df). Они не авторский сюжет, и аналог
+    обязан их повторять, чтобы быть «как в КИМ». Такие шинглы не учитываются ни в числителе, ни в знаменателе."""
+
+    def __init__(self, texts, k=5, boiler_df=40):
         self.k = k
         self.index = {}
         self.n = 0
@@ -445,14 +449,15 @@ class Similarity:
             for s in shingles(t, k):
                 self.index.setdefault(s, []).append(i)
             self.n += 1
+        self.boiler = {s for s, ids in self.index.items() if len(set(ids)) >= boiler_df}
 
     def score(self, text):
-        sh = shingles(text, self.k)
+        sh = shingles(text, self.k) - self.boiler
         if not sh:
             return 0.0, None
         cnt = Counter()
         for s in sh:
-            for i in self.index.get(s, ()):
+            for i in set(self.index.get(s, ())):
                 cnt[i] += 1
         if not cnt:
             return 0.0, None
