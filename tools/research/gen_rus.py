@@ -807,6 +807,18 @@ def check_llm(c):
         got = []
         for w_pre, i, w_post in re.findall(r'([а-яё]*)\.\.\((\d)\)([а-яё]*)', t.lower()):
             fills = [L for L in 'аоеиыяюуёзсъь' if known(w_pre + L + w_post)]
+            if not w_post or w_post in ('т', 'тся', 'шь', 'шься'):
+                # окончание: форму выбирает контекст (к пристани), словарь только подтверждает, что слово есть;
+                # падеж и лицо проверяет второй проход вслепую
+                if not fills:
+                    return f'пропуск ({i}): нет такого слова ни с одной буквой'
+                if m and i in a and m.group(1).lower() not in fills:
+                    return f'пропуск ({i}): с буквой {m.group(1)} слова нет'
+                if m and m.group(1).lower() in fills and len(fills) == 1:
+                    got.append(i)
+                elif m and i in a:
+                    got.append(i)
+                continue
             if len(fills) != 1:
                 return f'пропуск ({i}) неоднозначен или не слово: {w_pre}..{w_post} → {fills}'
             if m and fills[0] == m.group(1).lower():
