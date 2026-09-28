@@ -1420,8 +1420,8 @@ R(['Ca(HCO3)2', 'Na2CO3'], ['CaCO3', 'NaHCO3'], ['обмена'], aq=True, tags=
 R(['NaHSO4', 'BaCl2'], ['BaSO4', 'NaCl', 'HCl'], ['обмена'], aq=True, tags=['соль+соль'], sign='выпадение белого осадка')
 R(['NaHSO4', 'Ba(OH)2'], ['BaSO4', 'NaOH', 'H2O'], ['обмена'], cond='избыток Ba(OH)2', aq=True,
   tags=['кислая соль+щёлочь'], sign='выпадение белого осадка')
-R(['Na2SO4', 'H2SO4'], ['NaHSO4'], ['соединения'], aq=True, tags=['соль+кислота'])
-R(['K2SO4', 'H2SO4'], ['KHSO4'], ['соединения'], aq=True, tags=['соль+кислота'])
+R(['Na2SO4', 'H2SO4'], ['NaHSO4'], ['соединения'], cond='конц.', form={'H2SO4': 'конц.'}, tags=['соль+кислота'])
+R(['K2SO4', 'H2SO4'], ['KHSO4'], ['соединения'], cond='конц.', form={'H2SO4': 'конц.'}, tags=['соль+кислота'])
 R(['Na2CO3', 'HCl'], ['NaHCO3', 'NaCl'], ['обмена'], cond='недостаток кислоты', form={'HCl': 'р-р'}, aq=True,
   tags=['соль+кислота'])
 R(['CuOHCl', 'HCl'], ['CuCl2', 'H2O'], ['обмена'], form={'HCl': 'р-р'}, aq=True, tags=['основная соль+кислота'])
@@ -2027,7 +2027,7 @@ _NM = [
     (['Fe', 'Fe2O3'], ['FeO'], 't', [], dict()),
     (['Fe', 'HCl', 'O2'], ['FeCl3', 'H2O'], '', [], dict()) if False else None,
     (['Cu', 'Cl2'], ['CuCl2'], 't', [], dict()),
-    (['Cu', 'CuO'], ['Cu2O'], 't', [], dict()),
+    (['Cu', 'CuO'], ['Cu2O'], 't', [], dict()) if False else None,   # вне школьного курса
     (['Cu', 'O2', 'H2O', 'CO2'], ['(CuOH)2CO3'], 'влажный воздух', ['коррозия (патина)'], dict()),
     (['Cu', 'H2SO4', 'O2'], ['CuSO4', 'H2O'], 'разб., t, продувание воздуха', [], dict(form={'H2SO4': 'разб.'})),
     (['Cu', 'HCl', 'O2'], ['CuCl2', 'H2O'], 't', [], dict(form={'HCl': 'р-р'})),
@@ -2948,6 +2948,13 @@ def _neg_rule(a, b):
         c2, a2 = _salt_ions(b)
         if None in (c1, a1, c2, a2) or sol(a) != 'р' or sol(b) != 'р':
             return None
+        _acid_an = {'HCO3', 'HSO3', 'HS', 'HPO4', 'H2PO4', 'HSO4'}
+        if a1 in _acid_an or a2 in _acid_an:
+            # кислые соли: «не реагирует» только с солью щелочного металла и сильной кислоты
+            oc, oa = (c2, a2) if a1 in _acid_an else (c1, a1)
+            if oa in _acid_an or oc not in ('Li', 'Na', 'K') or oa not in ('Cl', 'Br', 'I', 'NO3', 'SO4'):
+                return None
+            return 'в растворе не образуется осадок, газ или слабый электролит'
         if c1 == c2 or a1 == a2:
             return 'соли с общим ионом не реагируют'
         p1, p2 = salt(c1, a2), salt(c2, a1)

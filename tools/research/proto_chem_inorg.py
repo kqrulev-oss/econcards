@@ -2696,8 +2696,11 @@ def dissociate(f, form=None):
     if not io or s.get('sol') != 'р' or s.get('cls') != 'соль':
         return None
     if io.get('cplx'):
-        if f.startswith('('):   # [Cu(NH3)4]SO4 — не используем
-            return None
+        if f.startswith('('):   # [Cu(NH3)4]SO4 → [Cu(NH3)4]²⁺ + SO4²⁻ (сильный электролит)
+            m = re.match(r'\((.+)\)(\(OH\)2|SO4)$', f)
+            if not m:
+                return None
+            return [('[' + m.group(1) + ']', 2, 1), ('OH', -1, 2) if m.group(2) == '(OH)2' else ('SO4', -2, 1)]
         m = re.match(r'([A-Z][a-z]?)(\d*)\((.+)\)(\d*)$', f)
         if not m:
             return None
@@ -3088,6 +3091,26 @@ def cat6(a, la, b, lb):
     return 'окраска'
 
 
+def fits6(c, want):
+    """Верно ли описание «want» для реакции с категорией c (выпал осадок — верно и для «осадок и газ»)."""
+    if c is None:
+        return None
+    if want == 'осадок':
+        return c in ('осадок', 'осадок и газ')
+    if want == 'газ':
+        return c in ('газ', 'осадок и газ', 'растворение и газ')
+    if want == 'растворение':
+        return c in ('растворение', 'растворение и газ')
+    return c == want
+
+
+def rx6(a, b):
+    """Реакция в растворе между a и b, которую описывает наблюдение (без «недостатка»)."""
+    rs = [r for r in pos_rx(a, _lab24(a), b, _lab24(b)) if r.get('aq') and 'сплавл' not in r.get('cond', '')]
+    main = [r for r in rs if 'недостаток' not in r.get('cond', '')]
+    return (main or rs)[0]
+
+
 _OUT6 = {'осадок': ['выпал осадок', 'наблюдали образование осадка'],
          'газ': ['выделился газ', 'наблюдали выделение газа'],
          'растворение': ['наблюдали растворение осадка'],
@@ -3103,7 +3126,7 @@ def _solve_6k(p):
     S = p['S']
     ans = {}
     for letter, want in (('X', p['c1']), ('Y', p['c2'])):
-        hits = [str(j + 1) for j, o in enumerate(p['opts']) if cat6(S, _lab24(S), o, _lab24(o)) == want]
+        hits = [str(j + 1) for j, o in enumerate(p['opts']) if fits6(cat6(S, _lab24(S), o, _lab24(o)), want)]
         if len(hits) != 1:
             return {'err': letter}
         ans[letter] = hits[0]
@@ -3149,7 +3172,7 @@ def g_6k(rng):
             X, Y = Y, X
         if SUBS[X]['cls'] != 'кислота' or SUBS[Y]['cls'] == 'кислота':
             raise Retry
-        others = [o for o, c in table.items() if c != 'растворение' and o not in (X, Y)]
+        others = [o for o, c in table.items() if not fits6(c, 'растворение') and o not in (X, Y)]
         if len(others) < 3:
             raise Retry
         items = shuffled(rng, [X, Y] + rng.sample(others, 3))
@@ -3163,8 +3186,12 @@ def g_6k(rng):
         if len(wanted) < 2:
             raise Retry
         c1, c2 = rng.sample(wanted, 2)
+        if fits6(c1, c2) or fits6(c2, c1):
+            raise Retry
         X, Y = rng.choice(by[c1]), rng.choice(by[c2])
-        others = [o for o, c in table.items() if c not in (c1, c2)]
+        if fits6(table[X], c2) or fits6(table[Y], c1):
+            raise Retry
+        others = [o for o, c in table.items() if not fits6(c, c1) and not fits6(c, c2)]
         if len(others) < 3:
             raise Retry
         items = shuffled(rng, [X, Y] + rng.sample(others, 3))
@@ -3177,7 +3204,7 @@ def g_6k(rng):
         p = {'S': S, 'c1': c1, 'c2': c2, 'opts': items}
     by_name = rng.random() < 0.6
     txt = [ru(x) if by_name else F(x) for x in items]
-    rx = lambda o: [r for r in pos_rx(S, _lab24(S), o, _lab24(o)) if r.get('aq')][0]
+    rx = lambda o: rx6(S, o)
     e = f'X: {eq_text(rx(X)["lhs"], rx(X)["rhs"])}; Y: {eq_text(rx(Y)["lhs"], rx(Y)["rhs"])}.'
     return card(pid, q, ans, e, k='match', o=match_opts(['X', 'Y'], txt, lids='XY'), p=p)
 
@@ -3186,9 +3213,9 @@ def _solve_6k_roles(p):
     if p.get('roles'):
         S = p['S']
         xs = [str(j + 1) for j, o in enumerate(p['opts']) if SUBS[o]['cls'] == 'кислота' and
-              cat6(S, _lab24(S), o, _lab24(o)) == 'растворение']
+              fits6(cat6(S, _lab24(S), o, _lab24(o)), 'растворение')]
         ys = [str(j + 1) for j, o in enumerate(p['opts']) if SUBS[o]['cls'] != 'кислота' and
-              cat6(S, _lab24(S), o, _lab24(o)) == 'растворение']
+              fits6(cat6(S, _lab24(S), o, _lab24(o)), 'растворение')]
         if len(xs) != 1 or len(ys) != 1:
             return {'err': 1}
         return {'X': xs[0], 'Y': ys[0]}
@@ -3199,10 +3226,10 @@ def _solve_6u(p):
     R1 = p['R1']
     good = []
     for x in p['opts']:
-        if cat6(x, _lab24(x), R1, _lab24(R1)) != p['c1']:
+        if not fits6(cat6(x, _lab24(x), R1, _lab24(R1)), p['c1']):
             continue
         for y in p['opts']:
-            if y != x and cat6(x, _lab24(x), y, _lab24(y)) == p['c2']:
+            if y != x and fits6(cat6(x, _lab24(x), y, _lab24(y)), p['c2']):
                 good.append((x, y))
     if len(good) != 1:
         return {'err': len(good)}
@@ -3236,7 +3263,7 @@ def g_6u(rng):
         pairs = {}
         ok = True
         for x in items:
-            if c1s[x] != c1:
+            if not fits6(c1s[x], c1):
                 continue
             for y in items:
                 if y == x:
@@ -3251,7 +3278,7 @@ def g_6u(rng):
         if not c2s:
             continue
         c2 = rng.choice(c2s)
-        good = [k for k, c in pairs.items() if c == c2]
+        good = [k for k, c in pairs.items() if fits6(c, c2)]
         if len(good) == 1:
             X, Y = good[0]
             break
@@ -3265,7 +3292,7 @@ def g_6u(rng):
     q = q.replace('при этом протекала', 'при этом протекала')
     by_name = rng.random() < 0.6
     txt = [ru(x) if by_name else F(x) for x in items]
-    rx = lambda a, b: [r for r in pos_rx(a, _lab24(a), b, _lab24(b)) if r.get('aq')][0]
+    rx = rx6
     e = f'{eq_text(rx(X, R1)["lhs"], rx(X, R1)["rhs"])}; {eq_text(rx(X, Y)["lhs"], rx(X, Y)["rhs"])}.'
     return card(pid, q, ans, e, k='match', o=match_opts(['X', 'Y'], txt, lids='XY'),
                 p={'R1': R1, 'c1': c1, 'c2': c2, 'opts': items})
