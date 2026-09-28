@@ -1,0 +1,596 @@
+{
+ "hist-ege-01-event-year": {
+  "status": "pass",
+  "checked": 3,
+  "notes": "форма 4×6 как в КИМ; ответ однозначен по базе",
+  "fixed": "только однолетние события (иначе «Сталинградская битва» — 1942 или 1943); убрана двойная точка"
+ },
+ "hist-ege-02-seq-world": {
+  "status": "pass",
+  "checked": 3,
+  "notes": "три события, одно из всеобщей истории — как в демоверсии",
+  "fixed": ""
+ },
+ "hist-ege-02-seq-russia": {
+  "status": "pass",
+  "checked": 3,
+  "notes": "события разных веков, без пересечения диапазонов",
+  "fixed": ""
+ },
+ "hist-ege-03-process-fact": {
+  "status": "pass",
+  "checked": 3,
+  "notes": "форма 4×6; факты других процессов тех же веков — рабочие дистракторы",
+  "fixed": "отсекаются факты, совпадающие с названием процесса («Отечественная война 1812 г.»)"
+ },
+ "hist-ege-04-table": {
+  "status": "pass",
+  "checked": 3,
+  "notes": "таблица 3×3 с шестью пропусками и девятью элементами, время десятилетиями — как в демоверсии",
+  "fixed": "не берутся события с годом в названии и участники, чьё имя есть в названии события"
+ },
+ "hist-ege-05-event-person": {
+  "status": "pass",
+  "checked": 3,
+  "notes": "форма 4×6; участники из базы",
+  "fixed": "участник не должен входить в другое выбранное событие (Пётр I в 1697 и 1721 гг.); имя не «просвечивает» в названии"
+ },
+ "hist-ege-06-source-true": {
+  "status": "fail",
+  "checked": 0,
+  "notes": "генератора нет: нужен банк источников",
+  "fixed": ""
+ },
+ "hist-ege-07-culture-match": {
+  "status": "pass",
+  "checked": 3,
+  "notes": "форма 4×6; характеристики — век, автор, правление",
+  "fixed": "правитель в родительном падеже («в правление Ивана IV»)"
+ },
+ "hist-ege-08-vov-image": {
+  "status": "fail",
+  "checked": 0,
+  "notes": "генератора нет: нужен изображения",
+  "fixed": ""
+ },
+ "hist-ege-09-map-ruler": {
+  "status": "fail",
+  "checked": 0,
+  "notes": "генератора нет: нужен карта-схема",
+  "fixed": ""
+ },
+ "hist-ege-10-map-object": {
+  "status": "fail",
+  "checked": 0,
+  "notes": "генератора нет: нужен карта-схема",
+  "fixed": ""
+ },
+ "hist-ege-11-map-text": {
+  "status": "fail",
+  "checked": 0,
+  "notes": "генератора нет: рецепт для ИИ",
+  "fixed": ""
+ },
+ "hist-ege-12-map-true": {
+  "status": "fail",
+  "checked": 0,
+  "notes": "генератора нет: рецепт для ИИ",
+  "fixed": ""
+ },
+ "hist-ege-13-source-attr": {
+  "status": "fail",
+  "checked": 0,
+  "notes": "генератора нет: нужен банк источников",
+  "fixed": ""
+ },
+ "hist-ege-14-source-info": {
+  "status": "fail",
+  "checked": 0,
+  "notes": "генератора нет: нужен банк источников",
+  "fixed": ""
+ },
+ "hist-ege-15-world-source": {
+  "status": "fail",
+  "checked": 0,
+  "notes": "генератора нет: нужен банк источников",
+  "fixed": ""
+ },
+ "hist-ege-16-image-conclusion": {
+  "status": "fail",
+  "checked": 0,
+  "notes": "генератора нет: нужен изображения",
+  "fixed": ""
+ },
+ "hist-ege-17-image-choice": {
+  "status": "fail",
+  "checked": 0,
+  "notes": "генератора нет: нужен изображения",
+  "fixed": ""
+ },
+ "hist-ege-18-vov-two-sources": {
+  "status": "fail",
+  "checked": 0,
+  "notes": "генератора нет: нужен банк источников",
+  "fixed": ""
+ },
+ "hist-ege-19-causes": {
+  "status": "fail",
+  "checked": 0,
+  "notes": "генератора нет: рецепт для ИИ",
+  "fixed": ""
+ },
+ "hist-ege-20-term": {
+  "status": "partial",
+  "checked": 3,
+  "notes": "мини-форма: определение и период без вопроса на факт; ответ развёрнутый",
+  "fixed": ""
+ },
+ "hist-ege-21-compare": {
+  "status": "fail",
+  "checked": 0,
+  "notes": "генератора нет: рецепт для ИИ",
+  "fixed": ""
+ },
+ "hist-ege-22-arguments": {
+  "status": "fail",
+  "checked": 0,
+  "notes": "генератора нет: рецепт для ИИ",
+  "fixed": ""
+ },
+ "hist-oge-01-event-year": {
+  "status": "pass",
+  "checked": 3,
+  "notes": "форма 3×5 как в демоверсии ОГЭ 2027",
+  "fixed": "только однолетние события; убрана двойная точка"
+ },
+ "hist-oge-02-seq": {
+  "status": "pass",
+  "checked": 3,
+  "notes": "как в демоверсии",
+  "fixed": ""
+ },
+ "hist-oge-02-earlier": {
+  "status": "partial",
+  "checked": 3,
+  "notes": "тренировочная форма «что раньше», в КИМ такой нет",
+  "fixed": ""
+ },
+ "hist-oge-03-term-def": {
+  "status": "pass",
+  "checked": 3,
+  "notes": "слово; определения свои, 55 терминов",
+  "fixed": ""
+ },
+ "hist-oge-04-persons": {
+  "status": "pass",
+  "checked": 3,
+  "notes": "несколько верных из пяти — как в демоверсии (Негласный комитет)",
+  "fixed": "исключён деятель, названный в имени процесса («Преобразования Петра I» → Пётр I)"
+ },
+ "hist-oge-04-century": {
+  "status": "pass",
+  "checked": 3,
+  "notes": "несколько верных из пяти по веку",
+  "fixed": ""
+ },
+ "hist-oge-05-odd-term": {
+  "status": "pass",
+  "checked": 3,
+  "notes": "форма «выпадающий термин по периоду» как в демоверсии",
+  "fixed": "убрана двойная точка после «вв.»"
+ },
+ "hist-oge-06-thesis-fact": {
+  "status": "fail",
+  "checked": 0,
+  "notes": "генератора нет: рецепт для ИИ",
+  "fixed": ""
+ },
+ "hist-oge-07-stat-table": {
+  "status": "fail",
+  "checked": 0,
+  "notes": "генератора нет: рецепт для ИИ",
+  "fixed": ""
+ },
+ "hist-oge-08-map": {
+  "status": "fail",
+  "checked": 0,
+  "notes": "генератора нет: нужен карта-схема",
+  "fixed": ""
+ },
+ "hist-oge-09-map-object": {
+  "status": "fail",
+  "checked": 0,
+  "notes": "генератора нет: нужен карта-схема",
+  "fixed": ""
+ },
+ "hist-oge-10-map-text": {
+  "status": "fail",
+  "checked": 0,
+  "notes": "генератора нет: рецепт для ИИ",
+  "fixed": ""
+ },
+ "hist-oge-11-image": {
+  "status": "fail",
+  "checked": 0,
+  "notes": "генератора нет: нужен изображения",
+  "fixed": ""
+ },
+ "hist-oge-12-scheme-year": {
+  "status": "pass",
+  "checked": 3,
+  "notes": "пропуск в схеме, ответ числом; в демоверсии пропуск — слово",
+  "fixed": ""
+ },
+ "hist-oge-13-culture-two": {
+  "status": "fail",
+  "checked": 0,
+  "notes": "генератора нет: нужен изображения",
+  "fixed": ""
+ },
+ "hist-oge-14-culture-one": {
+  "status": "partial",
+  "checked": 3,
+  "notes": "в КИМ часть памятников дана изображениями; здесь все названиями",
+  "fixed": "вопрос об авторе переписан в именительном падеже"
+ },
+ "hist-oge-15-world-person": {
+  "status": "pass",
+  "checked": 3,
+  "notes": "перечень из четырёх событий всеобщей истории — как в демоверсии 15–17",
+  "fixed": ""
+ },
+ "hist-oge-16-world-fact": {
+  "status": "pass",
+  "checked": 3,
+  "notes": "тот же перечень; вопрос о веке/порядке",
+  "fixed": ""
+ },
+ "hist-oge-17-world-source": {
+  "status": "fail",
+  "checked": 0,
+  "notes": "генератора нет: нужен банк источников",
+  "fixed": ""
+ },
+ "hist-oge-18-source-attr": {
+  "status": "fail",
+  "checked": 0,
+  "notes": "генератора нет: нужен банк источников",
+  "fixed": ""
+ },
+ "hist-oge-19-source-info": {
+  "status": "fail",
+  "checked": 0,
+  "notes": "генератора нет: нужен банк источников",
+  "fixed": ""
+ },
+ "hist-oge-20-source-context": {
+  "status": "fail",
+  "checked": 0,
+  "notes": "генератора нет: нужен банк источников",
+  "fixed": ""
+ },
+ "hist-oge-21-find-errors": {
+  "status": "partial",
+  "checked": 3,
+  "notes": "ответ — номера ошибочных предложений вместо исправлений; текст телеграфный",
+  "fixed": "предложения переписаны в связной форме"
+ },
+ "hist-oge-22-compare": {
+  "status": "fail",
+  "checked": 0,
+  "notes": "генератора нет: рецепт для ИИ",
+  "fixed": ""
+ },
+ "hist-oge-23-situation": {
+  "status": "fail",
+  "checked": 0,
+  "notes": "генератора нет: рецепт для ИИ",
+  "fixed": ""
+ },
+ "soc-ege-01-odd-two": {
+  "status": "pass",
+  "checked": 3,
+  "notes": "ряд из шести, два лишних — как в КИМ",
+  "fixed": ""
+ },
+ "soc-ege-02-true-human": {
+  "status": "pass",
+  "checked": 3,
+  "notes": "суждения из словаря, неверные — подменой признака; опора у каждого",
+  "fixed": ""
+ },
+ "soc-ege-03-match-human": {
+  "status": "pass",
+  "checked": 3,
+  "notes": "форма 5×2–3",
+  "fixed": ""
+ },
+ "soc-ege-04-apply-human": {
+  "status": "fail",
+  "checked": 0,
+  "notes": "генератора нет: рецепт для ИИ",
+  "fixed": ""
+ },
+ "soc-ege-05-true-econ": {
+  "status": "pass",
+  "checked": 3,
+  "notes": "как ЕГЭ 2",
+  "fixed": ""
+ },
+ "soc-ege-06-match-econ": {
+  "status": "pass",
+  "checked": 3,
+  "notes": "форма 5×2–3",
+  "fixed": ""
+ },
+ "soc-ege-07-costs": {
+  "status": "pass",
+  "checked": 3,
+  "notes": "три из шести; сюжет минимальный",
+  "fixed": ""
+ },
+ "soc-ege-07-apply-econ": {
+  "status": "fail",
+  "checked": 0,
+  "notes": "генератора нет: рецепт для ИИ",
+  "fixed": ""
+ },
+ "soc-ege-08-true-social": {
+  "status": "pass",
+  "checked": 3,
+  "notes": "как ЕГЭ 2",
+  "fixed": ""
+ },
+ "soc-ege-09-poll": {
+  "status": "partial",
+  "checked": 3,
+  "notes": "диаграмма описана числами, рисунка нет; форма выводов как в КИМ",
+  "fixed": "убрана двойная точка, группы опроса названы естественно"
+ },
+ "soc-ege-10-true-politics": {
+  "status": "pass",
+  "checked": 3,
+  "notes": "как ЕГЭ 2",
+  "fixed": ""
+ },
+ "soc-ege-11-apply-politics": {
+  "status": "fail",
+  "checked": 0,
+  "notes": "генератора нет: рецепт для ИИ",
+  "fixed": ""
+ },
+ "soc-ege-12-constitution": {
+  "status": "pass",
+  "checked": 3,
+  "notes": "три из шести по группам Конституции; статьи в пояснении",
+  "fixed": "дательный падеж названий групп"
+ },
+ "soc-ege-13-powers": {
+  "status": "pass",
+  "checked": 3,
+  "notes": "форма 5×3, статьи 83–89, 102, 103, 114",
+  "fixed": ""
+ },
+ "soc-ege-13-jurisdiction": {
+  "status": "pass",
+  "checked": 3,
+  "notes": "форма 5×2, ст. 71–72",
+  "fixed": ""
+ },
+ "soc-ege-14-true-law": {
+  "status": "pass",
+  "checked": 3,
+  "notes": "как ЕГЭ 2",
+  "fixed": "суждения о возрастах вынесены в отдельный прототип (тема заголовка совпадает с суждениями)"
+ },
+ "soc-ege-14-true-ages": {
+  "status": "pass",
+  "checked": 3,
+  "notes": "числа из Конституции и кодексов; неверные — подменой числа",
+  "fixed": ""
+ },
+ "soc-ege-15-match-law": {
+  "status": "pass",
+  "checked": 3,
+  "notes": "форма 5×2–3",
+  "fixed": ""
+ },
+ "soc-ege-16-law-examples": {
+  "status": "pass",
+  "checked": 3,
+  "notes": "три из шести ситуаций",
+  "fixed": "формулировка «ситуации, относящиеся к отрасли»"
+ },
+ "soc-ege-17-text": {
+  "status": "fail",
+  "checked": 0,
+  "notes": "генератора нет: рецепт для ИИ",
+  "fixed": ""
+ },
+ "soc-ege-18-concept": {
+  "status": "partial",
+  "checked": 3,
+  "notes": "мини-форма: без объяснения связи с текстом; проверка по признакам словаря",
+  "fixed": "берутся только понятия с двумя признаками"
+ },
+ "soc-ege-19-examples": {
+  "status": "fail",
+  "checked": 0,
+  "notes": "генератора нет: рецепт для ИИ",
+  "fixed": ""
+ },
+ "soc-ege-20-arguments": {
+  "status": "fail",
+  "checked": 0,
+  "notes": "генератора нет: рецепт для ИИ",
+  "fixed": ""
+ },
+ "soc-ege-21-market": {
+  "status": "partial",
+  "checked": 3,
+  "notes": "график описан словами, ответ цифрами вместо трёх пунктов",
+  "fixed": "линия предложения обозначена S→S1; не меньше двух верных утверждений"
+ },
+ "soc-ege-22-case": {
+  "status": "fail",
+  "checked": 0,
+  "notes": "генератора нет: рецепт для ИИ",
+  "fixed": ""
+ },
+ "soc-ege-23-principles": {
+  "status": "partial",
+  "checked": 3,
+  "notes": "в КИМ ученик сам формулирует положения; здесь выбор из списка",
+  "fixed": ""
+ },
+ "soc-ege-24-plan": {
+  "status": "fail",
+  "checked": 0,
+  "notes": "генератора нет: рецепт для ИИ",
+  "fixed": ""
+ },
+ "soc-ege-25-essay": {
+  "status": "fail",
+  "checked": 0,
+  "notes": "генератора нет: рецепт для ИИ",
+  "fixed": ""
+ },
+ "soc-oge-01-two-concepts": {
+  "status": "partial",
+  "checked": 3,
+  "notes": "ответ цифрами вместо слов и объяснения смысла",
+  "fixed": "родительный падеж в вопросе"
+ },
+ "soc-oge-02-table-gap": {
+  "status": "pass",
+  "checked": 3,
+  "notes": "таблица из двух строк, слово — как в демоверсии (гимн)",
+  "fixed": ""
+ },
+ "soc-oge-03-compare": {
+  "status": "pass",
+  "checked": 3,
+  "notes": "четыре позиции, сходство/различие — как в демоверсии",
+  "fixed": ""
+ },
+ "soc-oge-04-society": {
+  "status": "pass",
+  "checked": 3,
+  "notes": "один ответ из четырёх",
+  "fixed": "вопрос «какое понятие иллюстрирует пример» вместо согласования «к которому»; всегда четыре варианта"
+ },
+ "soc-oge-05-human": {
+  "status": "pass",
+  "checked": 3,
+  "notes": "один ответ из четырёх",
+  "fixed": ""
+ },
+ "soc-oge-06-ab-human-social": {
+  "status": "pass",
+  "checked": 3,
+  "notes": "А/Б, ответ 1–4 — как в КИМ",
+  "fixed": ""
+ },
+ "soc-oge-06-ab-social": {
+  "status": "pass",
+  "checked": 3,
+  "notes": "А/Б",
+  "fixed": ""
+ },
+ "soc-oge-07-photo": {
+  "status": "fail",
+  "checked": 0,
+  "notes": "генератора нет: нужен изображения",
+  "fixed": ""
+ },
+ "soc-oge-08-budget": {
+  "status": "partial",
+  "checked": 3,
+  "notes": "расчёт вместо развёрнутого ответа о финансовом поведении",
+  "fixed": "суммы с разрядами, убрана двойная точка"
+ },
+ "soc-oge-09-econ": {
+  "status": "pass",
+  "checked": 3,
+  "notes": "один ответ из четырёх",
+  "fixed": ""
+ },
+ "soc-oge-10-ab-econ": {
+  "status": "pass",
+  "checked": 3,
+  "notes": "А/Б",
+  "fixed": ""
+ },
+ "soc-oge-11-politics": {
+  "status": "pass",
+  "checked": 3,
+  "notes": "один ответ из четырёх",
+  "fixed": "дополнение вариантов до четырёх понятиями той же сферы"
+ },
+ "soc-oge-12-poll": {
+  "status": "partial",
+  "checked": 3,
+  "notes": "мини-форма: выбор выводов вместо сходства/различия/объяснения; без рисунка",
+  "fixed": ""
+ },
+ "soc-oge-13-powers": {
+  "status": "pass",
+  "checked": 3,
+  "notes": "один ответ из четырёх — как в демоверсии",
+  "fixed": ""
+ },
+ "soc-oge-14-match": {
+  "status": "pass",
+  "checked": 3,
+  "notes": "форма 5×2 — как в демоверсии",
+  "fixed": ""
+ },
+ "soc-oge-15-branch": {
+  "status": "pass",
+  "checked": 3,
+  "notes": "один ответ из четырёх — как в демоверсии",
+  "fixed": ""
+ },
+ "soc-oge-15-liability": {
+  "status": "pass",
+  "checked": 3,
+  "notes": "один ответ из четырёх",
+  "fixed": "единообразные варианты (одно слово)"
+ },
+ "soc-oge-16-ab-law": {
+  "status": "pass",
+  "checked": 3,
+  "notes": "А/Б",
+  "fixed": "то же: возрасты вынесены в отдельный прототип"
+ },
+ "soc-oge-16-ab-ages": {
+  "status": "pass",
+  "checked": 3,
+  "notes": "А/Б с числами из кодексов",
+  "fixed": ""
+ },
+ "soc-oge-17-values": {
+  "status": "fail",
+  "checked": 0,
+  "notes": "генератора нет: рецепт для ИИ",
+  "fixed": ""
+ },
+ "soc-oge-18-text-plan": {
+  "status": "fail",
+  "checked": 0,
+  "notes": "генератора нет: рецепт для ИИ",
+  "fixed": ""
+ },
+ "soc-oge-19-text-info": {
+  "status": "fail",
+  "checked": 0,
+  "notes": "генератора нет: рецепт для ИИ",
+  "fixed": ""
+ },
+ "soc-oge-20-text-examples": {
+  "status": "fail",
+  "checked": 0,
+  "notes": "генератора нет: рецепт для ИИ",
+  "fixed": ""
+ }
+}
