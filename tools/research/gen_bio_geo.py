@@ -854,9 +854,12 @@ RANKS_A = ['царство', 'тип', 'класс', 'отряд', 'семейс
 RANKS_P = ['царство', 'отдел', 'класс', 'порядок', 'семейство', 'род', 'вид']
 
 
+TAXA_FIPI = {'Донник лекарственный'}   # вид из задания открытого банка ФИПИ — не берём, чтобы аналог не повторял его
+
+
 def gen_b_taxa(rng):
     """ЕГЭ 12 — 6 таксонов (часто с доменом Эукариоты, ранги можно не называть); ОГЭ 3 — 5 таксонов, ранг всегда указан."""
-    row0 = rng.choice(TAXA)
+    row0 = rng.choice([r for r in TAXA if r[-1] not in TAXA_FIPI])
     row = ['Эукариоты'] + row0
     ranks = ['домен'] + (RANKS_A if row0[0] == 'Животные' else RANKS_P)
     m = rng.choice([5, 6])
@@ -868,7 +871,11 @@ def gen_b_taxa(rng):
     named = m == 5 or rng.random() < 0.5
     items = [(i, f'{ranks[i]} {row[i]}' if named and i > 0 else row[i]) for i in pick]
     shown = items[:]
-    rng.shuffle(shown)
+    for _ in range(50):                # соседние по рангу таксоны не ставим рядом — иначе порядок подсказан
+        rng.shuffle(shown)
+        pos = [pick.index(i) for i, _ in shown]
+        if all(abs(x - y) > 1 for x, y in zip(pos, pos[1:])):
+            break
     top_down = rng.random() < 0.5
     order = sorted(shown, key=lambda x: x[0], reverse=not top_down)
     ans = ''.join(str(shown.index(x) + 1) for x in order)

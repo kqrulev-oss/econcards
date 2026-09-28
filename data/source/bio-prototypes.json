@@ -3,7 +3,8 @@
   "about": "Каталог прототипов заданий ЕГЭ (нумерация КИМ 2027) и ОГЭ по биологии. Описания — своими словами по демоверсиям 2026–2027, спецификациям, навигатору и методическим рекомендациям ФИПИ; тексты заданий ФИПИ не копируются. Пример — собственный, сгенерирован генератором.",
   "gen": "Строка — спецификация генератора tools/research/gen_bio_geo.py: d_* — словарный движок по таблице фактов (data/source/bio-facts.json), b_*/g_* — параметрический генератор, «@k=v» — фильтр режима, «|» — несколько генераторов на прототип. Объект: llm — рецепт для ИИ с проверкой; bank — нужен рисунок/карта; none — не покрыто, причина в why.",
   "capacity": "Для генераторов — число разных карточек из 3000 попыток (≥ — генератор не исчерпан); для llm — оценка по числу входов (capacity_basis); bank/none — 0.",
-  "fields": "id, exam, n, title, invariant, varies, answer_rule, errors, share, seen, gen_kind, gen, capacity, example, fidelity"
+  "fields": "id, exam, n, title, invariant, varies, answer_rule, errors, share, seen, gen_kind, gen, capacity, example, fidelity",
+  "fidelity": "Экзаменационная проверка: kim — эталон КИМ 2027 для номера (уровень, баллы, время, формат ответа, устройство, кодификатор); auto — автоматическая сверка формата и числа элементов аналогов с эталоном; expert — второй проход: эксперт ЕГЭ/ОГЭ оценивает 5 случайных аналогов по чек-листу (format, structure, style, level, facts, trap, codifier, scoring) и отвечает, отличим ли аналог от задания открытого банка ФИПИ; status/reason — итог (pass — аналоги неотличимы от экзаменационных, fail — с причиной)."
  },
  "prototypes": [
   {
@@ -51,7 +52,28 @@
      "format": "pass",
      "structure": "pass",
      "notes": []
-    }
+    },
+    "expert": {
+     "round": 3,
+     "checked": 5,
+     "passed_cards": 4,
+     "checks": {
+      "format": "pass",
+      "structure": "pass",
+      "style": "pass",
+      "level": "pass",
+      "facts": "pass",
+      "trap": "pass",
+      "codifier": "pass",
+      "scoring": "fail"
+     },
+     "indistinguishable": "yes",
+     "verdict": "fail",
+     "reason": "В ключе нет допустимого синонима для биогеоценотического уровня — ученик с верным ответом «экосистемный» получит 0.",
+     "render": "таблица дана строкой"
+    },
+    "status": "fail",
+    "reason": "В ключе нет допустимого синонима для биогеоценотического уровня — ученик с верным ответом «экосистемный» получит 0."
    }
   },
   {
@@ -99,7 +121,28 @@
      "format": "pass",
      "structure": "pass",
      "notes": []
-    }
+    },
+    "expert": {
+     "round": 2,
+     "checked": 5,
+     "passed_cards": 5,
+     "checks": {
+      "format": "pass",
+      "structure": "pass",
+      "style": "pass",
+      "level": "pass",
+      "facts": "pass",
+      "trap": "pass",
+      "codifier": "pass",
+      "scoring": "pass"
+     },
+     "indistinguishable": "yes",
+     "verdict": "pass",
+     "reason": "",
+     "render": "таблица дана строкой «| … |»"
+    },
+    "status": "pass",
+    "reason": ""
    }
   },
   {
@@ -147,7 +190,28 @@
      "format": "pass",
      "structure": "pass",
      "notes": []
-    }
+    },
+    "expert": {
+     "round": 2,
+     "checked": 5,
+     "passed_cards": 5,
+     "checks": {
+      "format": "pass",
+      "structure": "pass",
+      "style": "pass",
+      "level": "pass",
+      "facts": "pass",
+      "trap": "pass",
+      "codifier": "pass",
+      "scoring": "pass"
+     },
+     "indistinguishable": "yes",
+     "verdict": "pass",
+     "reason": "",
+     "render": "таблица дана строкой"
+    },
+    "status": "pass",
+    "reason": ""
    }
   },
   {
@@ -188,7 +252,9 @@
       "1.2",
       "1.3"
      ]
-    }
+    },
+    "status": "fail",
+    "reason": "генератора нет: нужен рисунок/карта (свои рисунки приборов и объектов)"
    }
   },
   {
@@ -236,7 +302,28 @@
      "format": "pass",
      "structure": "pass",
      "notes": []
-    }
+    },
+    "expert": {
+     "round": 2,
+     "checked": 5,
+     "passed_cards": 4,
+     "checks": {
+      "format": "pass",
+      "structure": "pass",
+      "style": "pass",
+      "level": "pass",
+      "facts": "pass",
+      "trap": "pass",
+      "codifier": "pass",
+      "scoring": "pass"
+     },
+     "indistinguishable": "yes",
+     "verdict": "pass",
+     "reason": "",
+     "render": "таблица дана строкой"
+    },
+    "status": "pass",
+    "reason": ""
    }
   },
   {
@@ -284,7 +371,28 @@
      "format": "pass",
      "structure": "pass",
      "notes": []
-    }
+    },
+    "expert": {
+     "round": 3,
+     "checked": 5,
+     "passed_cards": 0,
+     "checks": {
+      "format": "pass",
+      "structure": "pass",
+      "style": "fail",
+      "level": "pass",
+      "facts": "fail",
+      "trap": "pass",
+      "codifier": "pass",
+      "scoring": "fail"
+     },
+     "indistinguishable": "no",
+     "verdict": "fail",
+     "reason": "Эталоны — длинные описательные фразы («учение об ароморфозе и идиоадаптации как путях эволюции», «открытие цикла трикарбоновых кислот») без допустимых вариантов; при проверке по полному совпадению ответ неоднозначен, в КИМ №1 ответ — краткий термин.",
+     "render": "таблица дана строкой"
+    },
+    "status": "fail",
+    "reason": "Эталоны — длинные описательные фразы («учение об ароморфозе и идиоадаптации как путях эволюции», «открытие цикла трикарбоновых кислот») без допустимых вариантов; при проверке по полному совпадению ответ неоднозначен, в КИМ №1 ответ — краткий термин."
    }
   },
   {
@@ -361,7 +469,28 @@
      "format": "pass",
      "structure": "pass",
      "notes": []
-    }
+    },
+    "expert": {
+     "round": 3,
+     "checked": 5,
+     "passed_cards": 5,
+     "checks": {
+      "format": "pass",
+      "structure": "pass",
+      "style": "pass",
+      "level": "pass",
+      "facts": "pass",
+      "trap": "pass",
+      "codifier": "pass",
+      "scoring": "pass"
+     },
+     "indistinguishable": "yes",
+     "verdict": "pass",
+     "reason": "",
+     "render": ""
+    },
+    "status": "pass",
+    "reason": ""
    }
   },
   {
@@ -438,7 +567,28 @@
      "format": "pass",
      "structure": "pass",
      "notes": []
-    }
+    },
+    "expert": {
+     "round": 3,
+     "checked": 5,
+     "passed_cards": 5,
+     "checks": {
+      "format": "pass",
+      "structure": "pass",
+      "style": "pass",
+      "level": "pass",
+      "facts": "pass",
+      "trap": "pass",
+      "codifier": "pass",
+      "scoring": "pass"
+     },
+     "indistinguishable": "yes",
+     "verdict": "pass",
+     "reason": "",
+     "render": ""
+    },
+    "status": "pass",
+    "reason": ""
    }
   },
   {
@@ -514,7 +664,28 @@
      "format": "pass",
      "structure": "pass",
      "notes": []
-    }
+    },
+    "expert": {
+     "round": 2,
+     "checked": 5,
+     "passed_cards": 4,
+     "checks": {
+      "format": "pass",
+      "structure": "pass",
+      "style": "pass",
+      "level": "pass",
+      "facts": "pass",
+      "trap": "pass",
+      "codifier": "pass",
+      "scoring": "pass"
+     },
+     "indistinguishable": "yes",
+     "verdict": "pass",
+     "reason": "",
+     "render": ""
+    },
+    "status": "pass",
+    "reason": ""
    }
   },
   {
@@ -591,7 +762,28 @@
      "format": "pass",
      "structure": "pass",
      "notes": []
-    }
+    },
+    "expert": {
+     "round": 2,
+     "checked": 5,
+     "passed_cards": 5,
+     "checks": {
+      "format": "pass",
+      "structure": "pass",
+      "style": "pass",
+      "level": "pass",
+      "facts": "pass",
+      "trap": "pass",
+      "codifier": "pass",
+      "scoring": "pass"
+     },
+     "indistinguishable": "yes",
+     "verdict": "pass",
+     "reason": "",
+     "render": ""
+    },
+    "status": "pass",
+    "reason": ""
    }
   },
   {
@@ -668,7 +860,28 @@
      "format": "pass",
      "structure": "pass",
      "notes": []
-    }
+    },
+    "expert": {
+     "round": 3,
+     "checked": 5,
+     "passed_cards": 2,
+     "checks": {
+      "format": "pass",
+      "structure": "pass",
+      "style": "pass",
+      "level": "fail",
+      "facts": "pass",
+      "trap": "fail",
+      "codifier": "pass",
+      "scoring": "pass"
+     },
+     "indistinguishable": "no",
+     "verdict": "fail",
+     "reason": "Аналоги однотипны: в 4 из 5 обе величины меняются одинаково, вариант «не изменится» не встречается, два аналога дублируют друг друга.",
+     "render": ""
+    },
+    "status": "fail",
+    "reason": "Аналоги однотипны: в 4 из 5 обе величины меняются одинаково, вариант «не изменится» не встречается, два аналога дублируют друг друга."
    }
   },
   {
@@ -715,7 +928,28 @@
      "format": "pass",
      "structure": "pass",
      "notes": []
-    }
+    },
+    "expert": {
+     "round": 2,
+     "checked": 5,
+     "passed_cards": 5,
+     "checks": {
+      "format": "pass",
+      "structure": "pass",
+      "style": "pass",
+      "level": "pass",
+      "facts": "pass",
+      "trap": "pass",
+      "codifier": "pass",
+      "scoring": "pass"
+     },
+     "indistinguishable": "yes",
+     "verdict": "pass",
+     "reason": "",
+     "render": ""
+    },
+    "status": "pass",
+    "reason": ""
    }
   },
   {
@@ -762,7 +996,28 @@
      "format": "pass",
      "structure": "pass",
      "notes": []
-    }
+    },
+    "expert": {
+     "round": 2,
+     "checked": 5,
+     "passed_cards": 5,
+     "checks": {
+      "format": "pass",
+      "structure": "pass",
+      "style": "pass",
+      "level": "pass",
+      "facts": "pass",
+      "trap": "pass",
+      "codifier": "pass",
+      "scoring": "pass"
+     },
+     "indistinguishable": "yes",
+     "verdict": "pass",
+     "reason": "",
+     "render": ""
+    },
+    "status": "pass",
+    "reason": ""
    }
   },
   {
@@ -809,7 +1064,28 @@
      "format": "pass",
      "structure": "pass",
      "notes": []
-    }
+    },
+    "expert": {
+     "round": 2,
+     "checked": 5,
+     "passed_cards": 5,
+     "checks": {
+      "format": "pass",
+      "structure": "pass",
+      "style": "pass",
+      "level": "pass",
+      "facts": "pass",
+      "trap": "pass",
+      "codifier": "pass",
+      "scoring": "pass"
+     },
+     "indistinguishable": "yes",
+     "verdict": "pass",
+     "reason": "",
+     "render": ""
+    },
+    "status": "pass",
+    "reason": ""
    }
   },
   {
@@ -855,7 +1131,28 @@
      "format": "pass",
      "structure": "pass",
      "notes": []
-    }
+    },
+    "expert": {
+     "round": 2,
+     "checked": 5,
+     "passed_cards": 5,
+     "checks": {
+      "format": "pass",
+      "structure": "pass",
+      "style": "pass",
+      "level": "pass",
+      "facts": "pass",
+      "trap": "pass",
+      "codifier": "pass",
+      "scoring": "pass"
+     },
+     "indistinguishable": "yes",
+     "verdict": "pass",
+     "reason": "",
+     "render": ""
+    },
+    "status": "pass",
+    "reason": ""
    }
   },
   {
@@ -901,7 +1198,28 @@
      "format": "pass",
      "structure": "pass",
      "notes": []
-    }
+    },
+    "expert": {
+     "round": 2,
+     "checked": 5,
+     "passed_cards": 5,
+     "checks": {
+      "format": "pass",
+      "structure": "pass",
+      "style": "pass",
+      "level": "pass",
+      "facts": "pass",
+      "trap": "pass",
+      "codifier": "pass",
+      "scoring": "pass"
+     },
+     "indistinguishable": "yes",
+     "verdict": "pass",
+     "reason": "",
+     "render": ""
+    },
+    "status": "pass",
+    "reason": ""
    }
   },
   {
@@ -948,7 +1266,28 @@
      "format": "pass",
      "structure": "pass",
      "notes": []
-    }
+    },
+    "expert": {
+     "round": 3,
+     "checked": 5,
+     "passed_cards": 5,
+     "checks": {
+      "format": "pass",
+      "structure": "pass",
+      "style": "pass",
+      "level": "pass",
+      "facts": "pass",
+      "trap": "pass",
+      "codifier": "pass",
+      "scoring": "pass"
+     },
+     "indistinguishable": "yes",
+     "verdict": "pass",
+     "reason": "",
+     "render": ""
+    },
+    "status": "pass",
+    "reason": ""
    }
   },
   {
@@ -999,7 +1338,28 @@
      "format": "pass",
      "structure": "pass",
      "notes": []
-    }
+    },
+    "expert": {
+     "round": 2,
+     "checked": 5,
+     "passed_cards": 5,
+     "checks": {
+      "format": "pass",
+      "structure": "pass",
+      "style": "pass",
+      "level": "pass",
+      "facts": "pass",
+      "trap": "pass",
+      "codifier": "pass",
+      "scoring": "pass"
+     },
+     "indistinguishable": "yes",
+     "verdict": "pass",
+     "reason": "",
+     "render": ""
+    },
+    "status": "pass",
+    "reason": ""
    }
   },
   {
@@ -1049,7 +1409,28 @@
      "format": "pass",
      "structure": "pass",
      "notes": []
-    }
+    },
+    "expert": {
+     "round": 2,
+     "checked": 5,
+     "passed_cards": 5,
+     "checks": {
+      "format": "pass",
+      "structure": "pass",
+      "style": "pass",
+      "level": "pass",
+      "facts": "pass",
+      "trap": "pass",
+      "codifier": "pass",
+      "scoring": "pass"
+     },
+     "indistinguishable": "yes",
+     "verdict": "pass",
+     "reason": "",
+     "render": "индексы аллелей в X-хромосоме строкой (XRXr) вместо верхних индексов"
+    },
+    "status": "pass",
+    "reason": ""
    }
   },
   {
@@ -1100,7 +1481,28 @@
      "format": "pass",
      "structure": "pass",
      "notes": []
-    }
+    },
+    "expert": {
+     "round": 2,
+     "checked": 5,
+     "passed_cards": 5,
+     "checks": {
+      "format": "pass",
+      "structure": "pass",
+      "style": "pass",
+      "level": "pass",
+      "facts": "pass",
+      "trap": "pass",
+      "codifier": "pass",
+      "scoring": "pass"
+     },
+     "indistinguishable": "yes",
+     "verdict": "pass",
+     "reason": "",
+     "render": ""
+    },
+    "status": "pass",
+    "reason": ""
    }
   },
   {
@@ -1143,7 +1545,9 @@
      "codifier": [
       "3.3"
      ]
-    }
+    },
+    "status": "fail",
+    "reason": "не покрыто: нужен генератор родословных со схемой (SVG) и решателем типа наследования — не сделан"
    }
   },
   {
@@ -1193,7 +1597,28 @@
      "format": "pass",
      "structure": "pass",
      "notes": []
-    }
+    },
+    "expert": {
+     "round": 3,
+     "checked": 5,
+     "passed_cards": 5,
+     "checks": {
+      "format": "pass",
+      "structure": "pass",
+      "style": "pass",
+      "level": "pass",
+      "facts": "pass",
+      "trap": "pass",
+      "codifier": "pass",
+      "scoring": "pass"
+     },
+     "indistinguishable": "yes",
+     "verdict": "pass",
+     "reason": "",
+     "render": "генотипы X-хромосомы даны без надстрочных индексов (XRXr вместо XᴿXʳ)"
+    },
+    "status": "pass",
+    "reason": ""
    }
   },
   {
@@ -1244,7 +1669,9 @@
       "3.6",
       "3.7"
      ]
-    }
+    },
+    "status": "fail",
+    "reason": "генератора нет: нужен рисунок/карта (свои схемы жизненных циклов)"
    }
   },
   {
@@ -1295,7 +1722,9 @@
       "3.6",
       "3.7"
      ]
-    }
+    },
+    "status": "fail",
+    "reason": "генератора нет: нужен рисунок/карта (свои схемы фаз деления)"
    }
   },
   {
@@ -1346,7 +1775,9 @@
       "3.6",
       "3.7"
      ]
-    }
+    },
+    "status": "fail",
+    "reason": "генератора нет: нужен рисунок/карта (свои формулы веществ (SVG))"
    }
   },
   {
@@ -1397,7 +1828,9 @@
       "3.6",
       "3.7"
      ]
-    }
+    },
+    "status": "fail",
+    "reason": "генератора нет: нужен рисунок/карта (свои схемы обмена веществ)"
    }
   },
   {
@@ -1448,7 +1881,9 @@
       "3.6",
       "3.7"
      ]
-    }
+    },
+    "status": "fail",
+    "reason": "генератора нет: нужен рисунок/карта (свои SVG-схемы клеток с номерами)"
    }
   },
   {
@@ -1498,7 +1933,9 @@
       "3.6",
       "3.7"
      ]
-    }
+    },
+    "status": "fail",
+    "reason": "генератора нет: нужен рисунок/карта (свои рисунки)"
    }
   },
   {
@@ -1605,7 +2042,28 @@
      "format": "pass",
      "structure": "pass",
      "notes": []
-    }
+    },
+    "expert": {
+     "round": 3,
+     "checked": 5,
+     "passed_cards": 3,
+     "checks": {
+      "format": "pass",
+      "structure": "fail",
+      "style": "pass",
+      "level": "pass",
+      "facts": "fail",
+      "trap": "pass",
+      "codifier": "pass",
+      "scoring": "fail"
+     },
+     "indistinguishable": "no",
+     "verdict": "fail",
+     "reason": "Правый столбец содержит непересекающиеся в школьной трактовке понятия не всегда: «клонирование» и «клеточная инженерия» даны как альтернативы. Формат №6 2027 (структуры с рисунка №5) не воспроизведён.",
+     "render": ""
+    },
+    "status": "fail",
+    "reason": "Правый столбец содержит непересекающиеся в школьной трактовке понятия не всегда: «клонирование» и «клеточная инженерия» даны как альтернативы. Формат №6 2027 (структуры с рисунка №5) не воспроизведён."
    }
   },
   {
@@ -1716,7 +2174,28 @@
      "format": "pass",
      "structure": "pass",
      "notes": []
-    }
+    },
+    "expert": {
+     "round": 2,
+     "checked": 5,
+     "passed_cards": 5,
+     "checks": {
+      "format": "pass",
+      "structure": "pass",
+      "style": "pass",
+      "level": "pass",
+      "facts": "pass",
+      "trap": "pass",
+      "codifier": "pass",
+      "scoring": "pass"
+     },
+     "indistinguishable": "yes",
+     "verdict": "pass",
+     "reason": "",
+     "render": "рисунок из задания 5 заменён названиями типов клеток/групп"
+    },
+    "status": "pass",
+    "reason": ""
    }
   },
   {
@@ -1823,7 +2302,28 @@
      "format": "pass",
      "structure": "pass",
      "notes": []
-    }
+    },
+    "expert": {
+     "round": 2,
+     "checked": 5,
+     "passed_cards": 5,
+     "checks": {
+      "format": "pass",
+      "structure": "pass",
+      "style": "pass",
+      "level": "pass",
+      "facts": "pass",
+      "trap": "pass",
+      "codifier": "pass",
+      "scoring": "pass"
+     },
+     "indistinguishable": "yes",
+     "verdict": "pass",
+     "reason": "",
+     "render": "структуры рисунка задания 5 названы в правом столбце словами (рисунка нет)"
+    },
+    "status": "pass",
+    "reason": ""
    }
   },
   {
@@ -1931,7 +2431,28 @@
      "format": "pass",
      "structure": "pass",
      "notes": []
-    }
+    },
+    "expert": {
+     "round": 2,
+     "checked": 5,
+     "passed_cards": 5,
+     "checks": {
+      "format": "pass",
+      "structure": "pass",
+      "style": "pass",
+      "level": "pass",
+      "facts": "pass",
+      "trap": "pass",
+      "codifier": "pass",
+      "scoring": "pass"
+     },
+     "indistinguishable": "yes",
+     "verdict": "pass",
+     "reason": "",
+     "render": "в КИМ объекты правого столбца обозначены на рисунке задания 5; здесь даны названиями"
+    },
+    "status": "pass",
+    "reason": ""
    }
   },
   {
@@ -2039,7 +2560,28 @@
      "format": "pass",
      "structure": "pass",
      "notes": []
-    }
+    },
+    "expert": {
+     "round": 2,
+     "checked": 5,
+     "passed_cards": 5,
+     "checks": {
+      "format": "pass",
+      "structure": "pass",
+      "style": "pass",
+      "level": "pass",
+      "facts": "pass",
+      "trap": "pass",
+      "codifier": "pass",
+      "scoring": "pass"
+     },
+     "indistinguishable": "yes",
+     "verdict": "pass",
+     "reason": "",
+     "render": "Структуры названы словами вместо обозначений на рисунке задания 5."
+    },
+    "status": "pass",
+    "reason": ""
    }
   },
   {
@@ -2146,7 +2688,28 @@
      "format": "pass",
      "structure": "pass",
      "notes": []
-    }
+    },
+    "expert": {
+     "round": 3,
+     "checked": 5,
+     "passed_cards": 4,
+     "checks": {
+      "format": "pass",
+      "structure": "pass",
+      "style": "pass",
+      "level": "pass",
+      "facts": "pass",
+      "trap": "pass",
+      "codifier": "pass",
+      "scoring": "pass"
+     },
+     "indistinguishable": "yes",
+     "verdict": "pass",
+     "reason": "",
+     "render": "рисунок задания 5 заменён названиями объектов"
+    },
+    "status": "pass",
+    "reason": ""
    }
   },
   {
@@ -2253,7 +2816,28 @@
      "format": "pass",
      "structure": "pass",
      "notes": []
-    }
+    },
+    "expert": {
+     "round": 2,
+     "checked": 5,
+     "passed_cards": 5,
+     "checks": {
+      "format": "pass",
+      "structure": "pass",
+      "style": "pass",
+      "level": "pass",
+      "facts": "pass",
+      "trap": "pass",
+      "codifier": "pass",
+      "scoring": "pass"
+     },
+     "indistinguishable": "yes",
+     "verdict": "pass",
+     "reason": "",
+     "render": "в КИМ правый столбец — структуры (формулы) с рисунка задания 5; здесь вещества названы словами"
+    },
+    "status": "pass",
+    "reason": ""
    }
   },
   {
@@ -2341,7 +2925,28 @@
      "format": "pass",
      "structure": "pass",
      "notes": []
-    }
+    },
+    "expert": {
+     "round": 3,
+     "checked": 5,
+     "passed_cards": 4,
+     "checks": {
+      "format": "pass",
+      "structure": "pass",
+      "style": "pass",
+      "level": "pass",
+      "facts": "pass",
+      "trap": "pass",
+      "codifier": "pass",
+      "scoring": "pass"
+     },
+     "indistinguishable": "yes",
+     "verdict": "pass",
+     "reason": "",
+     "render": ""
+    },
+    "status": "pass",
+    "reason": ""
    }
   },
   {
@@ -2429,7 +3034,28 @@
      "format": "pass",
      "structure": "pass",
      "notes": []
-    }
+    },
+    "expert": {
+     "round": 2,
+     "checked": 5,
+     "passed_cards": 5,
+     "checks": {
+      "format": "pass",
+      "structure": "pass",
+      "style": "pass",
+      "level": "pass",
+      "facts": "pass",
+      "trap": "pass",
+      "codifier": "pass",
+      "scoring": "pass"
+     },
+     "indistinguishable": "yes",
+     "verdict": "pass",
+     "reason": "",
+     "render": ""
+    },
+    "status": "pass",
+    "reason": ""
    }
   },
   {
@@ -2517,7 +3143,28 @@
      "format": "pass",
      "structure": "pass",
      "notes": []
-    }
+    },
+    "expert": {
+     "round": 2,
+     "checked": 5,
+     "passed_cards": 5,
+     "checks": {
+      "format": "pass",
+      "structure": "pass",
+      "style": "pass",
+      "level": "pass",
+      "facts": "pass",
+      "trap": "pass",
+      "codifier": "pass",
+      "scoring": "pass"
+     },
+     "indistinguishable": "yes",
+     "verdict": "pass",
+     "reason": "",
+     "render": ""
+    },
+    "status": "pass",
+    "reason": ""
    }
   },
   {
@@ -2605,7 +3252,28 @@
      "format": "pass",
      "structure": "pass",
      "notes": []
-    }
+    },
+    "expert": {
+     "round": 3,
+     "checked": 5,
+     "passed_cards": 4,
+     "checks": {
+      "format": "pass",
+      "structure": "pass",
+      "style": "pass",
+      "level": "pass",
+      "facts": "fail",
+      "trap": "pass",
+      "codifier": "pass",
+      "scoring": "fail"
+     },
+     "indistinguishable": "yes",
+     "verdict": "fail",
+     "reason": "Во всех дистракторах к хемосинтезу есть утверждение «поглощается кислород», верное для большинства хемосинтезирующих бактерий: возможен второй верный набор.",
+     "render": ""
+    },
+    "status": "fail",
+    "reason": "Во всех дистракторах к хемосинтезу есть утверждение «поглощается кислород», верное для большинства хемосинтезирующих бактерий: возможен второй верный набор."
    }
   },
   {
@@ -2693,7 +3361,28 @@
      "format": "pass",
      "structure": "pass",
      "notes": []
-    }
+    },
+    "expert": {
+     "round": 2,
+     "checked": 5,
+     "passed_cards": 5,
+     "checks": {
+      "format": "pass",
+      "structure": "pass",
+      "style": "pass",
+      "level": "pass",
+      "facts": "pass",
+      "trap": "pass",
+      "codifier": "pass",
+      "scoring": "pass"
+     },
+     "indistinguishable": "yes",
+     "verdict": "pass",
+     "reason": "",
+     "render": "без рисунка органоида"
+    },
+    "status": "pass",
+    "reason": ""
    }
   },
   {
@@ -2781,7 +3470,28 @@
      "format": "pass",
      "structure": "pass",
      "notes": []
-    }
+    },
+    "expert": {
+     "round": 2,
+     "checked": 5,
+     "passed_cards": 5,
+     "checks": {
+      "format": "pass",
+      "structure": "pass",
+      "style": "pass",
+      "level": "pass",
+      "facts": "pass",
+      "trap": "pass",
+      "codifier": "pass",
+      "scoring": "pass"
+     },
+     "indistinguishable": "yes",
+     "verdict": "pass",
+     "reason": "",
+     "render": ""
+    },
+    "status": "pass",
+    "reason": ""
    }
   },
   {
@@ -2869,7 +3579,28 @@
      "format": "pass",
      "structure": "pass",
      "notes": []
-    }
+    },
+    "expert": {
+     "round": 3,
+     "checked": 5,
+     "passed_cards": 5,
+     "checks": {
+      "format": "pass",
+      "structure": "pass",
+      "style": "pass",
+      "level": "pass",
+      "facts": "pass",
+      "trap": "pass",
+      "codifier": "pass",
+      "scoring": "pass"
+     },
+     "indistinguishable": "yes",
+     "verdict": "pass",
+     "reason": "",
+     "render": ""
+    },
+    "status": "pass",
+    "reason": ""
    }
   },
   {
@@ -2957,7 +3688,28 @@
      "format": "pass",
      "structure": "pass",
      "notes": []
-    }
+    },
+    "expert": {
+     "round": 2,
+     "checked": 5,
+     "passed_cards": 5,
+     "checks": {
+      "format": "pass",
+      "structure": "pass",
+      "style": "pass",
+      "level": "pass",
+      "facts": "pass",
+      "trap": "pass",
+      "codifier": "pass",
+      "scoring": "pass"
+     },
+     "indistinguishable": "yes",
+     "verdict": "pass",
+     "reason": "",
+     "render": ""
+    },
+    "status": "pass",
+    "reason": ""
    }
   },
   {
@@ -3017,7 +3769,28 @@
      "format": "pass",
      "structure": "pass",
      "notes": []
-    }
+    },
+    "expert": {
+     "round": 3,
+     "checked": 5,
+     "passed_cards": 3,
+     "checks": {
+      "format": "pass",
+      "structure": "pass",
+      "style": "pass",
+      "level": "fail",
+      "facts": "fail",
+      "trap": "pass",
+      "codifier": "pass",
+      "scoring": "pass"
+     },
+     "indistinguishable": "no",
+     "verdict": "fail",
+     "reason": "В аналогах по микроразмножению спорная последовательность (стерилизация/вычленение) и фактически неточная схема «меристема → каллус»; ПЦР с температурами — сложнее банка.",
+     "render": ""
+    },
+    "status": "fail",
+    "reason": "В аналогах по микроразмножению спорная последовательность (стерилизация/вычленение) и фактически неточная схема «меристема → каллус»; ПЦР с температурами — сложнее банка."
    }
   },
   {
@@ -3077,7 +3850,28 @@
      "format": "pass",
      "structure": "pass",
      "notes": []
-    }
+    },
+    "expert": {
+     "round": 2,
+     "checked": 5,
+     "passed_cards": 5,
+     "checks": {
+      "format": "pass",
+      "structure": "pass",
+      "style": "pass",
+      "level": "pass",
+      "facts": "pass",
+      "trap": "pass",
+      "codifier": "pass",
+      "scoring": "pass"
+     },
+     "indistinguishable": "yes",
+     "verdict": "pass",
+     "reason": "",
+     "render": ""
+    },
+    "status": "pass",
+    "reason": ""
    }
   },
   {
@@ -3137,7 +3931,28 @@
      "format": "pass",
      "structure": "pass",
      "notes": []
-    }
+    },
+    "expert": {
+     "round": 2,
+     "checked": 5,
+     "passed_cards": 5,
+     "checks": {
+      "format": "pass",
+      "structure": "pass",
+      "style": "pass",
+      "level": "pass",
+      "facts": "pass",
+      "trap": "pass",
+      "codifier": "pass",
+      "scoring": "pass"
+     },
+     "indistinguishable": "yes",
+     "verdict": "pass",
+     "reason": "",
+     "render": ""
+    },
+    "status": "pass",
+    "reason": ""
    }
   },
   {
@@ -3197,7 +4012,28 @@
      "format": "pass",
      "structure": "pass",
      "notes": []
-    }
+    },
+    "expert": {
+     "round": 3,
+     "checked": 5,
+     "passed_cards": 5,
+     "checks": {
+      "format": "pass",
+      "structure": "pass",
+      "style": "pass",
+      "level": "pass",
+      "facts": "pass",
+      "trap": "pass",
+      "codifier": "pass",
+      "scoring": "pass"
+     },
+     "indistinguishable": "yes",
+     "verdict": "pass",
+     "reason": "",
+     "render": ""
+    },
+    "status": "pass",
+    "reason": ""
    }
   },
   {
@@ -3257,7 +4093,28 @@
      "format": "pass",
      "structure": "pass",
      "notes": []
-    }
+    },
+    "expert": {
+     "round": 2,
+     "checked": 5,
+     "passed_cards": 5,
+     "checks": {
+      "format": "pass",
+      "structure": "pass",
+      "style": "pass",
+      "level": "pass",
+      "facts": "pass",
+      "trap": "pass",
+      "codifier": "pass",
+      "scoring": "pass"
+     },
+     "indistinguishable": "yes",
+     "verdict": "pass",
+     "reason": "",
+     "render": ""
+    },
+    "status": "pass",
+    "reason": ""
    }
   },
   {
@@ -3317,7 +4174,28 @@
      "format": "pass",
      "structure": "pass",
      "notes": []
-    }
+    },
+    "expert": {
+     "round": 2,
+     "checked": 5,
+     "passed_cards": 5,
+     "checks": {
+      "format": "pass",
+      "structure": "pass",
+      "style": "pass",
+      "level": "pass",
+      "facts": "pass",
+      "trap": "pass",
+      "codifier": "pass",
+      "scoring": "pass"
+     },
+     "indistinguishable": "yes",
+     "verdict": "pass",
+     "reason": "",
+     "render": ""
+    },
+    "status": "pass",
+    "reason": ""
    }
   },
   {
@@ -3377,7 +4255,28 @@
      "format": "pass",
      "structure": "pass",
      "notes": []
-    }
+    },
+    "expert": {
+     "round": 2,
+     "checked": 5,
+     "passed_cards": 5,
+     "checks": {
+      "format": "pass",
+      "structure": "pass",
+      "style": "pass",
+      "level": "pass",
+      "facts": "pass",
+      "trap": "pass",
+      "codifier": "pass",
+      "scoring": "pass"
+     },
+     "indistinguishable": "yes",
+     "verdict": "pass",
+     "reason": "",
+     "render": ""
+    },
+    "status": "pass",
+    "reason": ""
    }
   },
   {
@@ -3437,7 +4336,28 @@
      "format": "pass",
      "structure": "pass",
      "notes": []
-    }
+    },
+    "expert": {
+     "round": 2,
+     "checked": 5,
+     "passed_cards": 5,
+     "checks": {
+      "format": "pass",
+      "structure": "pass",
+      "style": "pass",
+      "level": "pass",
+      "facts": "pass",
+      "trap": "pass",
+      "codifier": "pass",
+      "scoring": "pass"
+     },
+     "indistinguishable": "yes",
+     "verdict": "pass",
+     "reason": "",
+     "render": ""
+    },
+    "status": "pass",
+    "reason": ""
    }
   },
   {
@@ -3480,7 +4400,9 @@
       "4.4",
       "4.5"
      ]
-    }
+    },
+    "status": "fail",
+    "reason": "генератора нет: нужен рисунок/карта (фото/рисунки животных с открытой лицензией)"
    }
   },
   {
@@ -3523,7 +4445,9 @@
       "4.4",
       "4.5"
      ]
-    }
+    },
+    "status": "fail",
+    "reason": "генератора нет: нужен рисунок/карта (свои схемы строения животных)"
    }
   },
   {
@@ -3566,7 +4490,9 @@
       "4.4",
       "4.5"
      ]
-    }
+    },
+    "status": "fail",
+    "reason": "генератора нет: нужен рисунок/карта (фото/рисунки растений и грибов)"
    }
   },
   {
@@ -3609,7 +4535,9 @@
       "4.4",
       "4.5"
      ]
-    }
+    },
+    "status": "fail",
+    "reason": "генератора нет: нужен рисунок/карта (свои рисунки тканей и органов растений)"
    }
   },
   {
@@ -3708,7 +4636,28 @@
      "format": "pass",
      "structure": "pass",
      "notes": []
-    }
+    },
+    "expert": {
+     "round": 2,
+     "checked": 5,
+     "passed_cards": 5,
+     "checks": {
+      "format": "pass",
+      "structure": "pass",
+      "style": "pass",
+      "level": "pass",
+      "facts": "pass",
+      "trap": "pass",
+      "codifier": "pass",
+      "scoring": "pass"
+     },
+     "indistinguishable": "yes",
+     "verdict": "pass",
+     "reason": "",
+     "render": "правый столбец без рисунков задания 9"
+    },
+    "status": "pass",
+    "reason": ""
    }
   },
   {
@@ -3807,7 +4756,28 @@
      "format": "pass",
      "structure": "pass",
      "notes": []
-    }
+    },
+    "expert": {
+     "round": 2,
+     "checked": 5,
+     "passed_cards": 5,
+     "checks": {
+      "format": "pass",
+      "structure": "pass",
+      "style": "pass",
+      "level": "pass",
+      "facts": "pass",
+      "trap": "pass",
+      "codifier": "pass",
+      "scoring": "pass"
+     },
+     "indistinguishable": "yes",
+     "verdict": "pass",
+     "reason": "",
+     "render": "организмы/типы названы словами вместо рисунков задания 9"
+    },
+    "status": "pass",
+    "reason": ""
    }
   },
   {
@@ -3906,7 +4876,28 @@
      "format": "pass",
      "structure": "pass",
      "notes": []
-    }
+    },
+    "expert": {
+     "round": 3,
+     "checked": 5,
+     "passed_cards": 4,
+     "checks": {
+      "format": "pass",
+      "structure": "pass",
+      "style": "pass",
+      "level": "pass",
+      "facts": "pass",
+      "trap": "pass",
+      "codifier": "pass",
+      "scoring": "pass"
+     },
+     "indistinguishable": "yes",
+     "verdict": "pass",
+     "reason": "",
+     "render": "рисунки задания 9 заменены текстовыми названиями структур"
+    },
+    "status": "pass",
+    "reason": ""
    }
   },
   {
@@ -4005,7 +4996,28 @@
      "format": "pass",
      "structure": "pass",
      "notes": []
-    }
+    },
+    "expert": {
+     "round": 2,
+     "checked": 5,
+     "passed_cards": 5,
+     "checks": {
+      "format": "pass",
+      "structure": "pass",
+      "style": "pass",
+      "level": "pass",
+      "facts": "pass",
+      "trap": "pass",
+      "codifier": "pass",
+      "scoring": "pass"
+     },
+     "indistinguishable": "yes",
+     "verdict": "pass",
+     "reason": "",
+     "render": "в КИМ правый столбец — объекты с рисунков задания 9; здесь названы словами"
+    },
+    "status": "pass",
+    "reason": ""
    }
   },
   {
@@ -4105,7 +5117,28 @@
      "format": "pass",
      "structure": "pass",
      "notes": []
-    }
+    },
+    "expert": {
+     "round": 2,
+     "checked": 5,
+     "passed_cards": 4,
+     "checks": {
+      "format": "pass",
+      "structure": "pass",
+      "style": "pass",
+      "level": "pass",
+      "facts": "pass",
+      "trap": "pass",
+      "codifier": "pass",
+      "scoring": "pass"
+     },
+     "indistinguishable": "yes",
+     "verdict": "pass",
+     "reason": "",
+     "render": "в КИМ справа организмы на рисунках задания 9; здесь даны названия классов"
+    },
+    "status": "pass",
+    "reason": ""
    }
   },
   {
@@ -4185,7 +5218,28 @@
      "format": "pass",
      "structure": "pass",
      "notes": []
-    }
+    },
+    "expert": {
+     "round": 3,
+     "checked": 5,
+     "passed_cards": 5,
+     "checks": {
+      "format": "pass",
+      "structure": "pass",
+      "style": "pass",
+      "level": "pass",
+      "facts": "pass",
+      "trap": "pass",
+      "codifier": "pass",
+      "scoring": "pass"
+     },
+     "indistinguishable": "yes",
+     "verdict": "pass",
+     "reason": "",
+     "render": ""
+    },
+    "status": "pass",
+    "reason": ""
    }
   },
   {
@@ -4227,7 +5281,9 @@
       "4.4",
       "4.5"
      ]
-    }
+    },
+    "status": "fail",
+    "reason": "не покрыто: нужен генератор кладограмм (дерево + признаки на ветвях) со схемой — не сделан"
    }
   },
   {
@@ -4307,7 +5363,28 @@
      "format": "pass",
      "structure": "pass",
      "notes": []
-    }
+    },
+    "expert": {
+     "round": 3,
+     "checked": 5,
+     "passed_cards": 5,
+     "checks": {
+      "format": "pass",
+      "structure": "pass",
+      "style": "pass",
+      "level": "pass",
+      "facts": "pass",
+      "trap": "pass",
+      "codifier": "pass",
+      "scoring": "pass"
+     },
+     "indistinguishable": "yes",
+     "verdict": "pass",
+     "reason": "",
+     "render": ""
+    },
+    "status": "pass",
+    "reason": ""
    }
   },
   {
@@ -4349,7 +5426,9 @@
       "4.4",
       "4.5"
      ]
-    }
+    },
+    "status": "fail",
+    "reason": "генератора нет: нужен рисунок/карта (рисунок организма)"
    }
   },
   {
@@ -4429,7 +5508,28 @@
      "format": "pass",
      "structure": "pass",
      "notes": []
-    }
+    },
+    "expert": {
+     "round": 3,
+     "checked": 5,
+     "passed_cards": 5,
+     "checks": {
+      "format": "pass",
+      "structure": "pass",
+      "style": "pass",
+      "level": "pass",
+      "facts": "pass",
+      "trap": "pass",
+      "codifier": "pass",
+      "scoring": "pass"
+     },
+     "indistinguishable": "yes",
+     "verdict": "pass",
+     "reason": "",
+     "render": ""
+    },
+    "status": "pass",
+    "reason": ""
    }
   },
   {
@@ -4509,7 +5609,28 @@
      "format": "pass",
      "structure": "pass",
      "notes": []
-    }
+    },
+    "expert": {
+     "round": 3,
+     "checked": 5,
+     "passed_cards": 2,
+     "checks": {
+      "format": "pass",
+      "structure": "pass",
+      "style": "fail",
+      "level": "pass",
+      "facts": "pass",
+      "trap": "pass",
+      "codifier": "pass",
+      "scoring": "pass"
+     },
+     "indistinguishable": "no",
+     "verdict": "fail",
+     "reason": "Дистракторы, взятые из описаний зон корня, не согласованы по роду с объектом вопроса (чехлик), формулировка про корнеплоды неестественна — задание узнаваемо как машинное.",
+     "render": ""
+    },
+    "status": "fail",
+    "reason": "Дистракторы, взятые из описаний зон корня, не согласованы по роду с объектом вопроса (чехлик), формулировка про корнеплоды неестественна — задание узнаваемо как машинное."
    }
   },
   {
@@ -4528,12 +5649,12 @@
    "seen": "МР обучающимся 2025/2026 (веретенница колхидская)",
    "gen_kind": "param",
    "gen": "b_taxa@k=Животные&m=6",
-   "capacity": "≥2999",
+   "capacity": "≥2994",
    "example": {
     "k": "num",
-    "q": "Расположите систематические группы по рангу, начиная с самой крупной.\n1) отряд Насекомоядные\n2) класс Млекопитающие\n3) семейство Кротовые\n4) Эукариоты\n5) тип Хордовые\n6) вид Европейский крот\nЗапишите в таблицу соответствующую последовательность цифр.",
-    "a": "452136",
-    "e": "Порядок рангов: домен → тип → класс → отряд → семейство → вид."
+    "q": "Расположите систематические группы по рангу, начиная с самой мелкой.\n1) Эукариоты\n2) тип Хордовые\n3) род Пантеры\n4) класс Млекопитающие\n5) царство Животные\n6) отряд Хищные\nЗапишите в таблицу соответствующую последовательность цифр.",
+    "a": "364251",
+    "e": "Порядок рангов: домен → царство → тип → класс → отряд → род."
    },
    "fidelity": {
     "kim": {
@@ -4553,7 +5674,28 @@
      "format": "pass",
      "structure": "pass",
      "notes": []
-    }
+    },
+    "expert": {
+     "round": 2,
+     "checked": 5,
+     "passed_cards": 5,
+     "checks": {
+      "format": "pass",
+      "structure": "pass",
+      "style": "pass",
+      "level": "pass",
+      "facts": "pass",
+      "trap": "pass",
+      "codifier": "pass",
+      "scoring": "pass"
+     },
+     "indistinguishable": "yes",
+     "verdict": "pass",
+     "reason": "",
+     "render": ""
+    },
+    "status": "pass",
+    "reason": ""
    }
   },
   {
@@ -4573,12 +5715,12 @@
    "seen": "демо 2027/2026 (дудник лесной), МР обучающимся 2026 (чилим плавающий)",
    "gen_kind": "param",
    "gen": "b_taxa@k=Растения&m=6",
-   "capacity": "≥3000",
+   "capacity": "≥2982",
    "example": {
     "k": "num",
-    "q": "Расположите систематические группы по рангу, начиная с самой крупной.\n1) Эукариоты\n2) класс Двудольные\n3) отдел Покрытосеменные\n4) род Рябина\n5) семейство Розоцветные\n6) царство Растения\nЗапишите в таблицу соответствующую последовательность цифр.",
-    "a": "163254",
-    "e": "Порядок рангов: домен → царство → отдел → класс → семейство → род."
+    "q": "Расположите систематические группы по рангу, начиная с самой крупной.\n1) Овёс\n2) Покрытосеменные\n3) Злакоцветные\n4) Растения\n5) Однодольные\n6) Эукариоты\nЗапишите в таблицу соответствующую последовательность цифр.",
+    "a": "642531",
+    "e": "Порядок рангов: домен → царство → отдел → класс → порядок → род."
    },
    "fidelity": {
     "kim": {
@@ -4598,7 +5740,28 @@
      "format": "pass",
      "structure": "pass",
      "notes": []
-    }
+    },
+    "expert": {
+     "round": 2,
+     "checked": 5,
+     "passed_cards": 5,
+     "checks": {
+      "format": "pass",
+      "structure": "pass",
+      "style": "pass",
+      "level": "pass",
+      "facts": "pass",
+      "trap": "pass",
+      "codifier": "pass",
+      "scoring": "pass"
+     },
+     "indistinguishable": "yes",
+     "verdict": "pass",
+     "reason": "",
+     "render": ""
+    },
+    "status": "pass",
+    "reason": ""
    }
   },
   {
@@ -4643,7 +5806,9 @@
       "5.6",
       "5.7"
      ]
-    }
+    },
+    "status": "fail",
+    "reason": "генератора нет: нужен рисунок/карта (свои схемы глаза и уха)"
    }
   },
   {
@@ -4688,7 +5853,9 @@
       "5.6",
       "5.7"
      ]
-    }
+    },
+    "status": "fail",
+    "reason": "генератора нет: нужен рисунок/карта (свои схемы систем органов)"
    }
   },
   {
@@ -4733,7 +5900,9 @@
       "5.6",
       "5.7"
      ]
-    }
+    },
+    "status": "fail",
+    "reason": "генератора нет: нужен рисунок/карта (свои схемы тканей)"
    }
   },
   {
@@ -4838,7 +6007,28 @@
      "format": "pass",
      "structure": "pass",
      "notes": []
-    }
+    },
+    "expert": {
+     "round": 2,
+     "checked": 5,
+     "passed_cards": 5,
+     "checks": {
+      "format": "pass",
+      "structure": "pass",
+      "style": "pass",
+      "level": "pass",
+      "facts": "pass",
+      "trap": "pass",
+      "codifier": "pass",
+      "scoring": "pass"
+     },
+     "indistinguishable": "yes",
+     "verdict": "pass",
+     "reason": "",
+     "render": "структуры рисунка задания 13 названы словами"
+    },
+    "status": "pass",
+    "reason": ""
    }
   },
   {
@@ -4943,7 +6133,28 @@
      "format": "pass",
      "structure": "pass",
      "notes": []
-    }
+    },
+    "expert": {
+     "round": 2,
+     "checked": 5,
+     "passed_cards": 4,
+     "checks": {
+      "format": "pass",
+      "structure": "pass",
+      "style": "pass",
+      "level": "pass",
+      "facts": "pass",
+      "trap": "pass",
+      "codifier": "pass",
+      "scoring": "pass"
+     },
+     "indistinguishable": "yes",
+     "verdict": "pass",
+     "reason": "",
+     "render": "структуры рисунка задания 13 даны названиями"
+    },
+    "status": "pass",
+    "reason": ""
    }
   },
   {
@@ -5048,7 +6259,28 @@
      "format": "pass",
      "structure": "pass",
      "notes": []
-    }
+    },
+    "expert": {
+     "round": 2,
+     "checked": 5,
+     "passed_cards": 5,
+     "checks": {
+      "format": "pass",
+      "structure": "pass",
+      "style": "pass",
+      "level": "pass",
+      "facts": "pass",
+      "trap": "pass",
+      "codifier": "pass",
+      "scoring": "pass"
+     },
+     "indistinguishable": "yes",
+     "verdict": "pass",
+     "reason": "",
+     "render": "Органы названы словами вместо обозначений на рисунке задания 13."
+    },
+    "status": "pass",
+    "reason": ""
    }
   },
   {
@@ -5153,7 +6385,28 @@
      "format": "pass",
      "structure": "pass",
      "notes": []
-    }
+    },
+    "expert": {
+     "round": 2,
+     "checked": 5,
+     "passed_cards": 5,
+     "checks": {
+      "format": "pass",
+      "structure": "pass",
+      "style": "pass",
+      "level": "pass",
+      "facts": "pass",
+      "trap": "pass",
+      "codifier": "pass",
+      "scoring": "pass"
+     },
+     "indistinguishable": "yes",
+     "verdict": "pass",
+     "reason": "",
+     "render": "рисунка задания 13 нет, структуры названы словами"
+    },
+    "status": "pass",
+    "reason": ""
    }
   },
   {
@@ -5258,7 +6511,28 @@
      "format": "pass",
      "structure": "pass",
      "notes": []
-    }
+    },
+    "expert": {
+     "round": 2,
+     "checked": 5,
+     "passed_cards": 5,
+     "checks": {
+      "format": "pass",
+      "structure": "pass",
+      "style": "pass",
+      "level": "pass",
+      "facts": "pass",
+      "trap": "pass",
+      "codifier": "pass",
+      "scoring": "pass"
+     },
+     "indistinguishable": "yes",
+     "verdict": "pass",
+     "reason": "",
+     "render": "в КИМ структуры обозначены на рисунке задания 13; здесь названы словами"
+    },
+    "status": "pass",
+    "reason": ""
    }
   },
   {
@@ -5363,7 +6637,28 @@
      "format": "pass",
      "structure": "pass",
      "notes": []
-    }
+    },
+    "expert": {
+     "round": 2,
+     "checked": 5,
+     "passed_cards": 5,
+     "checks": {
+      "format": "pass",
+      "structure": "pass",
+      "style": "pass",
+      "level": "pass",
+      "facts": "pass",
+      "trap": "pass",
+      "codifier": "pass",
+      "scoring": "pass"
+     },
+     "indistinguishable": "yes",
+     "verdict": "pass",
+     "reason": "",
+     "render": "без рисунка задания 13"
+    },
+    "status": "pass",
+    "reason": ""
    }
   },
   {
@@ -5445,7 +6740,28 @@
      "format": "pass",
      "structure": "pass",
      "notes": []
-    }
+    },
+    "expert": {
+     "round": 3,
+     "checked": 5,
+     "passed_cards": 3,
+     "checks": {
+      "format": "pass",
+      "structure": "pass",
+      "style": "fail",
+      "level": "pass",
+      "facts": "pass",
+      "trap": "fail",
+      "codifier": "pass",
+      "scoring": "pass"
+     },
+     "indistinguishable": "no",
+     "verdict": "fail",
+     "reason": "Грамматический брак подстановки (к.2) и грамматическая подсказка в к.4 (число глагола выдаёт верные варианты).",
+     "render": ""
+    },
+    "status": "fail",
+    "reason": "Грамматический брак подстановки (к.2) и грамматическая подсказка в к.4 (число глагола выдаёт верные варианты)."
    }
   },
   {
@@ -5527,7 +6843,28 @@
      "format": "pass",
      "structure": "pass",
      "notes": []
-    }
+    },
+    "expert": {
+     "round": 2,
+     "checked": 5,
+     "passed_cards": 4,
+     "checks": {
+      "format": "pass",
+      "structure": "pass",
+      "style": "pass",
+      "level": "pass",
+      "facts": "pass",
+      "trap": "pass",
+      "codifier": "pass",
+      "scoring": "pass"
+     },
+     "indistinguishable": "yes",
+     "verdict": "pass",
+     "reason": "",
+     "render": ""
+    },
+    "status": "pass",
+    "reason": ""
    }
   },
   {
@@ -5609,7 +6946,28 @@
      "format": "pass",
      "structure": "pass",
      "notes": []
-    }
+    },
+    "expert": {
+     "round": 2,
+     "checked": 5,
+     "passed_cards": 5,
+     "checks": {
+      "format": "pass",
+      "structure": "pass",
+      "style": "pass",
+      "level": "pass",
+      "facts": "pass",
+      "trap": "pass",
+      "codifier": "pass",
+      "scoring": "pass"
+     },
+     "indistinguishable": "yes",
+     "verdict": "pass",
+     "reason": "",
+     "render": ""
+    },
+    "status": "pass",
+    "reason": ""
    }
   },
   {
@@ -5691,7 +7049,28 @@
      "format": "pass",
      "structure": "pass",
      "notes": []
-    }
+    },
+    "expert": {
+     "round": 3,
+     "checked": 5,
+     "passed_cards": 3,
+     "checks": {
+      "format": "pass",
+      "structure": "pass",
+      "style": "fail",
+      "level": "pass",
+      "facts": "pass",
+      "trap": "pass",
+      "codifier": "pass",
+      "scoring": "pass"
+     },
+     "indistinguishable": "no",
+     "verdict": "fail",
+     "reason": "Грамматические дефекты вопроса и вариантов (обрыв названия объекта, несогласование числа) сразу выдают генератор.",
+     "render": ""
+    },
+    "status": "fail",
+    "reason": "Грамматические дефекты вопроса и вариантов (обрыв названия объекта, несогласование числа) сразу выдают генератор."
    }
   },
   {
@@ -5773,7 +7152,28 @@
      "format": "pass",
      "structure": "pass",
      "notes": []
-    }
+    },
+    "expert": {
+     "round": 3,
+     "checked": 5,
+     "passed_cards": 1,
+     "checks": {
+      "format": "pass",
+      "structure": "pass",
+      "style": "fail",
+      "level": "pass",
+      "facts": "fail",
+      "trap": "fail",
+      "codifier": "pass",
+      "scoring": "pass"
+     },
+     "indistinguishable": "no",
+     "verdict": "fail",
+     "reason": "Варианты собраны из утверждений о разных органах без согласования: к «коже» — «выводят», «выделяют», «регулируют»; к «трахее» — «ветвясь, переходят»; к «мочевому пузырю» — «в неё открываются». Грамматика подсказывает ответ; есть спорные дистракторы.",
+     "render": ""
+    },
+    "status": "fail",
+    "reason": "Варианты собраны из утверждений о разных органах без согласования: к «коже» — «выводят», «выделяют», «регулируют»; к «трахее» — «ветвясь, переходят»; к «мочевому пузырю» — «в неё открываются». Грамматика подсказывает ответ; есть спорные дистракторы."
    }
   },
   {
@@ -5816,7 +7216,9 @@
       "5.6",
       "5.7"
      ]
-    }
+    },
+    "status": "fail",
+    "reason": "генератора нет: нужен рисунок/карта (рисунок с выносками (в КИМ 2027 исключён))"
    }
   },
   {
@@ -5867,7 +7269,28 @@
      "format": "pass",
      "structure": "pass",
      "notes": []
-    }
+    },
+    "expert": {
+     "round": 2,
+     "checked": 5,
+     "passed_cards": 5,
+     "checks": {
+      "format": "pass",
+      "structure": "pass",
+      "style": "pass",
+      "level": "pass",
+      "facts": "pass",
+      "trap": "pass",
+      "codifier": "pass",
+      "scoring": "pass"
+     },
+     "indistinguishable": "yes",
+     "verdict": "pass",
+     "reason": "",
+     "render": ""
+    },
+    "status": "pass",
+    "reason": ""
    }
   },
   {
@@ -5918,7 +7341,28 @@
      "format": "pass",
      "structure": "pass",
      "notes": []
-    }
+    },
+    "expert": {
+     "round": 2,
+     "checked": 5,
+     "passed_cards": 5,
+     "checks": {
+      "format": "pass",
+      "structure": "pass",
+      "style": "pass",
+      "level": "pass",
+      "facts": "pass",
+      "trap": "pass",
+      "codifier": "pass",
+      "scoring": "pass"
+     },
+     "indistinguishable": "yes",
+     "verdict": "pass",
+     "reason": "",
+     "render": ""
+    },
+    "status": "pass",
+    "reason": ""
    }
   },
   {
@@ -5969,7 +7413,28 @@
      "format": "pass",
      "structure": "pass",
      "notes": []
-    }
+    },
+    "expert": {
+     "round": 2,
+     "checked": 5,
+     "passed_cards": 5,
+     "checks": {
+      "format": "pass",
+      "structure": "pass",
+      "style": "pass",
+      "level": "pass",
+      "facts": "pass",
+      "trap": "pass",
+      "codifier": "pass",
+      "scoring": "pass"
+     },
+     "indistinguishable": "yes",
+     "verdict": "pass",
+     "reason": "",
+     "render": ""
+    },
+    "status": "pass",
+    "reason": ""
    }
   },
   {
@@ -6020,7 +7485,28 @@
      "format": "pass",
      "structure": "pass",
      "notes": []
-    }
+    },
+    "expert": {
+     "round": 2,
+     "checked": 5,
+     "passed_cards": 5,
+     "checks": {
+      "format": "pass",
+      "structure": "pass",
+      "style": "pass",
+      "level": "pass",
+      "facts": "pass",
+      "trap": "pass",
+      "codifier": "pass",
+      "scoring": "pass"
+     },
+     "indistinguishable": "yes",
+     "verdict": "pass",
+     "reason": "",
+     "render": ""
+    },
+    "status": "pass",
+    "reason": ""
    }
   },
   {
@@ -6071,7 +7557,28 @@
      "format": "pass",
      "structure": "pass",
      "notes": []
-    }
+    },
+    "expert": {
+     "round": 3,
+     "checked": 5,
+     "passed_cards": 3,
+     "checks": {
+      "format": "pass",
+      "structure": "pass",
+      "style": "pass",
+      "level": "pass",
+      "facts": "fail",
+      "trap": "pass",
+      "codifier": "pass",
+      "scoring": "fail"
+     },
+     "indistinguishable": "yes",
+     "verdict": "fail",
+     "reason": "Фактическая ошибка в последовательности костей руки (лопатка «от грудины»), в сердечном цикле два одновременных события разнесены в разные позиции.",
+     "render": ""
+    },
+    "status": "fail",
+    "reason": "Фактическая ошибка в последовательности костей руки (лопатка «от грудины»), в сердечном цикле два одновременных события разнесены в разные позиции."
    }
   },
   {
@@ -6122,7 +7629,28 @@
      "format": "pass",
      "structure": "pass",
      "notes": []
-    }
+    },
+    "expert": {
+     "round": 2,
+     "checked": 5,
+     "passed_cards": 5,
+     "checks": {
+      "format": "pass",
+      "structure": "pass",
+      "style": "pass",
+      "level": "pass",
+      "facts": "pass",
+      "trap": "pass",
+      "codifier": "pass",
+      "scoring": "pass"
+     },
+     "indistinguishable": "yes",
+     "verdict": "pass",
+     "reason": "",
+     "render": ""
+    },
+    "status": "pass",
+    "reason": ""
    }
   },
   {
@@ -6173,7 +7701,28 @@
      "format": "pass",
      "structure": "pass",
      "notes": []
-    }
+    },
+    "expert": {
+     "round": 2,
+     "checked": 5,
+     "passed_cards": 4,
+     "checks": {
+      "format": "pass",
+      "structure": "pass",
+      "style": "pass",
+      "level": "pass",
+      "facts": "pass",
+      "trap": "pass",
+      "codifier": "pass",
+      "scoring": "pass"
+     },
+     "indistinguishable": "yes",
+     "verdict": "pass",
+     "reason": "",
+     "render": ""
+    },
+    "status": "pass",
+    "reason": ""
    }
   },
   {
@@ -6254,7 +7803,28 @@
      "format": "pass",
      "structure": "pass",
      "notes": []
-    }
+    },
+    "expert": {
+     "round": 2,
+     "checked": 5,
+     "passed_cards": 5,
+     "checks": {
+      "format": "pass",
+      "structure": "pass",
+      "style": "pass",
+      "level": "pass",
+      "facts": "pass",
+      "trap": "pass",
+      "codifier": "pass",
+      "scoring": "pass"
+     },
+     "indistinguishable": "yes",
+     "verdict": "pass",
+     "reason": "",
+     "render": ""
+    },
+    "status": "pass",
+    "reason": ""
    }
   },
   {
@@ -6335,7 +7905,28 @@
      "format": "pass",
      "structure": "pass",
      "notes": []
-    }
+    },
+    "expert": {
+     "round": 2,
+     "checked": 5,
+     "passed_cards": 5,
+     "checks": {
+      "format": "pass",
+      "structure": "pass",
+      "style": "pass",
+      "level": "pass",
+      "facts": "pass",
+      "trap": "pass",
+      "codifier": "pass",
+      "scoring": "pass"
+     },
+     "indistinguishable": "yes",
+     "verdict": "pass",
+     "reason": "",
+     "render": ""
+    },
+    "status": "pass",
+    "reason": ""
    }
   },
   {
@@ -6416,7 +8007,28 @@
      "format": "pass",
      "structure": "pass",
      "notes": []
-    }
+    },
+    "expert": {
+     "round": 3,
+     "checked": 5,
+     "passed_cards": 4,
+     "checks": {
+      "format": "pass",
+      "structure": "pass",
+      "style": "pass",
+      "level": "pass",
+      "facts": "fail",
+      "trap": "pass",
+      "codifier": "pass",
+      "scoring": "fail"
+     },
+     "indistinguishable": "yes",
+     "verdict": "fail",
+     "reason": "В одном аналоге (Австралия) дистрактор «палеонтологический» сформулирован через географию распространения ископаемых и конкурирует с биогеографическими предложениями.",
+     "render": "заголовок текста выводится после инструкции"
+    },
+    "status": "fail",
+    "reason": "В одном аналоге (Австралия) дистрактор «палеонтологический» сформулирован через географию распространения ископаемых и конкурирует с биогеографическими предложениями."
    }
   },
   {
@@ -6497,7 +8109,28 @@
      "format": "pass",
      "structure": "pass",
      "notes": []
-    }
+    },
+    "expert": {
+     "round": 2,
+     "checked": 5,
+     "passed_cards": 5,
+     "checks": {
+      "format": "pass",
+      "structure": "pass",
+      "style": "pass",
+      "level": "pass",
+      "facts": "pass",
+      "trap": "pass",
+      "codifier": "pass",
+      "scoring": "pass"
+     },
+     "indistinguishable": "yes",
+     "verdict": "pass",
+     "reason": "",
+     "render": "заголовок текста выведен после инструкции, а не над текстом"
+    },
+    "status": "pass",
+    "reason": ""
    }
   },
   {
@@ -6578,7 +8211,28 @@
      "format": "pass",
      "structure": "pass",
      "notes": []
-    }
+    },
+    "expert": {
+     "round": 2,
+     "checked": 5,
+     "passed_cards": 5,
+     "checks": {
+      "format": "pass",
+      "structure": "pass",
+      "style": "pass",
+      "level": "pass",
+      "facts": "pass",
+      "trap": "pass",
+      "codifier": "pass",
+      "scoring": "pass"
+     },
+     "indistinguishable": "yes",
+     "verdict": "pass",
+     "reason": "",
+     "render": ""
+    },
+    "status": "pass",
+    "reason": ""
    }
   },
   {
@@ -6659,7 +8313,28 @@
      "format": "pass",
      "structure": "pass",
      "notes": []
-    }
+    },
+    "expert": {
+     "round": 2,
+     "checked": 5,
+     "passed_cards": 4,
+     "checks": {
+      "format": "pass",
+      "structure": "pass",
+      "style": "pass",
+      "level": "pass",
+      "facts": "pass",
+      "trap": "pass",
+      "codifier": "pass",
+      "scoring": "pass"
+     },
+     "indistinguishable": "yes",
+     "verdict": "pass",
+     "reason": "",
+     "render": ""
+    },
+    "status": "pass",
+    "reason": ""
    }
   },
   {
@@ -6740,7 +8415,28 @@
      "format": "pass",
      "structure": "pass",
      "notes": []
-    }
+    },
+    "expert": {
+     "round": 3,
+     "checked": 5,
+     "passed_cards": 2,
+     "checks": {
+      "format": "pass",
+      "structure": "pass",
+      "style": "fail",
+      "level": "pass",
+      "facts": "fail",
+      "trap": "pass",
+      "codifier": "pass",
+      "scoring": "pass"
+     },
+     "indistinguishable": "no",
+     "verdict": "fail",
+     "reason": "В аналоге о гидросфере дистрактор про подземные воды тоже характеризует гидросферу; падежная ошибка в вопросах о веществе биосферы.",
+     "render": ""
+    },
+    "status": "fail",
+    "reason": "В аналоге о гидросфере дистрактор про подземные воды тоже характеризует гидросферу; падежная ошибка в вопросах о веществе биосферы."
    }
   },
   {
@@ -6821,7 +8517,28 @@
      "format": "pass",
      "structure": "pass",
      "notes": []
-    }
+    },
+    "expert": {
+     "round": 2,
+     "checked": 5,
+     "passed_cards": 5,
+     "checks": {
+      "format": "pass",
+      "structure": "pass",
+      "style": "pass",
+      "level": "pass",
+      "facts": "pass",
+      "trap": "pass",
+      "codifier": "pass",
+      "scoring": "pass"
+     },
+     "indistinguishable": "yes",
+     "verdict": "pass",
+     "reason": "",
+     "render": ""
+    },
+    "status": "pass",
+    "reason": ""
    }
   },
   {
@@ -6902,7 +8619,28 @@
      "format": "pass",
      "structure": "pass",
      "notes": []
-    }
+    },
+    "expert": {
+     "round": 3,
+     "checked": 5,
+     "passed_cards": 5,
+     "checks": {
+      "format": "pass",
+      "structure": "pass",
+      "style": "pass",
+      "level": "pass",
+      "facts": "pass",
+      "trap": "pass",
+      "codifier": "pass",
+      "scoring": "pass"
+     },
+     "indistinguishable": "yes",
+     "verdict": "pass",
+     "reason": "",
+     "render": ""
+    },
+    "status": "pass",
+    "reason": ""
    }
   },
   {
@@ -6983,7 +8721,28 @@
      "format": "pass",
      "structure": "pass",
      "notes": []
-    }
+    },
+    "expert": {
+     "round": 3,
+     "checked": 5,
+     "passed_cards": 5,
+     "checks": {
+      "format": "pass",
+      "structure": "pass",
+      "style": "pass",
+      "level": "pass",
+      "facts": "pass",
+      "trap": "pass",
+      "codifier": "pass",
+      "scoring": "pass"
+     },
+     "indistinguishable": "yes",
+     "verdict": "pass",
+     "reason": "",
+     "render": ""
+    },
+    "status": "pass",
+    "reason": ""
    }
   },
   {
@@ -7064,7 +8823,28 @@
      "format": "pass",
      "structure": "pass",
      "notes": []
-    }
+    },
+    "expert": {
+     "round": 3,
+     "checked": 5,
+     "passed_cards": 5,
+     "checks": {
+      "format": "pass",
+      "structure": "pass",
+      "style": "pass",
+      "level": "pass",
+      "facts": "pass",
+      "trap": "pass",
+      "codifier": "pass",
+      "scoring": "pass"
+     },
+     "indistinguishable": "yes",
+     "verdict": "pass",
+     "reason": "",
+     "render": "пищевая сеть дана списком связей"
+    },
+    "status": "pass",
+    "reason": ""
    }
   },
   {
@@ -7172,7 +8952,28 @@
      "format": "pass",
      "structure": "pass",
      "notes": []
-    }
+    },
+    "expert": {
+     "round": 2,
+     "checked": 5,
+     "passed_cards": 5,
+     "checks": {
+      "format": "pass",
+      "structure": "pass",
+      "style": "pass",
+      "level": "pass",
+      "facts": "pass",
+      "trap": "pass",
+      "codifier": "pass",
+      "scoring": "pass"
+     },
+     "indistinguishable": "yes",
+     "verdict": "pass",
+     "reason": "",
+     "render": ""
+    },
+    "status": "pass",
+    "reason": ""
    }
   },
   {
@@ -7281,7 +9082,28 @@
      "format": "pass",
      "structure": "pass",
      "notes": []
-    }
+    },
+    "expert": {
+     "round": 2,
+     "checked": 5,
+     "passed_cards": 5,
+     "checks": {
+      "format": "pass",
+      "structure": "pass",
+      "style": "pass",
+      "level": "pass",
+      "facts": "pass",
+      "trap": "pass",
+      "codifier": "pass",
+      "scoring": "pass"
+     },
+     "indistinguishable": "yes",
+     "verdict": "pass",
+     "reason": "",
+     "render": ""
+    },
+    "status": "pass",
+    "reason": ""
    }
   },
   {
@@ -7390,7 +9212,28 @@
      "format": "pass",
      "structure": "pass",
      "notes": []
-    }
+    },
+    "expert": {
+     "round": 2,
+     "checked": 5,
+     "passed_cards": 5,
+     "checks": {
+      "format": "pass",
+      "structure": "pass",
+      "style": "pass",
+      "level": "pass",
+      "facts": "pass",
+      "trap": "pass",
+      "codifier": "pass",
+      "scoring": "pass"
+     },
+     "indistinguishable": "yes",
+     "verdict": "pass",
+     "reason": "",
+     "render": ""
+    },
+    "status": "pass",
+    "reason": ""
    }
   },
   {
@@ -7499,7 +9342,28 @@
      "format": "pass",
      "structure": "pass",
      "notes": []
-    }
+    },
+    "expert": {
+     "round": 2,
+     "checked": 5,
+     "passed_cards": 5,
+     "checks": {
+      "format": "pass",
+      "structure": "pass",
+      "style": "pass",
+      "level": "pass",
+      "facts": "pass",
+      "trap": "pass",
+      "codifier": "pass",
+      "scoring": "pass"
+     },
+     "indistinguishable": "yes",
+     "verdict": "pass",
+     "reason": "",
+     "render": ""
+    },
+    "status": "pass",
+    "reason": ""
    }
   },
   {
@@ -7608,7 +9472,28 @@
      "format": "pass",
      "structure": "pass",
      "notes": []
-    }
+    },
+    "expert": {
+     "round": 2,
+     "checked": 5,
+     "passed_cards": 5,
+     "checks": {
+      "format": "pass",
+      "structure": "pass",
+      "style": "pass",
+      "level": "pass",
+      "facts": "pass",
+      "trap": "pass",
+      "codifier": "pass",
+      "scoring": "pass"
+     },
+     "indistinguishable": "yes",
+     "verdict": "pass",
+     "reason": "",
+     "render": ""
+    },
+    "status": "pass",
+    "reason": ""
    }
   },
   {
@@ -7717,7 +9602,28 @@
      "format": "pass",
      "structure": "pass",
      "notes": []
-    }
+    },
+    "expert": {
+     "round": 2,
+     "checked": 5,
+     "passed_cards": 5,
+     "checks": {
+      "format": "pass",
+      "structure": "pass",
+      "style": "pass",
+      "level": "pass",
+      "facts": "pass",
+      "trap": "pass",
+      "codifier": "pass",
+      "scoring": "pass"
+     },
+     "indistinguishable": "yes",
+     "verdict": "pass",
+     "reason": "",
+     "render": ""
+    },
+    "status": "pass",
+    "reason": ""
    }
   },
   {
@@ -7826,7 +9732,28 @@
      "format": "pass",
      "structure": "pass",
      "notes": []
-    }
+    },
+    "expert": {
+     "round": 2,
+     "checked": 5,
+     "passed_cards": 5,
+     "checks": {
+      "format": "pass",
+      "structure": "pass",
+      "style": "pass",
+      "level": "pass",
+      "facts": "pass",
+      "trap": "pass",
+      "codifier": "pass",
+      "scoring": "pass"
+     },
+     "indistinguishable": "yes",
+     "verdict": "pass",
+     "reason": "",
+     "render": ""
+    },
+    "status": "pass",
+    "reason": ""
    }
   },
   {
@@ -7901,7 +9828,28 @@
      "format": "pass",
      "structure": "pass",
      "notes": []
-    }
+    },
+    "expert": {
+     "round": 2,
+     "checked": 5,
+     "passed_cards": 5,
+     "checks": {
+      "format": "pass",
+      "structure": "pass",
+      "style": "pass",
+      "level": "pass",
+      "facts": "pass",
+      "trap": "pass",
+      "codifier": "pass",
+      "scoring": "pass"
+     },
+     "indistinguishable": "yes",
+     "verdict": "pass",
+     "reason": "",
+     "render": "таблица дана строкой"
+    },
+    "status": "pass",
+    "reason": ""
    }
   },
   {
@@ -7977,7 +9925,28 @@
      "format": "pass",
      "structure": "pass",
      "notes": []
-    }
+    },
+    "expert": {
+     "round": 3,
+     "checked": 5,
+     "passed_cards": 0,
+     "checks": {
+      "format": "pass",
+      "structure": "fail",
+      "style": "fail",
+      "level": "fail",
+      "facts": "pass",
+      "trap": "pass",
+      "codifier": "pass",
+      "scoring": "pass"
+     },
+     "indistinguishable": "no",
+     "verdict": "fail",
+     "reason": "Структура таблицы не как в КИМ (два столбца вместо трёх разных признаков), задание проще уровня П; заметная орфографическая ошибка в заголовке.",
+     "render": "таблица дана строкой"
+    },
+    "status": "fail",
+    "reason": "Структура таблицы не как в КИМ (два столбца вместо трёх разных признаков), задание проще уровня П; заметная орфографическая ошибка в заголовке."
    }
   },
   {
@@ -8053,7 +10022,28 @@
      "format": "pass",
      "structure": "pass",
      "notes": []
-    }
+    },
+    "expert": {
+     "round": 3,
+     "checked": 5,
+     "passed_cards": 5,
+     "checks": {
+      "format": "pass",
+      "structure": "fail",
+      "style": "pass",
+      "level": "fail",
+      "facts": "pass",
+      "trap": "pass",
+      "codifier": "pass",
+      "scoring": "pass"
+     },
+     "indistinguishable": "no",
+     "verdict": "fail",
+     "reason": "В КИМ №20 — таблица из трёх столбцов с тремя пропусками, каждая ячейка связывает два признака; здесь таблица из двух столбцов, каждый пропуск — прямая пара «пример → группа», проще, чем задание повышенного уровня.",
+     "render": "таблица дана строкой"
+    },
+    "status": "fail",
+    "reason": "В КИМ №20 — таблица из трёх столбцов с тремя пропусками, каждая ячейка связывает два признака; здесь таблица из двух столбцов, каждый пропуск — прямая пара «пример → группа», проще, чем задание повышенного уровня."
    }
   },
   {
@@ -8129,7 +10119,28 @@
      "format": "pass",
      "structure": "pass",
      "notes": []
-    }
+    },
+    "expert": {
+     "round": 3,
+     "checked": 5,
+     "passed_cards": 3,
+     "checks": {
+      "format": "pass",
+      "structure": "fail",
+      "style": "fail",
+      "level": "pass",
+      "facts": "pass",
+      "trap": "pass",
+      "codifier": "pass",
+      "scoring": "pass"
+     },
+     "indistinguishable": "no",
+     "verdict": "fail",
+     "reason": "Часть аналогов — двухстолбцовые таблицы, в КИМ три столбца; один элемент списка обрезан.",
+     "render": "таблица передана строкой"
+    },
+    "status": "fail",
+    "reason": "Часть аналогов — двухстолбцовые таблицы, в КИМ три столбца; один элемент списка обрезан."
    }
   },
   {
@@ -8204,7 +10215,28 @@
      "format": "pass",
      "structure": "pass",
      "notes": []
-    }
+    },
+    "expert": {
+     "round": 3,
+     "checked": 5,
+     "passed_cards": 0,
+     "checks": {
+      "format": "pass",
+      "structure": "fail",
+      "style": "pass",
+      "level": "fail",
+      "facts": "pass",
+      "trap": "fail",
+      "codifier": "pass",
+      "scoring": "pass"
+     },
+     "indistinguishable": "no",
+     "verdict": "fail",
+     "reason": "Таблица 2 столбца и тривиальное содержание (организм → царство) — ниже уровня П и не похоже на №20 КИМ.",
+     "render": "таблица дана строкой"
+    },
+    "status": "fail",
+    "reason": "Таблица 2 столбца и тривиальное содержание (организм → царство) — ниже уровня П и не похоже на №20 КИМ."
    }
   },
   {
@@ -8306,7 +10338,28 @@
      "format": "pass",
      "structure": "pass",
      "notes": []
-    }
+    },
+    "expert": {
+     "round": 3,
+     "checked": 5,
+     "passed_cards": 3,
+     "checks": {
+      "format": "pass",
+      "structure": "pass",
+      "style": "fail",
+      "level": "pass",
+      "facts": "fail",
+      "trap": "pass",
+      "codifier": "pass",
+      "scoring": "pass"
+     },
+     "indistinguishable": "yes",
+     "verdict": "fail",
+     "reason": "Часть кривых биологически неправдоподобна (плато массы откармливаемого поросёнка), шероховатости в единицах и падежах.",
+     "render": "график дан точками"
+    },
+    "status": "fail",
+    "reason": "Часть кривых биологически неправдоподобна (плато массы откармливаемого поросёнка), шероховатости в единицах и падежах."
    }
   },
   {
@@ -8407,7 +10460,28 @@
      "format": "pass",
      "structure": "pass",
      "notes": []
-    }
+    },
+    "expert": {
+     "round": 3,
+     "checked": 5,
+     "passed_cards": 2,
+     "checks": {
+      "format": "pass",
+      "structure": "pass",
+      "style": "fail",
+      "level": "pass",
+      "facts": "fail",
+      "trap": "fail",
+      "codifier": "pass",
+      "scoring": "pass"
+     },
+     "indistinguishable": "no",
+     "verdict": "fail",
+     "reason": "Утверждения — механическое считывание точек («составляет 42» без единиц, «минимальна при времени бега 0 мин»); в КИМ утверждения требуют интерпретации эксперимента (оптимум, зависимость, влияние фактора), и только одно-два — буквальное чтение.",
+     "render": "график дан точками"
+    },
+    "status": "fail",
+    "reason": "Утверждения — механическое считывание точек («составляет 42» без единиц, «минимальна при времени бега 0 мин»); в КИМ утверждения требуют интерпретации эксперимента (оптимум, зависимость, влияние фактора), и только одно-два — буквальное чтение."
    }
   },
   {
@@ -8509,7 +10583,28 @@
      "format": "pass",
      "structure": "pass",
      "notes": []
-    }
+    },
+    "expert": {
+     "round": 3,
+     "checked": 5,
+     "passed_cards": 2,
+     "checks": {
+      "format": "pass",
+      "structure": "pass",
+      "style": "fail",
+      "level": "pass",
+      "facts": "fail",
+      "trap": "pass",
+      "codifier": "pass",
+      "scoring": "pass"
+     },
+     "indistinguishable": "no",
+     "verdict": "fail",
+     "reason": "Данные откорма поросят биологически невозможны; падежные ошибки в шаблоне утверждений.",
+     "render": "график дан точками"
+    },
+    "status": "fail",
+    "reason": "Данные откорма поросят биологически невозможны; падежные ошибки в шаблоне утверждений."
    }
   },
   {
@@ -8585,7 +10680,9 @@
       "7.4",
       "7.5"
      ]
-    }
+    },
+    "status": "fail",
+    "reason": "генератора нет: рецепт для ИИ (аналоги пишет ИИ по таблице фактов, проверка — выборочно экспертом)"
    }
   },
   {
@@ -8662,7 +10759,9 @@
       "7.4",
       "7.5"
      ]
-    }
+    },
+    "status": "fail",
+    "reason": "генератора нет: рецепт для ИИ (аналоги пишет ИИ по таблице фактов, проверка — выборочно экспертом)"
    }
   },
   {
@@ -8738,7 +10837,9 @@
       "7.4",
       "7.5"
      ]
-    }
+    },
+    "status": "fail",
+    "reason": "генератора нет: рецепт для ИИ (аналоги пишет ИИ по таблице фактов, проверка — выборочно экспертом)"
    }
   },
   {
@@ -8815,7 +10916,9 @@
       "7.4",
       "7.5"
      ]
-    }
+    },
+    "status": "fail",
+    "reason": "генератора нет: рецепт для ИИ (аналоги пишет ИИ по таблице фактов, проверка — выборочно экспертом)"
    }
   },
   {
@@ -8897,7 +11000,28 @@
      "notes": [
       "в КИМ развёрнутый ответ, у нас number (шаг задания)"
      ]
-    }
+    },
+    "expert": {
+     "round": 2,
+     "checked": 5,
+     "passed_cards": 0,
+     "checks": {
+      "format": "fail",
+      "structure": "fail",
+      "style": "fail",
+      "level": "fail",
+      "facts": "fail",
+      "trap": "fail",
+      "codifier": "pass",
+      "scoring": "fail"
+     },
+     "indistinguishable": "no",
+     "verdict": "fail",
+     "reason": "Вместо развёрнутого задания по эксперименту — числовой вопрос по случайной таблице с биологически бессмысленными данными.",
+     "render": "таблица дана перечнем"
+    },
+    "status": "fail",
+    "reason": "в КИМ развёрнутый ответ; генератор тренирует шаг задания (расчёт/выбор), а не всё задание"
    }
   },
   {
@@ -8974,7 +11098,9 @@
       "7.5",
       "7.6"
      ]
-    }
+    },
+    "status": "fail",
+    "reason": "генератора нет: рецепт для ИИ (аналоги пишет ИИ по таблице фактов, проверка — выборочно экспертом)"
    }
   },
   {
@@ -9051,7 +11177,9 @@
       "7.5",
       "7.6"
      ]
-    }
+    },
+    "status": "fail",
+    "reason": "генератора нет: рецепт для ИИ (аналоги пишет ИИ по таблице фактов, проверка — выборочно экспертом)"
    }
   },
   {
@@ -9121,7 +11249,9 @@
       "7.5",
       "7.6"
      ]
-    }
+    },
+    "status": "fail",
+    "reason": "генератора нет: нужен рисунок/карта (свои рисунки органов)"
    }
   },
   {
@@ -9192,7 +11322,9 @@
       "7.5",
       "7.6"
      ]
-    }
+    },
+    "status": "fail",
+    "reason": "генератора нет: нужен рисунок/карта (свои рисунки клеток)"
    }
   },
   {
@@ -9263,7 +11395,9 @@
       "7.5",
       "7.6"
      ]
-    }
+    },
+    "status": "fail",
+    "reason": "генератора нет: нужен рисунок/карта (схема пищевой сети (можно рисовать из WEBS))"
    }
   },
   {
@@ -9333,7 +11467,9 @@
       "7.5",
       "7.6"
      ]
-    }
+    },
+    "status": "fail",
+    "reason": "генератора нет: нужен рисунок/карта (рисунки ископаемых и схем; подкарточки: bio-ege-08-structure-order, d_seq:bio/geo_periods)"
    }
   },
   {
@@ -9404,7 +11540,9 @@
       "7.5",
       "7.6"
      ]
-    }
+    },
+    "status": "fail",
+    "reason": "генератора нет: нужен рисунок/карта (рисунок эволюционного дерева)"
    }
   },
   {
@@ -9475,7 +11613,9 @@
       "7.5",
       "7.6"
      ]
-    }
+    },
+    "status": "fail",
+    "reason": "генератора нет: нужен рисунок/карта (свои рисунки срезов растений)"
    }
   },
   {
@@ -9531,7 +11671,9 @@
       "5.6",
       "5.7"
      ]
-    }
+    },
+    "status": "fail",
+    "reason": "генератора нет: рецепт для ИИ (аналоги пишет ИИ по таблице фактов, проверка — выборочно экспертом)"
    }
   },
   {
@@ -9586,7 +11728,9 @@
       "5.6",
       "5.7"
      ]
-    }
+    },
+    "status": "fail",
+    "reason": "генератора нет: рецепт для ИИ (аналоги пишет ИИ по таблице фактов, проверка — выборочно экспертом)"
    }
   },
   {
@@ -9642,7 +11786,9 @@
       "5.6",
       "5.7"
      ]
-    }
+    },
+    "status": "fail",
+    "reason": "генератора нет: рецепт для ИИ (аналоги пишет ИИ по таблице фактов, проверка — выборочно экспертом)"
    }
   },
   {
@@ -9698,7 +11844,9 @@
       "5.6",
       "5.7"
      ]
-    }
+    },
+    "status": "fail",
+    "reason": "генератора нет: рецепт для ИИ (аналоги пишет ИИ по таблице фактов, проверка — выборочно экспертом)"
    }
   },
   {
@@ -9760,7 +11908,9 @@
       "7.5",
       "7.6"
      ]
-    }
+    },
+    "status": "fail",
+    "reason": "генератора нет: рецепт для ИИ (аналоги пишет ИИ по таблице фактов, проверка — выборочно экспертом)"
    }
   },
   {
@@ -9822,7 +11972,9 @@
       "7.5",
       "7.6"
      ]
-    }
+    },
+    "status": "fail",
+    "reason": "генератора нет: рецепт для ИИ (аналоги пишет ИИ по таблице фактов, проверка — выборочно экспертом)"
    }
   },
   {
@@ -9884,7 +12036,9 @@
       "7.5",
       "7.6"
      ]
-    }
+    },
+    "status": "fail",
+    "reason": "генератора нет: рецепт для ИИ (аналоги пишет ИИ по таблице фактов, проверка — выборочно экспертом)"
    }
   },
   {
@@ -9947,7 +12101,9 @@
       "7.5",
       "7.6"
      ]
-    }
+    },
+    "status": "fail",
+    "reason": "генератора нет: рецепт для ИИ (аналоги пишет ИИ по таблице фактов, проверка — выборочно экспертом)"
    }
   },
   {
@@ -10009,7 +12165,9 @@
       "7.5",
       "7.6"
      ]
-    }
+    },
+    "status": "fail",
+    "reason": "генератора нет: рецепт для ИИ (аналоги пишет ИИ по таблице фактов, проверка — выборочно экспертом)"
    }
   },
   {
@@ -10058,7 +12216,28 @@
      "notes": [
       "в КИМ развёрнутый ответ, у нас number (шаг задания)"
      ]
-    }
+    },
+    "expert": {
+     "round": 2,
+     "checked": 5,
+     "passed_cards": 0,
+     "checks": {
+      "format": "fail",
+      "structure": "fail",
+      "style": "fail",
+      "level": "fail",
+      "facts": "pass",
+      "trap": "fail",
+      "codifier": "pass",
+      "scoring": "fail"
+     },
+     "indistinguishable": "no",
+     "verdict": "fail",
+     "reason": "Карточки — копия базового №3 (одно число), а в КИМ №27 — задача высокого уровня с объяснением на 3 балла.",
+     "render": ""
+    },
+    "status": "fail",
+    "reason": "в КИМ развёрнутый ответ; генератор тренирует шаг задания (расчёт/выбор), а не всё задание"
    }
   },
   {
@@ -10107,7 +12286,28 @@
      "notes": [
       "в КИМ развёрнутый ответ, у нас number (шаг задания)"
      ]
-    }
+    },
+    "expert": {
+     "round": 2,
+     "checked": 5,
+     "passed_cards": 0,
+     "checks": {
+      "format": "fail",
+      "structure": "fail",
+      "style": "fail",
+      "level": "fail",
+      "facts": "fail",
+      "trap": "fail",
+      "codifier": "pass",
+      "scoring": "fail"
+     },
+     "indistinguishable": "no",
+     "verdict": "fail",
+     "reason": "Задание части 2 сведено к однострочному вычислению числа; нет требования объяснить, из каких клеток и каким делением образуются клетки; числа хромосом нереалистичны.",
+     "render": ""
+    },
+    "status": "fail",
+    "reason": "в КИМ развёрнутый ответ; генератор тренирует шаг задания (расчёт/выбор), а не всё задание"
    }
   },
   {
@@ -10147,7 +12347,9 @@
       "2.6",
       "6.2"
      ]
-    }
+    },
+    "status": "fail",
+    "reason": "не покрыто: нужен генератор шпилек РНК (палиндромы + рамка) — не сделан"
    }
   },
   {
@@ -10196,7 +12398,28 @@
      "notes": [
       "в КИМ развёрнутый ответ, у нас number (шаг задания)"
      ]
-    }
+    },
+    "expert": {
+     "round": 2,
+     "checked": 5,
+     "passed_cards": 0,
+     "checks": {
+      "format": "fail",
+      "structure": "fail",
+      "style": "pass",
+      "level": "fail",
+      "facts": "pass",
+      "trap": "fail",
+      "codifier": "pass",
+      "scoring": "fail"
+     },
+     "indistinguishable": "no",
+     "verdict": "fail",
+     "reason": "Вместо задачи части 2 на 3 балла — однострочный расчёт с кратким ответом.",
+     "render": ""
+    },
+    "status": "fail",
+    "reason": "в КИМ развёрнутый ответ; генератор тренирует шаг задания (расчёт/выбор), а не всё задание"
    }
   },
   {
@@ -10264,7 +12487,28 @@
      "notes": [
       "в КИМ развёрнутый ответ, у нас digits_set (шаг задания)"
      ]
-    }
+    },
+    "expert": {
+     "round": 2,
+     "checked": 5,
+     "passed_cards": 0,
+     "checks": {
+      "format": "fail",
+      "structure": "fail",
+      "style": "fail",
+      "level": "fail",
+      "facts": "pass",
+      "trap": "fail",
+      "codifier": "pass",
+      "scoring": "fail"
+     },
+     "indistinguishable": "no",
+     "verdict": "fail",
+     "reason": "Задание 27 превращено в тест на одну цифру с тривиальным поиском АУГ в иРНК.",
+     "render": ""
+    },
+    "status": "fail",
+    "reason": "в КИМ развёрнутый ответ; генератор тренирует шаг задания (расчёт/выбор), а не всё задание"
    }
   },
   {
@@ -10313,7 +12557,28 @@
      "notes": [
       "в КИМ развёрнутый ответ, у нас number (шаг задания)"
      ]
-    }
+    },
+    "expert": {
+     "round": 2,
+     "checked": 5,
+     "passed_cards": 0,
+     "checks": {
+      "format": "fail",
+      "structure": "fail",
+      "style": "fail",
+      "level": "fail",
+      "facts": "pass",
+      "trap": "fail",
+      "codifier": "pass",
+      "scoring": "fail"
+     },
+     "indistinguishable": "no",
+     "verdict": "fail",
+     "reason": "Задача части 2 сведена к однострочному расчёту с числовым ответом.",
+     "render": ""
+    },
+    "status": "fail",
+    "reason": "в КИМ развёрнутый ответ; генератор тренирует шаг задания (расчёт/выбор), а не всё задание"
    }
   },
   {
@@ -10380,7 +12645,28 @@
      "notes": [
       "в КИМ развёрнутый ответ, у нас digits_set (шаг задания)"
      ]
-    }
+    },
+    "expert": {
+     "round": 2,
+     "checked": 5,
+     "passed_cards": 0,
+     "checks": {
+      "format": "fail",
+      "structure": "fail",
+      "style": "pass",
+      "level": "fail",
+      "facts": "pass",
+      "trap": "fail",
+      "codifier": "pass",
+      "scoring": "fail"
+     },
+     "indistinguishable": "no",
+     "verdict": "fail",
+     "reason": "Задание части 2 превращено в тест с выбором одной цифры — формат и уровень не соответствуют КИМ.",
+     "render": ""
+    },
+    "status": "fail",
+    "reason": "в КИМ развёрнутый ответ; генератор тренирует шаг задания (расчёт/выбор), а не всё задание"
    }
   },
   {
@@ -10448,7 +12734,28 @@
      "notes": [
       "в КИМ развёрнутый ответ, у нас digits_set (шаг задания)"
      ]
-    }
+    },
+    "expert": {
+     "round": 2,
+     "checked": 5,
+     "passed_cards": 0,
+     "checks": {
+      "format": "fail",
+      "structure": "fail",
+      "style": "fail",
+      "level": "fail",
+      "facts": "pass",
+      "trap": "fail",
+      "codifier": "pass",
+      "scoring": "fail"
+     },
+     "indistinguishable": "no",
+     "verdict": "fail",
+     "reason": "Развёрнутая задача №27 на 3 балла превращена в выбор одной цифры из четырёх; уровень, формат и оценивание не соответствуют КИМ.",
+     "render": ""
+    },
+    "status": "fail",
+    "reason": "в КИМ развёрнутый ответ; генератор тренирует шаг задания (расчёт/выбор), а не всё задание"
    }
   },
   {
@@ -10492,7 +12799,28 @@
      "notes": [
       "в КИМ развёрнутый ответ, у нас number (шаг задания)"
      ]
-    }
+    },
+    "expert": {
+     "round": 2,
+     "checked": 5,
+     "passed_cards": 0,
+     "checks": {
+      "format": "fail",
+      "structure": "fail",
+      "style": "fail",
+      "level": "fail",
+      "facts": "pass",
+      "trap": "pass",
+      "codifier": "pass",
+      "scoring": "fail"
+     },
+     "indistinguishable": "no",
+     "verdict": "fail",
+     "reason": "Числовой тренажёр вместо полноценной генетической задачи с схемами скрещиваний.",
+     "render": ""
+    },
+    "status": "fail",
+    "reason": "в КИМ развёрнутый ответ; генератор тренирует шаг задания (расчёт/выбор), а не всё задание"
    }
   },
   {
@@ -10535,7 +12863,28 @@
      "notes": [
       "в КИМ развёрнутый ответ, у нас number (шаг задания)"
      ]
-    }
+    },
+    "expert": {
+     "round": 2,
+     "checked": 5,
+     "passed_cards": 0,
+     "checks": {
+      "format": "fail",
+      "structure": "fail",
+      "style": "fail",
+      "level": "fail",
+      "facts": "pass",
+      "trap": "fail",
+      "codifier": "pass",
+      "scoring": "fail"
+     },
+     "indistinguishable": "no",
+     "verdict": "fail",
+     "reason": "Вместо задачи №28 (две схемы, генотипы, фенотипы, объяснение) выдаются однострочные расчёты уровня №4.",
+     "render": ""
+    },
+    "status": "fail",
+    "reason": "в КИМ развёрнутый ответ; генератор тренирует шаг задания (расчёт/выбор), а не всё задание"
    }
   },
   {
@@ -10578,7 +12927,28 @@
      "notes": [
       "в КИМ развёрнутый ответ, у нас number (шаг задания)"
      ]
-    }
+    },
+    "expert": {
+     "round": 2,
+     "checked": 5,
+     "passed_cards": 0,
+     "checks": {
+      "format": "fail",
+      "structure": "fail",
+      "style": "pass",
+      "level": "fail",
+      "facts": "pass",
+      "trap": "fail",
+      "codifier": "pass",
+      "scoring": "fail"
+     },
+     "indistinguishable": "no",
+     "verdict": "fail",
+     "reason": "Задача высокого уровня заменена однострочной задачей на вероятность; нет двух скрещиваний и объяснения.",
+     "render": ""
+    },
+    "status": "fail",
+    "reason": "в КИМ развёрнутый ответ; генератор тренирует шаг задания (расчёт/выбор), а не всё задание"
    }
   },
   {
@@ -10621,7 +12991,28 @@
      "notes": [
       "в КИМ развёрнутый ответ, у нас number (шаг задания)"
      ]
-    }
+    },
+    "expert": {
+     "round": 2,
+     "checked": 5,
+     "passed_cards": 0,
+     "checks": {
+      "format": "fail",
+      "structure": "fail",
+      "style": "pass",
+      "level": "fail",
+      "facts": "pass",
+      "trap": "fail",
+      "codifier": "pass",
+      "scoring": "pass"
+     },
+     "indistinguishable": "no",
+     "verdict": "fail",
+     "reason": "Генетическая задача части 2 подменена арифметикой n±1.",
+     "render": ""
+    },
+    "status": "fail",
+    "reason": "в КИМ развёрнутый ответ; генератор тренирует шаг задания (расчёт/выбор), а не всё задание"
    }
   },
   {
@@ -10656,7 +13047,9 @@
      "codifier": [
       "3.3"
      ]
-    }
+    },
+    "status": "fail",
+    "reason": "не покрыто: нужен генератор полной схемы для генов в X- и Y-хромосомах — не сделан"
    }
   },
   {
@@ -10699,7 +13092,28 @@
      "notes": [
       "в КИМ развёрнутый ответ, у нас number (шаг задания)"
      ]
-    }
+    },
+    "expert": {
+     "round": 2,
+     "checked": 5,
+     "passed_cards": 0,
+     "checks": {
+      "format": "fail",
+      "structure": "fail",
+      "style": "fail",
+      "level": "fail",
+      "facts": "pass",
+      "trap": "fail",
+      "codifier": "pass",
+      "scoring": "fail"
+     },
+     "indistinguishable": "no",
+     "verdict": "fail",
+     "reason": "Аналоги не соответствуют заявленному прототипу: вместо двух сцепленных с X генов и двух скрещиваний — моногибридная задача на процент.",
+     "render": ""
+    },
+    "status": "fail",
+    "reason": "в КИМ развёрнутый ответ; генератор тренирует шаг задания (расчёт/выбор), а не всё задание"
    }
   },
   {
@@ -10743,7 +13157,28 @@
      "notes": [
       "в КИМ развёрнутый ответ, у нас number (шаг задания)"
      ]
-    }
+    },
+    "expert": {
+     "round": 2,
+     "checked": 5,
+     "passed_cards": 0,
+     "checks": {
+      "format": "fail",
+      "structure": "fail",
+      "style": "fail",
+      "level": "fail",
+      "facts": "pass",
+      "trap": "fail",
+      "codifier": "pass",
+      "scoring": "fail"
+     },
+     "indistinguishable": "no",
+     "verdict": "fail",
+     "reason": "Вместо задачи с двумя скрещиваниями на X-сцепленный и аутосомный гены даны мини-вопросы на вероятность.",
+     "render": ""
+    },
+    "status": "fail",
+    "reason": "в КИМ развёрнутый ответ; генератор тренирует шаг задания (расчёт/выбор), а не всё задание"
    }
   },
   {
@@ -10788,7 +13223,28 @@
      "format": "pass",
      "structure": "pass",
      "notes": []
-    }
+    },
+    "expert": {
+     "round": 3,
+     "checked": 5,
+     "passed_cards": 0,
+     "checks": {
+      "format": "pass",
+      "structure": "pass",
+      "style": "fail",
+      "level": "pass",
+      "facts": "pass",
+      "trap": "pass",
+      "codifier": "pass",
+      "scoring": "pass"
+     },
+     "indistinguishable": "no",
+     "verdict": "fail",
+     "reason": "Форма стимула заимствована из ЕГЭ №1 (таблица с пропуском), в ОГЭ №1 — описание/рисунок и прямой вопрос.",
+     "render": ""
+    },
+    "status": "fail",
+    "reason": "Форма стимула заимствована из ЕГЭ №1 (таблица с пропуском), в ОГЭ №1 — описание/рисунок и прямой вопрос."
    }
   },
   {
@@ -10833,7 +13289,28 @@
      "format": "pass",
      "structure": "pass",
      "notes": []
-    }
+    },
+    "expert": {
+     "round": 3,
+     "checked": 5,
+     "passed_cards": 0,
+     "checks": {
+      "format": "pass",
+      "structure": "fail",
+      "style": "fail",
+      "level": "pass",
+      "facts": "pass",
+      "trap": "fail",
+      "codifier": "pass",
+      "scoring": "pass"
+     },
+     "indistinguishable": "no",
+     "verdict": "fail",
+     "reason": "Использована форма задания ЕГЭ №1 вместо ОГЭ №1; аналоги повторяются.",
+     "render": ""
+    },
+    "status": "fail",
+    "reason": "Использована форма задания ЕГЭ №1 вместо ОГЭ №1; аналоги повторяются."
    }
   },
   {
@@ -10878,7 +13355,28 @@
      "format": "pass",
      "structure": "pass",
      "notes": []
-    }
+    },
+    "expert": {
+     "round": 3,
+     "checked": 5,
+     "passed_cards": 0,
+     "checks": {
+      "format": "pass",
+      "structure": "fail",
+      "style": "fail",
+      "level": "pass",
+      "facts": "pass",
+      "trap": "fail",
+      "codifier": "pass",
+      "scoring": "fail"
+     },
+     "indistinguishable": "no",
+     "verdict": "fail",
+     "reason": "В ОГЭ №1 — короткий вопрос к рисунку: какое общее свойство живого, какой метод или какая профессия показаны. Здесь аналогия-таблица в стиле ЕГЭ №1 про сезонные явления (линька, листопад, перелёт), а эталоны без синонимов.",
+     "render": "рисунок заменён описанием в таблице"
+    },
+    "status": "fail",
+    "reason": "В ОГЭ №1 — короткий вопрос к рисунку: какое общее свойство живого, какой метод или какая профессия показаны. Здесь аналогия-таблица в стиле ЕГЭ №1 про сезонные явления (линька, листопад, перелёт), а эталоны без синонимов."
    }
   },
   {
@@ -10923,7 +13421,28 @@
      "format": "pass",
      "structure": "pass",
      "notes": []
-    }
+    },
+    "expert": {
+     "round": 3,
+     "checked": 5,
+     "passed_cards": 5,
+     "checks": {
+      "format": "pass",
+      "structure": "pass",
+      "style": "pass",
+      "level": "pass",
+      "facts": "pass",
+      "trap": "pass",
+      "codifier": "pass",
+      "scoring": "pass"
+     },
+     "indistinguishable": "yes",
+     "verdict": "pass",
+     "reason": "",
+     "render": "фотография заменена описанием работы"
+    },
+    "status": "pass",
+    "reason": ""
    }
   },
   {
@@ -10968,7 +13487,28 @@
      "format": "pass",
      "structure": "pass",
      "notes": []
-    }
+    },
+    "expert": {
+     "round": 3,
+     "checked": 5,
+     "passed_cards": 0,
+     "checks": {
+      "format": "pass",
+      "structure": "pass",
+      "style": "fail",
+      "level": "pass",
+      "facts": "pass",
+      "trap": "pass",
+      "codifier": "pass",
+      "scoring": "pass"
+     },
+     "indistinguishable": "no",
+     "verdict": "fail",
+     "reason": "Та же проблема формы: табличная аналогия вместо прямого вопроса ОГЭ.",
+     "render": ""
+    },
+    "status": "fail",
+    "reason": "Та же проблема формы: табличная аналогия вместо прямого вопроса ОГЭ."
    }
   },
   {
@@ -11077,7 +13617,28 @@
      "format": "pass",
      "structure": "pass",
      "notes": []
-    }
+    },
+    "expert": {
+     "round": 2,
+     "checked": 5,
+     "passed_cards": 5,
+     "checks": {
+      "format": "pass",
+      "structure": "pass",
+      "style": "pass",
+      "level": "pass",
+      "facts": "pass",
+      "trap": "pass",
+      "codifier": "pass",
+      "scoring": "pass"
+     },
+     "indistinguishable": "yes",
+     "verdict": "pass",
+     "reason": "",
+     "render": ""
+    },
+    "status": "pass",
+    "reason": ""
    }
   },
   {
@@ -11185,7 +13746,28 @@
      "format": "pass",
      "structure": "pass",
      "notes": []
-    }
+    },
+    "expert": {
+     "round": 2,
+     "checked": 5,
+     "passed_cards": 5,
+     "checks": {
+      "format": "pass",
+      "structure": "pass",
+      "style": "pass",
+      "level": "pass",
+      "facts": "pass",
+      "trap": "pass",
+      "codifier": "pass",
+      "scoring": "pass"
+     },
+     "indistinguishable": "yes",
+     "verdict": "pass",
+     "reason": "",
+     "render": ""
+    },
+    "status": "pass",
+    "reason": ""
    }
   },
   {
@@ -11205,12 +13787,12 @@
    "seen": "демо 2026 (глухарь), МР 2025/2026 (барсук)",
    "gen_kind": "param",
    "gen": "b_taxa@k=Животные&m=5",
-   "capacity": "≥2987",
+   "capacity": "≥2918",
    "example": {
     "k": "num",
-    "q": "Расположите систематические таксоны по рангу, начиная с наибольшего.\n1) род Веретеницы\n2) тип Хордовые\n3) класс Пресмыкающиеся\n4) вид Ломкая веретеница\n5) отряд Чешуйчатые\nЗапишите в таблицу соответствующую последовательность цифр.",
-    "a": "23514",
-    "e": "Порядок рангов: тип → класс → отряд → род → вид."
+    "q": "Расположите систематические таксоны по рангу, начиная с наименьшего.\n1) семейство Бобровые\n2) класс Млекопитающие\n3) вид Канадский бобр\n4) царство Животные\n5) отряд Грызуны\nЗапишите в таблицу соответствующую последовательность цифр.",
+    "a": "31524",
+    "e": "Порядок рангов: царство → класс → отряд → семейство → вид."
    },
    "fidelity": {
     "kim": {
@@ -11238,7 +13820,28 @@
      "format": "pass",
      "structure": "pass",
      "notes": []
-    }
+    },
+    "expert": {
+     "round": 2,
+     "checked": 5,
+     "passed_cards": 5,
+     "checks": {
+      "format": "pass",
+      "structure": "pass",
+      "style": "pass",
+      "level": "pass",
+      "facts": "pass",
+      "trap": "pass",
+      "codifier": "pass",
+      "scoring": "pass"
+     },
+     "indistinguishable": "yes",
+     "verdict": "pass",
+     "reason": "",
+     "render": ""
+    },
+    "status": "pass",
+    "reason": ""
    }
   },
   {
@@ -11258,11 +13861,11 @@
    "seen": "демо 2027 (рогоз), МР 2025 (донник), МР 2026 (пшеница)",
    "gen_kind": "param",
    "gen": "b_taxa@k=Растения&m=5",
-   "capacity": "≥2973",
+   "capacity": 2788,
    "example": {
     "k": "num",
-    "q": "Расположите систематические таксоны по рангу, начиная с наименьшего.\n1) род Крапива\n2) вид Крапива двудомная\n3) семейство Крапивные\n4) отдел Покрытосеменные\n5) класс Двудольные\nЗапишите в таблицу соответствующую последовательность цифр.",
-    "a": "21354",
+    "q": "Расположите систематические таксоны по рангу, начиная с наибольшего.\n1) класс Двудольные\n2) род Тополь\n3) отдел Покрытосеменные\n4) вид Осина (тополь дрожащий)\n5) семейство Ивовые\nЗапишите в таблицу соответствующую последовательность цифр.",
+    "a": "31524",
     "e": "Порядок рангов: отдел → класс → семейство → род → вид."
    },
    "fidelity": {
@@ -11291,7 +13894,28 @@
      "format": "pass",
      "structure": "pass",
      "notes": []
-    }
+    },
+    "expert": {
+     "round": 2,
+     "checked": 5,
+     "passed_cards": 4,
+     "checks": {
+      "format": "pass",
+      "structure": "pass",
+      "style": "pass",
+      "level": "pass",
+      "facts": "pass",
+      "trap": "pass",
+      "codifier": "pass",
+      "scoring": "pass"
+     },
+     "indistinguishable": "yes",
+     "verdict": "pass",
+     "reason": "",
+     "render": ""
+    },
+    "status": "pass",
+    "reason": ""
    }
   },
   {
@@ -11363,7 +13987,28 @@
      "format": "pass",
      "structure": "pass",
      "notes": []
-    }
+    },
+    "expert": {
+     "round": 3,
+     "checked": 5,
+     "passed_cards": 5,
+     "checks": {
+      "format": "pass",
+      "structure": "pass",
+      "style": "pass",
+      "level": "pass",
+      "facts": "pass",
+      "trap": "pass",
+      "codifier": "pass",
+      "scoring": "pass"
+     },
+     "indistinguishable": "yes",
+     "verdict": "pass",
+     "reason": "",
+     "render": "график дан точками"
+    },
+    "status": "pass",
+    "reason": ""
    }
   },
   {
@@ -11435,7 +14080,28 @@
      "format": "pass",
      "structure": "pass",
      "notes": []
-    }
+    },
+    "expert": {
+     "round": 3,
+     "checked": 5,
+     "passed_cards": 1,
+     "checks": {
+      "format": "pass",
+      "structure": "pass",
+      "style": "fail",
+      "level": "pass",
+      "facts": "fail",
+      "trap": "pass",
+      "codifier": "pass",
+      "scoring": "pass"
+     },
+     "indistinguishable": "no",
+     "verdict": "fail",
+     "reason": "Данные нефизиологичны: активность пепсина при pH 6–7 около половины максимальной, SpO2 падает с 98 до 93 % за 10 с задержки дыхания, ЧДД в покое 25; в утверждениях нет единиц («составляет 42»).",
+     "render": "график дан точками"
+    },
+    "status": "fail",
+    "reason": "Данные нефизиологичны: активность пепсина при pH 6–7 около половины максимальной, SpO2 падает с 98 до 93 % за 10 с задержки дыхания, ЧДД в покое 25; в утверждениях нет единиц («составляет 42»)."
    }
   },
   {
@@ -11507,7 +14173,28 @@
      "format": "pass",
      "structure": "pass",
      "notes": []
-    }
+    },
+    "expert": {
+     "round": 3,
+     "checked": 5,
+     "passed_cards": 3,
+     "checks": {
+      "format": "pass",
+      "structure": "pass",
+      "style": "pass",
+      "level": "pass",
+      "facts": "fail",
+      "trap": "pass",
+      "codifier": "pass",
+      "scoring": "pass"
+     },
+     "indistinguishable": "no",
+     "verdict": "fail",
+     "reason": "Кривые генерируются без биологической правдоподобности (пепсин при pH 1 почти неактивен, гипергликемия натощак).",
+     "render": "график дан точками"
+    },
+    "status": "fail",
+    "reason": "Кривые генерируются без биологической правдоподобности (пепсин при pH 1 почти неактивен, гипергликемия натощак)."
    }
   },
   {
@@ -11579,7 +14266,28 @@
      "format": "pass",
      "structure": "pass",
      "notes": []
-    }
+    },
+    "expert": {
+     "round": 3,
+     "checked": 5,
+     "passed_cards": 1,
+     "checks": {
+      "format": "pass",
+      "structure": "pass",
+      "style": "fail",
+      "level": "pass",
+      "facts": "fail",
+      "trap": "fail",
+      "codifier": "pass",
+      "scoring": "pass"
+     },
+     "indistinguishable": "no",
+     "verdict": "fail",
+     "reason": "Нереалистичные данные графика и дублирующие друг друга верные утверждения; грамматические огрехи.",
+     "render": "график дан точками"
+    },
+    "status": "fail",
+    "reason": "Нереалистичные данные графика и дублирующие друг друга верные утверждения; грамматические огрехи."
    }
   },
   {
@@ -11658,7 +14366,28 @@
      "format": "pass",
      "structure": "pass",
      "notes": []
-    }
+    },
+    "expert": {
+     "round": 3,
+     "checked": 5,
+     "passed_cards": 5,
+     "checks": {
+      "format": "pass",
+      "structure": "pass",
+      "style": "pass",
+      "level": "pass",
+      "facts": "pass",
+      "trap": "pass",
+      "codifier": "pass",
+      "scoring": "pass"
+     },
+     "indistinguishable": "yes",
+     "verdict": "pass",
+     "reason": "",
+     "render": ""
+    },
+    "status": "pass",
+    "reason": ""
    }
   },
   {
@@ -11737,7 +14466,28 @@
      "format": "pass",
      "structure": "pass",
      "notes": []
-    }
+    },
+    "expert": {
+     "round": 2,
+     "checked": 5,
+     "passed_cards": 5,
+     "checks": {
+      "format": "pass",
+      "structure": "pass",
+      "style": "pass",
+      "level": "pass",
+      "facts": "pass",
+      "trap": "pass",
+      "codifier": "pass",
+      "scoring": "pass"
+     },
+     "indistinguishable": "yes",
+     "verdict": "pass",
+     "reason": "",
+     "render": ""
+    },
+    "status": "pass",
+    "reason": ""
    }
   },
   {
@@ -11816,7 +14566,28 @@
      "format": "pass",
      "structure": "pass",
      "notes": []
-    }
+    },
+    "expert": {
+     "round": 2,
+     "checked": 5,
+     "passed_cards": 3,
+     "checks": {
+      "format": "pass",
+      "structure": "pass",
+      "style": "pass",
+      "level": "pass",
+      "facts": "pass",
+      "trap": "pass",
+      "codifier": "pass",
+      "scoring": "pass"
+     },
+     "indistinguishable": "yes",
+     "verdict": "pass",
+     "reason": "",
+     "render": ""
+    },
+    "status": "pass",
+    "reason": ""
    }
   },
   {
@@ -11895,7 +14666,28 @@
      "format": "pass",
      "structure": "pass",
      "notes": []
-    }
+    },
+    "expert": {
+     "round": 2,
+     "checked": 5,
+     "passed_cards": 5,
+     "checks": {
+      "format": "pass",
+      "structure": "pass",
+      "style": "pass",
+      "level": "pass",
+      "facts": "pass",
+      "trap": "pass",
+      "codifier": "pass",
+      "scoring": "pass"
+     },
+     "indistinguishable": "yes",
+     "verdict": "pass",
+     "reason": "",
+     "render": ""
+    },
+    "status": "pass",
+    "reason": ""
    }
   },
   {
@@ -11974,7 +14766,28 @@
      "format": "pass",
      "structure": "pass",
      "notes": []
-    }
+    },
+    "expert": {
+     "round": 2,
+     "checked": 5,
+     "passed_cards": 4,
+     "checks": {
+      "format": "pass",
+      "structure": "pass",
+      "style": "pass",
+      "level": "pass",
+      "facts": "pass",
+      "trap": "pass",
+      "codifier": "pass",
+      "scoring": "pass"
+     },
+     "indistinguishable": "yes",
+     "verdict": "pass",
+     "reason": "",
+     "render": ""
+    },
+    "status": "pass",
+    "reason": ""
    }
   },
   {
@@ -12053,7 +14866,28 @@
      "format": "pass",
      "structure": "pass",
      "notes": []
-    }
+    },
+    "expert": {
+     "round": 2,
+     "checked": 5,
+     "passed_cards": 5,
+     "checks": {
+      "format": "pass",
+      "structure": "pass",
+      "style": "pass",
+      "level": "pass",
+      "facts": "pass",
+      "trap": "pass",
+      "codifier": "pass",
+      "scoring": "pass"
+     },
+     "indistinguishable": "yes",
+     "verdict": "pass",
+     "reason": "",
+     "render": ""
+    },
+    "status": "pass",
+    "reason": ""
    }
   },
   {
@@ -12132,7 +14966,28 @@
      "format": "pass",
      "structure": "pass",
      "notes": []
-    }
+    },
+    "expert": {
+     "round": 2,
+     "checked": 5,
+     "passed_cards": 5,
+     "checks": {
+      "format": "pass",
+      "structure": "pass",
+      "style": "pass",
+      "level": "pass",
+      "facts": "pass",
+      "trap": "pass",
+      "codifier": "pass",
+      "scoring": "pass"
+     },
+     "indistinguishable": "yes",
+     "verdict": "pass",
+     "reason": "",
+     "render": ""
+    },
+    "status": "pass",
+    "reason": ""
    }
   },
   {
@@ -12196,7 +15051,28 @@
      "format": "pass",
      "structure": "pass",
      "notes": []
-    }
+    },
+    "expert": {
+     "round": 3,
+     "checked": 5,
+     "passed_cards": 0,
+     "checks": {
+      "format": "pass",
+      "structure": "fail",
+      "style": "fail",
+      "level": "fail",
+      "facts": "pass",
+      "trap": "fail",
+      "codifier": "pass",
+      "scoring": "pass"
+     },
+     "indistinguishable": "no",
+     "verdict": "fail",
+     "reason": "Вместо «что измеряют этим прибором» дана таблица-аналогия (стиль ОГЭ №8); в выборке секундомер, пипетка, весы — не измерительные физиологические приборы; дистракторы из другой области («отлов насекомых») отсеиваются сразу, ловушка «пульсоксиметр ↔ ЧСС» не проверяется.",
+     "render": "фото прибора заменено названием в таблице"
+    },
+    "status": "fail",
+    "reason": "Вместо «что измеряют этим прибором» дана таблица-аналогия (стиль ОГЭ №8); в выборке секундомер, пипетка, весы — не измерительные физиологические приборы; дистракторы из другой области («отлов насекомых») отсеиваются сразу, ловушка «пульсоксиметр ↔ ЧСС» не проверяется."
    }
   },
   {
@@ -12260,7 +15136,28 @@
      "format": "pass",
      "structure": "pass",
      "notes": []
-    }
+    },
+    "expert": {
+     "round": 3,
+     "checked": 5,
+     "passed_cards": 5,
+     "checks": {
+      "format": "pass",
+      "structure": "pass",
+      "style": "fail",
+      "level": "pass",
+      "facts": "pass",
+      "trap": "fail",
+      "codifier": "pass",
+      "scoring": "pass"
+     },
+     "indistinguishable": "no",
+     "verdict": "fail",
+     "reason": "Задание оформлено как аналогия из №8, а не как вопрос о назначении прибора; выборка смещена к лабораторному инвентарю.",
+     "render": "фото прибора заменено названием"
+    },
+    "status": "fail",
+    "reason": "Задание оформлено как аналогия из №8, а не как вопрос о назначении прибора; выборка смещена к лабораторному инвентарю."
    }
   },
   {
@@ -12324,7 +15221,28 @@
      "format": "pass",
      "structure": "pass",
      "notes": []
-    }
+    },
+    "expert": {
+     "round": 3,
+     "checked": 5,
+     "passed_cards": 0,
+     "checks": {
+      "format": "pass",
+      "structure": "pass",
+      "style": "fail",
+      "level": "pass",
+      "facts": "pass",
+      "trap": "pass",
+      "codifier": "pass",
+      "scoring": "pass"
+     },
+     "indistinguishable": "no",
+     "verdict": "fail",
+     "reason": "Форма стимула (табличная аналогия) не совпадает с ОГЭ №6.",
+     "render": "фото прибора заменено перечнем оборудования"
+    },
+    "status": "fail",
+    "reason": "Форма стимула (табличная аналогия) не совпадает с ОГЭ №6."
    }
   },
   {
@@ -12388,7 +15306,28 @@
      "format": "pass",
      "structure": "pass",
      "notes": []
-    }
+    },
+    "expert": {
+     "round": 3,
+     "checked": 5,
+     "passed_cards": 0,
+     "checks": {
+      "format": "pass",
+      "structure": "fail",
+      "style": "fail",
+      "level": "pass",
+      "facts": "pass",
+      "trap": "fail",
+      "codifier": "pass",
+      "scoring": "pass"
+     },
+     "indistinguishable": "no",
+     "verdict": "fail",
+     "reason": "Аналоги проверяют не то умение: вместо определения назначения прибора — классификация метода по примеру в чужой форме.",
+     "render": ""
+    },
+    "status": "fail",
+    "reason": "Аналоги проверяют не то умение: вместо определения назначения прибора — классификация метода по примеру в чужой форме."
    }
   },
   {
@@ -12452,7 +15391,28 @@
      "format": "pass",
      "structure": "pass",
      "notes": []
-    }
+    },
+    "expert": {
+     "round": 3,
+     "checked": 5,
+     "passed_cards": 0,
+     "checks": {
+      "format": "pass",
+      "structure": "fail",
+      "style": "fail",
+      "level": "pass",
+      "facts": "pass",
+      "trap": "fail",
+      "codifier": "pass",
+      "scoring": "pass"
+     },
+     "indistinguishable": "no",
+     "verdict": "fail",
+     "reason": "Та же подмена стема таблицей-аналогией; дистракторы не из одной области (электронный микроскоп vs «измерение роста человека»); в (4) ответ — определение предмета, а не цель использования.",
+     "render": "фото инструмента заменено названием в таблице"
+    },
+    "status": "fail",
+    "reason": "Та же подмена стема таблицей-аналогией; дистракторы не из одной области (электронный микроскоп vs «измерение роста человека»); в (4) ответ — определение предмета, а не цель использования."
    }
   },
   {
@@ -12546,7 +15506,28 @@
      "format": "pass",
      "structure": "pass",
      "notes": []
-    }
+    },
+    "expert": {
+     "round": 3,
+     "checked": 5,
+     "passed_cards": 1,
+     "checks": {
+      "format": "pass",
+      "structure": "pass",
+      "style": "pass",
+      "level": "pass",
+      "facts": "fail",
+      "trap": "fail",
+      "codifier": "pass",
+      "scoring": "fail"
+     },
+     "indistinguishable": "no",
+     "verdict": "fail",
+     "reason": "Ключевые признаки в справке сформулированы так, что верными могут считаться другие утверждения; эталон следует внутренним категориям генератора.",
+     "render": ""
+    },
+    "status": "fail",
+    "reason": "Ключевые признаки в справке сформулированы так, что верными могут считаться другие утверждения; эталон следует внутренним категориям генератора."
    }
   },
   {
@@ -12640,7 +15621,28 @@
      "format": "pass",
      "structure": "pass",
      "notes": []
-    }
+    },
+    "expert": {
+     "round": 3,
+     "checked": 5,
+     "passed_cards": 0,
+     "checks": {
+      "format": "pass",
+      "structure": "pass",
+      "style": "fail",
+      "level": "pass",
+      "facts": "fail",
+      "trap": "fail",
+      "codifier": "pass",
+      "scoring": "fail"
+     },
+     "indistinguishable": "no",
+     "verdict": "fail",
+     "reason": "Во всех аналогах есть 4–5 утверждений, относящихся к названным признакам, либо эталон включает утверждения не по признакам справки.",
+     "render": ""
+    },
+    "status": "fail",
+    "reason": "Во всех аналогах есть 4–5 утверждений, относящихся к названным признакам, либо эталон включает утверждения не по признакам справки."
    }
   },
   {
@@ -12734,7 +15736,28 @@
      "format": "pass",
      "structure": "pass",
      "notes": []
-    }
+    },
+    "expert": {
+     "round": 3,
+     "checked": 5,
+     "passed_cards": 1,
+     "checks": {
+      "format": "pass",
+      "structure": "pass",
+      "style": "pass",
+      "level": "pass",
+      "facts": "fail",
+      "trap": "fail",
+      "codifier": "pass",
+      "scoring": "fail"
+     },
+     "indistinguishable": "no",
+     "verdict": "fail",
+     "reason": "Ключи не соответствуют признакам из справки: засчитываются утверждения, не связанные с названными признаками, а подходящие остаются вне ответа.",
+     "render": ""
+    },
+    "status": "fail",
+    "reason": "Ключи не соответствуют признакам из справки: засчитываются утверждения, не связанные с названными признаками, а подходящие остаются вне ответа."
    }
   },
   {
@@ -12790,7 +15813,9 @@
       "6.7",
       "6.8"
      ]
-    }
+    },
+    "status": "fail",
+    "reason": "не покрыто: в КИМ — выбор 3 из 6 фактов об учёном; нужна таблица с несколькими фактами на учёного — не собрана"
    }
   },
   {
@@ -12871,7 +15896,28 @@
      "format": "pass",
      "structure": "pass",
      "notes": []
-    }
+    },
+    "expert": {
+     "round": 3,
+     "checked": 5,
+     "passed_cards": 5,
+     "checks": {
+      "format": "pass",
+      "structure": "pass",
+      "style": "pass",
+      "level": "pass",
+      "facts": "pass",
+      "trap": "pass",
+      "codifier": "pass",
+      "scoring": "pass"
+     },
+     "indistinguishable": "yes",
+     "verdict": "pass",
+     "reason": "",
+     "render": "таблица дана строкой"
+    },
+    "status": "pass",
+    "reason": ""
    }
   },
   {
@@ -12952,7 +15998,28 @@
      "format": "pass",
      "structure": "pass",
      "notes": []
-    }
+    },
+    "expert": {
+     "round": 2,
+     "checked": 5,
+     "passed_cards": 4,
+     "checks": {
+      "format": "pass",
+      "structure": "pass",
+      "style": "pass",
+      "level": "pass",
+      "facts": "pass",
+      "trap": "pass",
+      "codifier": "pass",
+      "scoring": "pass"
+     },
+     "indistinguishable": "yes",
+     "verdict": "pass",
+     "reason": "",
+     "render": ""
+    },
+    "status": "pass",
+    "reason": ""
    }
   },
   {
@@ -13033,7 +16100,28 @@
      "format": "pass",
      "structure": "pass",
      "notes": []
-    }
+    },
+    "expert": {
+     "round": 2,
+     "checked": 5,
+     "passed_cards": 3,
+     "checks": {
+      "format": "pass",
+      "structure": "pass",
+      "style": "pass",
+      "level": "pass",
+      "facts": "pass",
+      "trap": "pass",
+      "codifier": "pass",
+      "scoring": "pass"
+     },
+     "indistinguishable": "yes",
+     "verdict": "pass",
+     "reason": "",
+     "render": ""
+    },
+    "status": "pass",
+    "reason": ""
    }
   },
   {
@@ -13114,7 +16202,28 @@
      "format": "pass",
      "structure": "pass",
      "notes": []
-    }
+    },
+    "expert": {
+     "round": 2,
+     "checked": 5,
+     "passed_cards": 5,
+     "checks": {
+      "format": "pass",
+      "structure": "pass",
+      "style": "pass",
+      "level": "pass",
+      "facts": "pass",
+      "trap": "pass",
+      "codifier": "pass",
+      "scoring": "pass"
+     },
+     "indistinguishable": "yes",
+     "verdict": "pass",
+     "reason": "",
+     "render": "таблица дана строкой"
+    },
+    "status": "pass",
+    "reason": ""
    }
   },
   {
@@ -13195,7 +16304,28 @@
      "format": "pass",
      "structure": "pass",
      "notes": []
-    }
+    },
+    "expert": {
+     "round": 2,
+     "checked": 5,
+     "passed_cards": 5,
+     "checks": {
+      "format": "pass",
+      "structure": "pass",
+      "style": "pass",
+      "level": "pass",
+      "facts": "pass",
+      "trap": "pass",
+      "codifier": "pass",
+      "scoring": "pass"
+     },
+     "indistinguishable": "yes",
+     "verdict": "pass",
+     "reason": "",
+     "render": ""
+    },
+    "status": "pass",
+    "reason": ""
    }
   },
   {
@@ -13276,7 +16406,28 @@
      "format": "pass",
      "structure": "pass",
      "notes": []
-    }
+    },
+    "expert": {
+     "round": 3,
+     "checked": 5,
+     "passed_cards": 5,
+     "checks": {
+      "format": "pass",
+      "structure": "pass",
+      "style": "pass",
+      "level": "pass",
+      "facts": "pass",
+      "trap": "pass",
+      "codifier": "pass",
+      "scoring": "pass"
+     },
+     "indistinguishable": "yes",
+     "verdict": "pass",
+     "reason": "",
+     "render": "таблица дана строкой"
+    },
+    "status": "pass",
+    "reason": ""
    }
   },
   {
@@ -13357,7 +16508,28 @@
      "format": "pass",
      "structure": "pass",
      "notes": []
-    }
+    },
+    "expert": {
+     "round": 3,
+     "checked": 5,
+     "passed_cards": 5,
+     "checks": {
+      "format": "pass",
+      "structure": "pass",
+      "style": "pass",
+      "level": "pass",
+      "facts": "pass",
+      "trap": "pass",
+      "codifier": "pass",
+      "scoring": "pass"
+     },
+     "indistinguishable": "yes",
+     "verdict": "pass",
+     "reason": "",
+     "render": "таблица дана строкой"
+    },
+    "status": "pass",
+    "reason": ""
    }
   },
   {
@@ -13449,7 +16621,28 @@
      "format": "pass",
      "structure": "pass",
      "notes": []
-    }
+    },
+    "expert": {
+     "round": 3,
+     "checked": 5,
+     "passed_cards": 5,
+     "checks": {
+      "format": "pass",
+      "structure": "pass",
+      "style": "pass",
+      "level": "pass",
+      "facts": "pass",
+      "trap": "pass",
+      "codifier": "pass",
+      "scoring": "pass"
+     },
+     "indistinguishable": "yes",
+     "verdict": "pass",
+     "reason": "",
+     "render": ""
+    },
+    "status": "pass",
+    "reason": ""
    }
   },
   {
@@ -13541,7 +16734,28 @@
      "format": "pass",
      "structure": "pass",
      "notes": []
-    }
+    },
+    "expert": {
+     "round": 3,
+     "checked": 5,
+     "passed_cards": 0,
+     "checks": {
+      "format": "pass",
+      "structure": "fail",
+      "style": "pass",
+      "level": "fail",
+      "facts": "pass",
+      "trap": "fail",
+      "codifier": "fail",
+      "scoring": "pass"
+     },
+     "indistinguishable": "no",
+     "verdict": "fail",
+     "reason": "ОГЭ №9 — задание повышенного уровня: сравнение двух групп организмов («чем отличаются X от Y»), растения/животные. Здесь простая классификация примеров по свойствам живого («дыхание», «размножение») — базовый уровень, другое умение.",
+     "render": ""
+    },
+    "status": "fail",
+    "reason": "ОГЭ №9 — задание повышенного уровня: сравнение двух групп организмов («чем отличаются X от Y»), растения/животные. Здесь простая классификация примеров по свойствам живого («дыхание», «размножение») — базовый уровень, другое умение."
    }
   },
   {
@@ -13633,7 +16847,28 @@
      "format": "pass",
      "structure": "pass",
      "notes": []
-    }
+    },
+    "expert": {
+     "round": 3,
+     "checked": 5,
+     "passed_cards": 3,
+     "checks": {
+      "format": "pass",
+      "structure": "pass",
+      "style": "fail",
+      "level": "pass",
+      "facts": "fail",
+      "trap": "fail",
+      "codifier": "pass",
+      "scoring": "fail"
+     },
+     "indistinguishable": "no",
+     "verdict": "fail",
+     "reason": "Нет сравнительной формы КИМ; из-за этого общие признаки становятся верными ответами, а в моховидных есть спорный дистрактор.",
+     "render": ""
+    },
+    "status": "fail",
+    "reason": "Нет сравнительной формы КИМ; из-за этого общие признаки становятся верными ответами, а в моховидных есть спорный дистрактор."
    }
   },
   {
@@ -13725,7 +16960,28 @@
      "format": "pass",
      "structure": "pass",
      "notes": []
-    }
+    },
+    "expert": {
+     "round": 3,
+     "checked": 5,
+     "passed_cards": 0,
+     "checks": {
+      "format": "pass",
+      "structure": "pass",
+      "style": "fail",
+      "level": "pass",
+      "facts": "pass",
+      "trap": "fail",
+      "codifier": "fail",
+      "scoring": "pass"
+     },
+     "indistinguishable": "no",
+     "verdict": "fail",
+     "reason": "Не сравнительная форма КИМ, вирусы вне кодификатора №9, неотличительные признаки как верные ответы.",
+     "render": ""
+    },
+    "status": "fail",
+    "reason": "Не сравнительная форма КИМ, вирусы вне кодификатора №9, неотличительные признаки как верные ответы."
    }
   },
   {
@@ -13817,7 +17073,28 @@
      "format": "pass",
      "structure": "pass",
      "notes": []
-    }
+    },
+    "expert": {
+     "round": 3,
+     "checked": 5,
+     "passed_cards": 3,
+     "checks": {
+      "format": "pass",
+      "structure": "pass",
+      "style": "pass",
+      "level": "fail",
+      "facts": "pass",
+      "trap": "fail",
+      "codifier": "pass",
+      "scoring": "pass"
+     },
+     "indistinguishable": "no",
+     "verdict": "fail",
+     "reason": "В части аналогов дистракторы очевидны, уровень ниже П.",
+     "render": ""
+    },
+    "status": "fail",
+    "reason": "В части аналогов дистракторы очевидны, уровень ниже П."
    }
   },
   {
@@ -13909,7 +17186,28 @@
      "format": "pass",
      "structure": "pass",
      "notes": []
-    }
+    },
+    "expert": {
+     "round": 3,
+     "checked": 5,
+     "passed_cards": 0,
+     "checks": {
+      "format": "pass",
+      "structure": "fail",
+      "style": "fail",
+      "level": "fail",
+      "facts": "pass",
+      "trap": "pass",
+      "codifier": "fail",
+      "scoring": "pass"
+     },
+     "indistinguishable": "no",
+     "verdict": "fail",
+     "reason": "Вместо сравнения групп организмов — отнесение органов человека к системам; стем «Какие примеры относятся к понятию „поперечнополосатая скелетная“» неграмотен.",
+     "render": ""
+    },
+    "status": "fail",
+    "reason": "Вместо сравнения групп организмов — отнесение органов человека к системам; стем «Какие примеры относятся к понятию „поперечнополосатая скелетная“» неграмотен."
    }
   },
   {
@@ -14001,7 +17299,28 @@
      "format": "pass",
      "structure": "pass",
      "notes": []
-    }
+    },
+    "expert": {
+     "round": 2,
+     "checked": 5,
+     "passed_cards": 5,
+     "checks": {
+      "format": "pass",
+      "structure": "pass",
+      "style": "pass",
+      "level": "pass",
+      "facts": "pass",
+      "trap": "pass",
+      "codifier": "pass",
+      "scoring": "pass"
+     },
+     "indistinguishable": "yes",
+     "verdict": "pass",
+     "reason": "",
+     "render": ""
+    },
+    "status": "pass",
+    "reason": ""
    }
   },
   {
@@ -14093,7 +17412,28 @@
      "format": "pass",
      "structure": "pass",
      "notes": []
-    }
+    },
+    "expert": {
+     "round": 2,
+     "checked": 5,
+     "passed_cards": 5,
+     "checks": {
+      "format": "pass",
+      "structure": "pass",
+      "style": "pass",
+      "level": "pass",
+      "facts": "pass",
+      "trap": "pass",
+      "codifier": "pass",
+      "scoring": "pass"
+     },
+     "indistinguishable": "yes",
+     "verdict": "pass",
+     "reason": "",
+     "render": ""
+    },
+    "status": "pass",
+    "reason": ""
    }
   },
   {
@@ -14185,7 +17525,28 @@
      "format": "pass",
      "structure": "pass",
      "notes": []
-    }
+    },
+    "expert": {
+     "round": 2,
+     "checked": 5,
+     "passed_cards": 5,
+     "checks": {
+      "format": "pass",
+      "structure": "pass",
+      "style": "pass",
+      "level": "pass",
+      "facts": "pass",
+      "trap": "pass",
+      "codifier": "pass",
+      "scoring": "pass"
+     },
+     "indistinguishable": "yes",
+     "verdict": "pass",
+     "reason": "",
+     "render": ""
+    },
+    "status": "pass",
+    "reason": ""
    }
   },
   {
@@ -14277,7 +17638,28 @@
      "format": "pass",
      "structure": "pass",
      "notes": []
-    }
+    },
+    "expert": {
+     "round": 2,
+     "checked": 5,
+     "passed_cards": 5,
+     "checks": {
+      "format": "pass",
+      "structure": "pass",
+      "style": "pass",
+      "level": "pass",
+      "facts": "pass",
+      "trap": "pass",
+      "codifier": "pass",
+      "scoring": "pass"
+     },
+     "indistinguishable": "yes",
+     "verdict": "pass",
+     "reason": "",
+     "render": ""
+    },
+    "status": "pass",
+    "reason": ""
    }
   },
   {
@@ -14388,7 +17770,28 @@
      "format": "pass",
      "structure": "pass",
      "notes": []
-    }
+    },
+    "expert": {
+     "round": 2,
+     "checked": 5,
+     "passed_cards": 5,
+     "checks": {
+      "format": "pass",
+      "structure": "pass",
+      "style": "pass",
+      "level": "pass",
+      "facts": "pass",
+      "trap": "pass",
+      "codifier": "pass",
+      "scoring": "pass"
+     },
+     "indistinguishable": "yes",
+     "verdict": "pass",
+     "reason": "",
+     "render": "рисунки животных заменены названиями классов"
+    },
+    "status": "pass",
+    "reason": ""
    }
   },
   {
@@ -14499,7 +17902,28 @@
      "format": "pass",
      "structure": "pass",
      "notes": []
-    }
+    },
+    "expert": {
+     "round": 3,
+     "checked": 5,
+     "passed_cards": 2,
+     "checks": {
+      "format": "pass",
+      "structure": "pass",
+      "style": "fail",
+      "level": "pass",
+      "facts": "pass",
+      "trap": "fail",
+      "codifier": "pass",
+      "scoring": "pass"
+     },
+     "indistinguishable": "no",
+     "verdict": "fail",
+     "reason": "Левый столбец не в стиле КИМ (конкретные животные) — вперемешку отряды и виды с дублированием; нет вариантов «прямое/непрямое развитие».",
+     "render": ""
+    },
+    "status": "fail",
+    "reason": "Левый столбец не в стиле КИМ (конкретные животные) — вперемешку отряды и виды с дублированием; нет вариантов «прямое/непрямое развитие»."
    }
   },
   {
@@ -14610,7 +18034,28 @@
      "format": "pass",
      "structure": "pass",
      "notes": []
-    }
+    },
+    "expert": {
+     "round": 2,
+     "checked": 5,
+     "passed_cards": 5,
+     "checks": {
+      "format": "pass",
+      "structure": "pass",
+      "style": "pass",
+      "level": "pass",
+      "facts": "pass",
+      "trap": "pass",
+      "codifier": "pass",
+      "scoring": "pass"
+     },
+     "indistinguishable": "yes",
+     "verdict": "pass",
+     "reason": "",
+     "render": ""
+    },
+    "status": "pass",
+    "reason": ""
    }
   },
   {
@@ -14721,7 +18166,28 @@
      "format": "pass",
      "structure": "pass",
      "notes": []
-    }
+    },
+    "expert": {
+     "round": 2,
+     "checked": 5,
+     "passed_cards": 5,
+     "checks": {
+      "format": "pass",
+      "structure": "pass",
+      "style": "pass",
+      "level": "pass",
+      "facts": "pass",
+      "trap": "pass",
+      "codifier": "pass",
+      "scoring": "pass"
+     },
+     "indistinguishable": "yes",
+     "verdict": "pass",
+     "reason": "",
+     "render": "Рисунки 1 и 2 заменены названиями групп."
+    },
+    "status": "pass",
+    "reason": ""
    }
   },
   {
@@ -14832,7 +18298,28 @@
      "format": "pass",
      "structure": "pass",
      "notes": []
-    }
+    },
+    "expert": {
+     "round": 3,
+     "checked": 5,
+     "passed_cards": 0,
+     "checks": {
+      "format": "pass",
+      "structure": "pass",
+      "style": "pass",
+      "level": "fail",
+      "facts": "pass",
+      "trap": "pass",
+      "codifier": "fail",
+      "scoring": "pass"
+     },
+     "indistinguishable": "no",
+     "verdict": "fail",
+     "reason": "Содержание вне кодификатора №11 (человек) или сверх ОГЭ (биохимия фотосинтеза).",
+     "render": ""
+    },
+    "status": "fail",
+    "reason": "Содержание вне кодификатора №11 (человек) или сверх ОГЭ (биохимия фотосинтеза)."
    }
   },
   {
@@ -14943,7 +18430,28 @@
      "format": "pass",
      "structure": "pass",
      "notes": []
-    }
+    },
+    "expert": {
+     "round": 2,
+     "checked": 5,
+     "passed_cards": 5,
+     "checks": {
+      "format": "pass",
+      "structure": "pass",
+      "style": "pass",
+      "level": "pass",
+      "facts": "pass",
+      "trap": "pass",
+      "codifier": "pass",
+      "scoring": "pass"
+     },
+     "indistinguishable": "yes",
+     "verdict": "pass",
+     "reason": "",
+     "render": ""
+    },
+    "status": "pass",
+    "reason": ""
    }
   },
   {
@@ -15008,7 +18516,28 @@
      "format": "pass",
      "structure": "pass",
      "notes": []
-    }
+    },
+    "expert": {
+     "round": 3,
+     "checked": 5,
+     "passed_cards": 0,
+     "checks": {
+      "format": "pass",
+      "structure": "pass",
+      "style": "fail",
+      "level": "pass",
+      "facts": "fail",
+      "trap": "pass",
+      "codifier": "pass",
+      "scoring": "pass"
+     },
+     "indistinguishable": "no",
+     "verdict": "fail",
+     "reason": "Суждения собраны шаблоном «Группа — признак» без грамматического согласования; один из ключей опирается на тонкость строения, неочевидную для ОГЭ.",
+     "render": ""
+    },
+    "status": "fail",
+    "reason": "Суждения собраны шаблоном «Группа — признак» без грамматического согласования; один из ключей опирается на тонкость строения, неочевидную для ОГЭ."
    }
   },
   {
@@ -15073,7 +18602,28 @@
      "format": "pass",
      "structure": "pass",
      "notes": []
-    }
+    },
+    "expert": {
+     "round": 3,
+     "checked": 5,
+     "passed_cards": 0,
+     "checks": {
+      "format": "pass",
+      "structure": "pass",
+      "style": "fail",
+      "level": "pass",
+      "facts": "fail",
+      "trap": "pass",
+      "codifier": "fail",
+      "scoring": "pass"
+     },
+     "indistinguishable": "no",
+     "verdict": "fail",
+     "reason": "Суждения собраны из шаблонов без согласования и нечитаемы («Трутовики — трутовики — одноклеточные грибы», «Мукор спор мукора образуются…», «Животные — клетки имеют…»); 2 из 5 не о грибах/лишайниках.",
+     "render": ""
+    },
+    "status": "fail",
+    "reason": "Суждения собраны из шаблонов без согласования и нечитаемы («Трутовики — трутовики — одноклеточные грибы», «Мукор спор мукора образуются…», «Животные — клетки имеют…»); 2 из 5 не о грибах/лишайниках."
    }
   },
   {
@@ -15138,7 +18688,28 @@
      "format": "pass",
      "structure": "pass",
      "notes": []
-    }
+    },
+    "expert": {
+     "round": 3,
+     "checked": 5,
+     "passed_cards": 3,
+     "checks": {
+      "format": "pass",
+      "structure": "pass",
+      "style": "fail",
+      "level": "pass",
+      "facts": "pass",
+      "trap": "pass",
+      "codifier": "pass",
+      "scoring": "pass"
+     },
+     "indistinguishable": "no",
+     "verdict": "fail",
+     "reason": "Шаблон суждений ломает согласование и порождает неграмотные фразы.",
+     "render": ""
+    },
+    "status": "fail",
+    "reason": "Шаблон суждений ломает согласование и порождает неграмотные фразы."
    }
   },
   {
@@ -15203,7 +18774,28 @@
      "format": "pass",
      "structure": "pass",
      "notes": []
-    }
+    },
+    "expert": {
+     "round": 3,
+     "checked": 5,
+     "passed_cards": 1,
+     "checks": {
+      "format": "pass",
+      "structure": "pass",
+      "style": "fail",
+      "level": "pass",
+      "facts": "pass",
+      "trap": "fail",
+      "codifier": "pass",
+      "scoring": "pass"
+     },
+     "indistinguishable": "no",
+     "verdict": "fail",
+     "reason": "Грамматически неполноценные суждения (шаблон «X — Y»), в к.5 потеряно слово «анализатор».",
+     "render": ""
+    },
+    "status": "fail",
+    "reason": "Грамматически неполноценные суждения (шаблон «X — Y»), в к.5 потеряно слово «анализатор»."
    }
   },
   {
@@ -15268,7 +18860,28 @@
      "format": "pass",
      "structure": "pass",
      "notes": []
-    }
+    },
+    "expert": {
+     "round": 3,
+     "checked": 5,
+     "passed_cards": 0,
+     "checks": {
+      "format": "pass",
+      "structure": "pass",
+      "style": "fail",
+      "level": "fail",
+      "facts": "fail",
+      "trap": "pass",
+      "codifier": "pass",
+      "scoring": "pass"
+     },
+     "indistinguishable": "no",
+     "verdict": "fail",
+     "reason": "Шаблонные несогласованные суждения, опечатка, тавтологичное суждение.",
+     "render": ""
+    },
+    "status": "fail",
+    "reason": "Шаблонные несогласованные суждения, опечатка, тавтологичное суждение."
    }
   },
   {
@@ -15333,7 +18946,28 @@
      "format": "pass",
      "structure": "pass",
      "notes": []
-    }
+    },
+    "expert": {
+     "round": 3,
+     "checked": 5,
+     "passed_cards": 2,
+     "checks": {
+      "format": "pass",
+      "structure": "pass",
+      "style": "fail",
+      "level": "pass",
+      "facts": "pass",
+      "trap": "pass",
+      "codifier": "pass",
+      "scoring": "pass"
+     },
+     "indistinguishable": "no",
+     "verdict": "fail",
+     "reason": "Шаблонные суждения с тире и без согласования («Вирусы — некоторые являются автотрофами», «Бактерии — все являются автотрофами», «Вирусы — к ним относятся бактериофаги»).",
+     "render": ""
+    },
+    "status": "fail",
+    "reason": "Шаблонные суждения с тире и без согласования («Вирусы — некоторые являются автотрофами», «Бактерии — все являются автотрофами», «Вирусы — к ним относятся бактериофаги»)."
    }
   },
   {
@@ -15376,7 +19010,9 @@
      "codifier": [
       "6.8"
      ]
-    }
+    },
+    "status": "fail",
+    "reason": "генератора нет: нужен рисунок/карта (фото кошек с открытой лицензией + разметка признаков)"
    }
   },
   {
@@ -15419,7 +19055,9 @@
      "codifier": [
       "6.8"
      ]
-    }
+    },
+    "status": "fail",
+    "reason": "генератора нет: нужен рисунок/карта (фото собак с открытой лицензией + разметка)"
    }
   },
   {
@@ -15462,7 +19100,9 @@
      "codifier": [
       "6.8"
      ]
-    }
+    },
+    "status": "fail",
+    "reason": "генератора нет: нужен рисунок/карта (фото лошадей с открытой лицензией + разметка)"
    }
   },
   {
@@ -15505,7 +19145,9 @@
      "codifier": [
       "6.8"
      ]
-    }
+    },
+    "status": "fail",
+    "reason": "генератора нет: нужен рисунок/карта (фото животных + разметка)"
    }
   },
   {
@@ -15548,7 +19190,9 @@
      "codifier": [
       "6.8"
      ]
-    }
+    },
+    "status": "fail",
+    "reason": "не покрыто: нет таблицы стандартов пород (breed_standards) — не собрана"
    }
   },
   {
@@ -15623,7 +19267,28 @@
      "format": "pass",
      "structure": "pass",
      "notes": []
-    }
+    },
+    "expert": {
+     "round": 3,
+     "checked": 5,
+     "passed_cards": 0,
+     "checks": {
+      "format": "pass",
+      "structure": "pass",
+      "style": "fail",
+      "level": "pass",
+      "facts": "pass",
+      "trap": "pass",
+      "codifier": "pass",
+      "scoring": "pass"
+     },
+     "indistinguishable": "no",
+     "verdict": "fail",
+     "reason": "Склейка «Какой/Какая + название группы + описание» даёт нечитаемые вопросы в 4 из 5 аналогов.",
+     "render": "рисунки органов заменены описанием"
+    },
+    "status": "fail",
+    "reason": "Склейка «Какой/Какая + название группы + описание» даёт нечитаемые вопросы в 4 из 5 аналогов."
    }
   },
   {
@@ -15674,7 +19339,9 @@
       "7.11",
       "7.12"
      ]
-    }
+    },
+    "status": "fail",
+    "reason": "генератора нет: нужен рисунок/карта (рисунки органов (свои схемы))"
    }
   },
   {
@@ -15749,7 +19416,28 @@
      "format": "pass",
      "structure": "pass",
      "notes": []
-    }
+    },
+    "expert": {
+     "round": 3,
+     "checked": 5,
+     "passed_cards": 0,
+     "checks": {
+      "format": "pass",
+      "structure": "pass",
+      "style": "fail",
+      "level": "pass",
+      "facts": "pass",
+      "trap": "pass",
+      "codifier": "fail",
+      "scoring": "pass"
+     },
+     "indistinguishable": "no",
+     "verdict": "fail",
+     "reason": "Форма вариантов-обрывков и тематический сдвиг: вместо поведения/психики — регуляция.",
+     "render": ""
+    },
+    "status": "fail",
+    "reason": "Форма вариантов-обрывков и тематический сдвиг: вместо поведения/психики — регуляция."
    }
   },
   {
@@ -15824,7 +19512,28 @@
      "format": "pass",
      "structure": "pass",
      "notes": []
-    }
+    },
+    "expert": {
+     "round": 3,
+     "checked": 5,
+     "passed_cards": 3,
+     "checks": {
+      "format": "pass",
+      "structure": "pass",
+      "style": "fail",
+      "level": "pass",
+      "facts": "pass",
+      "trap": "pass",
+      "codifier": "pass",
+      "scoring": "pass"
+     },
+     "indistinguishable": "no",
+     "verdict": "fail",
+     "reason": "Грамматически разрушенные вопросы в двух аналогах.",
+     "render": ""
+    },
+    "status": "fail",
+    "reason": "Грамматически разрушенные вопросы в двух аналогах."
    }
   },
   {
@@ -15878,7 +19587,9 @@
       "7.11",
       "7.12"
      ]
-    }
+    },
+    "status": "fail",
+    "reason": "генератора нет: рецепт для ИИ (аналоги пишет ИИ по таблице фактов, проверка — выборочно экспертом)"
    }
   },
   {
@@ -15953,7 +19664,28 @@
      "format": "pass",
      "structure": "pass",
      "notes": []
-    }
+    },
+    "expert": {
+     "round": 3,
+     "checked": 5,
+     "passed_cards": 4,
+     "checks": {
+      "format": "pass",
+      "structure": "pass",
+      "style": "fail",
+      "level": "pass",
+      "facts": "pass",
+      "trap": "pass",
+      "codifier": "pass",
+      "scoring": "pass"
+     },
+     "indistinguishable": "no",
+     "verdict": "fail",
+     "reason": "Систематическая ошибка согласования вопросительного местоимения в шаблоне («Какое железа вырабатывает…»); тот же генератор ломает стемы в соседнем прототипе.",
+     "render": ""
+    },
+    "status": "fail",
+    "reason": "Систематическая ошибка согласования вопросительного местоимения в шаблоне («Какое железа вырабатывает…»); тот же генератор ломает стемы в соседнем прототипе."
    }
   },
   {
@@ -16028,7 +19760,28 @@
      "format": "pass",
      "structure": "pass",
      "notes": []
-    }
+    },
+    "expert": {
+     "round": 3,
+     "checked": 5,
+     "passed_cards": 3,
+     "checks": {
+      "format": "pass",
+      "structure": "pass",
+      "style": "fail",
+      "level": "pass",
+      "facts": "fail",
+      "trap": "fail",
+      "codifier": "pass",
+      "scoring": "fail"
+     },
+     "indistinguishable": "no",
+     "verdict": "fail",
+     "reason": "Второй верный ответ в задании о суставах, неточная терминология; раздел «первая помощь» не генерируется.",
+     "render": ""
+    },
+    "status": "fail",
+    "reason": "Второй верный ответ в задании о суставах, неточная терминология; раздел «первая помощь» не генерируется."
    }
   },
   {
@@ -16103,7 +19856,28 @@
      "format": "pass",
      "structure": "pass",
      "notes": []
-    }
+    },
+    "expert": {
+     "round": 3,
+     "checked": 5,
+     "passed_cards": 4,
+     "checks": {
+      "format": "pass",
+      "structure": "pass",
+      "style": "pass",
+      "level": "pass",
+      "facts": "pass",
+      "trap": "pass",
+      "codifier": "pass",
+      "scoring": "pass"
+     },
+     "indistinguishable": "yes",
+     "verdict": "pass",
+     "reason": "",
+     "render": ""
+    },
+    "status": "pass",
+    "reason": ""
    }
   },
   {
@@ -16178,7 +19952,28 @@
      "format": "pass",
      "structure": "pass",
      "notes": []
-    }
+    },
+    "expert": {
+     "round": 3,
+     "checked": 5,
+     "passed_cards": 2,
+     "checks": {
+      "format": "pass",
+      "structure": "pass",
+      "style": "fail",
+      "level": "pass",
+      "facts": "pass",
+      "trap": "fail",
+      "codifier": "pass",
+      "scoring": "pass"
+     },
+     "indistinguishable": "no",
+     "verdict": "fail",
+     "reason": "Ошибки согласования в вопросах и дистракторах, позволяющие угадать ответ.",
+     "render": ""
+    },
+    "status": "fail",
+    "reason": "Ошибки согласования в вопросах и дистракторах, позволяющие угадать ответ."
    }
   },
   {
@@ -16253,7 +20048,28 @@
      "format": "pass",
      "structure": "pass",
      "notes": []
-    }
+    },
+    "expert": {
+     "round": 3,
+     "checked": 5,
+     "passed_cards": 0,
+     "checks": {
+      "format": "pass",
+      "structure": "pass",
+      "style": "fail",
+      "level": "pass",
+      "facts": "pass",
+      "trap": "pass",
+      "codifier": "pass",
+      "scoring": "pass"
+     },
+     "indistinguishable": "no",
+     "verdict": "fail",
+     "reason": "Почти все стемы неграмотны («о зрительном», «Какое структура уха воспринимают», «Какие структура глаза образует», «Какой анализатор корковый отдел…»), варианты к «слуховым косточкам» — в ед. ч. ж. р.",
+     "render": ""
+    },
+    "status": "fail",
+    "reason": "Почти все стемы неграмотны («о зрительном», «Какое структура уха воспринимают», «Какие структура глаза образует», «Какой анализатор корковый отдел…»), варианты к «слуховым косточкам» — в ед. ч. ж. р."
    }
   },
   {
@@ -16341,7 +20157,28 @@
      "format": "pass",
      "structure": "pass",
      "notes": []
-    }
+    },
+    "expert": {
+     "round": 3,
+     "checked": 5,
+     "passed_cards": 2,
+     "checks": {
+      "format": "pass",
+      "structure": "fail",
+      "style": "fail",
+      "level": "pass",
+      "facts": "pass",
+      "trap": "fail",
+      "codifier": "pass",
+      "scoring": "pass"
+     },
+     "indistinguishable": "no",
+     "verdict": "fail",
+     "reason": "Текстовая замена не имитирует проверку подписей к частям органа; дистракторы грамматически выдают себя.",
+     "render": "рисунок отсутствует"
+    },
+    "status": "fail",
+    "reason": "Текстовая замена не имитирует проверку подписей к частям органа; дистракторы грамматически выдают себя."
    }
   },
   {
@@ -16391,7 +20228,9 @@
       "7.11",
       "7.12"
      ]
-    }
+    },
+    "status": "fail",
+    "reason": "генератора нет: нужен рисунок/карта (рисунок органа с выносками)"
    }
   },
   {
@@ -16442,7 +20281,9 @@
       "7.11",
       "7.12"
      ]
-    }
+    },
+    "status": "fail",
+    "reason": "генератора нет: нужен рисунок/карта (схема с выносками)"
    }
   },
   {
@@ -16530,7 +20371,28 @@
      "format": "pass",
      "structure": "pass",
      "notes": []
-    }
+    },
+    "expert": {
+     "round": 2,
+     "checked": 5,
+     "passed_cards": 5,
+     "checks": {
+      "format": "pass",
+      "structure": "pass",
+      "style": "pass",
+      "level": "pass",
+      "facts": "pass",
+      "trap": "pass",
+      "codifier": "pass",
+      "scoring": "pass"
+     },
+     "indistinguishable": "yes",
+     "verdict": "pass",
+     "reason": "",
+     "render": ""
+    },
+    "status": "pass",
+    "reason": ""
    }
   },
   {
@@ -16618,7 +20480,28 @@
      "format": "pass",
      "structure": "pass",
      "notes": []
-    }
+    },
+    "expert": {
+     "round": 3,
+     "checked": 5,
+     "passed_cards": 5,
+     "checks": {
+      "format": "pass",
+      "structure": "pass",
+      "style": "pass",
+      "level": "pass",
+      "facts": "pass",
+      "trap": "pass",
+      "codifier": "pass",
+      "scoring": "pass"
+     },
+     "indistinguishable": "yes",
+     "verdict": "pass",
+     "reason": "",
+     "render": ""
+    },
+    "status": "pass",
+    "reason": ""
    }
   },
   {
@@ -16706,7 +20589,28 @@
      "format": "pass",
      "structure": "pass",
      "notes": []
-    }
+    },
+    "expert": {
+     "round": 2,
+     "checked": 5,
+     "passed_cards": 4,
+     "checks": {
+      "format": "pass",
+      "structure": "pass",
+      "style": "pass",
+      "level": "pass",
+      "facts": "pass",
+      "trap": "pass",
+      "codifier": "pass",
+      "scoring": "pass"
+     },
+     "indistinguishable": "yes",
+     "verdict": "pass",
+     "reason": "",
+     "render": ""
+    },
+    "status": "pass",
+    "reason": ""
    }
   },
   {
@@ -16794,7 +20698,28 @@
      "format": "pass",
      "structure": "pass",
      "notes": []
-    }
+    },
+    "expert": {
+     "round": 3,
+     "checked": 5,
+     "passed_cards": 0,
+     "checks": {
+      "format": "pass",
+      "structure": "pass",
+      "style": "pass",
+      "level": "fail",
+      "facts": "pass",
+      "trap": "fail",
+      "codifier": "pass",
+      "scoring": "pass"
+     },
+     "indistinguishable": "no",
+     "verdict": "fail",
+     "reason": "Задание сводится к узнаванию названий систем, типичные ошибки не проверяются.",
+     "render": ""
+    },
+    "status": "fail",
+    "reason": "Задание сводится к узнаванию названий систем, типичные ошибки не проверяются."
    }
   },
   {
@@ -16901,7 +20826,28 @@
      "format": "pass",
      "structure": "pass",
      "notes": []
-    }
+    },
+    "expert": {
+     "round": 2,
+     "checked": 5,
+     "passed_cards": 5,
+     "checks": {
+      "format": "pass",
+      "structure": "pass",
+      "style": "pass",
+      "level": "pass",
+      "facts": "pass",
+      "trap": "pass",
+      "codifier": "pass",
+      "scoring": "pass"
+     },
+     "indistinguishable": "yes",
+     "verdict": "pass",
+     "reason": "",
+     "render": ""
+    },
+    "status": "pass",
+    "reason": ""
    }
   },
   {
@@ -17008,7 +20954,28 @@
      "format": "pass",
      "structure": "pass",
      "notes": []
-    }
+    },
+    "expert": {
+     "round": 2,
+     "checked": 5,
+     "passed_cards": 5,
+     "checks": {
+      "format": "pass",
+      "structure": "pass",
+      "style": "pass",
+      "level": "pass",
+      "facts": "pass",
+      "trap": "pass",
+      "codifier": "pass",
+      "scoring": "pass"
+     },
+     "indistinguishable": "yes",
+     "verdict": "pass",
+     "reason": "",
+     "render": ""
+    },
+    "status": "pass",
+    "reason": ""
    }
   },
   {
@@ -17115,7 +21082,28 @@
      "format": "pass",
      "structure": "pass",
      "notes": []
-    }
+    },
+    "expert": {
+     "round": 2,
+     "checked": 5,
+     "passed_cards": 5,
+     "checks": {
+      "format": "pass",
+      "structure": "pass",
+      "style": "pass",
+      "level": "pass",
+      "facts": "pass",
+      "trap": "pass",
+      "codifier": "pass",
+      "scoring": "pass"
+     },
+     "indistinguishable": "yes",
+     "verdict": "pass",
+     "reason": "",
+     "render": ""
+    },
+    "status": "pass",
+    "reason": ""
    }
   },
   {
@@ -17222,7 +21210,28 @@
      "format": "pass",
      "structure": "pass",
      "notes": []
-    }
+    },
+    "expert": {
+     "round": 2,
+     "checked": 5,
+     "passed_cards": 5,
+     "checks": {
+      "format": "pass",
+      "structure": "pass",
+      "style": "pass",
+      "level": "pass",
+      "facts": "pass",
+      "trap": "pass",
+      "codifier": "pass",
+      "scoring": "pass"
+     },
+     "indistinguishable": "yes",
+     "verdict": "pass",
+     "reason": "",
+     "render": ""
+    },
+    "status": "pass",
+    "reason": ""
    }
   },
   {
@@ -17329,7 +21338,28 @@
      "format": "pass",
      "structure": "pass",
      "notes": []
-    }
+    },
+    "expert": {
+     "round": 2,
+     "checked": 5,
+     "passed_cards": 5,
+     "checks": {
+      "format": "pass",
+      "structure": "pass",
+      "style": "pass",
+      "level": "pass",
+      "facts": "pass",
+      "trap": "pass",
+      "codifier": "pass",
+      "scoring": "pass"
+     },
+     "indistinguishable": "yes",
+     "verdict": "pass",
+     "reason": "",
+     "render": ""
+    },
+    "status": "pass",
+    "reason": ""
    }
   },
   {
@@ -17436,7 +21466,28 @@
      "format": "pass",
      "structure": "pass",
      "notes": []
-    }
+    },
+    "expert": {
+     "round": 2,
+     "checked": 5,
+     "passed_cards": 5,
+     "checks": {
+      "format": "pass",
+      "structure": "pass",
+      "style": "pass",
+      "level": "pass",
+      "facts": "pass",
+      "trap": "pass",
+      "codifier": "pass",
+      "scoring": "pass"
+     },
+     "indistinguishable": "yes",
+     "verdict": "pass",
+     "reason": "",
+     "render": ""
+    },
+    "status": "pass",
+    "reason": ""
    }
   },
   {
@@ -17543,7 +21594,28 @@
      "format": "pass",
      "structure": "pass",
      "notes": []
-    }
+    },
+    "expert": {
+     "round": 2,
+     "checked": 5,
+     "passed_cards": 5,
+     "checks": {
+      "format": "pass",
+      "structure": "pass",
+      "style": "pass",
+      "level": "pass",
+      "facts": "pass",
+      "trap": "pass",
+      "codifier": "pass",
+      "scoring": "pass"
+     },
+     "indistinguishable": "yes",
+     "verdict": "pass",
+     "reason": "",
+     "render": ""
+    },
+    "status": "pass",
+    "reason": ""
    }
   },
   {
@@ -17650,7 +21722,28 @@
      "format": "pass",
      "structure": "pass",
      "notes": []
-    }
+    },
+    "expert": {
+     "round": 2,
+     "checked": 5,
+     "passed_cards": 5,
+     "checks": {
+      "format": "pass",
+      "structure": "pass",
+      "style": "pass",
+      "level": "pass",
+      "facts": "pass",
+      "trap": "pass",
+      "codifier": "pass",
+      "scoring": "pass"
+     },
+     "indistinguishable": "yes",
+     "verdict": "pass",
+     "reason": "",
+     "render": ""
+    },
+    "status": "pass",
+    "reason": ""
    }
   },
   {
@@ -17734,7 +21827,28 @@
      "format": "pass",
      "structure": "pass",
      "notes": []
-    }
+    },
+    "expert": {
+     "round": 3,
+     "checked": 5,
+     "passed_cards": 1,
+     "checks": {
+      "format": "pass",
+      "structure": "pass",
+      "style": "fail",
+      "level": "pass",
+      "facts": "fail",
+      "trap": "fail",
+      "codifier": "pass",
+      "scoring": "pass"
+     },
+     "indistinguishable": "no",
+     "verdict": "fail",
+     "reason": "Характеристики сведены к чтению стрелок («служит пищей для организма «скопа»», «питается организмом «злаки»»), а в КИМ — экологическое описание (консумент какого порядка, растительноядный/хищник, среда, конкурент). Прототип о растительноядном, а в 4 из 5 — хищники; «консумент II порядка» у выдры неоднозначен (она и II, и III, и IV).",
+     "render": "схема пищевой сети дана списком связей"
+    },
+    "status": "fail",
+    "reason": "Характеристики сведены к чтению стрелок («служит пищей для организма «скопа»», «питается организмом «злаки»»), а в КИМ — экологическое описание (консумент какого порядка, растительноядный/хищник, среда, конкурент). Прототип о растительноядном, а в 4 из 5 — хищники; «консумент II порядка» у выдры неоднозначен (она и II, и III, и IV)."
    }
   },
   {
@@ -17818,7 +21932,28 @@
      "format": "pass",
      "structure": "pass",
      "notes": []
-    }
+    },
+    "expert": {
+     "round": 3,
+     "checked": 5,
+     "passed_cards": 3,
+     "checks": {
+      "format": "pass",
+      "structure": "pass",
+      "style": "pass",
+      "level": "pass",
+      "facts": "pass",
+      "trap": "fail",
+      "codifier": "pass",
+      "scoring": "pass"
+     },
+     "indistinguishable": "yes",
+     "verdict": "fail",
+     "reason": "Генератор не обеспечивает инвариант «организм на нескольких трофических уровнях».",
+     "render": "схема экосистемы дана списком связей"
+    },
+    "status": "fail",
+    "reason": "Генератор не обеспечивает инвариант «организм на нескольких трофических уровнях»."
    }
   },
   {
@@ -17902,7 +22037,28 @@
      "format": "pass",
      "structure": "pass",
      "notes": []
-    }
+    },
+    "expert": {
+     "round": 3,
+     "checked": 5,
+     "passed_cards": 0,
+     "checks": {
+      "format": "pass",
+      "structure": "pass",
+      "style": "fail",
+      "level": "fail",
+      "facts": "pass",
+      "trap": "fail",
+      "codifier": "pass",
+      "scoring": "pass"
+     },
+     "indistinguishable": "no",
+     "verdict": "fail",
+     "reason": "Не воспроизведена форма «экологическое описание организма», дистракторы не требуют анализа.",
+     "render": "пищевая сеть дана списком связей"
+    },
+    "status": "fail",
+    "reason": "Не воспроизведена форма «экологическое описание организма», дистракторы не требуют анализа."
    }
   },
   {
@@ -17955,7 +22111,28 @@
      "format": "pass",
      "structure": "pass",
      "notes": []
-    }
+    },
+    "expert": {
+     "round": 2,
+     "checked": 5,
+     "passed_cards": 5,
+     "checks": {
+      "format": "pass",
+      "structure": "pass",
+      "style": "pass",
+      "level": "pass",
+      "facts": "pass",
+      "trap": "pass",
+      "codifier": "pass",
+      "scoring": "pass"
+     },
+     "indistinguishable": "yes",
+     "verdict": "pass",
+     "reason": "",
+     "render": "схема пищевой сети дана текстом"
+    },
+    "status": "pass",
+    "reason": ""
    }
   },
   {
@@ -18010,7 +22187,28 @@
      "format": "pass",
      "structure": "pass",
      "notes": []
-    }
+    },
+    "expert": {
+     "round": 3,
+     "checked": 5,
+     "passed_cards": 0,
+     "checks": {
+      "format": "pass",
+      "structure": "pass",
+      "style": "fail",
+      "level": "pass",
+      "facts": "pass",
+      "trap": "fail",
+      "codifier": "pass",
+      "scoring": "pass"
+     },
+     "indistinguishable": "no",
+     "verdict": "fail",
+     "reason": "Ответ одинаков во всех аналогах, формулировки несогласованы.",
+     "render": "схема экосистемы дана списком связей"
+    },
+    "status": "fail",
+    "reason": "Ответ одинаков во всех аналогах, формулировки несогласованы."
    }
   },
   {
@@ -18065,7 +22263,28 @@
      "format": "pass",
      "structure": "pass",
      "notes": []
-    }
+    },
+    "expert": {
+     "round": 3,
+     "checked": 5,
+     "passed_cards": 1,
+     "checks": {
+      "format": "pass",
+      "structure": "pass",
+      "style": "fail",
+      "level": "pass",
+      "facts": "pass",
+      "trap": "fail",
+      "codifier": "pass",
+      "scoring": "pass"
+     },
+     "indistinguishable": "no",
+     "verdict": "fail",
+     "reason": "Во всех 5 ответ «21/12»: рост вида → его пища убывает, хищник растёт; вариант «не изменится» и альтернативная пища не проверяются. В стемах падежные ошибки («питается большей синицей», «заяц-русаком»).",
+     "render": "схема дана списком связей"
+    },
+    "status": "fail",
+    "reason": "Во всех 5 ответ «21/12»: рост вида → его пища убывает, хищник растёт; вариант «не изменится» и альтернативная пища не проверяются. В стемах падежные ошибки («питается большей синицей», «заяц-русаком»)."
    }
   },
   {
@@ -18120,7 +22339,28 @@
      "format": "pass",
      "structure": "pass",
      "notes": []
-    }
+    },
+    "expert": {
+     "round": 3,
+     "checked": 5,
+     "passed_cards": 2,
+     "checks": {
+      "format": "pass",
+      "structure": "pass",
+      "style": "fail",
+      "level": "pass",
+      "facts": "pass",
+      "trap": "pass",
+      "codifier": "pass",
+      "scoring": "pass"
+     },
+     "indistinguishable": "no",
+     "verdict": "fail",
+     "reason": "Падежные ошибки в тексте связей и пояснений.",
+     "render": "схема дана списком связей"
+    },
+    "status": "fail",
+    "reason": "Падежные ошибки в тексте связей и пояснений."
    }
   },
   {
@@ -18190,7 +22430,9 @@
       "7.11",
       "7.12"
      ]
-    }
+    },
+    "status": "fail",
+    "reason": "генератора нет: рецепт для ИИ (аналоги пишет ИИ по таблице фактов, проверка — выборочно экспертом)"
    }
   },
   {
@@ -18260,7 +22502,9 @@
       "7.11",
       "7.12"
      ]
-    }
+    },
+    "status": "fail",
+    "reason": "генератора нет: рецепт для ИИ (аналоги пишет ИИ по таблице фактов, проверка — выборочно экспертом)"
    }
   },
   {
@@ -18330,7 +22574,9 @@
       "7.11",
       "7.12"
      ]
-    }
+    },
+    "status": "fail",
+    "reason": "генератора нет: рецепт для ИИ (аналоги пишет ИИ по таблице фактов, проверка — выборочно экспертом)"
    }
   },
   {
@@ -18400,7 +22646,9 @@
       "7.11",
       "7.12"
      ]
-    }
+    },
+    "status": "fail",
+    "reason": "генератора нет: рецепт для ИИ (аналоги пишет ИИ по таблице фактов, проверка — выборочно экспертом)"
    }
   },
   {
@@ -18470,7 +22718,9 @@
       "7.11",
       "7.12"
      ]
-    }
+    },
+    "status": "fail",
+    "reason": "генератора нет: рецепт для ИИ (аналоги пишет ИИ по таблице фактов, проверка — выборочно экспертом)"
    }
   },
   {
@@ -18552,7 +22802,9 @@
       "7.11",
       "7.12"
      ]
-    }
+    },
+    "status": "fail",
+    "reason": "генератора нет: рецепт для ИИ (аналоги пишет ИИ по таблице фактов, проверка — выборочно экспертом)"
    }
   },
   {
@@ -18634,7 +22886,9 @@
       "7.11",
       "7.12"
      ]
-    }
+    },
+    "status": "fail",
+    "reason": "генератора нет: рецепт для ИИ (аналоги пишет ИИ по таблице фактов, проверка — выборочно экспертом)"
    }
   },
   {
@@ -18721,7 +22975,28 @@
      "notes": [
       "в КИМ развёрнутый ответ, у нас number (шаг задания)"
      ]
-    }
+    },
+    "expert": {
+     "round": 2,
+     "checked": 5,
+     "passed_cards": 0,
+     "checks": {
+      "format": "fail",
+      "structure": "pass",
+      "style": "pass",
+      "level": "pass",
+      "facts": "fail",
+      "trap": "fail",
+      "codifier": "pass",
+      "scoring": "fail"
+     },
+     "indistinguishable": "no",
+     "verdict": "fail",
+     "reason": "Задание части 2 подменено вычислением среднего по случайным числам.",
+     "render": ""
+    },
+    "status": "fail",
+    "reason": "в КИМ развёрнутый ответ; генератор тренирует шаг задания (расчёт/выбор), а не всё задание"
    }
   },
   {
@@ -18803,7 +23078,9 @@
       "7.11",
       "7.12"
      ]
-    }
+    },
+    "status": "fail",
+    "reason": "генератора нет: рецепт для ИИ (аналоги пишет ИИ по таблице фактов, проверка — выборочно экспертом)"
    }
   },
   {
@@ -18885,7 +23162,9 @@
       "7.11",
       "7.12"
      ]
-    }
+    },
+    "status": "fail",
+    "reason": "генератора нет: рецепт для ИИ (аналоги пишет ИИ по таблице фактов, проверка — выборочно экспертом)"
    }
   },
   {
@@ -18969,7 +23248,9 @@
       "7.11",
       "7.12"
      ]
-    }
+    },
+    "status": "fail",
+    "reason": "генератора нет: рецепт для ИИ (аналоги пишет ИИ по таблице фактов, проверка — выборочно экспертом)"
    }
   },
   {
@@ -19053,7 +23334,9 @@
       "7.11",
       "7.12"
      ]
-    }
+    },
+    "status": "fail",
+    "reason": "генератора нет: рецепт для ИИ (аналоги пишет ИИ по таблице фактов, проверка — выборочно экспертом)"
    }
   },
   {
@@ -19137,7 +23420,9 @@
       "7.11",
       "7.12"
      ]
-    }
+    },
+    "status": "fail",
+    "reason": "генератора нет: рецепт для ИИ (аналоги пишет ИИ по таблице фактов, проверка — выборочно экспертом)"
    }
   },
   {
@@ -19221,7 +23506,9 @@
       "7.11",
       "7.12"
      ]
-    }
+    },
+    "status": "fail",
+    "reason": "генератора нет: рецепт для ИИ (аналоги пишет ИИ по таблице фактов, проверка — выборочно экспертом)"
    }
   },
   {
@@ -19310,7 +23597,28 @@
      "notes": [
       "в КИМ развёрнутый ответ, у нас number (шаг задания)"
      ]
-    }
+    },
+    "expert": {
+     "round": 2,
+     "checked": 5,
+     "passed_cards": 0,
+     "checks": {
+      "format": "fail",
+      "structure": "fail",
+      "style": "fail",
+      "level": "fail",
+      "facts": "pass",
+      "trap": "fail",
+      "codifier": "fail",
+      "scoring": "fail"
+     },
+     "indistinguishable": "no",
+     "verdict": "fail",
+     "reason": "Аналог не имеет отношения к формату №25 ОГЭ (древо + 3 вопроса).",
+     "render": ""
+    },
+    "status": "fail",
+    "reason": "в КИМ развёрнутый ответ; генератор тренирует шаг задания (расчёт/выбор), а не всё задание"
    }
   },
   {
@@ -19399,7 +23707,28 @@
      "notes": [
       "в КИМ развёрнутый ответ, у нас number (шаг задания)"
      ]
-    }
+    },
+    "expert": {
+     "round": 2,
+     "checked": 5,
+     "passed_cards": 0,
+     "checks": {
+      "format": "fail",
+      "structure": "fail",
+      "style": "fail",
+      "level": "fail",
+      "facts": "fail",
+      "trap": "fail",
+      "codifier": "pass",
+      "scoring": "fail"
+     },
+     "indistinguishable": "no",
+     "verdict": "fail",
+     "reason": "Развёрнутое задание заменено расчётом, данные опыта случайны и противоречат биологии.",
+     "render": "таблица дана строкой"
+    },
+    "status": "fail",
+    "reason": "в КИМ развёрнутый ответ; генератор тренирует шаг задания (расчёт/выбор), а не всё задание"
    }
   },
   {
@@ -19488,7 +23817,28 @@
      "notes": [
       "в КИМ развёрнутый ответ, у нас number (шаг задания)"
      ]
-    }
+    },
+    "expert": {
+     "round": 2,
+     "checked": 5,
+     "passed_cards": 0,
+     "checks": {
+      "format": "fail",
+      "structure": "fail",
+      "style": "fail",
+      "level": "fail",
+      "facts": "fail",
+      "trap": "fail",
+      "codifier": "pass",
+      "scoring": "fail"
+     },
+     "indistinguishable": "no",
+     "verdict": "fail",
+     "reason": "Полностью иной формат и уровень; данные нереалистичны.",
+     "render": ""
+    },
+    "status": "fail",
+    "reason": "в КИМ развёрнутый ответ; генератор тренирует шаг задания (расчёт/выбор), а не всё задание"
    }
   },
   {
@@ -19577,7 +23927,28 @@
      "notes": [
       "в КИМ развёрнутый ответ, у нас number (шаг задания)"
      ]
-    }
+    },
+    "expert": {
+     "round": 2,
+     "checked": 5,
+     "passed_cards": 0,
+     "checks": {
+      "format": "fail",
+      "structure": "fail",
+      "style": "fail",
+      "level": "fail",
+      "facts": "fail",
+      "trap": "fail",
+      "codifier": "pass",
+      "scoring": "fail"
+     },
+     "indistinguishable": "no",
+     "verdict": "fail",
+     "reason": "Вместо задания части 2 с тремя вопросами и объяснением — вычисление среднего по нереалистичным случайным данным.",
+     "render": "таблица строкой"
+    },
+    "status": "fail",
+    "reason": "в КИМ развёрнутый ответ; генератор тренирует шаг задания (расчёт/выбор), а не всё задание"
    }
   },
   {
@@ -19666,7 +24037,28 @@
      "notes": [
       "в КИМ развёрнутый ответ, у нас number (шаг задания)"
      ]
-    }
+    },
+    "expert": {
+     "round": 2,
+     "checked": 5,
+     "passed_cards": 0,
+     "checks": {
+      "format": "fail",
+      "structure": "fail",
+      "style": "fail",
+      "level": "fail",
+      "facts": "fail",
+      "trap": "fail",
+      "codifier": "pass",
+      "scoring": "fail"
+     },
+     "indistinguishable": "no",
+     "verdict": "fail",
+     "reason": "Одно арифметическое действие по случайной таблице вместо трёх вопросов по реалистичным данным.",
+     "render": "таблица дана перечнем"
+    },
+    "status": "fail",
+    "reason": "в КИМ развёрнутый ответ; генератор тренирует шаг задания (расчёт/выбор), а не всё задание"
    }
   },
   {
@@ -19713,7 +24105,28 @@
      "notes": [
       "в КИМ развёрнутый ответ, у нас number (шаг задания)"
      ]
-    }
+    },
+    "expert": {
+     "round": 2,
+     "checked": 5,
+     "passed_cards": 0,
+     "checks": {
+      "format": "fail",
+      "structure": "fail",
+      "style": "fail",
+      "level": "fail",
+      "facts": "pass",
+      "trap": "fail",
+      "codifier": "pass",
+      "scoring": "fail"
+     },
+     "indistinguishable": "no",
+     "verdict": "fail",
+     "reason": "Сведено к сложению калорий; нет ситуации, таблиц и трёх элементов ответа №26.",
+     "render": ""
+    },
+    "status": "fail",
+    "reason": "в КИМ развёрнутый ответ; генератор тренирует шаг задания (расчёт/выбор), а не всё задание"
    }
   },
   {
@@ -19760,7 +24173,28 @@
      "notes": [
       "в КИМ развёрнутый ответ, у нас number (шаг задания)"
      ]
-    }
+    },
+    "expert": {
+     "round": 2,
+     "checked": 5,
+     "passed_cards": 0,
+     "checks": {
+      "format": "fail",
+      "structure": "fail",
+      "style": "fail",
+      "level": "fail",
+      "facts": "pass",
+      "trap": "fail",
+      "codifier": "pass",
+      "scoring": "fail"
+     },
+     "indistinguishable": "no",
+     "verdict": "fail",
+     "reason": "Задание части 2 сведено к сложению калорийности.",
+     "render": ""
+    },
+    "status": "fail",
+    "reason": "в КИМ развёрнутый ответ; генератор тренирует шаг задания (расчёт/выбор), а не всё задание"
    }
   },
   {
@@ -19807,7 +24241,28 @@
      "notes": [
       "в КИМ развёрнутый ответ, у нас number (шаг задания)"
      ]
-    }
+    },
+    "expert": {
+     "round": 2,
+     "checked": 5,
+     "passed_cards": 0,
+     "checks": {
+      "format": "fail",
+      "structure": "fail",
+      "style": "pass",
+      "level": "fail",
+      "facts": "pass",
+      "trap": "pass",
+      "codifier": "pass",
+      "scoring": "pass"
+     },
+     "indistinguishable": "no",
+     "verdict": "fail",
+     "reason": "Ситуационная задача на 3 балла сведена к одному вычислению.",
+     "render": ""
+    },
+    "status": "fail",
+    "reason": "в КИМ развёрнутый ответ; генератор тренирует шаг задания (расчёт/выбор), а не всё задание"
    }
   }
  ]
