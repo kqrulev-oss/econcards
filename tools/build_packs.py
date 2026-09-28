@@ -27,7 +27,7 @@
   num    — число с клавиатуры, a = "0,35"; необязательное tol — допуск (|ответ − a| ≤ tol)
   word   — слово или строка, как в бланке: без регистра, пробелов, ё = е; варианты через «|»
   text   — то же, что word (строки: английский, информатика)
-  seq    — последовательность цифр, порядок важен; одна ошибка — полбалла
+  seq    — последовательность цифр, порядок важен; одна ошибка — полбалла; any: true — порядок не важен
 """
 import html
 import json
@@ -587,7 +587,7 @@ def math_pack():
 # ---------- производные: бесплатная часть библиотеки и «Готовый пример» ----------
 
 # Наборы библиотеки с платным доступом — как LIB_PACKS в worker/billing.js
-LIB_PACKS = ['ege-rus', 'ege-math', 'ege-math-base', 'oge-math', 'ege-phys', 'oge-phys', 'ege-chem', 'oge-chem', 'econ-olymp', 'udarenie']
+LIB_PACKS = ['ege-rus', 'ege-math', 'ege-math-base', 'oge-math', 'ege-phys', 'oge-phys', 'ege-chem', 'oge-chem', 'ege-bio', 'oge-bio', 'ege-geo', 'oge-geo', 'ege-inf', 'oge-inf', 'ege-hist', 'oge-hist', 'ege-soc', 'oge-soc', 'econ-olymp', 'udarenie']
 FREE_PROTOS = 2    # без доступа: по 2 первых прототипа в каждом задании
 FREE_PER_TOPIC = 15  # в наборах без прототипов — первые 15 карточек темы
 
@@ -683,7 +683,8 @@ if __name__ == '__main__':
     # Математика: три набора из каталога прототипов; теория прежнего набора профиля переносится
     from build_math_packs import math_packs
     from build_proto_packs import proto_packs
-    built = [rus_pack(), *math_packs(old_prof=math_pack()), *proto_packs(), econ_pack(), stress_pack()]
+    from build_more_packs import more_packs
+    built = [rus_pack(), *math_packs(old_prof=math_pack()), *proto_packs(), *more_packs(), econ_pack(), stress_pack()]
     index = [write(p) for p in built]
     (OUT / 'index.json').write_text(json.dumps(index, ensure_ascii=False, indent=1) + '\n', 'utf-8')
     print('packs/index.json')

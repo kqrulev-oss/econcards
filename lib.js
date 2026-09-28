@@ -290,8 +290,9 @@ export const sameWord = (got, a) => {
 
 // Последовательность цифр (ЕГЭ: порядок важен). 1 — точно; 0.5 — одна ошибка: одна цифра не та
 // или две соседние переставлены, как «1 балл из 2» в критериях; иначе 0
-export function seqScore(got, a) {
-  const g = String(got).replace(/\D/g, ''), r = String(a).replace(/\D/g, '');
+export function seqScore(got, a, any = false) {
+  let g = String(got).replace(/\D/g, ''), r = String(a).replace(/\D/g, '');
+  if (any) { g = [...g].sort().join(''); r = [...r].sort().join(''); } // порядок не важен (набор цифр)
   if (!g || !r) return 0;
   if (g === r) return 1;
   if (g.length !== r.length) return 0;
@@ -414,7 +415,7 @@ export function renderCard(card, root, onDone, { imgRoot = './', aiEnabled = !!a
     // последовательность цифр — с частичным баллом за одну ошибку
     const k = card.k;
     const hint = k === 'num' ? 'Целое число или десятичная дробь, как в бланке ЕГЭ'
-      : k === 'seq' ? 'Цифры по порядку, без пробелов и запятых'
+      : k === 'seq' ? (card.any ? 'Цифры без пробелов и запятых, порядок не важен' : 'Цифры по порядку, без пробелов и запятых')
       : k === 'word' ? 'Слово или несколько слов, без пробелов, как в бланке' : 'Ответ, как в бланке';
     const mode = k === 'num' ? 'decimal' : k === 'seq' ? 'numeric' : 'text';
     body.innerHTML = `
@@ -426,7 +427,7 @@ export function renderCard(card, root, onDone, { imgRoot = './', aiEnabled = !!a
     const check = () => {
       const got = input.value.trim();
       if (!got) return toast('Введи ответ');
-      const score = k === 'num' ? numScore(got, card.a, card.tol) : k === 'seq' ? seqScore(got, card.a) : sameWord(got, card.a) ? 1 : 0;
+      const score = k === 'num' ? numScore(got, card.a, card.tol) : k === 'seq' ? seqScore(got, card.a, !!card.any) : sameWord(got, card.a) ? 1 : 0;
       input.disabled = true;
       input.classList.add(score === 1 ? 'ok' : score ? 'mid' : 'bad');
       body.querySelector('.check').remove();
