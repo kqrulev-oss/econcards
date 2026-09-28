@@ -1731,16 +1731,38 @@ def protos_main(args):
     return 1 if fails or cross else 0
 
 
-def export_protos(path, fipi_dir, n=30):
+_EXP = {}
+
+
+def _export_one(pid):
+    p = _EXP['protos'][pid]
+    return pid, run_proto(p, _EXP['n'], _EXP['fipi'])
+
+
+def export_protos(path, fipi_dir, n=60, jobs=None):
+    """Каталог прототипов → JSON. Заодно это итоговая самопроверка: по n карточек на прототип
+    (ответ пересчитан, дубли, копии, сходство с ФИПИ), ёмкость по 3000 вызовам. Считается параллельно."""
+    import multiprocessing as mp
     protos = load_protos()
     fipi = Fipi(fipi_dir) if fipi_dir else None
     cov = fipi_coverage(protos, fipi) if fipi else {}
     fid_path = os.path.join(HERE, 'math_fidelity.json')
     fid = json.load(open(fid_path, encoding='utf-8')) if os.path.exists(fid_path) else {}
-    out = []
+    _EXP.update(protos=protos, fipi=fipi, n=n)
+    with mp.get_context('fork').Pool(jobs or os.cpu_count()) as pool:
+        res = dict(pool.imap_unordered(_export_one, list(protos), chunksize=1))
+    out, summary = [], Counter()
     for p in sorted(protos.values(), key=lambda p: (list(EXAMS).index(p['exam']), p['n'], p['id'])):
-        cards, info = run_proto(p, n, fipi)
-        assert not info['fail'], p['id']
+        cards, info = res[p['id']]
+        summary['прототипов'] += 1
+        summary['карточек'] += info['cards']
+        summary['сбоев'] += info['fail']
+        summary['отсеяно копий'] += info.get('copy', 0)
+        if p['kind'] == 'param' and info['capacity'] < CAP_TARGET:
+            summary['ёмкость < 50'] += 1
+        if info['sim_over']:
+            summary['сходство ≥ 0.30'] += 1
+        assert cards and not info['fail'], (p['id'], info)
         ex = cards[0]
         rec = dict(id=p['id'], exam=p['exam'], n=p['n'], title=p['title'], invariant=p['invariant'], varies=p['varies'],
                    answer_rule=p['answer_rule'],
@@ -1755,6 +1777,8 @@ def export_protos(path, fipi_dir, n=30):
         if p.get('kim'):
             rec['kim'] = p['kim']
         rec['fidelity'] = fid.get(p['id'], {'verdict': 'not_checked'})
+        rec['selfcheck'] = {'cards': info['cards'], 'fail': info['fail'], 'copies_dropped': info.get('copy', 0),
+                            'distinct_answers': info.get('answers')}
         if fipi:
             rec['fipi_bank_matches'] = cov[p['exam']]['per'].get(p['id'], 0)
             rec['sim_fipi_max'] = info['sim_max']
@@ -1764,6 +1788,9 @@ def export_protos(path, fipi_dir, n=30):
         json.dump(out, fh, ensure_ascii=False, indent=1)
         fh.write('\n')
     print(f'{path}: {len(out)} прототипов')
+    print('Итог самопроверки:', dict(summary))
+    for exam, c in cov.items():
+        print(f'Банк ФИПИ, {EXAMS[exam]}: узнано прототипами {c["matched"]} из {c["total"]}')
 
 
 def make_fingerprints(fipi_dir, path=None):

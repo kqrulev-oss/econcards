@@ -390,14 +390,16 @@ _SCRIPT = str.maketrans('⁰¹²³⁴⁵⁶⁷⁸⁹₀₁₂₃₄₅₆₇₈�
 
 
 def formula_shingles(text):
-    """6-токенные куски записи (числа, латинские буквы, знаки + − = < >), где нет русских слов и ≥ 2 чисел."""
+    """6-токенные куски записи (числа, латинские буквы, знаки + − = < >), где нет русских слов, ≥ 2 чисел
+    и есть знак или буква — то есть кусок формулы, а не строка таблицы."""
     t = text.lower().replace('ё', 'е').translate(_SCRIPT).replace('−', '-').replace('–', '-').replace('≤', '<').replace('≥', '>')
     t = re.sub(r'<[^>]+>', ' ', t)
     w = re.findall(r'[а-яa-z]+|\d+(?:[.,]\d+)?|[-+=<>]', t)
     out = []
     for i in range(len(w) - 5):
         g = w[i:i + 6]
-        if sum(x[0].isdigit() for x in g) >= 2 and not any('а' <= x[0] <= 'я' for x in g):
+        if (sum(x[0].isdigit() for x in g) >= 2 and not any('а' <= x[0] <= 'я' for x in g)
+                and any(x in '-+=<>' or 'a' <= x[0] <= 'z' for x in g)):
             out.append(' '.join(g))
     return out
 
@@ -413,7 +415,12 @@ def fipi_copy(text):
             _FP = {x.strip() for x in open(FP_PATH, encoding='utf-8') if x.strip() and not x.startswith('#')}
     if not _FP:
         return False
-    parts = re.findall(r'⟦(.+?)⟧', text) or [text]
+    parts = re.findall(r'⟦(.+?)⟧', text)
+    if not parts:
+        # без разметки проверяем только «формульные» условия: в сюжетном тексте формула — лишь часть
+        if len(re.findall(r'[а-яё]{3,}', text.lower())) >= 8:
+            return False
+        parts = [text]
     for f in parts:
         plain = re.findall(r'\d+(?:[.,]\d+)?', re.sub(r'[⁰-⁹₀-₉]', '', f))
         if len(plain) < 2 or all(p in ('0', '1', '2') for p in plain):
