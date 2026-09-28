@@ -71,11 +71,8 @@ python3 tools/research/gen_bio_geo.py --protos
 python3 tools/research/gen_rus.py --check -n 50
 python3 tools/research/gen_inf.py --protos --n 50 --cap 300 [--export]
 python3 tools/research/gen_eng.py
-<<<<<<< HEAD
 python3 tools/research/gen_eng.py --protos [--export --tables]
-=======
 python3 tools/research/gen_social.py --protos --n 50 --cap 300 [--subject hist|soc] [--export]
->>>>>>> origin/claude/protos-social
 ```
 
 Полная самопроверка математики (787 прототипов, ёмкость до 4000 попыток) идёт больше 25 минут; для быстрого прогона задавайте `--exam` или `--proto`. `protos_report.py` не запускать: он переписывает отчёты старыми цифрами.
