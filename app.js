@@ -632,7 +632,9 @@ function cardLabel(card, fallback) {
 // Набор-экзамен: темы пронумерованы как задания (у ЕГЭ по русскому — 1–27). Весь набор — задания
 // одного экзамена (библиотека ЕГЭ или тренажёр только из её заданий): тогда «Задания ЕГЭ» и пробный
 // вариант. Репетитор может смешать свои темы (без номера) с заданиями из библиотеки
-const isExam = () => pack.topics.length > 0 && pack.topics.every(t => t.n) && new Set(pack.topics.map(t => t.section || '')).size === 1;
+// Экзаменационный набор: все темы — номера заданий, разделы — либо один, либо «Часть 1» / «Часть 2»
+const isExam = () => pack.topics.length > 0 && pack.topics.every(t => t.n)
+  && (new Set(pack.topics.map(t => t.section || '')).size === 1 || pack.topics.every(t => /^Часть \d/.test(t.section || '')));
 const shortTitle = t => t.title.replace(/^\d+\.\s*/, '');
 
 // Плитками — только темы с номером задания (свои темы репетитора идут списком ниже, topicList).
@@ -650,9 +652,9 @@ function examGrid() {
     const st = topicStats(tp.id);
     const acc = st.started ? st.acc : null;
     return `<a class="task-tile ${accTone(acc)}" href="#/topic/${encodeURIComponent(tp.id)}" title="${esc(tp.title)}" aria-label="Задание ${tp.n}: ${esc(shortTitle(tp))}">
-      <b>${tp.n}</b><span>${acc === null ? 'новое' : Math.round(acc * 100) + '%'}</span></a>`;
+      <b>${tp.n}</b><em>${esc(shortTitle(tp))}</em><span>${acc === null ? 'новое' : Math.round(acc * 100) + '%'}</span></a>`;
   };
-  return groups.map((g, i) => `<section class="topics"><h2>${isExam() ? 'Задания ЕГЭ' : esc(g.name || 'Задания экзамена')}</h2>
+  return groups.map((g, i) => `<section class="topics"><h2>${/^Часть \d/.test(g.name) ? esc(g.name) : isExam() ? 'Задания ЕГЭ' : esc(g.name || 'Задания экзамена')}</h2>
     <div class="task-grid">${g.items.map(tile).join('')}</div>
     ${i === groups.length - 1 ? '<p class="muted legend">Точность: <span class="dot ok"></span> 80%+ <span class="dot mid"></span> 60–79% <span class="dot bad"></span> ниже 60%</p>' : ''}</section>`).join('');
 }

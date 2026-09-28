@@ -379,7 +379,7 @@ input:focus, select:focus, textarea:focus { outline: 3px solid var(--accent); ou
 .solution .fblock, .explain .fblock { background: var(--surface); }
 
 /* ---------- каталог заданий ЕГЭ ---------- */
-.task-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(58px, 1fr)); gap: 10px; }
+.task-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; }
 .task-tile {
   display: grid; place-items: center; align-content: center; gap: 0; min-height: 62px; padding: 6px 2px;
   background: var(--surface); color: #1B1440; border: var(--bw) solid var(--ink); border-radius: 16px; box-shadow: 0 4px 0 var(--ink);
@@ -387,6 +387,7 @@ input:focus, select:focus, textarea:focus { outline: 3px solid var(--accent); ou
 }
 .task-tile:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--ink); }
 .task-tile b { font: 800 17px/1.1 var(--display); }
+.task-tile em { font: 800 12px/1.15 var(--display); font-style: normal; text-align: center; padding: 0 4px; }
 .task-tile span { font-size: 11px; font-weight: 800; }
 .task-tile.new { color: var(--text); }
 .task-tile.new span { color: var(--muted); }
