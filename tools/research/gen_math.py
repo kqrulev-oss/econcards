@@ -28,7 +28,7 @@ import sys
 from collections import Counter
 
 from mathlib import *  # noqa: F401,F403 — помощники и реестры
-from mathlib import EXAMS, pcard, F, GEN, TRIPLES, X, card, finite, gen, nice, num, par, poly, same, signed, sp, tnum, ftxt, lin, SUB  # noqa: F401
+from mathlib import EXAMS, fipi_copy, pcard, F, GEN, TRIPLES, X, card, finite, gen, nice, num, par, poly, same, signed, sp, tnum, ftxt, lin, SUB  # noqa: F401
 
 # ================================================================ ЕГЭ профиль
 
@@ -1499,7 +1499,8 @@ STOCK = [r'найдите все корни этого уравнения,? пр
          r'найдите количество точек[^.]*', r'найдите (?:точку|точки) экстремума[^.]*', r'найдите сумму точек экстремума[^.]*',
          r'в какой точке отрезка[^.?]*', r'прямая[^.]*является касательной к графику функции[^.]*', r'касательная к графику функции[^.]*',
          r'найдите значение производной функции f\(x\) в точке x ?[₀0]', r'найдите промежутки (?:возрастания|убывания)[^.]*',
-         r'установите соответствие между [^.:]*', r'в таблице под каждой буквой[^.]*', r'каждой (?:точке|букве|величине|функции)[^.]*соответствует[^.]*',
+         r'установите соответствие между [^.:]*', r'к каждому элементу первого столбца подберите соответствующий элемент (?:из )?второго столбца',
+         r'(?:пользуясь графиком,? )?поставьте в соответствие каждой [^.]*', r'в таблице под каждой буквой[^.]*', r'каждой (?:точке|букве|величине|функции)[^.]*соответствует[^.]*',
          r'впишите в приведённую в ответе таблицу[^.]*', r'запишите в ответ цифры,? расположив их в порядке,? соответствующем буквам[^.]*',
          r'выберите все утверждения,? которые верны при указанных условиях', r'выберите утверждения,? которые верны[^.]*',
          r'постройте график функции', r'определите,? при каких значениях [a-zkm] прямая y ?= ?[a-zkm][^.]*',
@@ -1624,6 +1625,9 @@ def run_proto(p, n, fipi=None, seed=1, cap_tries=None):
         if key in seen:
             info['dup'] += 1
             continue
+        if fipi_copy(card_text(c)):
+            info['copy'] = info.get('copy', 0) + 1
+            continue
         if not answer_ok(c, p['maxdec'], p['lim']):
             info['bad'] += 1
             print('  ?? неприятный ответ', p['id'], c['q'][:90], c['a'], file=sys.stderr)
@@ -1689,14 +1693,14 @@ def protos_main(args):
     fipi = Fipi(args.fipi) if args.fipi else None
     sel = [p for p in protos.values() if (not args.exam or p['exam'] == args.exam) and (not args.proto or p['id'].startswith(args.proto))]
     sel.sort(key=lambda p: (list(EXAMS).index(p['exam']), p['n'], p['id']))
-    print(f'{"прототип":<24}{"вид":<6}{"готово":>7}{"отсев":>6}{"повт.":>6}{"сбой":>5}{"ёмкость":>8}{"ответов":>8}{"сходство":>9}')
+    print(f'{"прототип":<24}{"вид":<6}{"готово":>7}{"отсев":>6}{"повт.":>6}{"копия":>6}{"сбой":>5}{"ёмкость":>8}{"ответов":>8}{"сходство":>9}')
     allcards, infos = [], []
     for p in sel:
         cards, info = run_proto(p, args.n, fipi)
         infos.append(info)
         allcards += cards
         sim = '—' if info['sim_max'] is None else f'{info["sim_max"]:.2f}'
-        print(f'{p["id"]:<24}{p["kind"]:<6}{info["cards"]:>7}{info["drop"]:>6}{info["dup"]:>6}{info["fail"]:>5}'
+        print(f'{p["id"]:<24}{p["kind"]:<6}{info["cards"]:>7}{info["drop"]:>6}{info["dup"]:>6}{info.get("copy", 0):>6}{info["fail"]:>5}'
               f'{info["capacity"]:>8}{info.get("answers", "—"):>8}{sim:>9}')
         if args.sample:
             for c in cards[:2]:
@@ -1761,6 +1765,23 @@ def export_protos(path, fipi_dir, n=30):
     print(f'{path}: {len(out)} прототипов')
 
 
+def make_fingerprints(fipi_dir, path=None):
+    """Отпечатки формул ФИПИ для защиты от дословных копий без текстов банка в репозитории:
+    sha1 (8 знаков) каждого 6-токенного куска записи, где нет русских слов и есть ≥ 2 чисел."""
+    import hashlib
+    import mathlib
+    fipi = Fipi(fipi_dir)
+    out = set()
+    for t in fipi.docs:
+        for g in mathlib.formula_shingles(strip_stock(t)):
+            out.add(hashlib.sha1(g.encode()).hexdigest()[:8])
+    path = path or mathlib.FP_PATH
+    with open(path, 'w', encoding='utf-8') as fh:
+        fh.write('# Отпечатки формул открытого банка и демоверсий ФИПИ (sha1, 8 знаков). Самих текстов здесь нет.\n')
+        fh.write('\n'.join(sorted(out)) + '\n')
+    print(f'{path}: {len(out)} отпечатков')
+
+
 def review_dump(path, fipi_dir, k=5):
     """Материал для «экзаменационной проверки»: по k случайных аналогов на прототип (другое зерно,
     чем в самопроверке) + паспорт КИМ + до 3 заданий банка ФИПИ того же прототипа (только локально)."""
@@ -1797,8 +1818,12 @@ def main():
     ap.add_argument('--fipi', help='папка с локальными текстами ФИПИ для сверки сходства')
     ap.add_argument('--unmatched', type=int, default=0, help='показать столько заданий банка без прототипа')
     ap.add_argument('--export-protos', help='собрать data/source/math-prototypes.json')
+    ap.add_argument('--make-fingerprints', action='store_true', help='пересобрать fipi_fingerprints.txt (нужен --fipi)')
     ap.add_argument('--review-dump', help='материал для экзаменационной проверки (локально, не коммитить)')
     args = ap.parse_args()
+    if args.make_fingerprints:
+        make_fingerprints(args.fipi)
+        return 0
     if args.review_dump:
         review_dump(args.review_dump, args.fipi)
         return 0
