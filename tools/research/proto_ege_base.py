@@ -7339,8 +7339,9 @@ def gen_eb14_distributive(r):
    '«Найдите значение выражения …»', kes=['1.2'])
 def gen_eb14_nested(r):
     if r.random() < 0.5:
-        a, b = r.sample([2, 3, 4, 5, 6, 8, 10, 12, 15, 20], 2)
-        e = Ediv_line(En(1), Eop(Ef(1, a), '+', Ef(1, b)))
+        a, b = r.sample([2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 14, 15, 18, 20, 21, 24, 28, 30, 35, 36], 2)
+        c = r.choice([1, 2, 3, 5, 6, 7, 9, 11, 13])
+        e = Ediv_line(En(c), Eop(Ef(1, a), '+', Ef(1, b)))
     else:
         k = r.choice([2, 3, 4, 5, 7, 8, 9, 11, 15, 19])
         c = r.choice([F(9, 10), F(12, 10), 2, 3, F(4, 10), F(8, 10), 6, F(18, 10)])
@@ -7402,14 +7403,14 @@ def gen_eb16_roots(r):
    '«Найдите значение выражения (a√b − c)(a√b + c)».', kes=['1.3', '1.8'])
 def gen_eb16_conjugate(r):
     if r.random() < 0.6:
-        a, b, c = r.randint(1, 5), r.choice([2, 3, 5, 6, 7, 10, 11, 13, 14, 17, 23]), r.randint(1, 9)
+        a, b, c = r.randint(1, 6), r.choice([2, 3, 5, 6, 7, 10, 11, 13, 14, 15, 17, 19, 21, 22, 23, 26, 29]), r.randint(1, 12)
         A = f'{a if a > 1 else ""}√{b}'
         d = f'({A} − {c})({A} + {c})' if r.random() < 0.5 else f'({A} + {c})({A} − {c})'
         s_ = f'({a}*sqrt({b})-{c})*({a}*sqrt({b})+{c})'
         ans = F(a * a * b - c * c)
     else:
-        a, b = r.sample([2, 3, 5, 6, 7, 10, 11, 13, 14, 15, 17, 19, 21], 2)
-        k = r.randint(1, 4)
+        a, b = r.sample([2, 3, 5, 6, 7, 10, 11, 13, 14, 15, 17, 19, 21, 22, 23, 26, 29, 31, 33, 35], 2)
+        k = r.randint(1, 5)
         d = f'({k if k > 1 else ""}√{a} − √{b})({k if k > 1 else ""}√{a} + √{b})'
         s_ = f'({k}*sqrt({a})-sqrt({b}))*({k}*sqrt({a})+sqrt({b}))'
         ans = F(k * k * a - b)
