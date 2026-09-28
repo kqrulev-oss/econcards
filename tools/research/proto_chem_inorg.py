@@ -3308,6 +3308,9 @@ def _role6(f):
     return _ROLE6.get(c)
 
 
+_NOT_REAGENT_6 = {'H2CO3', 'H2SO3', 'H2SiO3'}
+
+
 def _solve_6i(p):
     target = (frozenset(tuple(x) for x in p['net'][0]), frozenset(tuple(x) for x in p['net'][1]))
     good = []
@@ -3328,7 +3331,9 @@ def _solve_6i(p):
 
 IONIC6 = [r for r in RX if r.get('aq') and not is_redox(r) and net_key(r) and len(set(r['lhs']) - {'H2O'}) == 2
           and 'недостаток' not in r.get('cond', '') and ':' not in r.get('cond', '')
-          and 'основная соль' not in r.get('tags', [])]
+          and 'основная соль' not in r.get('tags', [])
+          and all(x == 'H2O' or SUBS[x].get('sol') == 'р' and SUBS[x]['cls'] != 'оксид' and x not in _NOT_REAGENT_6
+                  for x in r['lhs'])]
 
 
 @proto('ch-ege-06-ionic', 'ЕГЭ', 6, 'Вещества X и Y по сокращённому ионному уравнению их реакции',
@@ -3396,9 +3401,20 @@ def _default_cond(r):
     return 'недостаток' not in c and ':' not in c and 'основная соль' not in r.get('tags', [])
 
 
-EXCH30 = [r for r in RX if r.get('aq') and not is_redox(r) and len(set(r['lhs']) - {'H2O'}) == 2 and net_key(r)
-          and not any(FORM_OF(r, x) == 'конц.' for x in r['lhs']) and 'совместный гидролиз' not in r.get('tags', [])
-          and _default_cond(r)]
+_NOT_REAGENT30 = {'H2CO3', 'H2SO3', 'Al4C3', 'AlN', 'Mg3N2', 'CaC2'}
+_BAD_PROD30 = {'Ca(H2PO4)2', 'Ba(H2PO4)2', 'CaHPO4', 'BaHPO4', 'Ca(HCO3)2', 'Ba(HCO3)2'}
+
+
+def _exch_ok(r):
+    """Реакция ионного обмена в растворе с реагентами, допустимыми как «растворы» в КИМ."""
+    return (r.get('aq') and not is_redox(r) and len(set(r['lhs']) - {'H2O'}) == 2 and net_key(r)
+            and not any(FORM_OF(r, x) == 'конц.' for x in r['lhs'])
+            and not (set(r['lhs']) & _NOT_REAGENT30) and not (set(r['rhs']) & _BAD_PROD30)
+            and not any(SUBS[x]['cls'] == 'оксид' and x not in ('CO2', 'SO2') for x in r['lhs']))
+
+
+EXCH_ALL30 = [r for r in RX if _exch_ok(r)]
+EXCH30 = [r for r in EXCH_ALL30 if 'совместный гидролиз' not in r.get('tags', []) and _default_cond(r)]
 
 
 def cond30(r):
@@ -3428,23 +3444,25 @@ POOL30 = list(dict.fromkeys(POOL30))
 
 
 def _pairs30(items):
+    """Для каждой пары: (реагирует?, все реакции обмена в растворе при любых соотношениях)."""
     res = {}
     for i, a in enumerate(items):
         for b in items[i + 1:]:
             v = reacts(a, _lab24(a), b, _lab24(b))
-            rs = [r for r in pos_rx(a, _lab24(a), b, _lab24(b)) if r in EXCH30]
+            rs = [r for r in RX if set(r['lhs']) - {'H2O'} == {a, b} and r.get('aq') and not is_redox(r)]
             res[(a, b)] = (v, rs)
     return res
 
 
 def _solve_30c(p):
+    """Перебор всех пар перечня по всем реакциям базы (любые соотношения): подходящая пара должна быть одна."""
     items = p['items']
     want = p['cond']
     good = set()
     for i, a in enumerate(items):
         for b in items[i + 1:]:
             for r in RX:
-                if set(r['lhs']) - {'H2O'} == {a, b} and r in EXCH30 and want in cond30(r):
+                if set(r['lhs']) - {'H2O'} == {a, b} and r.get('aq') and not is_redox(r) and want in cond30(r):
                     good.add((a, b))
     if len(good) != 1:
         return ['err']
@@ -3590,7 +3608,9 @@ def g_30n(rng):
     cnd_t = f' ({cnd})' if cnd and ('избыт' in cnd or 'недостат' in cnd) else ''
     q = (f'Выберите сокращённое ионное уравнение реакции ионного обмена между {ins(a).replace("ом ", "ом ")} и '
          f'{ins(b)}{cnd_t}.').replace('между ', 'между ')
-    q = f'Какое сокращённое ионное уравнение соответствует реакции между растворами веществ {F(a)} и {F(b)}{cnd_t}?'
+    both = all(SUBS[x].get('sol') == 'р' and SUBS[x]['cls'] != 'оксид' for x in (a, b))
+    q = (f'Какое сокращённое ионное уравнение соответствует реакции между {"растворами " if both else ""}веществ'
+         f'{"" if both else "ами"} {F(a)} и {F(b)}{cnd_t}?')
     e = f'{eq_text(r["lhs"], r["rhs"])}; полное ионное: {ion_text(full)}; сокращённое: {true}.'
     return card(pid, q, str(items.index(true) + 1), e, k='one', o=opts(items), p={'rid': r['rid'], 'opts': items},
                 eqs=[(r['lhs'], r['rhs'], *r['k'])])
@@ -3623,8 +3643,10 @@ def g_30s(rng):
     a, b = [x for x in dict.fromkeys(r['lhs']) if x != 'H2O']
     cnd = r.get('cond', '')
     cnd_t = f' ({cnd})' if cnd and ('избыт' in cnd or 'недостат' in cnd) else ''
-    q = (f'Составьте молекулярное, полное и сокращённое ионные уравнения реакции между растворами {gen(a)} и '
-         f'{gen(b)}{cnd_t}. В ответ запишите сумму коэффициентов в сокращённом ионном уравнении.')
+    both = all(SUBS[x].get('sol') == 'р' and SUBS[x]['cls'] != 'оксид' for x in (a, b))
+    pre = f'растворами {gen(a)} и {gen(b)}' if both else f'веществами {F(a)} и {F(b)}'
+    q = (f'Составьте молекулярное, полное и сокращённое ионные уравнения реакции между {pre}{cnd_t}. В ответ '
+         f'запишите сумму коэффициентов в сокращённом ионном уравнении.')
     q = q.replace('растворами ', 'растворами ')
     e = f'{eq_text(r["lhs"], r["rhs"])}; сокращённое: {ion_text(net)} — сумма {s_net}.'
     return card(pid, q, str(s_net), e, k='num', p={'rid': r['rid']}, wrong=[str(s_full), str(s_mol), str(s_net + 1)],
@@ -3646,6 +3668,14 @@ _BAD29 = [{'K2S', 'K2SO3'}, {'Na2S', 'Na2SO3'}, {'FeSO4', 'KNO2'}, {'FeSO4', 'Na
 REDOX29 = [r for r in RX if is_redox(r) and agent_formula(r, 'ox') and agent_formula(r, 'red') and
            set(r['lhs']) <= set(OX29 + RED29 + MED29) and 'электролиз' not in r['type'] and
            not any(FORM_OF(r, x) == 'конц.' for x in r['lhs'])]
+
+
+_RX29_ANY = [r for r in RX if redox_roles(r) and 'электролиз' not in r['type'] and agent_formula(r, 'ox')
+             and agent_formula(r, 'red') and agent_formula(r, 'ox') != agent_formula(r, 'red')
+             and 'H2' not in r['rhs'] and not any(FORM_OF(r, x) == 'конц.' for x in r['lhs'])]
+# может быть окислителем (восстановителем) для веществ перечней 29 хотя бы в одной реакции базы
+OX_ANY = {agent_formula(r, 'ox') for r in _RX29_ANY if agent_formula(r, 'red') in RED29}
+RED_ANY = {agent_formula(r, 'red') for r in _RX29_ANY if agent_formula(r, 'ox') in OX29}
 
 
 def _salts(fs):
@@ -3761,11 +3791,13 @@ def g_29c(rng):
         if any(b <= set(items) for b in _BAD29):
             continue
         # все пары «окислитель — восстановитель» перечня должны быть известны базе
-        oxs = [x for x in items if x in OX29]
-        reds = [x for x in items if x in RED29]
+        oxs = [x for x in items if x in OX29 or x in OX_ANY]
+        reds = [x for x in items if x in RED29 or x in RED_ANY]
         rx_in = _redox_in(items)
         known = {(agent_formula(x, 'ox'), agent_formula(x, 'red')) for x in rx_in}
-        if any((a, b) not in known and a != b for a in oxs for b in reds):
+        # каждая пара «окислитель — восстановитель» перечня либо есть в базе, либо явно не реагирует
+        if any((a, b) not in known and a != b and reacts(a, _lab24(a), b, _lab24(b)) is not False
+               for a in oxs for b in reds):
             continue
         rng.shuffle(conds)
         for c in conds:

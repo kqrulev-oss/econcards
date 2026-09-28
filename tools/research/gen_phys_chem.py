@@ -1553,8 +1553,56 @@ def fidelity_of(m):
     return f
 
 
-def export_protos(rows, examples):
+class QuoteScrubber:
+    """Цитаты из заданий банка ФИПИ в описаниях прототипов (паспорт fidelity, причины экспертизы) не попадают в репозиторий:
+    фрагмент в «ёлочках» или кавычках, совпадающий с редким (не типовым) оборотом банка по 6-словным шинглам,
+    заменяется пометкой. Типовые инструкции КИМ (встречаются в ≥ 10 заданиях банка) остаются."""
+
+    MARK = '«[формулировка задания банка]»'
+
+    def __init__(self, fipi_dir):
+        self.df = {}
+        for subj in ('phys', 'chem'):
+            for t in load_fipi(subj, fipi_dir):
+                for s in _pc.shingles(t, 6):
+                    self.df[s] = self.df.get(s, 0) + 1
+        self.n = 0
+
+    def rare(self, frag):
+        return any(self.df.get(s, 99) < 10 and len(set(s.split()) - {'#'}) >= 4 for s in _pc.shingles(frag, 6))
+
+    def text(self, t):
+        if not isinstance(t, str):
+            return t
+
+        def sub(m):
+            if self.rare(m.group(0)):
+                self.n += 1
+                return self.MARK
+            return m.group(0)
+        t2 = re.sub(r'«[^«»]{12,}»|"[^"]{12,}"|“[^”]{12,}”', sub, t)
+        if self.rare(t2):  # цитата без кавычек: заменяем фрагмент между знаками препинания
+            parts = re.split(r'(?<=[.;:!?()—])\s+', t2)
+            for i, p in enumerate(parts):
+                if self.rare(p):
+                    self.n += 1
+                    parts[i] = '[формулировка задания банка]' + (p[-1] if p[-1] in '.;:!?)' else '')
+            t2 = ' '.join(parts)
+        return t2
+
+    def deep(self, x):
+        if isinstance(x, dict):
+            return {k: self.deep(v) for k, v in x.items()}
+        if isinstance(x, list):
+            return [self.deep(v) for v in x]
+        return self.text(x)
+
+
+def export_protos(rows, examples, fipi_dir=FIPI_DIR):
     """data/source/phys-prototypes.json и chem-prototypes.json — по записи на прототип."""
+    if not fipi_dir:
+        raise SystemExit('--export требует локальную выгрузку ФИПИ (--fipi / FIPI_DIR): по ней вычищаются цитаты банка')
+    scrub = QuoteScrubber(fipi_dir)
     out = {'phys': [], 'chem': []}
     for r in rows:
         m = r['m']
@@ -1571,11 +1619,12 @@ def export_protos(rows, examples):
                 gen['why'] = m['why']
         out[m['subj']].append({
             'id': m['id'], 'exam': m['exam'], 'n': m['n'], 'title': m['title'], 'kes': m['kes'],
-            'invariant': m['invariant'], 'varies': m['varies'], 'answer_rule': m['answer_rule'], 'mistakes': m['mistakes'],
+            'invariant': scrub.text(m['invariant']), 'varies': scrub.text(m['varies']),
+            'answer_rule': scrub.text(m['answer_rule']), 'mistakes': scrub.deep(m['mistakes']),
             'gen': gen, 'capacity': cap, 'capacity_note': ('≥ (на 2000 попыток новые ещё появлялись)' if r.get('growing') else
                                                            ('оценка' if m['fn'] is None else 'разных условий на 2000 попыток')),
             'fipi_sim_max': None if r.get('sim') is None else round(r['sim'], 3),
-            'fidelity': fidelity_of(m),
+            'fidelity': scrub.deep(fidelity_of(m)),
             'example': ex,
         })
     for subj, recs in out.items():
@@ -1589,6 +1638,7 @@ def export_protos(rows, examples):
                        'prototypes': recs}, f, ensure_ascii=False, indent=1)
             f.write('\n')
         print('записано', path, len(recs))
+    print('цитат банка заменено пометкой:', scrub.n)
 
 
 def print_proto_report(rows, cross_dups, nfipi, n):
@@ -1662,7 +1712,7 @@ def main():
         rows, cross, examples, nf = proto_check(args.n, args.seed, args.fipi, args.cap, args.only)
         bad = print_proto_report(rows, cross, nf, args.n)
         if args.export:
-            export_protos(rows, examples)
+            export_protos(rows, examples, args.fipi)
         sys.exit(1 if bad else 0)
     if args.sample:
         out = []

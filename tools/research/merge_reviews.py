@@ -6,7 +6,7 @@
 формат ответа, стиль КИМ, уровень, масштаб, ловушка, КЭС, оценивание, «неотличимость от банка».
 Вердикты эксперта — файлы <участок>-verdict.json ({"reviews": {id: {status, checked, passed, reason, ...}}}).
 
-  python3 tools/research/merge_reviews.py <папка с *-verdict.json>
+  FIPI_DIR=<выгрузка банка> python3 tools/research/merge_reviews.py <папка с *-verdict.json>
 Тексты банка ФИПИ в вердиктах не хранятся — только id заданий банка (bank_refs).
 """
 import glob
@@ -24,6 +24,10 @@ def main(src):
     sys.path.insert(0, HERE)
     import gen_phys_chem as g
     protos = g.load_protos()
+    fipi = os.environ.get('FIPI_DIR')
+    if not fipi:
+        raise SystemExit('нужен FIPI_DIR: по локальной выгрузке банка из причин вычищаются цитаты заданий')
+    scrub = g.QuoteScrubber(fipi)
     reviews, areas = {}, {}
     for path in sorted(glob.glob(os.path.join(src, '*-verdict.json'))):
         area = os.path.basename(path)[:-len('-verdict.json')]
@@ -33,7 +37,7 @@ def main(src):
         for pid, v in rv.items():
             if pid not in protos:
                 continue  # прототип удалён после проверки
-            reviews[pid] = {k: v[k] for k in KEEP if k in v}
+            reviews[pid] = scrub.deep({k: v[k] for k in KEEP if k in v})
             reviews[pid]['area'] = area
             n += 1
         areas[area] = n
@@ -49,7 +53,7 @@ def main(src):
                             'areas': areas, 'summary': summary},
                    'reviews': dict(sorted(reviews.items()))}, f, ensure_ascii=False, indent=1)
         f.write('\n')
-    print('записано', OUT, json.dumps(summary, ensure_ascii=False)[:400])
+    print('записано', OUT, json.dumps(summary, ensure_ascii=False)[:400], '; цитат банка заменено:', scrub.n)
 
 
 if __name__ == '__main__':
