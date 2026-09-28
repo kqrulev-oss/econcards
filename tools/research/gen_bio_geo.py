@@ -37,7 +37,7 @@ from functools import reduce
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from ru_morph import agree, inflect, predicate, short_adj  # noqa: E402
+from ru_morph import agree, inflect, plural_of, predicate, short_adj  # noqa: E402
 
 # ---------------------------------------------------------------- общее
 
@@ -875,7 +875,7 @@ def gen_b_taxa(rng):
     lst = '\n'.join(f'{j + 1}) {t}' for j, (_, t) in enumerate(shown))
     what = 'систематических групп' if m == 6 else 'систематических таксонов'
     start = ('наибольшего' if top_down else 'наименьшего') if m == 5 else ('самой крупной' if top_down else 'самой мелкой')
-    q = (f'Установите последовательность {what}, начиная с {start}.\n{lst}\n'
+    q = (f'Расположите {"систематические группы" if m == 6 else "систематические таксоны"} по рангу, начиная с {start}.\n{lst}\n'
          'Запишите в таблицу соответствующую последовательность цифр.')
     e = 'Порядок рангов: ' + ' → '.join(ranks[i] for i in pick) + '.'
     return card('num', 'bio-ege-12' if m == 6 else 'bio-oge-3', q, ans, e,
@@ -1114,7 +1114,7 @@ def gen_g_newyear(rng):
     order = sorted(range(3), key=lambda i: -CITIES[cs[i]][3])
     ans = ''.join(str(i + 1) for i in order)
     ev = rng.choice(['Новый год', 'полдень (12 ч по местному времени)', 'начало рабочего дня (9 ч по местному времени)'])
-    q = (f'Расположите регионы России в той последовательности, в которой в них наступает {ev}, начиная с региона, '
+    q = (f'Расположите регионы России по порядку наступления события «{ev}» — первым укажите регион, '
          'где это происходит раньше всего: ' + '; '.join(f'{i + 1}) {r}' for i, r in enumerate(regs))
          + '. Запишите в таблицу получившуюся последовательность цифр.')
     e = 'Раньше встречают там, где больше смещение от UTC: ' + ', '.join(f'{r} — МСК{CITIES[c][3] - 3:+d}' for r, c in zip(regs, cs)) + '.'
@@ -1312,9 +1312,8 @@ def gen_g_altitude(rng):
             ts = rng.sample(range(-12, 15), 3)
             if min(ts) < 0 < max(ts) and min(abs(x - y) for x, y in itertools.combinations(ts, 2)) >= 2:
                 break
-        q = ('На метеостанциях 1, 2 и 3, расположенных на склоне горы на разных высотах, одновременно измерили температуру воздуха. '
-             'Результаты: ' + '; '.join(f'метеостанция {i + 1} — {t:+d} °С'.replace('+0', '0') for i, t in enumerate(ts))
-             + '. Расположите эти метеостанции в порядке увеличения их высоты над уровнем моря. '
+        q = ('Три метеостанции стоят на одном горном склоне на разной высоте. В один и тот же момент на них записали температуру воздуха: ' + '; '.join(f'метеостанция {i + 1} — {t:+d} °С'.replace('+0', '0') for i, t in enumerate(ts))
+             + '. Расположите метеостанции по возрастанию высоты, на которой они находятся, — от самой низкой к самой высокой. '
              'Запишите в таблицу получившуюся последовательность цифр.')
         ans = ''.join(str(i + 1) for i in sorted(range(3), key=lambda i: -ts[i]))
         return card('num', 'geo-ege-2', q, ans, 'В тропосфере температура с высотой понижается: чем выше станция, тем холоднее.',
@@ -1393,9 +1392,9 @@ def gen_g_humidity(rng):
         ps = rng.sample(range(600, 761), 3)
         if min(abs(x - y) for x, y in itertools.combinations(ps, 2)) >= 8:
             break
-    q = ('На метеостанциях 1, 2 и 3, расположенных на склоне горы на разных высотах, одновременно измерили атмосферное давление: '
+    q = ('Три метеостанции стоят на одном горном склоне на разной высоте. В один и тот же момент на них записали атмосферное давление: '
          + '; '.join(f'метеостанция {i + 1} — {p} мм рт. ст.' for i, p in enumerate(ps))
-         + '. Расположите эти метеостанции в порядке увеличения их высоты над уровнем моря. '
+         + '. Расположите метеостанции по возрастанию высоты, на которой они находятся, — от самой низкой к самой высокой. '
          'Запишите в таблицу получившуюся последовательность цифр.').replace('ст..', 'ст.')
     ans = ''.join(str(i + 1) for i in sorted(range(3), key=lambda i: -ps[i]))
     return card('num', 'geo-ege-2', q, ans, 'С высотой давление понижается: выше станция — ниже давление.', {'mode': mode, 'ps': ps})
@@ -1813,6 +1812,12 @@ NUM_WORD = {2: 'два', 3: 'три', 4: 'четыре', 5: 'пять', 6: 'ше
 NUM_GEN = {2: 'двух', 3: 'трёх', 4: 'четырёх', 5: 'пяти', 6: 'шести'}
 
 
+def table_lvl_ok(T, kw):
+    """Вся таблица помечена уровнем (level: ege) — для другого экзамена не берём."""
+    want = kw.get('lvl')
+    return not want or T.get('level') not in ('ege' if want == 'oge' else 'oge',)
+
+
 def lvl_ok(item, kw, S=None):
     """Уровень: для ОГЭ (lvl=oge) не берём помеченное "ege", для ЕГЭ (lvl=ege) — помеченное "oge"."""
     want = kw.get('lvl')
@@ -1836,6 +1841,15 @@ def set_matrix(S, kw=None):
     return objs, [(t, y, syn) for t, y, syn in props if y]
 
 
+def false_about(S, x, props, near, pool):
+    """Неверные утверждения об x: свойства ближайших соседей (кроме not_for: x) + типичные ошибки из таблицы (errors)."""
+    nf = {p['t']: set(p.get('not_for', [])) for p in S['props']}
+    bad = [t for t, s_, _ in props if x not in s_ and s_ & set(near) and x not in nf.get(t, ())]
+    bad += [e['t'] for e in S.get('errors', []) if e.get('obj') == x and e['t'] not in bad]
+    bad += [t for t in (S.get('not') or {}).get(x, []) if t not in bad]
+    return bad
+
+
 def pool_of(S, kw, objs=None):
     g = kw.get('g')
     pool = list(S['groups'][g]) if g else list(S['objects'])
@@ -1848,10 +1862,10 @@ def no_syn(chosen, props):
     seen = set()
     for t in chosen:
         s = syn.get(t)
-        if s:
-            if s in seen:
+        for g in (s if isinstance(s, list) else [s] if s else []):
+            if g in seen:
                 return False
-            seen.add(s)
+            seen.add(g)
     return True
 
 
@@ -1934,7 +1948,7 @@ def gen_d_many(rng, args, topic='dict'):
             y = similarity_order(x, pool, props)[0] if rng.random() < 0.7 else rng.choice([o for o in pool if o != x])
             good = [t for t, s, _ in props if x in s and y not in s]
             bad = [t for t, s, _ in props if y in s and x not in s]
-            q = (f'Какие признаки характерны для {inflect(x, "gent")}, в отличие от {inflect(y, "gent")}? '
+            q = (f'Чем {x} {"отличаются" if plural_of(x) == "plur" else "отличается"} от {inflect(y, "gent")}? Выберите признаки, которые есть только у {inflect(x, "gent")}. '
                  f'{TAIL_MANY.replace("три", NUM_WORD[n_true]).replace("шести", NUM_GEN[n_all])}')
         else:
             x = rng.choice(pool)
@@ -1989,7 +2003,7 @@ def gen_d_one(rng, args, topic='dict'):
         x = rng.choice(pool)
         near = similarity_order(x, pool, props)[:2]
         good = [t for t, s, _ in props if x in s and not set(pool) <= s]
-        bad = [t for t, s, _ in props if x not in s and s & set(near)]
+        bad = false_about(S, x, props, near, pool)
         if not good or len(bad) < 3:
             continue
         t = rng.choice(good)
@@ -2006,7 +2020,7 @@ def check_d_one(c):
     if c['mode'] == 'obj':
         ok = [i for i, o in enumerate(c['opts']) if o in yes[c['t']]]
     else:
-        ok = [i for i, t in enumerate(c['opts']) if c['x'] in yes[t]]
+        ok = [i for i, t in enumerate(c['opts']) if c['x'] in yes.get(t, ())]     # errors — заведомо неверны
     return '123456'[ok[0]] if len(ok) == 1 else None
 
 
@@ -2024,7 +2038,7 @@ def gen_d_judge(rng, args, topic='dict'):
         x = rng.choice(pool)
         near = similarity_order(x, pool, props)[:2]
         good = [t for t, s, _ in props if x in s and not set(pool) <= s]
-        bad = [t for t, s, _ in props if x not in s and s & set(near)]
+        bad = false_about(S, x, props, near, pool)
         if len(good) < 2 or len(bad) < 2:
             continue
         g = rng.sample(good, 2)
@@ -2044,7 +2058,7 @@ def gen_d_judge(rng, args, topic='dict'):
 def check_d_judge(c):
     S = table(c['ref'], 'sets')
     yes = {p['t']: set(p['yes']) for p in S['props']}
-    A, B = (x in yes[t] for x, t in c['st'])
+    A, B = (x in yes.get(t, ()) for x, t in c['st'])
     return '1234'[{(True, False): 0, (False, True): 1, (True, True): 2, (False, False): 3}[(A, B)]]
 
 
@@ -2072,6 +2086,8 @@ def gen_d_analogy(rng, args, topic='dict'):
     (ref,), kw = parse_args(args)
     if kw.get('cls'):
         C = table(ref, 'classes')
+        if not table_lvl_ok(C, kw):
+            raise Skip(ref)
         items = {k: v for k, v in C['items'].items() if lvl_ok(k, kw, C) and lvl_ok(v, kw, C)}
         x, y = rng.sample(list(items), 2)
         vx, vy = items[x], items[y]
@@ -2089,6 +2105,9 @@ def gen_d_analogy(rng, args, topic='dict'):
         o, a = one(rng, vy, rng.sample(wrong, 3))
         cols = cols_of(C['title'], C)
         chk = {'eng': 'd_analogy', 'ref': ref, 'cls': True, 'y': y, 'opts': [z['t'] for z in o]}
+        acc = (C.get('answers') or C.get('accept') or {}).get(vy)
+        if acc:
+            chk['answers'] = acc              # допустимые написания для ответа словом
     else:
         S = table(ref, 'sets')
         attr = kw.get('a') or rng.choice(list(S['attrs']))
@@ -2107,8 +2126,10 @@ def gen_d_analogy(rng, args, topic='dict'):
         cols = [S.get('q_one', 'Объект').capitalize(), cap(attr)]
         chk = {'eng': 'd_analogy', 'ref': ref, 'attr': attr, 'y': y, 'opts': [z['t'] for z in o]}
     title = kw.get('title') or f'{cols[0]} и {cols[1].lower()}'
-    q = (f'Рассмотрите таблицу «{title}» и заполните пустую ячейку. | {cols[0]} | {cols[1]} | — | {x} | {vx} | — '
-         f'| {y} | ? | Какое понятие следует вписать на место вопроса?')
+    first = kw.get('cls') and C.get('cols')          # в таблице фактов cols = [класс, объект], как в КИМ
+    r1, r2 = (f'{vx} | {x}', f'? | {y}') if first else (f'{x} | {vx}', f'{y} | ?')
+    q = (f'Рассмотрите таблицу «{title}» и заполните пустую ячейку. | {cols[0]} | {cols[1]} | — | {r1} | — '
+         f'| {r2} | Какое понятие следует вписать на место вопроса?')
     return card('one', topic, q, a, f'{cap(y)} — {vy}.', chk, o=o)
 
 
@@ -2223,10 +2244,12 @@ def gen_d_class(rng, args, topic='dict'):
     Распределение не хуже 3–2–1 (две категории — не хуже 4–2)."""
     (ref,), kw = parse_args(args)
     C = table(ref, 'classes')
+    if not table_lvl_ok(C, kw):
+        raise Skip(ref)
     only = set(kw['only'].split('+')) if kw.get('only') else None
     by = {}
     for it, cl in C['items'].items():
-        if not lvl_ok(it, kw, C) or (only and cl not in only) or it in C.get('hint_items', []):
+        if not lvl_ok(it, kw, C) or (only and cl not in only) or it in C.get('hint_items', []) or it in C.get('hint', []):
             continue
         by.setdefault(cl, []).append(it)
     classes = [c for c in C['classes'] if len(by.get(c, [])) >= 1]
@@ -4306,7 +4329,7 @@ def gen_g_daylen1(rng):
     south = min(cs, key=lambda c: CITIES[c][1])
     right = (north if day == '22 июня' else south) if longest else (south if day == '22 июня' else north)
     o, a = one(rng, right, [c for c in cs if c != right])
-    q = f'В каком из перечисленных городов {day} продолжительность светового дня {"наибольшая" if longest else "наименьшая"}?'
+    q = f'Где из перечисленных городов {day} день длится {"дольше" if longest else "меньше"} всего (от восхода до заката Солнца)?'
     return card('one', 'geo-oge-17', q, a, f'{day}: чем {"севернее" if (day == "22 июня") == longest else "южнее"}, тем {"длиннее" if longest else "короче"} день.',
                 {'cs': cs, 'doy': doy, 'longest': longest, 'opts': [z['t'] for z in o]}, o=o)
 
@@ -4518,6 +4541,75 @@ def check_d_regword(c):
 
 # ================================================================ прототипы: генератор по спецификации и самопроверка
 
+def gen_d_text17(rng, args, topic='dict'):
+    """ЕГЭ 17: текст из 6 предложений, выбрать три о заданном понятии (критерий вида, форма отбора и т. п.).
+    Спрашиваем исходное понятие текста или другое, если к нему тоже относятся ровно три предложения."""
+    (ref,), kw = parse_args(args)
+    T = FACTS[ref.split('/')[0]]['texts17']
+    t = rng.choice([x for x in T if not kw.get('topic') or x['topic'] in kw['topic'].split('+')])
+    by = Counter(z['c'] for z in t['sentences'])
+    alt = [c for c, n in by.items() if n == 3 and c != t['target']]
+    target, ask = t['target'], t['ask']
+    if alt and t['topic'] == 'species_criteria' and rng.random() < 0.4:
+        target = rng.choice(alt)
+        ask = re.sub(r'описан \w+ критерий', f'описан {target} критерий', ask)
+    good = [i for i, z in enumerate(t['sentences']) if z['c'] == target]
+    if len(good) != 3:
+        raise Skip(t['title'])
+    sents = [re.sub(r'^\(\d+\)\s*', '', z['t']) for z in t['sentences']]
+    q = f'{ask} {t["title"]}.'
+    return many_card(topic, q, sents, good, f'{cap(target)}: ' + ', '.join(str(i + 1) for i in good) + '.',
+                     {'eng': 'd_text17', 'ref': ref, 'title': t['title'], 'target': target})
+
+
+def check_d_text17(c):
+    T = FACTS[c['ref'].split('/')[0]]['texts17']
+    t = next(x for x in T if x['title'] == c['title'])
+    return [str(i + 1) for i, z in enumerate(t['sentences']) if z['c'] == c['target']]
+
+
+ASPECT_ORDER = ['строение', 'среда', 'питание', 'размножение', 'значение']
+
+
+def gen_d_profile(rng, args, topic='dict'):
+    """ОГЭ 7: «Известно, что X — [2 признака]. Выберите три утверждения, относящиеся к описанию данных признаков».
+    Все шесть утверждений верны; три — о названных признаках, три — о других сторонах жизни организма."""
+    (ref,), kw = parse_args(args)
+    P = FACTS[ref.split('/')[0]]['organism_profiles']
+    group = kw.get('group')
+    names = [n for n, v in P.items() if not group or v['group'] in group.split('+')]
+    for _ in range(50):
+        x = rng.choice(names)
+        v = P[x]
+        by = {}
+        for f in v['facts']:
+            by.setdefault(f['aspect'], []).append(f['t'])
+        asp = [a for a in by if a in v['about']]
+        if len(asp) < 3:
+            continue
+        pick = rng.sample(asp, 2)
+        yes = [t for a in pick for t in by[a]]
+        no = [t for a in by if a not in pick for t in by[a]]
+        if len(yes) < 3 or len(no) < 3:
+            continue
+        good = rng.sample(yes, 3)
+        items = good + rng.sample(no, 3)
+        rng.shuffle(items)
+        gi = [i for i, t in enumerate(items) if t in good]
+        about = ', '.join(v['about'][a] for a in sorted(pick, key=ASPECT_ORDER.index))
+        q = (f'Известно, что {x} — {about}. Используя эти сведения, выберите из приведённого ниже списка три утверждения, '
+             'относящиеся к описанию данных признаков этого организма. Запишите в таблицу цифры, соответствующие выбранным ответам.')
+        return many_card(topic, q, items, gi, 'О названных признаках: ' + ' '.join(items[i] for i in gi),
+                         {'eng': 'd_profile', 'ref': ref, 'x': x, 'pick': pick, 'items': items})
+    raise Skip(ref)
+
+
+def check_d_profile(c):
+    v = FACTS[c['ref'].split('/')[0]]['organism_profiles'][c['x']]
+    asp = {f['t']: f['aspect'] for f in v['facts']}
+    return [str(i + 1) for i, t in enumerate(c['items']) if asp.get(t) in c['pick']]
+
+
 ENGINES = {k[4:]: (v, globals()['check_' + k[4:]]) for k, v in list(globals().items())
            if k.startswith('gen_d_') and 'check_' + k[4:] in globals()}
 
@@ -4570,6 +4662,8 @@ def to_word(c):
         return c
     right = next(x['t'] for x in c['o'] if x['id'] == c['a'])
     w = dict(c, k='word', a=right)
+    if c['chk'].get('answers'):
+        w['alt'] = [x for x in c['chk']['answers'] if x != right]
     w['_one'] = {'o': c['o'], 'a': c['a']}
     w.pop('o')
     w['q'] = re.sub(r'\s*Выберите[^.?]*[.?]?$', '', w['q']).rstrip() + ' Ответ запишите словом (словосочетанием).'
@@ -4658,8 +4752,24 @@ def fipi_shingles(folder):
     return S
 
 
+# Стандартные формулы КИМ о форме записи ответа (одинаковы в тысячах заданий; их требует критерий «стиль КИМ»).
+# Сходство с ФИПИ меряем по содержанию задания, без этих формул; список — закрытый, в отчёте приведён.
+KIM_FORMS = [
+    r'запишите в таблицу (выбранные цифры|получившуюся последовательность цифр|соответствующую последовательность цифр|цифры, соответствующие выбранным ответам)( под соответствующими буквами| для каждой величины)?\.?',
+    r'к каждой позиции, данной в первом столбце, подберите соответствующую позицию из второго столбца\.?',
+    r'для каждой величины определите соответствующий характер её изменения\.?', r'цифры в ответе могут повторяться\.?',
+    r'запишите цифры, под которыми они указаны\.?', r'запишите в ответе цифры, под которыми они указаны\.?',
+    r'в ответе запишите только число\.?', r'ответ запишите в виде числа\.?', r'полученный результат округлите до [а-яё ]+\.?',
+    r'верны ли следующие суждения о', r'верно только а', r'верно только б', r'верны оба суждения', r'оба суждения неверны',
+    r'увеличится', r'уменьшится', r'не изменится', r'измерение проводите между центрами условных знаков\.?',
+    r'установите последовательность', r'установите соответствие между', r'выберите три верных ответа из шести',
+    r'прочитайте текст\.', r'выберите три предложения, в которых', r'(и )?запишите в таблицу цифры, под которыми они указаны\.?',
+]
+_FORMS_RE = re.compile('|'.join(KIM_FORMS), re.I)
+
+
 def similarity(c, S):
-    sh = shingles(card_text(c))
+    sh = shingles(_FORMS_RE.sub(' ', card_text(c)))
     return len(sh & S) / len(sh) if sh else 0.0
 
 

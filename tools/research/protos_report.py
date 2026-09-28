@@ -4,7 +4,8 @@
 Запуск: python3 tools/research/protos_report.py
 Читает data/source/{bio,geo}-prototypes.json (capacity и example заполняет
 `gen_bio_geo.py --protos --write`) и заменяет в отчёте блоки между маркерами
-<!-- coverage:start --> … <!-- coverage:end --> и <!-- gaps:start --> … <!-- gaps:end -->.
+<!-- coverage:start --> … <!-- coverage:end -->, <!-- gaps:start --> … <!-- gaps:end --> и
+<!-- fidelity:start --> … <!-- fidelity:end --> (экзаменационная проверка; поле fidelity пишет fidelity_apply.py).
 
 Покрыт генератором — прототип с param/dict-генератором, давший ≥ 50 разных карточек.
 llm — рецепт с проверкой (ёмкость — оценка по числу входов). bank/none — не покрыт.
@@ -97,6 +98,48 @@ def gaps(data):
     return '| Задание | Прототип | Статус | Почему не покрыт |\n|---|---|---|---|\n' + '\n'.join(rows)
 
 
+CHECK_RU = {'format': 'формат', 'structure': 'устройство', 'style': 'стиль', 'level': 'уровень', 'facts': 'факты',
+            'trap': 'ловушка', 'codifier': 'кодификатор', 'scoring': 'оценивание'}
+
+
+def fidelity(data):
+    """Сводка по номерам и полная таблица «прототип → проверено → прошло»."""
+    out, rows, tot = [], [], defaultdict(int)
+    fails = defaultdict(int)
+    out.append('| Экзамен | № | Прототипов | Проверено экспертом (по 5 аналогов) | Прошло | Не прошло (есть генератор) | Без генератора |')
+    out.append('|---|---|---|---|---|---|---|')
+    for (subj, exam), title in NAMES.items():
+        by = defaultdict(list)
+        for p in data[subj]:
+            if p['exam'] == exam:
+                by[p['n']].append(p)
+        for n in sorted(by):
+            ps = by[n]
+            fid = [p.get('fidelity') or {} for p in ps]
+            chk = sum(1 for f in fid if f.get('expert'))
+            ok = sum(1 for f in fid if f.get('status') == 'pass')
+            nogen = sum(1 for p in ps if isinstance(p['gen'], dict))
+            out.append(f'| {title} | {n} | {len(ps)} | {chk} | {ok} | {len(ps) - ok - nogen} | {nogen} |')
+            for k, v in (('p', len(ps)), ('c', chk), ('ok', ok), ('ng', nogen)):
+                tot[k] += v
+            for p, f in zip(ps, fid):
+                ex = f.get('expert') or {}
+                for k, v in (ex.get('checks') or {}).items():
+                    fails[k] += v == 'fail'
+                checked = f'5 аналогов, без замечаний {ex.get("passed_cards")}' if ex else '—'
+                verdict = '✅' if f.get('status') == 'pass' else '❌'
+                why = (f.get('reason') or '').replace('|', '/').replace('\n', ' ')
+                rows.append(f'| `{p["id"]}` | {checked} | {verdict} | {why[:220]} |')
+    head = (f'Проверено экспертом: **{tot["c"]}** прототипов с генератором из {tot["p"] - tot["ng"]} (по 5 случайных аналогов, '
+            f'всего {tot["c"] * 5} аналогов). Прошло (аналоги неотличимы от заданий открытого банка): **{tot["ok"]}**; '
+            f'не прошло: **{tot["p"] - tot["ng"] - tot["ok"]}**; без генератора (llm/bank/none): {tot["ng"]}.\n\n'
+            'Чаще всего не проходили пункты: ' + ', '.join(f'{CHECK_RU[k]} — {v}' for k, v in sorted(fails.items(), key=lambda x: -x[1]) if v)
+            + '.\n\n')
+    full = ('\n<details><summary>Полная таблица: прототип → проверено → прошло</summary>\n\n'
+            '| Прототип | Проверено | Прошло | Причина (если нет) |\n|---|---|---|---|\n' + '\n'.join(rows) + '\n\n</details>')
+    return head + '\n'.join(out) + '\n' + full
+
+
 def put(text, name, body):
     return re.sub(rf'(<!-- {name}:start -->\n).*?(<!-- {name}:end -->)', lambda m: m.group(1) + body + '\n' + m.group(2),
                   text, flags=re.S)
@@ -108,6 +151,8 @@ def main():
     doc = DOC.read_text('utf-8')
     doc = put(doc, 'coverage', cov)
     doc = put(doc, 'gaps', gaps(data))
+    if '<!-- fidelity:start -->' in doc:
+        doc = put(doc, 'fidelity', fidelity(data))
     DOC.write_text(doc, encoding='utf-8')
     print(dict(total))
 

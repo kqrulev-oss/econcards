@@ -108,9 +108,16 @@ def plural_of(phrase):
     if _M is None:
         return 'sing'
     for w in re.findall(r'[\w-]+', phrase):
-        p = _best(w.lower(), ('NOUN',))
-        if p and p.tag.case == 'nomn':
-            return p.tag.number or 'sing'
+        ps = [x for x in _M.parse(w.lower()) if x.tag.POS == 'NOUN' and x.tag.case == 'nomn']
+        if any(x.tag.POS in ('ADJF', 'PRTF') for x in _M.parse(w.lower())[:2]):
+            continue
+        if ps:
+            nums = {x.tag.number for x in ps}
+            return 'sing' if 'sing' in nums and 'plur' not in nums else 'plur' if 'plur' in nums and 'sing' not in nums else ps[0].tag.number or 'sing'
+    for w in re.findall(r'[\w-]+', phrase):          # только прилагательные («голосеменные») — по их числу
+        a = next((x for x in _M.parse(w.lower()) if x.tag.POS in ('ADJF', 'PRTF') and x.tag.case == 'nomn'), None)
+        if a:
+            return a.tag.number or 'sing'
     return 'sing'
 
 
