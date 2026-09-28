@@ -1,6 +1,6 @@
 """Записывает итог «экзаменационной проверки» в поле fidelity каталогов прототипов.
 
-    python3 tools/research/fidelity_apply.py DIR     # DIR — папка с verdict*.json экспертов
+    python3 tools/research/fidelity_apply.py DIR2 [DIR3 …]   # папки с verdict*.json экспертов по раундам (2, 3, …)
 
 Вердикт эксперта (по 5 случайным аналогам) лежит в fidelity.expert; итог — fidelity.status (pass / fail) и
 fidelity.reason. Правила итога:
@@ -16,18 +16,20 @@ ROOT = Path(__file__).resolve().parents[2]
 CHECKS = ('format', 'structure', 'style', 'level', 'facts', 'trap', 'codifier', 'scoring')
 
 
-def load_verdicts(folder):
+def load_verdicts(folders):
+    """Последний раунд, в котором прототип проверялся, заменяет предыдущие."""
     out = {}
-    for f in sorted(Path(folder).glob('verdict*.json')):
-        for v in json.loads(f.read_text('utf-8')):
-            out[v['id']] = v
+    for rnd, folder in enumerate(folders, start=2):
+        for f in sorted(Path(folder).glob('verdict*.json')):
+            for v in json.loads(f.read_text('utf-8')):
+                out[v['id']] = dict(v, round=rnd)
     return out
 
 
 def expert_of(v):
     checks = {k: (v['checks'].get(k) or ['?'])[0] for k in CHECKS}
     return {
-        'round': 2, 'checked': v.get('checked', 5), 'passed_cards': v.get('passed_cards'),
+        'round': v.get('round', 2), 'checked': v.get('checked', 5), 'passed_cards': v.get('passed_cards'),
         'checks': checks, 'indistinguishable': v.get('indistinguishable'), 'verdict': v.get('verdict'),
         'reason': v.get('reason') or '', 'render': v.get('render') or '',
     }
@@ -54,7 +56,7 @@ def status_of(p, ex):
 
 
 def main():
-    V = load_verdicts(sys.argv[1])
+    V = load_verdicts(sys.argv[1:])
     for subj in ('bio', 'geo'):
         path = ROOT / 'data' / 'source' / f'{subj}-prototypes.json'
         data = json.loads(path.read_text('utf-8'))
