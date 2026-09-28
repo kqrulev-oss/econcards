@@ -1,0 +1,332 @@
+[
+  {
+    "source": "ФИПИ: открытый банк заданий ЕГЭ/ОГЭ",
+    "url": "https://fipi.ru/ege/otkrytyy-bank-zadaniy-ege",
+    "kind": "банк заданий",
+    "paid_use": "unclear",
+    "conditions": "Дословно не копировать. Брать можно форму задания, тип, проверяемое умение и прототип (идеи и методы, ГК 1259 п. 5); тексты писать свои. Документы ФИПИ помечены «© Рособрнадзор», ФИПИ — учреждение (ФГБНУ), а не госорган, поэтому довод «официальный документ, ГК 1259 п. 6» слабый. Нужен юрист.",
+    "attribution": "Не обязательна, но честно писать «по модели заданий ФИПИ», без логотипа и без слов «официальный».",
+    "evidence_url": "https://fipi.ru/",
+    "checked": "2026-09-27"
+  },
+  {
+    "source": "ФИПИ: демоверсии, спецификации, кодификаторы 2026",
+    "url": "https://fipi.ru/ege/demoversii-specifikacii-kodifikatory",
+    "kind": "нормативный документ экзамена",
+    "paid_use": "conditions",
+    "conditions": "Структуру экзамена, номера, баллы, темы кодификатора (это факты) использовать можно, пересказывая своими словами. Дословные тексты заданий демоверсии не копировать: на PDF стоит «© 2026 Федеральная служба по надзору в сфере образования и науки».",
+    "attribution": "Ссылка на fipi.ru в теории («по кодификатору ФИПИ 2026»).",
+    "evidence_url": "https://doc.fipi.ru/ege/demoversii-specifikacii-kodifikatory/2026/ru_11_2026.zip",
+    "checked": "2026-09-27"
+  },
+  {
+    "source": "ФИПИ: орфоэпический словник (задание 4)",
+    "url": "https://fipi.ru/ege/demoversii-specifikacii-kodifikatory",
+    "kind": "список слов",
+    "paid_use": "conditions",
+    "conditions": "Ударение в слове — факт (ГК 1259 п. 5). Список сверять с несколькими источниками (Викисловарь, лексемы Wikidata), дополнять своими словами, не выдавать за «официальный список ФИПИ» дословной копией.",
+    "attribution": "«Слова из орфоэпического минимума ФИПИ» в описании набора.",
+    "evidence_url": "https://www.consultant.ru/document/cons_doc_LAW_64629/be05678dc42ddc67aae5be9ba9beebd367fb9a3f/",
+    "checked": "2026-09-27"
+  },
+  {
+    "source": "Реальные КИМ ЕГЭ/ОГЭ, «слитые» варианты",
+    "url": "https://www.consultant.ru/document/cons_doc_LAW_140174/95d9ecc180e13e58ff632723375f109b36986b8c/",
+    "kind": "экзаменационные материалы",
+    "paid_use": "no",
+    "conditions": "273-ФЗ ст. 59 ч. 11: информация в КИМ ГИА — информация ограниченного доступа. Не использовать ни в каком виде.",
+    "attribution": "—",
+    "evidence_url": "https://www.consultant.ru/document/cons_doc_LAW_140174/95d9ecc180e13e58ff632723375f109b36986b8c/",
+    "checked": "2026-09-27"
+  },
+  {
+    "source": "Решу ЕГЭ / ОГЭ / ВПР (sdamgia.ru)",
+    "url": "https://sdamgia.ru/",
+    "kind": "банк заданий",
+    "paid_use": "no",
+    "conditions": "Прямой запрет копировать задания, ответы, решения, рубрикаторы «в приложения, боты и т. д.»; скрапинг запрещён; разрешено только личное некоммерческое копирование на срок до 10 дней. Можно давать ученику ссылку на страницу задания.",
+    "attribution": "—",
+    "evidence_url": "https://sdamgia.ru/copyright",
+    "checked": "2026-09-27"
+  },
+  {
+    "source": "Сайт К. Ю. Полякова (информатика)",
+    "url": "https://kpolyakov.spb.ru/",
+    "kind": "банк заданий, генераторы",
+    "paid_use": "no",
+    "conditions": "Свободно только в некоммерческих целях с сохранением авторства; публикация, включение в сборники, коммерческая выгода — только с письменного согласия автора. Возможен договор (написать автору).",
+    "attribution": "Обязательна при некоммерческом использовании.",
+    "evidence_url": "https://kpolyakov.spb.ru/school/ege.htm",
+    "checked": "2026-09-27"
+  },
+  {
+    "source": "ЯКласс",
+    "url": "https://www.yaklass.ru/",
+    "kind": "платформа",
+    "paid_use": "no",
+    "conditions": "Материалы — объекты исключительных прав, воспроизведение без согласия запрещено (проверена белорусская версия соглашения, российская не открылась).",
+    "attribution": "—",
+    "evidence_url": "https://www.yaklass.by/info/rules",
+    "checked": "2026-09-27"
+  },
+  {
+    "source": "Учи.ру",
+    "url": "https://uchi.ru/",
+    "kind": "платформа",
+    "paid_use": "no",
+    "conditions": "Исключительные права на сервисы и контент у платформы (страница соглашения закрыта антиботом; по поисковой выдаче). Считать запрещённым.",
+    "attribution": "—",
+    "evidence_url": "https://uchi.ru/terms",
+    "checked": "2026-09-27"
+  },
+  {
+    "source": "Российская электронная школа (РЭШ)",
+    "url": "https://resh.edu.ru/",
+    "kind": "уроки и задания",
+    "paid_use": "unclear",
+    "conditions": "Сайт недоступен при проверке, свободной лицензии не найдено. Считать запрещённым; давать ученику ссылку на урок можно.",
+    "attribution": "—",
+    "evidence_url": "https://resh.edu.ru/",
+    "checked": "2026-09-27"
+  },
+  {
+    "source": "Московская электронная школа (МЭШ, библиотека)",
+    "url": "https://uchebnik.mos.ru/",
+    "kind": "уроки и задания",
+    "paid_use": "unclear",
+    "conditions": "Пользовательское соглашение КИС ГУСОЭВ не содержит найденных разрешений на коммерческое использование; сайт при проверке недоступен. Считать запрещённым.",
+    "attribution": "—",
+    "evidence_url": "https://school.mos.ru/help/documents/",
+    "checked": "2026-09-27"
+  },
+  {
+    "source": "Задачи.ру / problems.ru (МЦНМО)",
+    "url": "https://problems.ru/",
+    "kind": "банк задач",
+    "paid_use": "no",
+    "conditions": "Свободно в личных некоммерческих целях, на уроках и кружках; о коммерческом использовании — «обратиться к нам».",
+    "attribution": "—",
+    "evidence_url": "https://problems.ru/about_system.php#copyright",
+    "checked": "2026-09-27"
+  },
+  {
+    "source": "Нормативные словари по распоряжению Правительства РФ от 30.04.2025 № 1102-р",
+    "url": "https://www.consultant.ru/law/hotdocs/89174.html",
+    "kind": "словари",
+    "paid_use": "conditions",
+    "conditions": "Словарь — охраняемое составное произведение (ГК 1260) и база данных (ГК 1334, извлекать массово нельзя). Отдельные факты (написание, ударение, форма) использовать можно; словарные статьи и крупные выборки не копировать. Сверять спорные нормы с нормативными словарями, ссылаться на них в разборе.",
+    "attribution": "В разборе: «по орфографическому словарю ИРЯ РАН» и т. п.",
+    "evidence_url": "https://gramota.ru/journal/novosti-i-sobytiya/utverzhden-spisok-slovarey-russkogo-yazyka-kak-gosudarstvennogo",
+    "checked": "2026-09-27"
+  },
+  {
+    "source": "Правила русской орфографии и пунктуации 1956 г.",
+    "url": "https://legalacts.ru/doc/pravila-russkoi-orfografii-i-punktuatsii-utv-an/",
+    "kind": "свод правил",
+    "paid_use": "conditions",
+    "conditions": "Правило как принцип и метод не охраняется (ГК 1259 п. 5). Статус текста как «официального документа» неясен — пересказывать своими словами, короткие цитаты допустимы.",
+    "attribution": "Ссылка на «Правила 1956 г., § N» в теории.",
+    "evidence_url": "https://www.consultant.ru/document/cons_doc_LAW_64629/be05678dc42ddc67aae5be9ba9beebd367fb9a3f/",
+    "checked": "2026-09-27"
+  },
+  {
+    "source": "Полный академический справочник под ред. В. В. Лопатина (2006), словари ударений Зарвы, Резниченко и др.",
+    "url": "https://www.consultant.ru/document/cons_doc_LAW_64629/26eaf5de7ca59025f4388fe2980d3dd03dd5e775/",
+    "kind": "справочник, словари",
+    "paid_use": "conditions",
+    "conditions": "Охраняемые произведения: текст, примеры и подборки не копировать. Нормы (факты) использовать, объяснять своими словами, примеры придумывать или брать из открытых источников.",
+    "attribution": "Ссылка на справочник как на источник нормы — по желанию.",
+    "evidence_url": "https://www.consultant.ru/document/cons_doc_LAW_64629/26eaf5de7ca59025f4388fe2980d3dd03dd5e775/",
+    "checked": "2026-09-27"
+  },
+  {
+    "source": "Грамматический словарь Зализняка (gramdict, 6-е изд.)",
+    "url": "https://github.com/gramdict/zalizniak-2010",
+    "kind": "данные словаря",
+    "paid_use": "conditions",
+    "conditions": "CC BY-NC: для платного продукта нужна коммерческая лицензия (human@gramdict.ru).",
+    "attribution": "По лицензии.",
+    "evidence_url": "https://github.com/gramdict/zalizniak-2010",
+    "checked": "2026-09-27"
+  },
+  {
+    "source": "Национальный корпус русского языка (НКРЯ)",
+    "url": "https://ruscorpora.ru/",
+    "kind": "корпус",
+    "paid_use": "no",
+    "conditions": "Выгрузки — только для некоммерческих научных и учебных целей по соглашению. Проверять употребление через поиск можно, копировать примеры в карточки нельзя.",
+    "attribution": "—",
+    "evidence_url": "https://ruscorpora.ru/page/corpora-datasets/",
+    "checked": "2026-09-27"
+  },
+  {
+    "source": "OpenCorpora (словарь)",
+    "url": "https://opencorpora.org/",
+    "kind": "морфологический словарь",
+    "paid_use": "conditions",
+    "conditions": "CC BY-SA: можно использовать для проверки форм слов в генераторах; сам словарь в продукт не выкладывать (иначе share-alike на выкладку).",
+    "attribution": "Упоминание в «Источниках» набора.",
+    "evidence_url": "https://opencorpora.org/?page=export",
+    "checked": "2026-09-27"
+  },
+  {
+    "source": "Википедия",
+    "url": "https://ru.wikipedia.org/",
+    "kind": "энциклопедия",
+    "paid_use": "conditions",
+    "conditions": "Текст — CC BY-SA 4.0 + GFDL. Дословный или близкий к тексту фрагмент в карточке делает карточку переработкой: её придётся отдавать под CC BY-SA со ссылкой и отметкой об изменениях. Факты, пересказанные своими словами, лицензии не подчиняются. Изображения — у каждого своя лицензия.",
+    "attribution": "При дословном использовании: ссылка на статью у карточки (поле src) и пометка CC BY-SA 4.0 в интерфейсе.",
+    "evidence_url": "https://foundation.wikimedia.org/wiki/Policy:Terms_of_Use",
+    "checked": "2026-09-27"
+  },
+  {
+    "source": "Викисловарь",
+    "url": "https://ru.wiktionary.org/",
+    "kind": "словарь",
+    "paid_use": "conditions",
+    "conditions": "CC BY-SA 4.0 + GFDL. Ударения и формы слов (факты) использовать можно; толкования и примеры дословно — только с атрибуцией и share-alike.",
+    "attribution": "Строка «Источники» в наборе: «Викисловарь, CC BY-SA 4.0».",
+    "evidence_url": "https://en.wiktionary.org/wiki/Wiktionary:Copyrights",
+    "checked": "2026-09-27"
+  },
+  {
+    "source": "Wikidata (в том числе лексемы)",
+    "url": "https://www.wikidata.org/",
+    "kind": "структурированные данные",
+    "paid_use": "yes",
+    "conditions": "Структурированные данные (в том числе Lexeme) — CC0, без условий. Лучший источник дат, столиц, химических элементов, форм и ударений слов для генераторов.",
+    "attribution": "Не требуется, желательно упомянуть.",
+    "evidence_url": "https://www.wikidata.org/wiki/Wikidata:Licensing",
+    "checked": "2026-09-27"
+  },
+  {
+    "source": "Oxford 3000 / Oxford 5000",
+    "url": "https://www.oxfordlearnersdictionaries.com/",
+    "kind": "список слов (английский)",
+    "paid_use": "no",
+    "conditions": "Копирование и распространение только с письменного разрешения OUP.",
+    "attribution": "—",
+    "evidence_url": "https://www.oxfordlearnersdictionaries.com/legal-notice",
+    "checked": "2026-09-27"
+  },
+  {
+    "source": "English Vocabulary Profile (Cambridge)",
+    "url": "https://englishprofile.org/",
+    "kind": "список слов с уровнями CEFR",
+    "paid_use": "unclear",
+    "conditions": "Текст условий полностью не открылся; есть требование ссылки «This publication… has made use of the English Vocabulary Profile». До проверки не использовать.",
+    "attribution": "Обязательная формулировка (см. условия).",
+    "evidence_url": "https://englishprofile.org/?menu=evp-terms-of-use",
+    "checked": "2026-09-27"
+  },
+  {
+    "source": "CEFR-J Wordlist",
+    "url": "https://github.com/openlanguageprofiles/olp-en-cefrj",
+    "kind": "список слов с уровнями CEFR",
+    "paid_use": "conditions",
+    "conditions": "Можно в коммерческих целях бесплатно при корректном цитировании (© Tono Laboratory, TUFS). Дополнение Octanove C1/C2 — CC BY-SA 4.0.",
+    "attribution": "Цитирование датасета в «Источниках».",
+    "evidence_url": "https://github.com/openlanguageprofiles/olp-en-cefrj",
+    "checked": "2026-09-27"
+  },
+  {
+    "source": "New General Service List (NGSL) и семейство списков",
+    "url": "https://www.newgeneralservicelist.com/",
+    "kind": "список слов (английский)",
+    "paid_use": "conditions",
+    "conditions": "CC BY-SA 4.0, коммерческое использование разрешено. Сам список в продукте — с атрибуцией и share-alike на список.",
+    "attribution": "«NGSL, Browne, Culligan, Phillips, CC BY-SA 4.0».",
+    "evidence_url": "https://www.newgeneralservicelist.com/new-general-service-list",
+    "checked": "2026-09-27"
+  },
+  {
+    "source": "Дескрипторы CEFR (Совет Европы)",
+    "url": "https://www.coe.int/en/web/common-european-framework-reference-languages",
+    "kind": "описания уровней",
+    "paid_use": "unclear",
+    "conditions": "Ссылаться на уровни A1–C2 можно; тексты дескрипторов без разрешения не копировать (страница не открылась, по поиску).",
+    "attribution": "—",
+    "evidence_url": "https://rm.coe.int/common-european-framework-of-reference-for-languages-learning-teaching/16809ea0d4",
+    "checked": "2026-09-27"
+  },
+  {
+    "source": "OpenStax",
+    "url": "https://openstax.org/",
+    "kind": "открытые учебники",
+    "paid_use": "conditions",
+    "conditions": "С 22.04.2026 новые и обновлённые версии — CC BY-NC-SA (нельзя в платном). Старые версии под CC BY 4.0 можно, с атрибуцией; лицензию проверять по каждой книге и версии.",
+    "attribution": "Автор, название, ссылка, лицензия CC BY 4.0, отметка об изменениях.",
+    "evidence_url": "https://openstax.org/blog/openstax-licensing",
+    "checked": "2026-09-27"
+  },
+  {
+    "source": "CK-12",
+    "url": "https://www.ck12.org/",
+    "kind": "открытые учебники",
+    "paid_use": "no",
+    "conditions": "CC BY-NC и собственная лицензия; коммерция только по договору.",
+    "attribution": "—",
+    "evidence_url": "https://info.ck12.org/curriculum-materials-license",
+    "checked": "2026-09-27"
+  },
+  {
+    "source": "Khan Academy",
+    "url": "https://www.khanacademy.org/",
+    "kind": "уроки и упражнения",
+    "paid_use": "no",
+    "conditions": "CC BY-NC-SA 4.0 — только некоммерческое использование.",
+    "attribution": "—",
+    "evidence_url": "https://www.khanacademy.org/about/docs/khan-academy-terms-of-service",
+    "checked": "2026-09-27"
+  },
+  {
+    "source": "Project Euler",
+    "url": "https://projecteuler.net/",
+    "kind": "задачи",
+    "paid_use": "no",
+    "conditions": "CC BY-NC-SA 4.0.",
+    "attribution": "—",
+    "evidence_url": "https://projecteuler.net/copyright",
+    "checked": "2026-09-27"
+  },
+  {
+    "source": "Произведения в общественном достоянии (классическая литература и т. п.)",
+    "url": "https://www.consultant.ru/document/cons_doc_LAW_64629/",
+    "kind": "тексты для заданий",
+    "paid_use": "conditions",
+    "conditions": "Срок охраны — жизнь автора + 70 лет (ГК 1281); в 2026 году свободны тексты авторов, умерших в 1955 г. и раньше; для работавших или воевавших в Великую Отечественную срок +4 года (ГК 1281 п. 4). Внимание: переводы, редакции и комментарии современных изданий охраняются отдельно. Нужна проверка года смерти автора и переводчика.",
+    "attribution": "Автор и произведение (право авторства бессрочно).",
+    "evidence_url": "https://www.consultant.ru/document/cons_doc_LAW_64629/",
+    "checked": "2026-09-27"
+  },
+  {
+    "source": "Задания, сгенерированные ИИ",
+    "url": "https://www.consultant.ru/document/cons_doc_LAW_64629/61d6709b930465436b5adb0943843ed28ff5dd8e/",
+    "kind": "собственный контент",
+    "paid_use": "conditions",
+    "conditions": "Автор — только гражданин (ГК 1228), чисто машинный результат, скорее всего, не охраняется: использовать можно, но защитить от копирования трудно. Охрана появляется за счёт редактуры и подбора (ГК 1260). Проверять на совпадение с чужими банками. Закон о технологиях ИИ (одобрен СФ 17.07.2026, с 01.09.2026) требует сообщать о владельцах прав на сгенерированное — нужен юрист.",
+    "attribution": "Указать в оферте, что задания подготовлены с помощью ИИ и проверены.",
+    "evidence_url": "https://pravo.ru/news/264822/",
+    "checked": "2026-09-27"
+  },
+  {
+    "source": "Google Gemini API (как инструмент генерации)",
+    "url": "https://ai.google.dev/gemini-api/terms",
+    "kind": "сервис ИИ",
+    "paid_use": "unclear",
+    "conditions": "Google не претендует на права на ответы; на платном тарифе запросы не используются для обучения (на бесплатном — используются). Но: запрет использования в сервисах, «likely to be accessed by individuals under the age of 18», и доступ только из доступных регионов — России в списке нет. Под вопросом и офлайн-генерация, и /ai в воркере. Нужен юрист.",
+    "attribution": "—",
+    "evidence_url": "https://ai.google.dev/gemini-api/docs/available-regions",
+    "checked": "2026-09-27"
+  },
+  {
+    "source": "YandexGPT / Alice AI (Yandex AI Studio), GigaChat (Сбер)",
+    "url": "https://aistudio.yandex.ru/",
+    "kind": "сервис ИИ",
+    "paid_use": "conditions",
+    "conditions": "Российские сервисы, оплата в рублях, договор с юрлицом или ИП/самозанятым — проверить условия об ограничениях по возрасту аудитории и о правах на результат до перехода.",
+    "attribution": "—",
+    "evidence_url": "https://developers.sber.ru/docs/ru/gigachat/tariffs/legal-tariffs",
+    "checked": "2026-09-27"
+  }
+]
