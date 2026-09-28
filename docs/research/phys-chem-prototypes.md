@@ -10,7 +10,22 @@
 
 ## Коротко
 
-@@SHORT@@
+- **Каталог.** 563 прототипа по всем номерам ЕГЭ (КИМ 2027) и ОГЭ по физике и химии:
+  - ЕГЭ-физика — 191 на 26 заданий;
+  - ОГЭ-физика — 120 на 22;
+  - ЕГЭ-химия — 175 на 34;
+  - ОГЭ-химия — 77 на 23.
+
+  Разновидности взяты из полной выгрузки открытого банка ФИПИ (8709 заданий) и демоверсий 2027. Каждая запись: что неизменно, что меняется, как считается ответ, типичные ошибки, генератор, ёмкость, наш пример.
+- **Покрытие.** 555 прототипов — генераторы с независимым пересчётом ответа. 8 рецептов `llm` — только полные развёрнутые ответы (ЕГЭ-химия 29–33, ОГЭ-физика 17–19); их проверяемые шаги тоже покрыты генераторами.
+- **Ёмкость.** У каждого генератора не меньше 50 разных условий. У 529 из 555 — не меньше 200, медиана 1232 на 2000 попыток. Всего не меньше 671 141 разных аналогов; это нижняя оценка, большинство генераторов не исчерпаны.
+- **Аналог — не только другие числа.** У прототипов 4–10 своих сюжетов, объектов и веществ. Максимальное сходство с текстами ФИПИ по 5-словным шинглам — 0,29 (порог 0,30), типовые инструкции КИМ не считаются.
+- **Самопроверка чистая.** Прототипов 563 (с генератором 555, рецептов 8); карточек 109798; ошибок 0; повторов в выдаче 0 (отброшено при генерации 113748); дублей между прототипами 0; карточек со сходством с ФИПИ ≥ 0,3: 0.
+- **Повторы старых генераторов добиты.** Было 1357 повторов условий на 5000 карточек, теперь повторов в выдаче 0: повтор при генерации — новая попытка.
+- **Экзаменационная проверка.** На каждый прототип — 5 случайных аналогов, эксперт по чек-листу КИМ 2027. Прошло 563 из 563 прототипов, после одного–трёх раундов исправлений.
+- **База веществ.** 814 веществ, 4090 реакций, каждая уравнена программой. 91 прототип развёрнутых заданий хранит шаги решения — это задел под частичный балл.
+- **Метод «Решу ЕГЭ».** Их аналог по собственному определению отличается от прототипа только числами. Мы меняем ещё сюжет и вещества, ответ вычисляем и перепроверяем кодом, а близость к ФИПИ меряем.
+- **Не покрыто.** Задания по рисунку, полное письменное решение (только шаги), задания банка вне КИМ 2027, около 100 нишевых задач части 2.
 
 ## Метод «Решу ЕГЭ» и что мы взяли
 
@@ -25,7 +40,7 @@
 - В каталоге у каждой темы два числа: сколько в ней прототипов и сколько всего заданий вместе с клонами [4]. Цифры по физике и химии получить не удалось: каталог строится скриптом.
 - Для сравнения: в открытом банке ФИПИ по профильной математике около 1083 задач на 468 прототипов, то есть примерно 2 на прототип [5, вторичный].
 - Весь банк «Решу ЕГЭ» оценивали примерно в 100 тыс. задач (2020) [6, вторичный].
-- По нашей выгрузке открытого банка ФИПИ (2344 задания ЕГЭ-физики, 2848 ЕГЭ-химии, 1507 ОГЭ-физики, 2010 ОГЭ-химии) на один наш прототип приходится в среднем 5–15 заданий банка. Это «естественные» аналоги ФИПИ.
+- По нашей выгрузке открытого банка ФИПИ (2344 задания ЕГЭ-физики, 2848 ЕГЭ-химии, 1507 ОГЭ-физики, 2010 ОГЭ-химии) на один наш прототип приходится в среднем около 15 заданий банка (8709 / 563). Это «естественные» аналоги ФИПИ.
 
 **Как проверяют.**
 - Краткие ответы проверяются автоматически. Развёрнутые показываются вместе с решением и критериями, оценку ставит учитель [4, 7].
@@ -81,7 +96,7 @@
 - Каждое уравнение уравнено программой `balance()` и перепроверено `check_balance()`. Коэффициенты вручную не пишутся.
 - Отдельно хранятся проверенные пары «не реагирует» — источник правдоподобных дистракторов.
 
-@@DB@@
+Итог базы: 814 веществ (органических 351), 4090 уравненных реакций, у 479 веществ — Wikidata QID, у 486 — PubChem CID. Проверка: `python3 tools/research/chemdb.py` — 0 проблем; выгрузка — `--write`.
 
 ## Самопроверка
 
@@ -94,7 +109,13 @@
   - Типовые инструкции КИМ («Из предложенного перечня выберите два…», «Запишите в таблицу выбранные цифры…») встречаются в 40 и более заданиях банка. Они не считаются заимствованием: аналог обязан их повторять.
 - **Формат ответа.** Число с запятой; у `pm` — одинаковая точность значения и погрешности; варианты без повторов. В тексте нет «None» и заготовок.
 
-@@RUN@@
+Итоговый прогон (`--n 200 --cap 2000`, текстов ФИПИ для сверки: физика 4175, химия 5336 — задания банка и фрагменты демоверсий):
+
+> Итого: прототипов 563 (с генератором 555, рецептов 8); карточек 109798; ошибок 0; повторов в выдаче 0 (отброшено при генерации 113748); дублей между прототипами 0; карточек со сходством с ФИПИ ≥ 0,3: 0.
+
+Старые 25 генераторов (`python3 tools/research/gen_phys_chem.py --n 200`):
+
+> Итого: 25 типов, 4591 карточек, ошибок 0, повторов условий в выдаче 0 (повтор при генерации — новая попытка; отброшено 27572).
 
 ## Экзаменационная проверка
 
@@ -105,7 +126,17 @@
 
 Итог по участкам:
 
-@@FID@@
+| участок | прототипов | проверено аналогов | прошло прототипов |
+|---|---|---|---|
+| ЕГЭ-физика 1–13 | 86 | 430 | 86 |
+| ЕГЭ-физика 14–26 | 105 | 525 | 105 |
+| ОГЭ-физика 1–22 | 120 | 585 | 120 |
+| Химия: атом, ПСХЭ, связь (ЕГЭ 1–4, ОГЭ 1–6) | 46 | 230 | 46 |
+| ЕГЭ-химия, неорганика (5–9, 17, 19, 20, 24, 29–31) | 39 | 183 | 39 |
+| ЕГЭ-химия, органика (10–17, 24, 25, 32, 33) | 70 | 342 | 70 |
+| Химия: расчёты (ЕГЭ 18, 21–23, 26–28, 34; ОГЭ 18, 19, 22) | 50 | 250 | 50 |
+| ОГЭ-химия 7–17, 20, 21, 23 | 47 | 235 | 47 |
+| **всего** | **563** | 2780 | 563 |
 
 Типовые находки, исправленные по ходу:
 - **Неединственность ответа.** Второй подходящий вариант в перечне, реактив, не различающий пару, два допустимых продукта ОВР. Теперь генераторы химии перебирают всю базу и отбрасывают карточку, если подходит больше одного варианта.
@@ -118,9 +149,138 @@
 
 ## Покрытие
 
-«Аналогов» — сумма ёмкостей прототипов номера (разных условий на 2000 попыток). Большинство генераторов на 2000 попыток ещё не исчерпаны, так что это нижняя оценка. «Экспертиза» — сколько прототипов прошло экзаменационную проверку.
+«Аналогов» — сумма ёмкостей прототипов номера (разных условий на 2000 попыток). Большинство генераторов на 2000 попыток ещё не исчерпаны, так что это нижняя оценка. Для рецептов `llm` в сумму входит оценка числа разных аналогов из рецепта. «Экспертиза» — сколько прототипов прошло экзаменационную проверку.
 
-@@COVER@@
+### ЕГЭ, физика
+
+| № | прототипов | генератор | рецепт | аналогов (сумма ёмкостей) | мин. на прототип | экспертиза: прошло / проверено |
+|---|---|---|---|---|---|---|
+| 1 | 8 | 8 | 0 | 8 095 | 616 | 8 / 8 |
+| 2 | 6 | 6 | 0 | 5 659 | 697 | 6 / 6 |
+| 3 | 7 | 7 | 0 | 5 578 | 241 | 7 / 7 |
+| 4 | 8 | 8 | 0 | 4 868 | 172 | 8 / 8 |
+| 5 | 6 | 6 | 0 | 7 198 | 411 | 6 / 6 |
+| 6 | 8 | 8 | 0 | 7 659 | 224 | 8 / 8 |
+| 7 | 6 | 6 | 0 | 6 396 | 590 | 6 / 6 |
+| 8 | 8 | 8 | 0 | 6 254 | 168 | 8 / 8 |
+| 9 | 5 | 5 | 0 | 4 884 | 199 | 5 / 5 |
+| 10 | 6 | 6 | 0 | 3 085 | 287 | 6 / 6 |
+| 11 | 7 | 7 | 0 | 5 476 | 195 | 7 / 7 |
+| 12 | 6 | 6 | 0 | 3 447 | 180 | 6 / 6 |
+| 13 | 5 | 5 | 0 | 1 939 | 254 | 5 / 5 |
+| 14 | 10 | 10 | 0 | 10 394 | 113 | 10 / 10 |
+| 15 | 11 | 11 | 0 | 11 640 | 116 | 11 / 11 |
+| 16 | 7 | 7 | 0 | 4 694 | 100 | 7 / 7 |
+| 17 | 6 | 6 | 0 | 6 987 | 396 | 6 / 6 |
+| 18 | 4 | 4 | 0 | 7 999 | 1999 | 4 / 4 |
+| 19 | 7 | 7 | 0 | 4 939 | 333 | 7 / 7 |
+| 20 | 6 | 6 | 0 | 11 839 | 1845 | 6 / 6 |
+| 21 | 8 | 8 | 0 | 10 031 | 853 | 8 / 8 |
+| 22 | 10 | 10 | 0 | 6 362 | 267 | 10 / 10 |
+| 23 | 9 | 9 | 0 | 8 282 | 573 | 9 / 9 |
+| 24 | 6 | 6 | 0 | 3 699 | 128 | 6 / 6 |
+| 25 | 11 | 11 | 0 | 10 954 | 153 | 11 / 11 |
+| 26 | 10 | 10 | 0 | 6 621 | 119 | 10 / 10 |
+| **итого** | **191** | 191 | 0 | 174 979 | | 191 / 191 |
+
+### ОГЭ, физика
+
+| № | прототипов | генератор | рецепт | аналогов (сумма ёмкостей) | мин. на прототип | экспертиза: прошло / проверено |
+|---|---|---|---|---|---|---|
+| 1 | 3 | 3 | 0 | 5 993 | 1993 | 3 / 3 |
+| 2 | 3 | 3 | 0 | 5 266 | 1591 | 3 / 3 |
+| 3 | 4 | 4 | 0 | 7 745 | 1872 | 4 / 4 |
+| 4 | 5 | 5 | 0 | 9 990 | 1993 | 5 / 5 |
+| 5 | 5 | 5 | 0 | 5 752 | 470 | 5 / 5 |
+| 6 | 11 | 11 | 0 | 7 994 | 267 | 11 / 11 |
+| 7 | 7 | 7 | 0 | 3 083 | 199 | 7 / 7 |
+| 8 | 4 | 4 | 0 | 2 096 | 134 | 4 / 4 |
+| 9 | 7 | 7 | 0 | 4 167 | 156 | 7 / 7 |
+| 10 | 4 | 4 | 0 | 1 439 | 194 | 4 / 4 |
+| 11 | 4 | 4 | 0 | 1 593 | 218 | 4 / 4 |
+| 12 | 10 | 10 | 0 | 4 199 | 216 | 10 / 10 |
+| 13 | 9 | 9 | 0 | 5 794 | 216 | 9 / 9 |
+| 14 | 5 | 5 | 0 | 9 707 | 1738 | 5 / 5 |
+| 15 | 3 | 3 | 0 | 5 038 | 1232 | 3 / 3 |
+| 16 | 6 | 6 | 0 | 11 881 | 1886 | 6 / 6 |
+| 17 | 8 | 7 | 1 | 3 585 | 54 | 8 / 8 |
+| 18 | 2 | 1 | 1 | 1 609 | 200 | 2 / 2 |
+| 19 | 3 | 2 | 1 | 2 761 | 300 | 3 / 3 |
+| 20 | 5 | 5 | 0 | 4 473 | 325 | 5 / 5 |
+| 21 | 7 | 7 | 0 | 7 328 | 404 | 7 / 7 |
+| 22 | 5 | 5 | 0 | 6 288 | 854 | 5 / 5 |
+| **итого** | **120** | 117 | 3 | 117 781 | | 120 / 120 |
+
+### ЕГЭ, химия
+
+| № | прототипов | генератор | рецепт | аналогов (сумма ёмкостей) | мин. на прототип | экспертиза: прошло / проверено |
+|---|---|---|---|---|---|---|
+| 1 | 5 | 5 | 0 | 9 772 | 1792 | 5 / 5 |
+| 2 | 6 | 6 | 0 | 6 923 | 889 | 6 / 6 |
+| 3 | 8 | 8 | 0 | 15 992 | 1994 | 8 / 8 |
+| 4 | 9 | 9 | 0 | 16 245 | 821 | 9 / 9 |
+| 5 | 2 | 2 | 0 | 3 044 | 1079 | 2 / 2 |
+| 6 | 3 | 3 | 0 | 1 383 | 215 | 3 / 3 |
+| 7 | 2 | 2 | 0 | 2 522 | 537 | 2 / 2 |
+| 8 | 4 | 4 | 0 | 6 349 | 1238 | 4 / 4 |
+| 9 | 3 | 3 | 0 | 3 163 | 776 | 3 / 3 |
+| 10 | 6 | 6 | 0 | 9 989 | 1443 | 6 / 6 |
+| 11 | 8 | 8 | 0 | 15 215 | 1396 | 8 / 8 |
+| 12 | 6 | 6 | 0 | 8 603 | 270 | 6 / 6 |
+| 13 | 10 | 10 | 0 | 15 258 | 227 | 10 / 10 |
+| 14 | 5 | 5 | 0 | 9 331 | 1336 | 5 / 5 |
+| 15 | 6 | 6 | 0 | 10 019 | 653 | 6 / 6 |
+| 16 | 4 | 4 | 0 | 6 659 | 1448 | 4 / 4 |
+| 17 | 8 | 8 | 0 | 10 965 | 573 | 8 / 8 |
+| 18 | 5 | 5 | 0 | 7 781 | 725 | 5 / 5 |
+| 19 | 4 | 4 | 0 | 6 865 | 1499 | 4 / 4 |
+| 20 | 4 | 4 | 0 | 4 906 | 645 | 4 / 4 |
+| 21 | 2 | 2 | 0 | 4 000 | 2000 | 2 / 2 |
+| 22 | 4 | 4 | 0 | 7 267 | 1441 | 4 / 4 |
+| 23 | 3 | 3 | 0 | 5 923 | 1953 | 3 / 3 |
+| 24 | 4 | 4 | 0 | 3 350 | 166 | 4 / 4 |
+| 25 | 7 | 7 | 0 | 12 860 | 931 | 7 / 7 |
+| 26 | 7 | 7 | 0 | 9 027 | 1048 | 7 / 7 |
+| 27 | 5 | 5 | 0 | 6 589 | 683 | 5 / 5 |
+| 28 | 6 | 6 | 0 | 10 533 | 1398 | 6 / 6 |
+| 29 | 4 | 3 | 1 | 4 190 | 583 | 4 / 4 |
+| 30 | 4 | 3 | 1 | 4 958 | 728 | 4 / 4 |
+| 31 | 2 | 1 | 1 | 4 604 | 1604 | 2 / 2 |
+| 32 | 5 | 4 | 1 | 8 300 | 973 | 5 / 5 |
+| 33 | 8 | 7 | 1 | 15 043 | 1059 | 8 / 8 |
+| 34 | 6 | 6 | 0 | 5 989 | 190 | 6 / 6 |
+| **итого** | **175** | 170 | 5 | 273 617 | | 175 / 175 |
+
+### ОГЭ, химия
+
+| № | прототипов | генератор | рецепт | аналогов (сумма ёмкостей) | мин. на прототип | экспертиза: прошло / проверено |
+|---|---|---|---|---|---|---|
+| 1 | 2 | 2 | 0 | 3 987 | 1987 | 2 / 2 |
+| 2 | 3 | 3 | 0 | 1 330 | 216 | 3 / 3 |
+| 3 | 4 | 4 | 0 | 2 752 | 215 | 4 / 4 |
+| 4 | 3 | 3 | 0 | 3 909 | 1228 | 3 / 3 |
+| 5 | 2 | 2 | 0 | 3 801 | 1844 | 2 / 2 |
+| 6 | 4 | 4 | 0 | 6 563 | 1289 | 4 / 4 |
+| 7 | 4 | 4 | 0 | 8 000 | 2000 | 4 / 4 |
+| 8 | 5 | 5 | 0 | 8 349 | 891 | 5 / 5 |
+| 9 | 6 | 6 | 0 | 11 994 | 1994 | 6 / 6 |
+| 10 | 3 | 3 | 0 | 1 485 | 338 | 3 / 3 |
+| 11 | 4 | 4 | 0 | 8 000 | 2000 | 4 / 4 |
+| 12 | 4 | 4 | 0 | 8 000 | 2000 | 4 / 4 |
+| 13 | 3 | 3 | 0 | 5 743 | 1743 | 3 / 3 |
+| 14 | 3 | 3 | 0 | 5 673 | 1726 | 3 / 3 |
+| 15 | 1 | 1 | 0 | 1 664 | 1664 | 1 / 1 |
+| 16 | 3 | 3 | 0 | 5 986 | 1987 | 3 / 3 |
+| 17 | 3 | 3 | 0 | 5 361 | 1361 | 3 / 3 |
+| 18 | 3 | 3 | 0 | 1 138 | 292 | 3 / 3 |
+| 19 | 4 | 4 | 0 | 5 534 | 875 | 4 / 4 |
+| 20 | 3 | 3 | 0 | 3 713 | 55 | 3 / 3 |
+| 21 | 2 | 2 | 0 | 2 269 | 366 | 2 / 2 |
+| 22 | 5 | 5 | 0 | 5 902 | 538 | 5 / 5 |
+| 23 | 3 | 3 | 0 | 5 911 | 1911 | 3 / 3 |
+| **итого** | **77** | 77 | 0 | 117 064 | | 77 / 77 |
+
+Всего: прототипов 563 (генераторов 555, рецептов 8); аналогов (сумма ёмкостей) 683 441; экспертиза: прошло 563 из 563.
 
 ## Что не покрыто и почему
 
@@ -156,4 +316,568 @@
 
 ## Приложение: экзаменационная проверка по прототипам
 
-@@FIDTABLE@@
+| прототип | № | проверено | прошло | статус |
+|---|---|---|---|---|
+| `ch-ege-01-excited` | ЕГЭ 1 | 5 | 5 | pass |
+| `ch-ege-01-ion` | ЕГЭ 1 | 5 | 5 | pass |
+| `ch-ege-01-outer` | ЕГЭ 1 | 5 | 5 | pass |
+| `ch-ege-01-sublevel` | ЕГЭ 1 | 5 | 5 | pass |
+| `ch-ege-01-unpaired` | ЕГЭ 1 | 5 | 5 | pass |
+| `ch-ege-02-acidbase` | ЕГЭ 2 | 5 | 5 | pass |
+| `ch-ege-02-en` | ЕГЭ 2 | 5 | 5 | pass |
+| `ch-ege-02-hiox` | ЕГЭ 2 | 5 | 5 | pass |
+| `ch-ege-02-hydrides` | ЕГЭ 2 | 5 | 5 | pass |
+| `ch-ege-02-radius` | ЕГЭ 2 | 5 | 5 | pass |
+| `ch-ege-02-reduc` | ЕГЭ 2 | 5 | 5 | pass |
+| `ch-ege-03-anion` | ЕГЭ 3 | 5 | 5 | pass |
+| `ch-ege-03-const` | ЕГЭ 3 | 5 | 5 | pass |
+| `ch-ege-03-diff` | ЕГЭ 3 | 5 | 5 | pass |
+| `ch-ege-03-maxox` | ЕГЭ 3 | 5 | 5 | pass |
+| `ch-ege-03-minox` | ЕГЭ 3 | 5 | 5 | pass |
+| `ch-ege-03-oxval` | ЕГЭ 3 | 5 | 5 | pass |
+| `ch-ege-03-sign` | ЕГЭ 3 | 5 | 5 | pass |
+| `ch-ege-03-valence` | ЕГЭ 3 | 5 | 5 | pass |
+| `ch-ege-04-combo` | ЕГЭ 4 | 5 | 5 | pass |
+| `ch-ege-04-da` | ЕГЭ 4 | 5 | 5 | pass |
+| `ch-ege-04-hbond` | ЕГЭ 4 | 5 | 5 | pass |
+| `ch-ege-04-ionic` | ЕГЭ 4 | 5 | 5 | pass |
+| `ch-ege-04-lattice` | ЕГЭ 4 | 5 | 5 | pass |
+| `ch-ege-04-mixed` | ЕГЭ 4 | 5 | 5 | pass |
+| `ch-ege-04-nonpolar` | ЕГЭ 4 | 5 | 5 | pass |
+| `ch-ege-04-polar` | ЕГЭ 4 | 5 | 5 | pass |
+| `ch-ege-04-props` | ЕГЭ 4 | 5 | 5 | pass |
+| `ch-ege-05-cells` | ЕГЭ 5 | 5 | 5 | pass |
+| `ch-ege-05-match` | ЕГЭ 5 | 5 | 5 | pass |
+| `ch-ege-06-ionic` | ЕГЭ 6 | 5 | 5 | pass |
+| `ch-ege-06-two-tubes` | ЕГЭ 6 | 5 | 5 | pass |
+| `ch-ege-06-unknown` | ЕГЭ 6 | 5 | 5 | pass |
+| `ch-ege-07-choose-two` | ЕГЭ 7 | 5 | 5 | pass |
+| `ch-ege-07-reagents` | ЕГЭ 7 | 5 | 5 | pass |
+| `ch-ege-08-amphoteric` | ЕГЭ 8 | 5 | 5 | pass |
+| `ch-ege-08-decomposition` | ЕГЭ 8 | 5 | 5 | pass |
+| `ch-ege-08-element` | ЕГЭ 8 | 5 | 5 | pass |
+| `ch-ege-08-oxacids` | ЕГЭ 8 | 5 | 5 | pass |
+| `ch-ege-09-mixed` | ЕГЭ 9 | 5 | 5 | pass |
+| `ch-ege-09-reagents` | ЕГЭ 9 | 5 | 5 | pass |
+| `ch-ege-09-substances` | ЕГЭ 9 | 5 | 5 | pass |
+| `ch-ege-10-brutto-class` | ЕГЭ 10 | 5 | 5 | pass |
+| `ch-ege-10-formula-class` | ЕГЭ 10 | 5 | 5 | pass |
+| `ch-ege-10-genf-class` | ЕГЭ 10 | 5 | 5 | pass |
+| `ch-ege-10-genf-substance` | ЕГЭ 10 | 5 | 5 | pass |
+| `ch-ege-10-name-class` | ЕГЭ 10 | 5 | 5 | pass |
+| `ch-ege-10-name-formula` | ЕГЭ 10 | 5 | 5 | pass |
+| `ch-ege-11-cis-trans` | ЕГЭ 11 | 5 | 5 | pass |
+| `ch-ege-11-func-groups` | ЕГЭ 11 | 5 | 5 | pass |
+| `ch-ege-11-homologs` | ЕГЭ 11 | 5 | 5 | pass |
+| `ch-ege-11-hybrid` | ЕГЭ 11 | 5 | 5 | pass |
+| `ch-ege-11-isomers` | ЕГЭ 11 | 5 | 5 | pass |
+| `ch-ege-11-no-isomers` | ЕГЭ 11 | 5 | 5 | pass |
+| `ch-ege-11-orientation` | ЕГЭ 11 | 5 | 5 | pass |
+| `ch-ege-11-sigma-pi` | ЕГЭ 11 | 5 | 5 | pass |
+| `ch-ege-12-common-reagent` | ЕГЭ 12 | 5 | 5 | pass |
+| `ch-ege-12-product-of-reaction` | ЕГЭ 12 | 5 | 5 | pass |
+| `ch-ege-12-reaction-type` | ЕГЭ 12 | 5 | 5 | pass |
+| `ch-ege-12-reacts-with` | ЕГЭ 12 | 5 | 5 | pass |
+| `ch-ege-12-schemes-to-product` | ЕГЭ 12 | 5 | 5 | pass |
+| `ch-ege-12-substances-for-reagent` | ЕГЭ 12 | 5 | 5 | pass |
+| `ch-ege-13-amphoteric` | ЕГЭ 13 | 5 | 5 | pass |
+| `ch-ege-13-basicity` | ЕГЭ 13 | 5 | 5 | pass |
+| `ch-ege-13-carb-fat-reagents` | ЕГЭ 13 | 5 | 5 | pass |
+| `ch-ege-13-compare-two` | ЕГЭ 13 | 5 | 5 | pass |
+| `ch-ege-13-hydrolysis` | ЕГЭ 13 | 5 | 5 | pass |
+| `ch-ege-13-hydrolysis-products` | ЕГЭ 13 | 5 | 5 | pass |
+| `ch-ege-13-n-compound-reagents` | ЕГЭ 13 | 5 | 5 | pass |
+| `ch-ege-13-n-synthesis` | ЕГЭ 13 | 5 | 5 | pass |
+| `ch-ege-13-reaction-types` | ЕГЭ 13 | 5 | 5 | pass |
+| `ch-ege-13-statements` | ЕГЭ 13 | 5 | 5 | pass |
+| `ch-ege-14-arenes` | ЕГЭ 14 | 5 | 5 | pass |
+| `ch-ege-14-fixed-process` | ЕГЭ 14 | 5 | 5 | pass |
+| `ch-ege-14-reagent-x` | ЕГЭ 14 | 5 | 5 | pass |
+| `ch-ege-14-scheme-product` | ЕГЭ 14 | 5 | 5 | pass |
+| `ch-ege-14-synthesis` | ЕГЭ 14 | 5 | 5 | pass |
+| `ch-ege-15-ester-hydrolysis` | ЕГЭ 15 | 5 | 5 | pass |
+| `ch-ege-15-one-substance` | ЕГЭ 15 | 5 | 5 | pass |
+| `ch-ege-15-reagent-x` | ЕГЭ 15 | 5 | 5 | pass |
+| `ch-ege-15-scheme-product` | ЕГЭ 15 | 5 | 5 | pass |
+| `ch-ege-15-substance-x` | ЕГЭ 15 | 5 | 5 | pass |
+| `ch-ege-15-synthesis` | ЕГЭ 15 | 5 | 5 | pass |
+| `ch-ege-16-forward` | ЕГЭ 16 | 5 | 5 | pass |
+| `ch-ege-16-intermediates` | ЕГЭ 16 | 5 | 5 | pass |
+| `ch-ege-16-reagents` | ЕГЭ 16 | 5 | 5 | pass |
+| `ch-ege-16-start-end` | ЕГЭ 16 | 5 | 5 | pass |
+| `ch-ege-17-decomposition` | ЕГЭ 17 | 5 | 5 | pass |
+| `ch-ege-17-match` | ЕГЭ 17 | 5 | 5 | pass |
+| `ch-ege-17-org-two-reactions` | ЕГЭ 17 | 5 | 5 | pass |
+| `ch-ege-17-org-types-all` | ЕГЭ 17 | 5 | 5 | pass |
+| `ch-ege-17-org-types-two` | ЕГЭ 17 | 5 | 5 | pass |
+| `ch-ege-17-pairs` | ЕГЭ 17 | 5 | 5 | pass |
+| `ch-ege-17-reagent` | ЕГЭ 17 | 5 | 5 | pass |
+| `ch-ege-17-types` | ЕГЭ 17 | 5 | 5 | pass |
+| `ch-ege-18-affect` | ЕГЭ 18 | 5 | 5 | pass |
+| `ch-ege-18-compare` | ЕГЭ 18 | 5 | 5 | pass |
+| `ch-ege-18-eqlist` | ЕГЭ 18 | 5 | 5 | pass |
+| `ch-ege-18-factor` | ЕГЭ 18 | 5 | 5 | pass |
+| `ch-ege-18-subst` | ЕГЭ 18 | 5 | 5 | pass |
+| `ch-ege-19-agent` | ЕГЭ 19 | 5 | 5 | pass |
+| `ch-ege-19-change` | ЕГЭ 19 | 5 | 5 | pass |
+| `ch-ege-19-ion` | ЕГЭ 19 | 5 | 5 | pass |
+| `ch-ege-19-property` | ЕГЭ 19 | 5 | 5 | pass |
+| `ch-ege-20-classes` | ЕГЭ 20 | 5 | 5 | pass |
+| `ch-ege-20-electrode` | ЕГЭ 20 | 5 | 5 | pass |
+| `ch-ege-20-formulas` | ЕГЭ 20 | 5 | 5 | pass |
+| `ch-ege-20-obtain` | ЕГЭ 20 | 5 | 5 | pass |
+| `ch-ege-21-names` | ЕГЭ 21 | 5 | 5 | pass |
+| `ch-ege-21-order` | ЕГЭ 21 | 5 | 5 | pass |
+| `ch-ege-22-eqlist` | ЕГЭ 22 | 5 | 5 | pass |
+| `ch-ege-22-gas` | ЕГЭ 22 | 5 | 5 | pass |
+| `ch-ege-22-hetero` | ЕГЭ 22 | 5 | 5 | pass |
+| `ch-ege-22-ionic` | ЕГЭ 22 | 5 | 5 | pass |
+| `ch-ege-23-letters` | ЕГЭ 23 | 5 | 5 | pass |
+| `ch-ege-23-table` | ЕГЭ 23 | 5 | 5 | pass |
+| `ch-ege-23-text` | ЕГЭ 23 | 5 | 5 | pass |
+| `ch-ege-24-distinguish` | ЕГЭ 24 | 5 | 5 | pass |
+| `ch-ege-24-org-pair-reagent` | ЕГЭ 24 | 5 | 5 | pass |
+| `ch-ege-24-org-sign` | ЕГЭ 24 | 5 | 5 | pass |
+| `ch-ege-24-signs` | ЕГЭ 24 | 5 | 5 | pass |
+| `ch-ege-25-application` | ЕГЭ 25 | 5 | 5 | pass |
+| `ch-ege-25-fiber-type` | ЕГЭ 25 | 5 | 5 | pass |
+| `ch-ege-25-industry` | ЕГЭ 25 | 5 | 5 | pass |
+| `ch-ege-25-monomer-polymer` | ЕГЭ 25 | 5 | 5 | pass |
+| `ch-ege-25-process` | ЕГЭ 25 | 5 | 5 | pass |
+| `ch-ege-25-safety` | ЕГЭ 25 | 5 | 5 | pass |
+| `ch-ege-25-unit-polymer` | ЕГЭ 25 | 5 | 5 | pass |
+| `ch-ege-26-add` | ЕГЭ 26 | 5 | 5 | pass |
+| `ch-ege-26-hydrate` | ЕГЭ 26 | 5 | 5 | pass |
+| `ch-ege-26-mix` | ЕГЭ 26 | 5 | 5 | pass |
+| `ch-ege-26-mixfind` | ЕГЭ 26 | 5 | 5 | pass |
+| `ch-ege-26-molar` | ЕГЭ 26 | 5 | 5 | pass |
+| `ch-ege-26-salt` | ЕГЭ 26 | 5 | 5 | pass |
+| `ch-ege-26-water` | ЕГЭ 26 | 5 | 5 | pass |
+| `ch-ege-27-gasvol` | ЕГЭ 27 | 5 | 5 | pass |
+| `ch-ege-27-inv` | ЕГЭ 27 | 5 | 5 | pass |
+| `ch-ege-27-mass` | ЕГЭ 27 | 5 | 5 | pass |
+| `ch-ege-27-qeq` | ЕГЭ 27 | 5 | 5 | pass |
+| `ch-ege-27-vol` | ЕГЭ 27 | 5 | 5 | pass |
+| `ch-ege-28-eta` | ЕГЭ 28 | 5 | 5 | pass |
+| `ch-ege-28-excess` | ЕГЭ 28 | 5 | 5 | pass |
+| `ch-ege-28-imp` | ЕГЭ 28 | 5 | 5 | pass |
+| `ch-ege-28-raw` | ЕГЭ 28 | 5 | 5 | pass |
+| `ch-ege-28-reverse` | ЕГЭ 28 | 5 | 5 | pass |
+| `ch-ege-28-yield` | ЕГЭ 28 | 5 | 5 | pass |
+| `ch-ege-29-choose` | ЕГЭ 29 | 5 | 5 | pass |
+| `ch-ege-29-coefficients` | ЕГЭ 29 | 5 | 5 | pass |
+| `ch-ege-29-electrons` | ЕГЭ 29 | 5 | 5 | pass |
+| `ch-ege-29-full` | ЕГЭ 29 | 1 | 1 | pass |
+| `ch-ege-30-choose` | ЕГЭ 30 | 5 | 5 | pass |
+| `ch-ege-30-full` | ЕГЭ 30 | 1 | 1 | pass |
+| `ch-ege-30-net-ionic` | ЕГЭ 30 | 5 | 5 | pass |
+| `ch-ege-30-sum` | ЕГЭ 30 | 5 | 5 | pass |
+| `ch-ege-31-chain` | ЕГЭ 31 | 5 | 5 | pass |
+| `ch-ege-31-full` | ЕГЭ 31 | 1 | 1 | pass |
+| `ch-ege-32-chain-aromatic` | ЕГЭ 32 | 5 | 5 | pass |
+| `ch-ege-32-chain-hydrocarbons` | ЕГЭ 32 | 5 | 5 | pass |
+| `ch-ege-32-chain-nitrogen` | ЕГЭ 32 | 5 | 5 | pass |
+| `ch-ege-32-chain-oxygen` | ЕГЭ 32 | 5 | 5 | pass |
+| `ch-ege-32-full-answer` | ЕГЭ 32 | 1 | 1 | pass |
+| `ch-ege-33-by-reaction` | ЕГЭ 33 | 5 | 5 | pass |
+| `ch-ege-33-combustion` | ЕГЭ 33 | 5 | 5 | pass |
+| `ch-ege-33-combustion-carbonate` | ЕГЭ 33 | 5 | 5 | pass |
+| `ch-ege-33-combustion-halogen` | ЕГЭ 33 | 5 | 5 | pass |
+| `ch-ege-33-full-answer` | ЕГЭ 33 | 1 | 1 | pass |
+| `ch-ege-33-mass-fractions` | ЕГЭ 33 | 5 | 5 | pass |
+| `ch-ege-33-salt-carbonyl` | ЕГЭ 33 | 5 | 5 | pass |
+| `ch-ege-33-structure` | ЕГЭ 33 | 5 | 5 | pass |
+| `ch-ege-34-atoms` | ЕГЭ 34 | 5 | 5 | pass |
+| `ch-ege-34-decomp` | ЕГЭ 34 | 5 | 5 | pass |
+| `ch-ege-34-electro` | ЕГЭ 34 | 5 | 5 | pass |
+| `ch-ege-34-hydrate` | ЕГЭ 34 | 5 | 5 | pass |
+| `ch-ege-34-oleum` | ЕГЭ 34 | 5 | 5 | pass |
+| `ch-ege-34-solub` | ЕГЭ 34 | 5 | 5 | pass |
+| `ch-oge-01-element` | ОГЭ 1 | 5 | 5 | pass |
+| `ch-oge-01-simple` | ОГЭ 1 | 5 | 5 | pass |
+| `ch-oge-02-cell` | ОГЭ 2 | 5 | 5 | pass |
+| `ch-oge-02-layers` | ОГЭ 2 | 5 | 5 | pass |
+| `ch-oge-02-nucleus` | ОГЭ 2 | 5 | 5 | pass |
+| `ch-oge-03-en` | ОГЭ 3 | 5 | 5 | pass |
+| `ch-oge-03-metal` | ОГЭ 3 | 5 | 5 | pass |
+| `ch-oge-03-oxides` | ОГЭ 3 | 5 | 5 | pass |
+| `ch-oge-03-radius` | ОГЭ 3 | 5 | 5 | pass |
+| `ch-oge-04-ox-metal` | ОГЭ 4 | 5 | 5 | pass |
+| `ch-oge-04-ox-nonmetal` | ОГЭ 4 | 5 | 5 | pass |
+| `ch-oge-04-valence` | ОГЭ 4 | 5 | 5 | pass |
+| `ch-oge-05-bond` | ОГЭ 5 | 5 | 5 | pass |
+| `ch-oge-05-mixed` | ОГЭ 5 | 5 | 5 | pass |
+| `ch-oge-06-among` | ОГЭ 6 | 5 | 5 | pass |
+| `ch-oge-06-anotb` | ОГЭ 6 | 5 | 5 | pass |
+| `ch-oge-06-both` | ОГЭ 6 | 5 | 5 | pass |
+| `ch-oge-06-row` | ОГЭ 6 | 5 | 5 | pass |
+| `ch-oge-07-hydroxides` | ОГЭ 7 | 5 | 5 | pass |
+| `ch-oge-07-mixed` | ОГЭ 7 | 5 | 5 | pass |
+| `ch-oge-07-oxides` | ОГЭ 7 | 5 | 5 | pass |
+| `ch-oge-07-same-class` | ОГЭ 7 | 5 | 5 | pass |
+| `ch-oge-08-acid-oxide` | ОГЭ 8 | 5 | 5 | pass |
+| `ch-oge-08-amph-oxide` | ОГЭ 8 | 5 | 5 | pass |
+| `ch-oge-08-basic-oxide` | ОГЭ 8 | 5 | 5 | pass |
+| `ch-oge-08-metal` | ОГЭ 8 | 5 | 5 | pass |
+| `ch-oge-08-nonmetal` | ОГЭ 8 | 5 | 5 | pass |
+| `ch-oge-09-acid-base` | ОГЭ 9 | 5 | 5 | pass |
+| `ch-oge-09-amphoteric` | ОГЭ 9 | 5 | 5 | pass |
+| `ch-oge-09-decomposition` | ОГЭ 9 | 5 | 5 | pass |
+| `ch-oge-09-redox` | ОГЭ 9 | 5 | 5 | pass |
+| `ch-oge-09-salts` | ОГЭ 9 | 5 | 5 | pass |
+| `ch-oge-09-water` | ОГЭ 9 | 5 | 5 | pass |
+| `ch-oge-10-compounds` | ОГЭ 10 | 5 | 5 | pass |
+| `ch-oge-10-names` | ОГЭ 10 | 5 | 5 | pass |
+| `ch-oge-10-simple-oxide-salt` | ОГЭ 10 | 5 | 5 | pass |
+| `ch-oge-11-equations-type` | ОГЭ 11 | 5 | 5 | pass |
+| `ch-oge-11-pairs-type` | ОГЭ 11 | 5 | 5 | pass |
+| `ch-oge-11-redox-pairs` | ОГЭ 11 | 5 | 5 | pass |
+| `ch-oge-11-thermal` | ОГЭ 11 | 5 | 5 | pass |
+| `ch-oge-12-gas` | ОГЭ 12 | 5 | 5 | pass |
+| `ch-oge-12-general` | ОГЭ 12 | 5 | 5 | pass |
+| `ch-oge-12-precipitate-color` | ОГЭ 12 | 5 | 5 | pass |
+| `ch-oge-12-solids` | ОГЭ 12 | 5 | 5 | pass |
+| `ch-oge-13-count-ions` | ОГЭ 13 | 5 | 5 | pass |
+| `ch-oge-13-electrolytes` | ОГЭ 13 | 5 | 5 | pass |
+| `ch-oge-13-ions-of-salt` | ОГЭ 13 | 5 | 5 | pass |
+| `ch-oge-14-ion-pairs` | ОГЭ 14 | 5 | 5 | pass |
+| `ch-oge-14-names` | ОГЭ 14 | 5 | 5 | pass |
+| `ch-oge-14-reactants` | ОГЭ 14 | 5 | 5 | pass |
+| `ch-oge-15-scheme-process` | ОГЭ 15 | 5 | 5 | pass |
+| `ch-oge-16-household` | ОГЭ 16 | 5 | 5 | pass |
+| `ch-oge-16-lab` | ОГЭ 16 | 5 | 5 | pass |
+| `ch-oge-16-mixtures` | ОГЭ 16 | 5 | 5 | pass |
+| `ch-oge-17-indicators` | ОГЭ 17 | 5 | 5 | pass |
+| `ch-oge-17-solids` | ОГЭ 17 | 5 | 5 | pass |
+| `ch-oge-17-solutions` | ОГЭ 17 | 5 | 5 | pass |
+| `ch-oge-18-hydrate` | ОГЭ 18 | 5 | 5 | pass |
+| `ch-oge-18-mineral` | ОГЭ 18 | 5 | 5 | pass |
+| `ch-oge-18-salt` | ОГЭ 18 | 5 | 5 | pass |
+| `ch-oge-19-agro` | ОГЭ 19 | 5 | 5 | pass |
+| `ch-oge-19-dose` | ОГЭ 19 | 5 | 5 | pass |
+| `ch-oge-19-raw` | ОГЭ 19 | 5 | 5 | pass |
+| `ch-oge-19-sol` | ОГЭ 19 | 5 | 5 | pass |
+| `ch-oge-20-coefficients` | ОГЭ 20 | 5 | 5 | pass |
+| `ch-oge-20-electron-balance` | ОГЭ 20 | 5 | 5 | pass |
+| `ch-oge-20-roles` | ОГЭ 20 | 5 | 5 | pass |
+| `ch-oge-21-find-x` | ОГЭ 21 | 5 | 5 | pass |
+| `ch-oge-21-reagents` | ОГЭ 21 | 5 | 5 | pass |
+| `ch-oge-22-gas` | ОГЭ 22 | 5 | 5 | pass |
+| `ch-oge-22-msol` | ОГЭ 22 | 5 | 5 | pass |
+| `ch-oge-22-omega` | ОГЭ 22 | 5 | 5 | pass |
+| `ch-oge-22-precip` | ОГЭ 22 | 5 | 5 | pass |
+| `ch-oge-22-reagent` | ОГЭ 22 | 5 | 5 | pass |
+| `ch-oge-23-choose-reagents` | ОГЭ 23 | 5 | 5 | pass |
+| `ch-oge-23-ionic` | ОГЭ 23 | 5 | 5 | pass |
+| `ch-oge-23-signs` | ОГЭ 23 | 5 | 5 | pass |
+| `ph-ege-01-circle` | ЕГЭ 1 | 5 | 5 | pass |
+| `ph-ege-01-freefall` | ЕГЭ 1 | 5 | 5 | pass |
+| `ph-ege-01-relative` | ЕГЭ 1 | 5 | 5 | pass |
+| `ph-ege-01-uniacc` | ЕГЭ 1 | 5 | 5 | pass |
+| `ph-ege-01-uniform-xt` | ЕГЭ 1 | 5 | 5 | pass |
+| `ph-ege-01-vt-accel` | ЕГЭ 1 | 5 | 5 | pass |
+| `ph-ege-01-vt-path` | ЕГЭ 1 | 5 | 5 | pass |
+| `ph-ege-01-xt-eq` | ЕГЭ 1 | 5 | 5 | pass |
+| `ph-ege-02-friction` | ЕГЭ 2 | 5 | 5 | pass |
+| `ph-ege-02-gravity` | ЕГЭ 2 | 5 | 5 | pass |
+| `ph-ege-02-hooke` | ЕГЭ 2 | 5 | 5 | pass |
+| `ph-ege-02-newton-num` | ЕГЭ 2 | 5 | 5 | pass |
+| `ph-ege-02-newton-ratio` | ЕГЭ 2 | 5 | 5 | pass |
+| `ph-ege-02-weight` | ЕГЭ 2 | 5 | 5 | pass |
+| `ph-ege-03-collision` | ЕГЭ 3 | 5 | 5 | pass |
+| `ph-ege-03-energy` | ЕГЭ 3 | 5 | 5 | pass |
+| `ph-ege-03-energy-friction` | ЕГЭ 3 | 5 | 5 | pass |
+| `ph-ege-03-kinetic` | ЕГЭ 3 | 5 | 5 | pass |
+| `ph-ege-03-momentum` | ЕГЭ 3 | 5 | 5 | pass |
+| `ph-ege-03-potential` | ЕГЭ 3 | 5 | 5 | pass |
+| `ph-ege-03-work` | ЕГЭ 3 | 5 | 5 | pass |
+| `ph-ege-04-archimedes` | ЕГЭ 4 | 5 | 5 | pass |
+| `ph-ege-04-float` | ЕГЭ 4 | 5 | 5 | pass |
+| `ph-ege-04-lever` | ЕГЭ 4 | 5 | 5 | pass |
+| `ph-ege-04-moment` | ЕГЭ 4 | 5 | 5 | pass |
+| `ph-ege-04-oscillation` | ЕГЭ 4 | 5 | 5 | pass |
+| `ph-ege-04-pendulum` | ЕГЭ 4 | 5 | 5 | pass |
+| `ph-ege-04-pressure` | ЕГЭ 4 | 5 | 5 | pass |
+| `ph-ege-04-wave` | ЕГЭ 4 | 5 | 5 | pass |
+| `ph-ege-05-block-table` | ЕГЭ 5 | 5 | 5 | pass |
+| `ph-ege-05-bridge` | ЕГЭ 5 | 5 | 5 | pass |
+| `ph-ege-05-float-table` | ЕГЭ 5 | 5 | 5 | pass |
+| `ph-ege-05-osc-table` | ЕГЭ 5 | 5 | 5 | pass |
+| `ph-ege-05-throw` | ЕГЭ 5 | 5 | 5 | pass |
+| `ph-ege-05-vx-table` | ЕГЭ 5 | 5 | 5 | pass |
+| `ph-ege-06-change-float` | ЕГЭ 6 | 5 | 5 | pass |
+| `ph-ege-06-change-forces` | ЕГЭ 6 | 5 | 5 | pass |
+| `ph-ege-06-change-orbit` | ЕГЭ 6 | 5 | 5 | pass |
+| `ph-ege-06-change-osc` | ЕГЭ 6 | 5 | 5 | pass |
+| `ph-ege-06-change-throw` | ЕГЭ 6 | 5 | 5 | pass |
+| `ph-ege-06-evolve` | ЕГЭ 6 | 5 | 5 | pass |
+| `ph-ege-06-formula` | ЕГЭ 6 | 5 | 5 | pass |
+| `ph-ege-06-table-match` | ЕГЭ 6 | 5 | 5 | pass |
+| `ph-ege-07-clapeyron-ratio` | ЕГЭ 7 | 5 | 5 | pass |
+| `ph-ege-07-energy-temp` | ЕГЭ 7 | 5 | 5 | pass |
+| `ph-ege-07-isoprocess` | ЕГЭ 7 | 5 | 5 | pass |
+| `ph-ege-07-leak` | ЕГЭ 7 | 5 | 5 | pass |
+| `ph-ege-07-mendeleev` | ЕГЭ 7 | 5 | 5 | pass |
+| `ph-ege-07-pnkt` | ЕГЭ 7 | 5 | 5 | pass |
+| `ph-ege-08-carnot` | ЕГЭ 8 | 5 | 5 | pass |
+| `ph-ege-08-engine` | ЕГЭ 8 | 5 | 5 | pass |
+| `ph-ege-08-first-law` | ЕГЭ 8 | 5 | 5 | pass |
+| `ph-ege-08-gas-work` | ЕГЭ 8 | 5 | 5 | pass |
+| `ph-ege-08-heat` | ЕГЭ 8 | 5 | 5 | pass |
+| `ph-ege-08-heat-balance` | ЕГЭ 8 | 5 | 5 | pass |
+| `ph-ege-08-internal-energy` | ЕГЭ 8 | 5 | 5 | pass |
+| `ph-ege-08-latent` | ЕГЭ 8 | 5 | 5 | pass |
+| `ph-ege-09-cycle` | ЕГЭ 9 | 5 | 5 | pass |
+| `ph-ege-09-heating-curve` | ЕГЭ 9 | 5 | 5 | pass |
+| `ph-ege-09-humidity` | ЕГЭ 9 | 5 | 5 | pass |
+| `ph-ege-09-iso-table` | ЕГЭ 9 | 5 | 5 | pass |
+| `ph-ege-09-vessels` | ЕГЭ 9 | 5 | 5 | pass |
+| `ph-ege-10-change-engine` | ЕГЭ 10 | 5 | 5 | pass |
+| `ph-ege-10-change-iso` | ЕГЭ 10 | 5 | 5 | pass |
+| `ph-ege-10-change-vapor` | ЕГЭ 10 | 5 | 5 | pass |
+| `ph-ege-10-change-vessel` | ЕГЭ 10 | 5 | 5 | pass |
+| `ph-ege-10-formula` | ЕГЭ 10 | 5 | 5 | pass |
+| `ph-ege-10-formula-coef` | ЕГЭ 10 | 5 | 5 | pass |
+| `ph-ege-11-coulomb` | ЕГЭ 11 | 5 | 5 | pass |
+| `ph-ege-11-current` | ЕГЭ 11 | 5 | 5 | pass |
+| `ph-ege-11-field-direction` | ЕГЭ 11 | 5 | 5 | pass |
+| `ph-ege-11-joule` | ЕГЭ 11 | 5 | 5 | pass |
+| `ph-ege-11-network` | ЕГЭ 11 | 5 | 5 | pass |
+| `ph-ege-11-ohm-circuit` | ЕГЭ 11 | 5 | 5 | pass |
+| `ph-ege-11-power` | ЕГЭ 11 | 5 | 5 | pass |
+| `ph-ege-12-ampere` | ЕГЭ 12 | 5 | 5 | pass |
+| `ph-ege-12-direction` | ЕГЭ 12 | 5 | 5 | pass |
+| `ph-ege-12-faraday` | ЕГЭ 12 | 5 | 5 | pass |
+| `ph-ege-12-inductance` | ЕГЭ 12 | 5 | 5 | pass |
+| `ph-ege-12-lorentz` | ЕГЭ 12 | 5 | 5 | pass |
+| `ph-ege-12-mag-energy` | ЕГЭ 12 | 5 | 5 | pass |
+| `ph-ege-13-lc` | ЕГЭ 13 | 5 | 5 | pass |
+| `ph-ege-13-lc-table` | ЕГЭ 13 | 5 | 5 | pass |
+| `ph-ege-13-lens` | ЕГЭ 13 | 5 | 5 | pass |
+| `ph-ege-13-mirror-image` | ЕГЭ 13 | 5 | 5 | pass |
+| `ph-ege-13-reflection` | ЕГЭ 13 | 5 | 5 | pass |
+| `ph-ege-14-ampere` | ЕГЭ 14 | 5 | 5 | pass |
+| `ph-ege-14-capacitor` | ЕГЭ 14 | 5 | 5 | pass |
+| `ph-ege-14-circuit` | ЕГЭ 14 | 5 | 5 | pass |
+| `ph-ege-14-coulomb` | ЕГЭ 14 | 5 | 5 | pass |
+| `ph-ege-14-induction` | ЕГЭ 14 | 5 | 5 | pass |
+| `ph-ege-14-lc-table` | ЕГЭ 14 | 5 | 5 | pass |
+| `ph-ege-14-lens` | ЕГЭ 14 | 5 | 5 | pass |
+| `ph-ege-14-lorentz` | ЕГЭ 14 | 5 | 5 | pass |
+| `ph-ege-14-refraction` | ЕГЭ 14 | 5 | 5 | pass |
+| `ph-ege-14-selfinduction` | ЕГЭ 14 | 5 | 5 | pass |
+| `ph-ege-15-capacitor-change` | ЕГЭ 15 | 5 | 5 | pass |
+| `ph-ege-15-circuit-change` | ЕГЭ 15 | 5 | 5 | pass |
+| `ph-ege-15-formula-circuit` | ЕГЭ 15 | 5 | 5 | pass |
+| `ph-ege-15-formula-lc` | ЕГЭ 15 | 5 | 5 | pass |
+| `ph-ege-15-formula-particle` | ЕГЭ 15 | 5 | 5 | pass |
+| `ph-ege-15-lc-change` | ЕГЭ 15 | 5 | 5 | pass |
+| `ph-ege-15-lc-graph` | ЕГЭ 15 | 5 | 5 | pass |
+| `ph-ege-15-lens-change` | ЕГЭ 15 | 5 | 5 | pass |
+| `ph-ege-15-particle-change` | ЕГЭ 15 | 5 | 5 | pass |
+| `ph-ege-15-refraction-change` | ЕГЭ 15 | 5 | 5 | pass |
+| `ph-ege-15-wire-change` | ЕГЭ 15 | 5 | 5 | pass |
+| `ph-ege-16-chain` | ЕГЭ 16 | 5 | 5 | pass |
+| `ph-ege-16-decay-product` | ЕГЭ 16 | 5 | 5 | pass |
+| `ph-ege-16-fission` | ЕГЭ 16 | 5 | 5 | pass |
+| `ph-ege-16-halflife-amount` | ЕГЭ 16 | 5 | 5 | pass |
+| `ph-ege-16-halflife-fraction` | ЕГЭ 16 | 5 | 5 | pass |
+| `ph-ege-16-nucleons` | ЕГЭ 16 | 5 | 5 | pass |
+| `ph-ege-16-reaction` | ЕГЭ 16 | 5 | 5 | pass |
+| `ph-ege-17-decay-change` | ЕГЭ 17 | 5 | 5 | pass |
+| `ph-ege-17-decay-equation` | ЕГЭ 17 | 5 | 5 | pass |
+| `ph-ege-17-formula-photo` | ЕГЭ 17 | 5 | 5 | pass |
+| `ph-ege-17-levels` | ЕГЭ 17 | 5 | 5 | pass |
+| `ph-ege-17-photoeffect-change` | ЕГЭ 17 | 5 | 5 | pass |
+| `ph-ege-17-photon-change` | ЕГЭ 17 | 5 | 5 | pass |
+| `ph-ege-18-laws` | ЕГЭ 18 | 5 | 5 | pass |
+| `ph-ege-18-mixed` | ЕГЭ 18 | 5 | 5 | pass |
+| `ph-ege-18-phenomena` | ЕГЭ 18 | 5 | 5 | pass |
+| `ph-ege-18-trend` | ЕГЭ 18 | 5 | 5 | pass |
+| `ph-ege-19-beaker` | ЕГЭ 19 | 5 | 5 | pass |
+| `ph-ege-19-dynamometer` | ЕГЭ 19 | 5 | 5 | pass |
+| `ph-ege-19-electric-meter` | ЕГЭ 19 | 5 | 5 | pass |
+| `ph-ege-19-given-error` | ЕГЭ 19 | 5 | 5 | pass |
+| `ph-ege-19-per-item` | ЕГЭ 19 | 5 | 5 | pass |
+| `ph-ege-19-pressure` | ЕГЭ 19 | 5 | 5 | pass |
+| `ph-ege-19-thermometer` | ЕГЭ 19 | 5 | 5 | pass |
+| `ph-ege-20-electro` | ЕГЭ 20 | 5 | 5 | pass |
+| `ph-ege-20-equipment` | ЕГЭ 20 | 5 | 5 | pass |
+| `ph-ege-20-mechanics` | ЕГЭ 20 | 5 | 5 | pass |
+| `ph-ege-20-optics` | ЕГЭ 20 | 5 | 5 | pass |
+| `ph-ege-20-pendulum` | ЕГЭ 20 | 5 | 5 | pass |
+| `ph-ege-20-thermal` | ЕГЭ 20 | 5 | 5 | pass |
+| `ph-ege-21-currents` | ЕГЭ 21 | 5 | 5 | pass |
+| `ph-ege-21-diode` | ЕГЭ 21 | 5 | 5 | pass |
+| `ph-ege-21-electrostatic` | ЕГЭ 21 | 5 | 5 | pass |
+| `ph-ege-21-induction` | ЕГЭ 21 | 5 | 5 | pass |
+| `ph-ege-21-key` | ЕГЭ 21 | 5 | 5 | pass |
+| `ph-ege-21-lens` | ЕГЭ 21 | 5 | 5 | pass |
+| `ph-ege-21-rheostat` | ЕГЭ 21 | 5 | 5 | pass |
+| `ph-ege-21-total-reflection` | ЕГЭ 21 | 5 | 5 | pass |
+| `ph-ege-22-archimedes-bottom` | ЕГЭ 22 | 5 | 5 | pass |
+| `ph-ege-22-buoyancy-thread` | ЕГЭ 22 | 5 | 5 | pass |
+| `ph-ege-22-connected-bodies` | ЕГЭ 22 | 5 | 5 | pass |
+| `ph-ege-22-elevator` | ЕГЭ 22 | 5 | 5 | pass |
+| `ph-ege-22-float-two-liquids` | ЕГЭ 22 | 5 | 5 | pass |
+| `ph-ege-22-inelastic` | ЕГЭ 22 | 5 | 5 | pass |
+| `ph-ege-22-kinematics` | ЕГЭ 22 | 5 | 5 | pass |
+| `ph-ege-22-projectile` | ЕГЭ 22 | 5 | 5 | pass |
+| `ph-ege-22-spring-oscillation` | ЕГЭ 22 | 5 | 5 | pass |
+| `ph-ege-22-statics` | ЕГЭ 22 | 5 | 5 | pass |
+| `ph-ege-23-bubble` | ЕГЭ 23 | 5 | 5 | pass |
+| `ph-ege-23-calorimetry` | ЕГЭ 23 | 5 | 5 | pass |
+| `ph-ege-23-connect-vessels` | ЕГЭ 23 | 5 | 5 | pass |
+| `ph-ege-23-cycle` | ЕГЭ 23 | 5 | 5 | pass |
+| `ph-ege-23-first-law` | ЕГЭ 23 | 5 | 5 | pass |
+| `ph-ege-23-humidity` | ЕГЭ 23 | 5 | 5 | pass |
+| `ph-ege-23-leak` | ЕГЭ 23 | 5 | 5 | pass |
+| `ph-ege-23-mercury-tube` | ЕГЭ 23 | 5 | 5 | pass |
+| `ph-ege-23-released-mass` | ЕГЭ 23 | 5 | 5 | pass |
+| `ph-ege-24-evaporation-piston` | ЕГЭ 24 | 5 | 5 | pass |
+| `ph-ege-24-hot-air-balloon` | ЕГЭ 24 | 5 | 5 | pass |
+| `ph-ege-24-humidity-compress` | ЕГЭ 24 | 5 | 5 | pass |
+| `ph-ege-24-humidity-partition` | ЕГЭ 24 | 5 | 5 | pass |
+| `ph-ege-24-piston-heating` | ЕГЭ 24 | 5 | 5 | pass |
+| `ph-ege-24-vessels-mixing` | ЕГЭ 24 | 5 | 5 | pass |
+| `ph-ege-25-accelerated-particle` | ЕГЭ 25 | 5 | 5 | pass |
+| `ph-ege-25-ampere-hanging` | ЕГЭ 25 | 5 | 5 | pass |
+| `ph-ege-25-ampere-rails` | ЕГЭ 25 | 5 | 5 | pass |
+| `ph-ege-25-capacitor-battery` | ЕГЭ 25 | 5 | 5 | pass |
+| `ph-ege-25-capacitor-dc` | ЕГЭ 25 | 5 | 5 | pass |
+| `ph-ege-25-charged-ball` | ЕГЭ 25 | 5 | 5 | pass |
+| `ph-ege-25-circuit-power` | ЕГЭ 25 | 5 | 5 | pass |
+| `ph-ege-25-heater` | ЕГЭ 25 | 5 | 5 | pass |
+| `ph-ege-25-lc-energy` | ЕГЭ 25 | 5 | 5 | pass |
+| `ph-ege-25-moving-rod` | ЕГЭ 25 | 5 | 5 | pass |
+| `ph-ege-25-particle-in-capacitor` | ЕГЭ 25 | 5 | 5 | pass |
+| `ph-ege-26-board-block` | ЕГЭ 26 | 5 | 5 | pass |
+| `ph-ege-26-bullet-pendulum` | ЕГЭ 26 | 5 | 5 | pass |
+| `ph-ege-26-hemisphere` | ЕГЭ 26 | 5 | 5 | pass |
+| `ph-ege-26-incline-two-bodies` | ЕГЭ 26 | 5 | 5 | pass |
+| `ph-ege-26-justify` | ЕГЭ 26 | 5 | 5 | pass |
+| `ph-ege-26-lever-archimedes` | ЕГЭ 26 | 5 | 5 | pass |
+| `ph-ege-26-pulley-spring` | ЕГЭ 26 | 5 | 5 | pass |
+| `ph-ege-26-rotating-cone` | ЕГЭ 26 | 5 | 5 | pass |
+| `ph-ege-26-shell-burst` | ЕГЭ 26 | 5 | 5 | pass |
+| `ph-ege-26-string-swing` | ЕГЭ 26 | 5 | 5 | pass |
+| `ph-oge-01-concept-example` | ОГЭ 1 | 5 | 5 | pass |
+| `ph-oge-01-quantity-definition` | ОГЭ 1 | 5 | 5 | pass |
+| `ph-oge-01-quantity-unit` | ОГЭ 1 | 5 | 5 | pass |
+| `ph-oge-02-device-law` | ОГЭ 2 | 5 | 5 | pass |
+| `ph-oge-02-device-phenomenon` | ОГЭ 2 | 5 | 5 | pass |
+| `ph-oge-02-quantity-device` | ОГЭ 2 | 5 | 5 | pass |
+| `ph-oge-03-phen-em` | ОГЭ 3 | 5 | 5 | pass |
+| `ph-oge-03-phen-mech` | ОГЭ 3 | 5 | 5 | pass |
+| `ph-oge-03-phen-optics` | ОГЭ 3 | 5 | 5 | pass |
+| `ph-oge-03-phen-thermal` | ОГЭ 3 | 5 | 5 | pass |
+| `ph-oge-04-electroscope` | ОГЭ 4 | 5 | 5 | pass |
+| `ph-oge-04-electrostatic-induction` | ОГЭ 4 | 5 | 5 | pass |
+| `ph-oge-04-floating` | ОГЭ 4 | 5 | 5 | pass |
+| `ph-oge-04-sound` | ОГЭ 4 | 5 | 5 | pass |
+| `ph-oge-04-thermal-expansion` | ОГЭ 4 | 5 | 5 | pass |
+| `ph-oge-05-buoyancy-balance` | ОГЭ 5 | 5 | 5 | pass |
+| `ph-oge-05-color-filter` | ОГЭ 5 | 5 | 5 | pass |
+| `ph-oge-05-heat-transfer` | ОГЭ 5 | 5 | 5 | pass |
+| `ph-oge-05-ice-melt` | ОГЭ 5 | 5 | 5 | pass |
+| `ph-oge-05-inertia` | ОГЭ 5 | 5 | 5 | pass |
+| `ph-oge-06-avg-speed` | ОГЭ 6 | 5 | 5 | pass |
+| `ph-oge-06-circular` | ОГЭ 6 | 5 | 5 | pass |
+| `ph-oge-06-energy` | ОГЭ 6 | 5 | 5 | pass |
+| `ph-oge-06-free-fall` | ОГЭ 6 | 5 | 5 | pass |
+| `ph-oge-06-gravity-ratio` | ОГЭ 6 | 5 | 5 | pass |
+| `ph-oge-06-momentum` | ОГЭ 6 | 5 | 5 | pass |
+| `ph-oge-06-newton-friction` | ОГЭ 6 | 5 | 5 | pass |
+| `ph-oge-06-spring` | ОГЭ 6 | 5 | 5 | pass |
+| `ph-oge-06-uniform-accel` | ОГЭ 6 | 5 | 5 | pass |
+| `ph-oge-06-work-power` | ОГЭ 6 | 5 | 5 | pass |
+| `ph-oge-06-xt-speed` | ОГЭ 6 | 5 | 5 | pass |
+| `ph-oge-07-archimedes` | ОГЭ 7 | 5 | 5 | pass |
+| `ph-oge-07-density` | ОГЭ 7 | 5 | 5 | pass |
+| `ph-oge-07-hydrostatic` | ОГЭ 7 | 5 | 5 | pass |
+| `ph-oge-07-lever` | ОГЭ 7 | 5 | 5 | pass |
+| `ph-oge-07-oscillation-wave` | ОГЭ 7 | 5 | 5 | pass |
+| `ph-oge-07-pressure-solid` | ОГЭ 7 | 5 | 5 | pass |
+| `ph-oge-07-pulley` | ОГЭ 7 | 5 | 5 | pass |
+| `ph-oge-08-fuel-efficiency` | ОГЭ 8 | 5 | 5 | pass |
+| `ph-oge-08-heat-capacity` | ОГЭ 8 | 5 | 5 | pass |
+| `ph-oge-08-heating-table` | ОГЭ 8 | 5 | 5 | pass |
+| `ph-oge-08-phase-change` | ОГЭ 8 | 5 | 5 | pass |
+| `ph-oge-09-charge-contact` | ОГЭ 9 | 5 | 5 | pass |
+| `ph-oge-09-circuit` | ОГЭ 9 | 5 | 5 | pass |
+| `ph-oge-09-coulomb-ratio` | ОГЭ 9 | 5 | 5 | pass |
+| `ph-oge-09-current-charge` | ОГЭ 9 | 5 | 5 | pass |
+| `ph-oge-09-ohm-law` | ОГЭ 9 | 5 | 5 | pass |
+| `ph-oge-09-power-work` | ОГЭ 9 | 5 | 5 | pass |
+| `ph-oge-09-resistivity` | ОГЭ 9 | 5 | 5 | pass |
+| `ph-oge-10-em-wave` | ОГЭ 10 | 5 | 5 | pass |
+| `ph-oge-10-lens` | ОГЭ 10 | 5 | 5 | pass |
+| `ph-oge-10-mirror` | ОГЭ 10 | 5 | 5 | pass |
+| `ph-oge-10-shadow` | ОГЭ 10 | 5 | 5 | pass |
+| `ph-oge-11-decay` | ОГЭ 11 | 5 | 5 | pass |
+| `ph-oge-11-half-life` | ОГЭ 11 | 5 | 5 | pass |
+| `ph-oge-11-nucleons` | ОГЭ 11 | 5 | 5 | pass |
+| `ph-oge-11-reaction` | ОГЭ 11 | 5 | 5 | pass |
+| `ph-oge-12-dyn` | ОГЭ 12 | 5 | 5 | pass |
+| `ph-oge-12-float` | ОГЭ 12 | 5 | 5 | pass |
+| `ph-oge-12-gas` | ОГЭ 12 | 5 | 5 | pass |
+| `ph-oge-12-heat` | ОГЭ 12 | 5 | 5 | pass |
+| `ph-oge-12-incline` | ОГЭ 12 | 5 | 5 | pass |
+| `ph-oge-12-orbit` | ОГЭ 12 | 5 | 5 | pass |
+| `ph-oge-12-pend` | ОГЭ 12 | 5 | 5 | pass |
+| `ph-oge-12-phase` | ОГЭ 12 | 5 | 5 | pass |
+| `ph-oge-12-stop` | ОГЭ 12 | 5 | 5 | pass |
+| `ph-oge-12-throw` | ОГЭ 12 | 5 | 5 | pass |
+| `ph-oge-13-decay` | ОГЭ 13 | 5 | 5 | pass |
+| `ph-oge-13-elec` | ОГЭ 13 | 5 | 5 | pass |
+| `ph-oge-13-eye` | ОГЭ 13 | 5 | 5 | pass |
+| `ph-oge-13-lens` | ОГЭ 13 | 5 | 5 | pass |
+| `ph-oge-13-light` | ОГЭ 13 | 5 | 5 | pass |
+| `ph-oge-13-magnet` | ОГЭ 13 | 5 | 5 | pass |
+| `ph-oge-13-net` | ОГЭ 13 | 5 | 5 | pass |
+| `ph-oge-13-rheo` | ОГЭ 13 | 5 | 5 | pass |
+| `ph-oge-13-spiral` | ОГЭ 13 | 5 | 5 | pass |
+| `ph-oge-14-heating-curve` | ОГЭ 14 | 5 | 5 | pass |
+| `ph-oge-14-materials-table` | ОГЭ 14 | 5 | 5 | pass |
+| `ph-oge-14-motion-table` | ОГЭ 14 | 5 | 5 | pass |
+| `ph-oge-14-oscillation-table` | ОГЭ 14 | 5 | 5 | pass |
+| `ph-oge-14-periodic-table` | ОГЭ 14 | 5 | 5 | pass |
+| `ph-oge-15-reading` | ОГЭ 15 | 5 | 5 | pass |
+| `ph-oge-15-scale` | ОГЭ 15 | 5 | 5 | pass |
+| `ph-oge-15-setup-choice` | ОГЭ 15 | 5 | 5 | pass |
+| `ph-oge-16-arch` | ОГЭ 16 | 5 | 5 | pass |
+| `ph-oge-16-cool` | ОГЭ 16 | 5 | 5 | pass |
+| `ph-oge-16-fric` | ОГЭ 16 | 5 | 5 | pass |
+| `ph-oge-16-pend` | ОГЭ 16 | 5 | 5 | pass |
+| `ph-oge-16-resist` | ОГЭ 16 | 5 | 5 | pass |
+| `ph-oge-16-spring` | ОГЭ 16 | 5 | 5 | pass |
+| `ph-oge-17-buoyancy` | ОГЭ 17 | 5 | 5 | pass |
+| `ph-oge-17-density` | ОГЭ 17 | 5 | 5 | pass |
+| `ph-oge-17-electric` | ОГЭ 17 | 5 | 5 | pass |
+| `ph-oge-17-friction` | ОГЭ 17 | 5 | 5 | pass |
+| `ph-oge-17-lens` | ОГЭ 17 | 5 | 5 | pass |
+| `ph-oge-17-lever` | ОГЭ 17 | 5 | 5 | pass |
+| `ph-oge-17-report` | ОГЭ 17 | 0 | 0 | pass |
+| `ph-oge-17-spring` | ОГЭ 17 | 5 | 5 | pass |
+| `ph-oge-18-boiling-pressure` | ОГЭ 18 | 5 | 5 | pass |
+| `ph-oge-18-text-question` | ОГЭ 18 | 0 | 0 | pass |
+| `ph-oge-19-energy-density` | ОГЭ 19 | 5 | 5 | pass |
+| `ph-oge-19-qual-llm` | ОГЭ 19 | 0 | 0 | pass |
+| `ph-oge-19-qualitative` | ОГЭ 19 | 5 | 5 | pass |
+| `ph-oge-20-avg-speed-halves` | ОГЭ 20 | 5 | 5 | pass |
+| `ph-oge-20-circuit-mixed` | ОГЭ 20 | 5 | 5 | pass |
+| `ph-oge-20-heat-mixing` | ОГЭ 20 | 5 | 5 | pass |
+| `ph-oge-20-phase-chain` | ОГЭ 20 | 5 | 5 | pass |
+| `ph-oge-20-wire-heater` | ОГЭ 20 | 5 | 5 | pass |
+| `ph-oge-21-air-resistance` | ОГЭ 21 | 5 | 5 | pass |
+| `ph-oge-21-bullet-heat` | ОГЭ 21 | 5 | 5 | pass |
+| `ph-oge-21-collision-energy` | ОГЭ 21 | 5 | 5 | pass |
+| `ph-oge-21-fall-heat` | ОГЭ 21 | 5 | 5 | pass |
+| `ph-oge-21-motor-lift` | ОГЭ 21 | 5 | 5 | pass |
+| `ph-oge-21-underwater-lift` | ОГЭ 21 | 5 | 5 | pass |
+| `ph-oge-21-vehicle-fuel` | ОГЭ 21 | 5 | 5 | pass |
+| `ph-oge-22-calorimeter` | ОГЭ 22 | 5 | 5 | pass |
+| `ph-oge-22-fuel-boil` | ОГЭ 22 | 5 | 5 | pass |
+| `ph-oge-22-furnace` | ОГЭ 22 | 5 | 5 | pass |
+| `ph-oge-22-kettle` | ОГЭ 22 | 5 | 5 | pass |
+| `ph-oge-22-two-heaters` | ОГЭ 22 | 5 | 5 | pass |

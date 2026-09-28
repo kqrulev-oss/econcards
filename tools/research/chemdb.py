@@ -112,6 +112,16 @@ def reacts_with(a, b, db=None):
     return [r for r in db['reactions'] if a in r['lhs'] and b in r['lhs']]
 
 
+def _jsonable(x):
+    """Дроби (Fraction) из данных модулей — числом, остальное — строкой."""
+    from fractions import Fraction
+    if isinstance(x, Fraction):
+        return int(x) if x.denominator == 1 else float(x)
+    if isinstance(x, (set, tuple)):
+        return list(x)
+    return str(x)
+
+
 def export(db=None):
     db = db or load()
     rows = []
@@ -133,9 +143,12 @@ def export(db=None):
         'built_by': 'python3 tools/research/chemdb.py --write (данные — tools/research/chemdb_*.py)',
         'counts': {'substances': len(rows), 'reactions': len(reactions)},
     }
-    with open(OUT, 'w', encoding='utf-8') as fh:
-        json.dump({'meta': meta, 'substances': rows, 'reactions': reactions}, fh, ensure_ascii=False, indent=1)
+    tmp = OUT + '.tmp'
+    with open(tmp, 'w', encoding='utf-8') as fh:
+        json.dump({'meta': meta, 'substances': rows, 'reactions': reactions}, fh, ensure_ascii=False, indent=1,
+                  default=_jsonable)
         fh.write('\n')
+    os.replace(tmp, OUT)
     return OUT, len(rows), len(reactions)
 
 
