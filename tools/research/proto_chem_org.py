@@ -4742,7 +4742,7 @@ def _kind17(r):
         return 'DEHYDRAT'
     if 'дегидрогалогенирования' in t and two in ('KOH', 'NaOH'):
         return 'DEHX'
-    if 'дегалогенирования' in t and two in ('Zn', 'Mg'):
+    if 'дегалогенирования' in t and two in ('Zn', 'Mg') and SUB[r['rhs'][0]]['hom'] in ('алкены', 'алкины'):
         return 'DEHAL'
     if 'этерификации' in t and two in SUB and SUB[two]['cls'] == 'карбоновая кислота' and cls == 'спирт':
         return 'ESTER'
@@ -5272,6 +5272,8 @@ def g24_sign(rng):
             continue
         if v == 'none' and sum(sign24(x[0], x[1]) == 'none' for x in rows) >= 1:
             continue  # «признаков нет» — не больше одной позиции, как в банке
+        if sum(sign24(x[0], x[1]) == v for x in rows) >= 2:
+            continue  # один признак — не больше чем у двух позиций
         rows.append((f, rk))
         if len(rows) == 4:
             break
