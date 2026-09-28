@@ -5,6 +5,7 @@
   python3 tools/research/gen_eng.py            # самопроверка
   python3 tools/research/gen_eng.py --show 3   # по 3 примера каждого типа
   python3 tools/research/gen_eng.py --dump out.json
+  python3 tools/research/gen_eng.py --protos [--export|--tables|--show ID]   # каталог прототипов, см. proto_eng.py
 
 Что внутри: собственные таблицы форм (неправильные глаголы, множественное число, степени сравнения,
 местоимения, порядковые) и собственные предложения-рамки. Тексты ФИПИ и коммерческих банков не используются.
@@ -653,6 +654,9 @@ def capacity(name, limit=5000, seed=1):
 
 
 def main():
+    if '--protos' in sys.argv:  # каталог прототипов и генератор аналогов: tools/research/proto_eng.py
+        import proto_eng
+        return proto_eng.main([a for a in sys.argv[1:] if a != '--protos'])
     ap = argparse.ArgumentParser()
     ap.add_argument('--n', type=int, default=200)
     ap.add_argument('--show', type=int, default=0)
