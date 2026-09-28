@@ -13,7 +13,7 @@
 | Библиотека | `packs/` | готовые наборы, собираются из `data/source/` скриптом `tools/build_packs.py` |
 | Данные | `data/source/`, `img/` | всё содержимое прежних приложений (EconCards, Сотка, Ударение, Сочинение) без потерь |
 
-[![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/kqrulev-oss/econcards/tree/main/worker) — сервер в один клик: нужен только ключ Gemini.
+[![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/kqrulev-oss/econcards/tree/main/worker) — сервер в один клик: ИИ работает на бесплатном Workers AI, ключи не нужны.
 
 Сайт статический: работает на GitHub Pages и офлайн (PWA). Без сервера доступна библиотека. ИИ, публикация тренажёров и отчёты работают, когда в `config.js` указан адрес Worker'а.
 
