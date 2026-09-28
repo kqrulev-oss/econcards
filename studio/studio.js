@@ -670,13 +670,13 @@ function editCard(p, index, onSave) {
     <h3>${index === null ? 'Новая карточка' : 'Карточка'}</h3>
     <div class="grid2">
       <div class="field"><label for="ce-t">Тема</label><select id="ce-t">${p.topics.map(t => `<option value="${esc(t.id)}" ${t.id === c.t ? 'selected' : ''}>${esc(t.title)}</option>`).join('')}<option value="__new">+ Новая тема…</option></select></div>
-      <div class="field"><label for="ce-k">Тип</label><select id="ce-k">${['one', 'many', 'flip', 'num', 'open'].map(k => `<option value="${k}" ${k === c.k ? 'selected' : ''}>${KIND_NAMES[k]}</option>`).join('')}</select></div>
+      <div class="field"><label for="ce-k">Тип</label><select id="ce-k">${['one', 'many', 'flip', 'num', 'word', 'seq', 'open'].map(k => `<option value="${k}" ${k === c.k ? 'selected' : ''}>${KIND_NAMES[k]}</option>`).join('')}</select></div>
     </div>
     <div class="field"><label for="ce-q">Вопрос или условие</label><textarea id="ce-q" rows="4">${esc(c.q)}</textarea></div>
     <div id="ce-opts" class="field"><span>Варианты — отметьте верные</span>
       <div id="ce-optlist">${opts.map(o => optRow(o, right.has(o.id))).join('')}</div>
       <button class="btn small" id="ce-addopt">+ Вариант</button></div>
-    <div class="field" id="ce-ans"><label for="ce-a" id="ce-ans-l">Ответ</label><textarea id="ce-a" rows="4">${esc(['flip', 'open', 'num'].includes(c.k) ? c.a : '')}</textarea></div>
+    <div class="field" id="ce-ans"><label for="ce-a" id="ce-ans-l">Ответ</label><textarea id="ce-a" rows="4">${esc(['flip', 'open', 'num', 'word', 'text', 'seq'].includes(c.k) ? c.a : '')}</textarea></div>
     <div class="field"><label for="ce-e">Разбор (необязательно)</label><textarea id="ce-e" rows="3">${esc(c.e || '')}</textarea></div>
     <div class="row"><button class="btn primary" id="ce-save">Сохранить</button><button class="btn ghost" id="ce-cancel">Отмена</button></div>`);
   const $ = s => box.querySelector(s);
@@ -684,7 +684,9 @@ function editCard(p, index, onSave) {
     const k = $('#ce-k').value;
     $('#ce-opts').hidden = !(k === 'one' || k === 'many');
     $('#ce-ans').hidden = !$('#ce-opts').hidden;
-    $('#ce-ans-l').textContent = k === 'open' ? 'Эталонное решение с ответом' : k === 'num' ? 'Ответ — число (например, 0,35)' : 'Ответ';
+    $('#ce-ans-l').textContent = k === 'open' ? 'Эталонное решение с ответом' : k === 'num' ? 'Ответ — число (например, 0,35)'
+      : k === 'word' ? 'Ответ словом; несколько допустимых — через | (например, «неверно|не верно»)'
+      : k === 'seq' ? 'Ответ — цифры по порядку (например, 2413)' : 'Ответ';
   };
   sync();
   $('#ce-k').onchange = sync;
@@ -722,6 +724,7 @@ function editCard(p, index, onSave) {
       card.a = $('#ce-a').value.trim();
       if (!card.a) return toast('Напишите ответ');
       if (k === 'num' && !/^-?\d+([.,]\d+)?$/.test(card.a)) return toast('Для числового ответа нужно число: 12 или 0,35');
+      if (k === 'seq' && !/^\d{2,}$/.test(card.a)) return toast('Для последовательности нужны цифры без пробелов: 2413');
     }
     const e = $('#ce-e').value.trim();
     if (e) card.e = e;

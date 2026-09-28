@@ -280,9 +280,41 @@ export function sameNumber(a, b) {
   return !Number.isNaN(nx) && !Number.isNaN(ny) && Math.abs(nx - ny) < 1e-9;
 }
 
+// Ответ словом или строкой, как в бланке: без регистра и пробелов, ё = е, «’» = «'», без точки в конце.
+// Допустимые варианты — массив или строка через «|»
+export const normWord = x => String(x ?? '').toLowerCase().replace(/ё/g, 'е').replace(/[’‘`]/g, "'").replace(/[\s\u00a0\-–—]+/g, '').replace(/[.。]+$/, '');
+export const sameWord = (got, a) => {
+  const g = normWord(got);
+  return !!g && (Array.isArray(a) ? a : String(a).split('|')).some(x => normWord(x) === g);
+};
+
+// Последовательность цифр (ЕГЭ: порядок важен). 1 — точно; 0.5 — одна ошибка: одна цифра не та
+// или две соседние переставлены, как «1 балл из 2» в критериях; иначе 0
+export function seqScore(got, a) {
+  const g = String(got).replace(/\D/g, ''), r = String(a).replace(/\D/g, '');
+  if (!g || !r) return 0;
+  if (g === r) return 1;
+  if (g.length !== r.length) return 0;
+  const diff = [...g].map((c, i) => c !== r[i] ? i : -1).filter(i => i >= 0);
+  if (diff.length === 1) return 0.5;
+  if (diff.length === 2 && diff[1] === diff[0] + 1 && g[diff[0]] === r[diff[1]] && g[diff[1]] === r[diff[0]]) return 0.5;
+  return 0;
+}
+
+// Числовой ответ с допуском (card.tol — абсолютный, например 0.1)
+export const numScore = (got, a, tol) => {
+  if (sameNumber(got, a)) return 1;
+  const g = Number(String(got).trim().replace(',', '.')), r = Number(String(a).trim().replace(',', '.'));
+  return tol > 0 && !Number.isNaN(g) && !Number.isNaN(r) && Math.abs(g - r) <= tol + 1e-9 ? 1 : 0;
+};
+
+// Карточки с вводом ответа с клавиатуры
+export const INPUT_KINDS = ['num', 'word', 'text', 'seq'];
+
 export const KIND_NAMES = {
   one: 'Один ответ', many: 'Несколько ответов', match: 'Соответствие',
   flip: 'Вопрос — ответ', open: 'Развёрнутое решение', stress: 'Ударение', num: 'Числовой ответ',
+  word: 'Ответ словом', text: 'Ответ строкой', seq: 'Последовательность цифр',
 };
 
 // ---------- карточка ----------
@@ -377,22 +409,29 @@ export function renderCard(card, root, onDone, { imgRoot = './', aiEnabled = !!a
       body.querySelector('.hint').innerHTML = `Правильно: <b>${esc(word)}</b>`;
       finish(+b.dataset.i === target ? 1 : 0);
     });
-  } else if (card.k === 'num') {
-    // Краткий ответ ЕГЭ: число вводится с клавиатуры, запятая и точка равноправны
+  } else if (INPUT_KINDS.includes(card.k)) {
+    // Краткий ответ, как в бланке: число (запятая и точка равноправны), слово или строка,
+    // последовательность цифр — с частичным баллом за одну ошибку
+    const k = card.k;
+    const hint = k === 'num' ? 'Целое число или десятичная дробь, как в бланке ЕГЭ'
+      : k === 'seq' ? 'Цифры по порядку, без пробелов и запятых'
+      : k === 'word' ? 'Слово или несколько слов, без пробелов, как в бланке' : 'Ответ, как в бланке';
+    const mode = k === 'num' ? 'decimal' : k === 'seq' ? 'numeric' : 'text';
     body.innerHTML = `
-      <div class="num-row"><input class="num-input" inputmode="decimal" autocomplete="off" placeholder="Ответ">
+      <div class="num-row"><input class="num-input${k === 'num' || k === 'seq' ? '' : ' wide'}" inputmode="${mode}" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Ответ">
         <button class="btn primary check">Проверить</button></div>
-      <p class="hint">Целое число или десятичная дробь, как в бланке ЕГЭ</p>`;
+      <p class="hint">${hint}</p>`;
     const input = body.querySelector('.num-input');
+    const shown = Array.isArray(card.a) ? card.a[0] : String(card.a).split('|')[0];
     const check = () => {
       const got = input.value.trim();
       if (!got) return toast('Введи ответ');
-      const ok = sameNumber(got, card.a);
+      const score = k === 'num' ? numScore(got, card.a, card.tol) : k === 'seq' ? seqScore(got, card.a) : sameWord(got, card.a) ? 1 : 0;
       input.disabled = true;
-      input.classList.add(ok ? 'ok' : 'bad');
+      input.classList.add(score === 1 ? 'ok' : score ? 'mid' : 'bad');
       body.querySelector('.check').remove();
-      body.querySelector('.hint').innerHTML = ok ? 'Верно!' : `Правильный ответ: <b>${esc(card.a)}</b>`;
-      finish(ok ? 1 : 0);
+      body.querySelector('.hint').innerHTML = score === 1 ? 'Верно!' : `${score ? 'Одна ошибка — половина балла. ' : ''}Правильный ответ: <b>${esc(shown)}</b>`;
+      finish(score);
     };
     body.querySelector('.check').onclick = check;
     // preventDefault: иначе тот же Enter нажмёт «Дальше», и ученик не увидит результат
