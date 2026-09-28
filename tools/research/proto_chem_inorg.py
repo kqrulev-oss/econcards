@@ -1064,7 +1064,7 @@ def _theme8(r, theme):
                                            'цинкат+кислота', 'разложение комплекса', 'щёлочь+соль') for t in tags) \
             and any(e in ''.join(r['lhs']) for e in ('Al', 'Zn', 'Cr', 'Be'))
     if theme == 'decomp':
-        return len(r['lhs']) == 1
+        return len(r['lhs']) == 1 and not ('·' in r['lhs'][0] and _low_ox(r['lhs'][0]))
     return True
 
 
@@ -1481,6 +1481,8 @@ def g_9s(rng):
         raise Retry
     items = shuffled(rng, [X, Y] + dis)
     ans = {'X': str(items.index(X) + 1), 'Y': str(items.index(Y) + 1)}
+    if _solve_9s({'A': A, 'r1': [R1, l1], 'r2': [R2, l2], 'opts': items}) != ans:
+        raise Retry     # по полному перебору реакций ответ неоднозначен
     scheme = F(A) + _arrow(_lab9(R1, l1)) + 'X' + _arrow(_lab9(R2, l2)) + 'Y'
     q = (f'Задана схема превращений веществ: {scheme}. Определите, какие из указанных веществ являются веществами '
          f'X и Y. Запишите в таблицу номера выбранных веществ под соответствующими буквами.')
@@ -3962,6 +3964,9 @@ def g_29c(rng):
                for a in oxs for b in reds):
             continue
         rng.shuffle(conds)
+        # условие «число электронов» — не чаще, чем в банке: ставим его последним в 3 случаях из 4
+        if rng.random() < 0.75:
+            conds.sort(key=lambda x: x.startswith('электроны:'))
         for c in conds:
             pairs = {(agent_formula(x, 'ox'), agent_formula(x, 'red')) for x in rx_in if c in cond29(x)}
             if pairs == {(o, rd)}:
@@ -4250,7 +4255,8 @@ def _unique_step(r, carrier, R):
 
 
 CHAIN_RX = [r for r in RX if 'электролиз' not in r['type'] and len(set(r['lhs']) - {'H2O'}) <= 2 and
-            'качественная' not in r.get('tags', []) and _school7(r) and not set(r['lhs']) & _EXOTIC9]
+            'качественная' not in r.get('tags', []) and _school7(r) and not set(r['lhs']) & _EXOTIC9
+            and not any('·' in x and _low_ox(x) for x in r['lhs'])]   # FeSO₄·7H₂O при прокаливании — ОВР
 
 
 def _side_ok(prev, carrier, kind, r):
