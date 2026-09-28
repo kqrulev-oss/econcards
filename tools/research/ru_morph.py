@@ -84,7 +84,7 @@ def inflect(phrase, case, number=None):
             out.append(w)
             continue
         core, tail = m.groups()
-        if len(core) > 1 and core.isupper():   # аббревиатура (США, ЭПС) — не склоняется
+        if len(core) > 1 and sum(ch.isupper() for ch in core) >= 2:   # аббревиатура (США, ЭПС, рРНК) — не склоняется
             out.append(w)
             continue
         if core.lower() in IRREG:

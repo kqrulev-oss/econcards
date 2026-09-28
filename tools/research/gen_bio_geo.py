@@ -3225,7 +3225,7 @@ def check_d_statements(c):
 # диапазоны — типичные учебные/справочные значения
 GRAPH_CTX = [
     ('температура', '°C', [5, 10, 15, 20, 25, 30, 35, 40], 'скорость фотосинтеза элодеи', 'пузырьков O₂ в минуту', 'bell', 'plant', (3, 42), 0),
-    ('температура', '°C', [0, 10, 20, 30, 40, 50, 60], 'активность амилазы слюны', 'усл. ед.', 'bell', 'human', (5, 100), 0),
+    ('температура', '°C', [0, 10, 20, 30, 37, 45, 60], 'активность амилазы слюны', 'усл. ед.', 'bell', 'human', (5, 100), 0),
     ('pH среды', '', [1, 2, 3, 4, 5, 6, 7, 8], 'активность пепсина', 'усл. ед.', 'bell', 'human', (2, 100), 0),
     ('возраст', 'лет', [10, 20, 30, 40, 50, 60, 70], 'жизненная ёмкость лёгких', 'л', 'bell', 'human', (2.4, 4.8), 1),
     ('время после приёма пищи', 'ч', [0, 0.5, 1, 1.5, 2, 2.5, 3], 'концентрация глюкозы в крови', 'ммоль/л', 'bell', 'human', (4.4, 8.2), 1),
@@ -3247,7 +3247,13 @@ GRAPH_CTX = [
 ]
 
 
-def graph_series(rng, shape, n, lo=5, hi=90, dec=0):
+# где у колоколообразной кривой максимум (реальные оптимумы; значения x из контекста)
+PEAK_X = {'активность пепсина': [2], 'активность амилазы слюны': [37], 'жизненная ёмкость лёгких': [20, 30],
+          'концентрация глюкозы в крови': [0.5, 1], 'скорость фотосинтеза элодеи': [25, 30],
+          'скорость прорастания семян гороха': [20, 25], 'урожайность пшеницы': [90, 120]}
+
+
+def graph_series(rng, shape, n, lo=5, hi=90, dec=0, peak=None):
     """Ряд заданной формы в реалистичном диапазоне [lo, hi]; монотонные участки строгие после округления."""
     step = Fraction(1, 10 ** dec)
     grid = [Fraction(lo) + i * step for i in range(int((Fraction(str(hi)) - Fraction(str(lo))) / step) + 1)]
@@ -3258,7 +3264,7 @@ def graph_series(rng, shape, n, lo=5, hi=90, dec=0):
             v.append(v[-1] * 2 if rng.random() < 0.75 else v[-1] * 2 + rng.randint(1, 5))
         return v
     if shape == 'bell':
-        peak = rng.randrange(2, n - 2)
+        peak = peak if peak is not None else rng.randrange(2, n - 2)
         top = grid[-1] - rng.randint(0, max(1, len(grid) // 12)) * step
         below = [g for g in grid if g < top]
         up = sorted(rng.sample(below, peak))
@@ -3277,6 +3283,7 @@ def graph_series(rng, shape, n, lo=5, hi=90, dec=0):
 def graph_statements(xs, ys, fx, fy, xu, yu=''):
     """(текст, верно по данным?) — утверждения в духе КИМ, проверяемые по точкам графика."""
     n = len(xs)
+    fx0 = fx
     X = lambda i: f'{fmt(Fraction(str(xs[i])))}{" " + xu if xu else ""}'
     V = lambda v: f'{fmt(Fraction(str(v)))}{" " + yu if yu and len(yu) < 12 else ""}'
     Y = cap(fy)
@@ -3321,12 +3328,16 @@ def graph_statements(xs, ys, fx, fy, xu, yu=''):
     j = (i + 1) % n
     if ys[j] != ys[i]:
         out.append((f'при значении фактора {X(i)} {fy} составляет {V(ys[j])}', False))
-    return [(cap(t), ok) for t, ok in out]
+    loc, gen = inflect(fx0, 'loct'), inflect(fx0, 'gent')
+    fix = lambda t: (t.replace('при значении фактора', f'при {loc}').replace('при значениях фактора', f'при {loc}')
+                      .replace('увеличении фактора', f'увеличении {gen}').replace('со значения фактора', 'со значения'))
+    return [(cap(fix(t)), ok) for t, ok in out]
 
 
 def gen_b_graph(rng):
     fx, xu, xs, fy, yu, shape, cat, (lo, hi), dec = rng.choice(GRAPH_CTX)
-    ys = graph_series(rng, shape, len(xs), lo, hi, dec)
+    pk = PEAK_X.get(fy)
+    ys = graph_series(rng, shape, len(xs), lo, hi, dec, xs.index(rng.choice(pk)) if pk else None)
     sts = graph_statements(xs, ys, fx, fy, xu, yu)
     seen, uniq = set(), []
     for t, ok in sts:
@@ -3338,7 +3349,7 @@ def gen_b_graph(rng):
     k = rng.choice([2, 2, 3])
     if len(good) < k or len(bad) < 5 - k:
         return gen_b_graph(rng)
-    topic_of = lambda t: re.sub(r'(возрастает|снижается|(максимальн|минимальн)\w+( только)? при значении фактора [\d,]+|составляет .*)', '', t)
+    topic_of = lambda t: re.sub(r'(возрастает|снижается|(максимальн|минимальн)\w+( только)? при [\w ]+? [\d,]+|составляет .*)', '', t)
     for _ in range(60):                # без пар-антонимов об одном интервале: они подсказывают ответ
         items = rng.sample(good, k) + rng.sample(bad, 5 - k)
         if len({topic_of(t) for t in items}) == 5:
