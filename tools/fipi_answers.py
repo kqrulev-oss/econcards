@@ -154,6 +154,12 @@ class Checker:
             return r
 
 
+def passage(data, t):
+    """Общий текст группы задания, если он не само это задание."""
+    g = data.get('groups', {}).get(t.get('group')) or {}
+    return None if g.get('from') == t['id'] else g.get('text')
+
+
 def load_candidates(paths):
     """Ответы и решения из файлов: {qid: [ответы]} или {qid: {"a": …, "e": "…", "sol": "…"}}.
     Возвращает {qid: [попытка, …]} — по попытке на файл, решение остаётся при своих ответах."""
@@ -197,9 +203,9 @@ def export(exam, key, batch, size, kinds):
         if t['kind'] in ('select', 'multi') and not t.get('opts'):
             continue
         item = {'id': t['id'], 'type': t['kind'], 'text': t['text']}
-        passage = data.get('groups', {}).get(t.get('group'), {}).get('text')
-        if passage:
-            item['passage'] = passage  # общий текст группы заданий
+        text = passage(data, t)
+        if text:
+            item['passage'] = text  # общий текст группы заданий
         if t['kind'] in ('select', 'multi'):
             item['options'] = [{'id': o['id'], 'text': o['text']} for o in t['opts']]
         if rec.get('no'):
@@ -298,7 +304,7 @@ def solve_subject(exam, key, args, gem_key):
         elif t['kind'] == 'short':
             ok = any(verify(t, x['a'], ex(x)) for x in atts)
             if not ok and args.ai and gem_key:
-                r = gemini(gem_key, SOLVE.format(exam='ЕГЭ' if exam == 'ege' else 'ОГЭ', subject=data['title']), t, args.model, data.get('groups', {}).get(t.get('group'), {}).get('text'))
+                r = gemini(gem_key, SOLVE.format(exam='ЕГЭ' if exam == 'ege' else 'ОГЭ', subject=data['title']), t, args.model, passage(data, t))
                 if r and r.get('answer'):
                     ok = verify(t, [r['answer']] + list(r.get('alt') or [])[:2],
                                 {'e': r['solution'].strip()} if r.get('solution') else None)
@@ -308,7 +314,7 @@ def solve_subject(exam, key, args, gem_key):
         elif t['kind'] == 'full' and not known.get('sol'):
             sol = next((x['sol'] for x in atts if x.get('sol')), None)
             if not sol and args.solutions and gem_key:
-                r = gemini(gem_key, WRITE.format(subject=data['title']), t, args.model, data.get('groups', {}).get(t.get('group'), {}).get('text'))
+                r = gemini(gem_key, WRITE.format(subject=data['title']), t, args.model, passage(data, t))
                 sol = r and (r.get('solution') or '').strip()
             if sol:
                 with lock:

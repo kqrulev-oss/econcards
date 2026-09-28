@@ -285,7 +285,7 @@ function editCard(p, index, onSave) {
     });
     const e = $('#e').value.trim();
     if (e) card.e = e;
-    for (const key of ['src', 'img', 'any']) if (c[key] && (key !== 'any' || k === 'short')) card[key] = c[key];
+    for (const key of ['src', 'img', 'files', 'any']) if (c[key] && (key !== 'any' || k === 'short')) card[key] = c[key];
     if (index === null) p.cards.push(card); else p.cards[index] = card;
     touch(p);
     close();

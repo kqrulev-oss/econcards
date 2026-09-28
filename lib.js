@@ -173,10 +173,14 @@ export function renderCard(card, root, onDone, { imgRoot = './', aiEnabled = !!a
   const imgs = (card.img || []).map(src => `<img src="${esc(imgRoot + src)}" alt="" loading="lazy">`).join('')
     // График из набора — картинкой через data:, чтобы SVG не мог выполнить код
     + (card.svg ? `<img class="graph" src="data:image/svg+xml;charset=utf-8,${encodeURIComponent(card.svg)}" alt="График к заданию">` : '');
+  // Файлы к заданию (архивы, таблицы) — ссылками на сайт ФИПИ, других адресов не пускаем
+  const files = (card.files || []).filter(u => /^https:\/\/(ege|oge)\.fipi\.ru\/[^\s"'<>]+$/.test(u))
+    .map(u => `<a class="btn small ghost" href="${esc(u)}" target="_blank" rel="noopener noreferrer">📎 Файл к заданию · ${esc(u.split('.').pop())}</a>`).join('');
   root.innerHTML = `
     ${card.src ? `<div class="card-src">${esc(card.src)}</div>` : ''}
     <div class="card-q${card.h ? ' rich' : ''}">${card.h ? '' : text(card.q)}</div>
     ${imgs ? `<div class="card-img">${imgs}</div>` : ''}
+    ${files ? `<div class="card-files">${files}</div>` : ''}
     <div class="card-body"></div>
     <div class="explain"></div>`;
   const body = root.querySelector('.card-body');

@@ -273,7 +273,9 @@ ATTRS = {
     'mspace': {'width'}, 'mi': {'mathvariant'}, 'mn': {'mathvariant'}, 'mtext': {'mathvariant'},
     'menclose': {'notation'},
 }
-PICTURE = re.compile(r"""(ShowPicture\w*)\s*\(\s*(['"])([^'"]+)\2""")
+PICTURE = re.compile(r"""(ShowPicture\w*)\s*\(\s*(['"])([^'"]+)\2(?:\s*,\s*(['"])([^'"]*)\4)?""")
+IMAGE_EXT = re.compile(r'\.(png|gif|jpe?g|svg|webp|bmp)$', re.I)
+DOC_EXT = re.compile(r'\.(zip|rar|7z|xlsx?|ods|docx?|odt|txt|csv|pdf)$', re.I)
 INVISIBLE = dict.fromkeys(map(ord, '⁡⁢⁣⁤​﻿'), None)
 
 
@@ -282,19 +284,21 @@ def local(tag):
 
 
 def pictures(script):
-    """ShowPictureQ('docs/…/xs3qstsrc….png') и родственные → [(функция, путь)].
-    У ShowPictureQ2/Q3 первым идёт большая картинка, вторым — превью; берём большую."""
-    return [(m.group(1), re.sub(r'\.\s+', '.', m.group(3))) for m in PICTURE.finditer(script)]
+    """ShowPictureQ('docs/…/xs3qstsrc….png') и родственные → [(функция, путь, второй путь)].
+    У ShowPictureQ2/Q3 первым идёт большая картинка или файл к заданию (zip, xlsx…),
+    вторым — превью."""
+    return [(m.group(1), re.sub(r'\.\s+', '.', m.group(3)), m.group(5) or '') for m in PICTURE.finditer(script)]
 
 
 class Cleaner:
     """Переводит узел условия в компактный HTML: только разрешённые теги и атрибуты,
     MathML без префикса m: и без semantics, пути картинок — локальные."""
 
-    def __init__(self, resolve_img, files=''):
+    def __init__(self, resolve_img, base=''):
         self.resolve_img = resolve_img  # (путь из страницы, из скрипта?) → локальный путь или None
-        self.files = files  # files_location: папка картинок ShowPicture(...) в общих текстах
+        self.base = base  # files_location: папка картинок ShowPicture(...) в общих текстах
         self.images = []
+        self.files = []  # файлы к заданию (архивы, таблицы) — ссылками на сайт ФИПИ
         self.media = False
 
     def image(self, src, script=False):
@@ -325,8 +329,16 @@ class Cleaner:
         tag = local(n.tag)
         if tag == 'script':
             # ShowPictureQ* — от qfiles_location, ShowPicture* — от files_location блока
-            imgs = [self.image(s, script=True) if fn.startswith('ShowPictureQ') else self.image(self.files + s)
-                    for fn, s in pictures(n.text())]
+            imgs = []
+            for fn, src, _ in pictures(n.text()):
+                q = fn.startswith('ShowPictureQ')
+                path = src if q else self.base + src
+                if IMAGE_EXT.search(path) or any(x in path.lower() for x in MEDIA):
+                    imgs.append(self.image(path, script=q))
+                else:  # файл к заданию: в репозиторий не кладём, даём ссылку на ФИПИ
+                    url = getattr(self.resolve_img, 'url', lambda s, script: s)(path, q)
+                    if url not in self.files:
+                        self.files.append(url)
             return [Node('img', {'src': s}) for s in imgs if s]
         if tag in DROP or n.tag in DROP:
             return []
@@ -339,6 +351,10 @@ class Cleaner:
             return [Node('img', {'src': src})] if src else []
         if tag in ('a', 'embed', 'audio', 'video', 'source') and any(x in (n.attrs.get('href', '') + n.attrs.get('src', '')).lower() for x in MEDIA):
             self.media = True
+        elif tag == 'a' and DOC_EXT.search(n.attrs.get('href', '')):
+            url = getattr(self.resolve_img, 'url', lambda s, script: s)(n.attrs['href'], False)
+            if url not in self.files:
+                self.files.append(url)
         tag = HTML_MAP.get(tag, tag)
         kids = self.clean(n, False)
         wrap = self.style_tags(n)
@@ -461,6 +477,8 @@ def tidy(kids):
 
 FUNCS = {'sin', 'cos', 'tg', 'ctg', 'tan', 'cot', 'arcsin', 'arccos', 'arctg', 'arcctg', 'log', 'ln', 'lg', 'lim', 'max', 'min'}
 SUB = str.maketrans('0123456789+-−=()', '₀₁₂₃₄₅₆₇₈₉₊₋₋₌₍₎')
+SUP_CHARS = '0123456789+-−=()n'
+SUP = str.maketrans(SUP_CHARS, '⁰¹²³⁴⁵⁶⁷⁸⁹⁺⁻⁻⁼⁽⁾ⁿ')
 ROOTS = {'2': '√', '3': '∛', '4': '∜'}
 
 
@@ -550,6 +568,14 @@ def plain(kids):
             out.append('\n')
         if tag == 'li':
             out.append('\n— ')
+        if tag in ('sup', 'sub'):  # 9<sup>11</sup> → 9¹¹, H<sub>2</sub>O → H₂O
+            inner = plain(k.kids)
+            table = SUP if tag == 'sup' else SUB
+            if inner and all(ch in SUP_CHARS if tag == 'sup' else ch in '0123456789+-−=()' for ch in inner):
+                out.append(inner.translate(table))
+            elif inner:
+                out.append(('^{%s}' if tag == 'sup' else '_{%s}') % inner)
+            return
         for x in k.kids:
             walk(x)
         if tag in ('td', 'th'):
@@ -647,6 +673,8 @@ def text_block(root, resolve_img, files):
         out['html'] = serialize(kids)
     if cleaner.images:
         out['img'] = cleaner.images
+    if cleaner.files:
+        out['files'] = cleaner.files
     if cleaner.media:
         out['media'] = True
     return out
@@ -691,6 +719,8 @@ def parse_questions(html, resolve_img, pending=None):
             task['opts'] = opts
         if cleaner.images:
             task['img'] = cleaner.images
+        if cleaner.files:
+            task['files'] = cleaner.files
         if cleaner.media:
             task['media'] = True
         if mask and opts:
@@ -761,6 +791,8 @@ def image_resolver(client, exam, key, page_base, script_base, offline):
             folder.mkdir(parents=True, exist_ok=True)
             path.write_bytes(data)
         return path.relative_to(ROOT).as_posix() if path.exists() else None
+    # Файлы к заданиям не скачиваем — нужен только их адрес на сайте ФИПИ
+    resolve.url = lambda src, script=False: urllib.parse.urljoin(script_base if script else page_base, src.strip())
     return resolve
 
 
@@ -820,7 +852,23 @@ def crawl(exam, key, client, offline=False, pagesize=100):
             by_id[t['id']] = t
         n += 1
         print(f'  {exam}-{key}: {len(by_id)}/{total}', end='\r', flush=True)
+    # Группа без общего текста (задачи про игру в информатике): условие дано в первом
+    # задании группы, остальные на него ссылаются — оно и становится общим текстом
+    for g in sorted({t['group'] for t in by_id.values() if t.get('group') and t['group'] not in groups}):
+        first = min((t for t in by_id.values() if t.get('group') == g), key=lambda t: t['gn'])
+        if first['gn'] == 1:
+            groups[g] = {k: first[k] for k in ('text', 'html', 'img', 'files') if k in first}
+            groups[g]['from'] = first['id']
     lost = sorted({t['group'] for t in by_id.values() if t.get('group') and t['group'] not in groups})
+    # Картинки, на которые больше ничего не ссылается (старый разбор, переименования), — удаляем
+    folder = IMG / f'{exam}-{key}'
+    if total and len(by_id) >= total and folder.exists():
+        used = {ROOT / src for x in list(by_id.values()) + list(groups.values()) for src in x.get('img', [])}
+        extra = [f for f in folder.iterdir() if f not in used]
+        for f in extra:
+            f.unlink()
+        if extra:
+            print(f'  {exam}-{key}: удалено лишних файлов картинок {len(extra)}')
     print(f'  {exam}-{key}: заданий {len(by_id)} из {total}, общих текстов {len(groups)}'
           + (f', не найден текст групп {lost}' if lost else '') + ' ' * 10)
 

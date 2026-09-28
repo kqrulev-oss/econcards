@@ -601,11 +601,15 @@ def fipi_card(t, rec, passage=None):
     card = {'q': t['text'], 'src': f'Банк ФИПИ · {t["id"]}'}
     if t.get('html'):
         card['h'] = t['html']
+    files = t.get('files', []) + (passage or {}).get('files', [])
+    if files:
+        card['files'] = files
     if passage:
-        card['q'] += '\n\nТекст к заданию:\n' + passage['text']
+        card['q'] += ('\n\nУсловие первого задания группы:\n' if passage.get('from') else '\n\nТекст к заданию:\n') + passage['text']
         body = t.get('html') or ''.join(f'<p>{esc(x)}</p>' for x in re.sub(r'⟦(.+?)⟧', r'\1', t['text']).split('\n') if x.strip())
         text = passage.get('html') or ''.join(f'<p>{esc(x)}</p>' for x in passage['text'].split('\n') if x.strip())
-        card['h'] = f'<details><summary>Текст к заданию</summary>{text}</details>{body}'
+        head = 'Условие первого задания группы' if passage.get('from') else 'Текст к заданию'
+        card['h'] = f'<details><summary>{head}</summary>{text}</details>{body}'
     opts = [{'id': o['id'], 't': o['text'], **({'h': o['html']} if o.get('html') else {})} for o in t.get('opts', [])]
     if t['kind'] == 'select' and opts and rec.get('a'):
         card.update(k='one', a=rec['a'], o=opts)
@@ -642,7 +646,10 @@ def fipi_content(exam, key, section):
         if t.get('group') and t['group'] not in groups:
             skipped[t['kind'] + ' (нет общего текста)'] += 1
             continue
-        body = fipi_card(t, answers.get(t['id'], {}), groups.get(t.get('group')))
+        passage = groups.get(t.get('group'))
+        if passage and passage.get('from') == t['id']:
+            passage = None  # это задание само и есть условие группы
+        body = fipi_card(t, answers.get(t['id'], {}), passage)
         if not body:
             skipped[t['kind'] + (' (медиа)' if t.get('media') else '')] += 1
             continue
