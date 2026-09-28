@@ -27,6 +27,7 @@ FIPI_CA=файл.pem с недостающими сертификатами ил
 """
 import argparse
 import hashlib
+import http.client
 import json
 import os
 import re
@@ -141,14 +142,51 @@ class Client:
         if insecure:
             ctx.check_hostname = False
             ctx.verify_mode = ssl.CERT_NONE
+        self.ctx = ctx
+        self.jar = CookieJar()
         self.opener = urllib.request.build_opener(
-            urllib.request.HTTPCookieProcessor(CookieJar()), urllib.request.HTTPSHandler(context=ctx))
+            urllib.request.HTTPCookieProcessor(self.jar), urllib.request.HTTPSHandler(context=ctx))
+        self.conn = None  # постоянное соединение для частых коротких запросов (post_fast)
         self.opener.addheaders = [
             ('User-Agent', 'Mozilla/5.0 (compatible; econcards-fipi/1.0; +https://github.com/kqrulev-oss/econcards)'),
             ('Accept-Language', 'ru-RU,ru;q=0.9'),
         ]
         self.delay = delay
         self.last = 0.0
+
+    def post_fast(self, path, data):
+        """POST по постоянному соединению: без нового TLS на каждый запрос проверка ответа
+        идёт в разы быстрее. Cookie сессии берём из общей банки; при обрыве — переподключаемся."""
+        host = urllib.parse.urlsplit(self.base).hostname
+        url = urllib.parse.urljoin(self.base, path)
+        body = urllib.parse.urlencode(data)
+        cookie = '; '.join(f'{c.name}={c.value}' for c in self.jar)
+        headers = {'Content-Type': 'application/x-www-form-urlencoded', 'Cookie': cookie,
+                   'User-Agent': dict(self.opener.addheaders)['User-Agent'], 'Connection': 'keep-alive'}
+        for attempt in range(4):
+            time.sleep(max(0.0, self.last + self.delay - time.time()))
+            self.last = time.time()
+            try:
+                if self.conn is None:
+                    proxy = urllib.parse.urlsplit(os.environ.get('HTTPS_PROXY') or os.environ.get('https_proxy') or '')
+                    if proxy.hostname:
+                        self.conn = http.client.HTTPSConnection(proxy.hostname, proxy.port or 80, context=self.ctx, timeout=60)
+                        self.conn.set_tunnel(host, 443)
+                    else:
+                        self.conn = http.client.HTTPSConnection(host, 443, context=self.ctx, timeout=60)
+                self.conn.request('POST', urllib.parse.urlsplit(url).path, body=body, headers=headers)
+                r = self.conn.getresponse()
+                content = r.read()
+                if r.status >= 500:
+                    raise ConnectionError(f'HTTP {r.status}')
+                return content.decode('windows-1251', errors='replace')
+            except (http.client.HTTPException, OSError) as e:
+                if self.conn is not None:
+                    self.conn.close()
+                self.conn = None
+                if attempt == 3:
+                    raise FipiError(f'банк ФИПИ не отвечает ({url}): {e}')
+                time.sleep(2 ** attempt)
 
     def fetch(self, path, params=None, data=None, raw=False):
         url = urllib.parse.urljoin(self.base, path)

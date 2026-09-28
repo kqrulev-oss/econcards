@@ -165,8 +165,8 @@ class Checker:
             for _ in range(3):
                 if not self.warm:
                     self.warmup()
-                r = self.client.fetch('solve.php', data={'proj': self.proj, 'guid': guid, 'answer': answer,
-                                                         'chkcode': '', 'ajax': '1'}).strip()
+                r = self.client.post_fast('solve.php', {'proj': self.proj, 'guid': guid, 'answer': answer,
+                                                        'chkcode': '', 'ajax': '1'}).strip()
                 if r in ('0', '1', '2', '3'):
                     return r
                 self.warm = False  # «Пользователь не определён» — сессия истекла
