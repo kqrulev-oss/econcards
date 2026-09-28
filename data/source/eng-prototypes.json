@@ -1,0 +1,5977 @@
+{
+ "meta": {
+  "about": "Каталог прототипов заданий ЕГЭ (1–42, КИМ 2026 = 2027) и ОГЭ (1–35 и устная часть) по английскому языку: что неизменно, что меняется, как считается ответ; генератор аналогов (param / dict) или рецепт llm. Тексты ФИПИ, Решу ЕГЭ и коммерческих банков не включены; примеры и все предложения генератора составлены самостоятельно.",
+  "built_by": "python3 tools/research/proto_eng.py --export",
+  "exam_docs": "спецификации, кодификаторы и демоверсии ФИПИ: ЕГЭ 2026 (05.11.2025), ОГЭ 2026 (06.11.2025); 2027 — без изменений",
+  "answer_types": {
+   "word": "слово/несколько слов как в бланке: без регистра и пробелов, апостроф сохраняется, варианты в списке a",
+   "one": "выбор одного из четырёх, ответ — цифра",
+   "open": "развёрнутый ответ, проверка по критериям (llm)"
+  },
+  "dicts": "сторонние словари в репозиторий не включены; таблицы форм, гнёзд и путаниц — собственные факты языка. Для расширения: CEFR-J (с атрибуцией), Open English WordNet (CC BY 4.0); Oxford 3000/5000 и English Vocabulary Profile — нельзя.",
+  "selftest": {
+   "eng-ege-19-be": {
+    "cards": 34,
+    "bad": 0,
+    "dup": 0,
+    "capacity": 34
+   },
+   "eng-oge-20-be": {
+    "cards": 20,
+    "bad": 0,
+    "dup": 0,
+    "capacity": 20
+   },
+   "eng-oge-20-there-be": {
+    "cards": 14,
+    "bad": 0,
+    "dup": 0,
+    "capacity": 14
+   },
+   "eng-ege-19-past-simple": {
+    "cards": 50,
+    "bad": 0,
+    "dup": 0,
+    "capacity": 2000
+   },
+   "eng-oge-21-past-simple": {
+    "cards": 50,
+    "bad": 0,
+    "dup": 0,
+    "capacity": 2000
+   },
+   "eng-ege-19-past-neg": {
+    "cards": 50,
+    "bad": 0,
+    "dup": 0,
+    "capacity": 2000
+   },
+   "eng-oge-21-past-neg": {
+    "cards": 50,
+    "bad": 0,
+    "dup": 0,
+    "capacity": 2000
+   },
+   "eng-ege-20-present-simple": {
+    "cards": 50,
+    "bad": 0,
+    "dup": 0,
+    "capacity": 2000
+   },
+   "eng-oge-22-present-simple": {
+    "cards": 50,
+    "bad": 0,
+    "dup": 0,
+    "capacity": 2000
+   },
+   "eng-ege-20-present-cont": {
+    "cards": 50,
+    "bad": 0,
+    "dup": 0,
+    "capacity": 1315
+   },
+   "eng-oge-22-present-cont": {
+    "cards": 50,
+    "bad": 0,
+    "dup": 0,
+    "capacity": 1315
+   },
+   "eng-ege-20-past-cont": {
+    "cards": 50,
+    "bad": 0,
+    "dup": 0,
+    "capacity": 1334
+   },
+   "eng-oge-23-past-cont": {
+    "cards": 50,
+    "bad": 0,
+    "dup": 0,
+    "capacity": 1334
+   },
+   "eng-ege-21-present-perfect": {
+    "cards": 50,
+    "bad": 0,
+    "dup": 0,
+    "capacity": 2000
+   },
+   "eng-oge-23-present-perfect": {
+    "cards": 50,
+    "bad": 0,
+    "dup": 0,
+    "capacity": 2000
+   },
+   "eng-ege-21-past-perfect": {
+    "cards": 50,
+    "bad": 0,
+    "dup": 0,
+    "capacity": 911
+   },
+   "eng-ege-21-perfect-cont": {
+    "cards": 50,
+    "bad": 0,
+    "dup": 0,
+    "capacity": 61
+   },
+   "eng-ege-22-future": {
+    "cards": 50,
+    "bad": 0,
+    "dup": 0,
+    "capacity": 2000
+   },
+   "eng-oge-24-future": {
+    "cards": 50,
+    "bad": 0,
+    "dup": 0,
+    "capacity": 2000
+   },
+   "eng-ege-22-passive-past": {
+    "cards": 31,
+    "bad": 0,
+    "dup": 0,
+    "capacity": 31
+   },
+   "eng-oge-25-passive-past": {
+    "cards": 31,
+    "bad": 0,
+    "dup": 0,
+    "capacity": 31
+   },
+   "eng-ege-22-passive-present": {
+    "cards": 20,
+    "bad": 0,
+    "dup": 0,
+    "capacity": 20
+   },
+   "eng-oge-25-passive-present": {
+    "cards": 20,
+    "bad": 0,
+    "dup": 0,
+    "capacity": 20
+   },
+   "eng-ege-22-passive-perfect-modal": {
+    "cards": 20,
+    "bad": 0,
+    "dup": 0,
+    "capacity": 20
+   },
+   "eng-ege-23-conditional-1": {
+    "cards": 32,
+    "bad": 0,
+    "dup": 0,
+    "capacity": 32
+   },
+   "eng-oge-26-conditional-1": {
+    "cards": 32,
+    "bad": 0,
+    "dup": 0,
+    "capacity": 32
+   },
+   "eng-ege-23-conditional-2": {
+    "cards": 32,
+    "bad": 0,
+    "dup": 0,
+    "capacity": 32
+   },
+   "eng-oge-26-conditional-2": {
+    "cards": 32,
+    "bad": 0,
+    "dup": 0,
+    "capacity": 32
+   },
+   "eng-ege-23-reported": {
+    "cards": 15,
+    "bad": 0,
+    "dup": 0,
+    "capacity": 15
+   },
+   "eng-oge-27-reported": {
+    "cards": 15,
+    "bad": 0,
+    "dup": 0,
+    "capacity": 15
+   },
+   "eng-ege-23-gerund-infinitive": {
+    "cards": 36,
+    "bad": 0,
+    "dup": 0,
+    "capacity": 36
+   },
+   "eng-oge-27-gerund-infinitive": {
+    "cards": 36,
+    "bad": 0,
+    "dup": 0,
+    "capacity": 36
+   },
+   "eng-ege-23-modal": {
+    "cards": 20,
+    "bad": 0,
+    "dup": 0,
+    "capacity": 20
+   },
+   "eng-oge-28-modal": {
+    "cards": 20,
+    "bad": 0,
+    "dup": 0,
+    "capacity": 20
+   },
+   "eng-ege-24-plural": {
+    "cards": 50,
+    "bad": 0,
+    "dup": 0,
+    "capacity": 50
+   },
+   "eng-oge-28-plural": {
+    "cards": 50,
+    "bad": 0,
+    "dup": 0,
+    "capacity": 50
+   },
+   "eng-ege-24-comparison": {
+    "cards": 50,
+    "bad": 0,
+    "dup": 0,
+    "capacity": 234
+   },
+   "eng-oge-28-comparison": {
+    "cards": 50,
+    "bad": 0,
+    "dup": 0,
+    "capacity": 234
+   },
+   "eng-ege-24-ordinal": {
+    "cards": 50,
+    "bad": 0,
+    "dup": 0,
+    "capacity": 349
+   },
+   "eng-oge-28-ordinal": {
+    "cards": 50,
+    "bad": 0,
+    "dup": 0,
+    "capacity": 349
+   },
+   "eng-ege-24-pronoun": {
+    "cards": 50,
+    "bad": 0,
+    "dup": 0,
+    "capacity": 69
+   },
+   "eng-oge-28-pronoun": {
+    "cards": 50,
+    "bad": 0,
+    "dup": 0,
+    "capacity": 69
+   },
+   "eng-ege-25-wf-noun": {
+    "cards": 50,
+    "bad": 0,
+    "dup": 0,
+    "capacity": 101
+   },
+   "eng-ege-25-wf-agent": {
+    "cards": 50,
+    "bad": 0,
+    "dup": 0,
+    "capacity": 64
+   },
+   "eng-ege-26-wf-adj": {
+    "cards": 50,
+    "bad": 0,
+    "dup": 0,
+    "capacity": 126
+   },
+   "eng-ege-26-wf-nationality": {
+    "cards": 32,
+    "bad": 0,
+    "dup": 0,
+    "capacity": 32
+   },
+   "eng-ege-27-wf-participle": {
+    "cards": 50,
+    "bad": 0,
+    "dup": 0,
+    "capacity": 50
+   },
+   "eng-ege-27-wf-negative": {
+    "cards": 46,
+    "bad": 0,
+    "dup": 0,
+    "capacity": 46
+   },
+   "eng-ege-28-wf-adverb": {
+    "cards": 50,
+    "bad": 0,
+    "dup": 0,
+    "capacity": 60
+   },
+   "eng-ege-28-wf-verb-prefix": {
+    "cards": 36,
+    "bad": 0,
+    "dup": 0,
+    "capacity": 36
+   },
+   "eng-ege-29-wf-verb-suffix": {
+    "cards": 36,
+    "bad": 0,
+    "dup": 0,
+    "capacity": 36
+   },
+   "eng-ege-29-wf-numeral": {
+    "cards": 44,
+    "bad": 0,
+    "dup": 0,
+    "capacity": 44
+   },
+   "eng-ege-27-wf-inter-pre-post": {
+    "cards": 20,
+    "bad": 0,
+    "dup": 0,
+    "capacity": 20
+   },
+   "eng-oge-29-wf-noun": {
+    "cards": 50,
+    "bad": 0,
+    "dup": 0,
+    "capacity": 88
+   },
+   "eng-oge-29-wf-agent": {
+    "cards": 50,
+    "bad": 0,
+    "dup": 0,
+    "capacity": 62
+   },
+   "eng-oge-30-wf-adj": {
+    "cards": 50,
+    "bad": 0,
+    "dup": 0,
+    "capacity": 106
+   },
+   "eng-oge-31-wf-participle": {
+    "cards": 44,
+    "bad": 0,
+    "dup": 0,
+    "capacity": 44
+   },
+   "eng-oge-31-wf-negative": {
+    "cards": 38,
+    "bad": 0,
+    "dup": 0,
+    "capacity": 38
+   },
+   "eng-oge-32-wf-adverb": {
+    "cards": 48,
+    "bad": 0,
+    "dup": 0,
+    "capacity": 48
+   },
+   "eng-oge-33-wf-verb-prefix": {
+    "cards": 18,
+    "bad": 0,
+    "dup": 0,
+    "capacity": 18
+   },
+   "eng-oge-34-wf-numeral": {
+    "cards": 44,
+    "bad": 0,
+    "dup": 0,
+    "capacity": 44
+   },
+   "eng-ege-30-make-do": {
+    "cards": 32,
+    "bad": 0,
+    "dup": 0,
+    "capacity": 32
+   },
+   "eng-ege-31-say-tell-speak-talk": {
+    "cards": 26,
+    "bad": 0,
+    "dup": 0,
+    "capacity": 26
+   },
+   "eng-ege-32-preposition": {
+    "cards": 30,
+    "bad": 0,
+    "dup": 0,
+    "capacity": 30
+   },
+   "eng-ege-33-ed-ing": {
+    "cards": 50,
+    "bad": 0,
+    "dup": 0,
+    "capacity": 80
+   },
+   "eng-ege-34-phrasal": {
+    "cards": 40,
+    "bad": 0,
+    "dup": 0,
+    "capacity": 40
+   },
+   "eng-ege-35-linkers": {
+    "cards": 31,
+    "bad": 0,
+    "dup": 0,
+    "capacity": 31
+   },
+   "eng-ege-36-confusables": {
+    "cards": 42,
+    "bad": 0,
+    "dup": 0,
+    "capacity": 42
+   }
+  },
+  "counts": {
+   "ЕГЭ:param": 22,
+   "ОГЭ:param": 20,
+   "ЕГЭ:dict": 18,
+   "ОГЭ:dict": 8,
+   "ЕГЭ:llm": 24,
+   "ОГЭ:llm": 23
+  }
+ },
+ "prototypes": [
+  {
+   "id": "eng-ege-19-be",
+   "exam": "ЕГЭ",
+   "n": 19,
+   "n_range": "19–24",
+   "title": "Формы глагола be (am/is/are/was/were), в том числе there + be",
+   "kes": [
+    "2.4.24"
+   ],
+   "level": "Б",
+   "invariant": "одно предложение с пропуском, основа BE заглавными в конце строки; лицо/число и время однозначно заданы подлежащим и маркером",
+   "varies": "подлежащее (лицо, число), время (настоящее или прошедшее), обстоятельство, конструкция there + be",
+   "answer_rule": "таблица форм be по лицу, числу и времени; в there + be число берётся от существительного после be",
+   "mistakes": [
+    "there is при множественном числе",
+    "was с they/you",
+    "am с he/she"
+   ],
+   "kim": {
+    "section": "грамматика и лексика",
+    "score": 1,
+    "time_min": 2,
+    "answer": "слово или несколько слов, в бланк — без пробелов; орфографическая ошибка = 0",
+    "source": "спецификация и демоверсия ЕГЭ 2026 (ФИПИ, 05.11.2025; 2027 — без изменений)"
+   },
+   "gen": {
+    "kind": "param",
+    "fn": "tools/research/proto_eng.py:g_be",
+    "check": "c_be"
+   },
+   "capacity": 34,
+   "capacity_note": "замер до 2000 разных условий",
+   "example": {
+    "k": "word",
+    "q": "There ____ nobody at home when I came back.  (BE)",
+    "a": [
+     "was"
+    ],
+    "e": "be: am/is/are в настоящем, was/were в прошедшем; число — по подлежащему (после there — по существительному).",
+    "blank": [
+     "was"
+    ]
+   },
+   "fidelity": {
+    "status": "pass",
+    "checked": 3,
+    "passed": 3,
+    "note": "проходит; замечание: в КИМ 19–24 — связный текст, а не одиночные предложения (см. отчёт)",
+    "history": {
+     "1": "3/3"
+    }
+   }
+  },
+  {
+   "id": "eng-oge-20-be",
+   "exam": "ОГЭ",
+   "n": 20,
+   "n_range": "20–28",
+   "title": "Формы глагола be",
+   "kes": [
+    "2.4.30",
+    "2.4.31"
+   ],
+   "level": "Б",
+   "invariant": "одно предложение, основа BE заглавными; лицо, число и время заданы подлежащим и маркером",
+   "varies": "подлежащее, время, обстоятельство",
+   "answer_rule": "таблица форм be по лицу, числу и времени",
+   "mistakes": [
+    "was с they",
+    "is с I",
+    "are с he/she"
+   ],
+   "kim": {
+    "section": "грамматика и лексика",
+    "score": 1,
+    "time_min": 2,
+    "answer": "слово или несколько слов, в бланк — без пробелов; орфографическая ошибка = 0",
+    "source": "спецификация и демоверсия ОГЭ 2026 (ФИПИ, 06.11.2025; 2027 — без изменений)"
+   },
+   "gen": {
+    "kind": "param",
+    "fn": "tools/research/proto_eng.py:g_be_oge",
+    "check": "c_be"
+   },
+   "capacity": 20,
+   "capacity_note": "замер до 2000 разных условий",
+   "example": {
+    "k": "word",
+    "q": "My cousin and I ____ in the same class this year.  (BE)",
+    "a": [
+     "are"
+    ],
+    "e": "be: am/is/are — настоящее, was/were — прошедшее; форма по подлежащему.",
+    "blank": [
+     "are"
+    ]
+   },
+   "fidelity": {
+    "status": "pass",
+    "checked": 3,
+    "passed": 3,
+    "note": "",
+    "history": {
+     "1": "3/3"
+    }
+   }
+  },
+  {
+   "id": "eng-oge-20-there-be",
+   "exam": "ОГЭ",
+   "n": 20,
+   "n_range": "20–28",
+   "title": "Конструкция there + be",
+   "kes": [
+    "2.4.5"
+   ],
+   "level": "Б",
+   "invariant": "предложение начинается с There, основа BE заглавными; число задано существительным, время — обстоятельством",
+   "varies": "существительное (ед./мн. число), время, обстоятельство",
+   "answer_rule": "число — от существительного после be, время — от маркера",
+   "mistakes": [
+    "there is с множественным числом",
+    "there were с a lot of snow (неисчисляемое)"
+   ],
+   "kim": {
+    "section": "грамматика и лексика",
+    "score": 1,
+    "time_min": 2,
+    "answer": "слово или несколько слов, в бланк — без пробелов; орфографическая ошибка = 0",
+    "source": "спецификация и демоверсия ОГЭ 2026 (ФИПИ, 06.11.2025; 2027 — без изменений)"
+   },
+   "gen": {
+    "kind": "param",
+    "fn": "tools/research/proto_eng.py:g_there",
+    "check": "c_be"
+   },
+   "capacity": 14,
+   "capacity_note": "замер до 2000 разных условий",
+   "example": {
+    "k": "word",
+    "q": "There ____ a small bakery on this corner ten years ago.  (BE)",
+    "a": [
+     "was"
+    ],
+    "e": "there + be: is/was — единственное число и неисчисляемые, are/were — множественное.",
+    "blank": [
+     "was"
+    ]
+   },
+   "fidelity": {
+    "status": "pass",
+    "checked": 3,
+    "passed": 3,
+    "note": "",
+    "history": {
+     "1": "3/3"
+    }
+   }
+  },
+  {
+   "id": "eng-ege-19-past-simple",
+   "exam": "ЕГЭ",
+   "n": 19,
+   "n_range": "19–24",
+   "title": "Past Simple: правильные и неправильные глаголы",
+   "kes": [
+    "2.4.24"
+   ],
+   "level": "Б",
+   "invariant": "одно предложение с маркером прошедшего времени (yesterday, ago, in 2019…), глагол заглавными",
+   "varies": "маркер, подлежащее, глагол (60 неправильных + правильные с орфографией -ed), дополнение",
+   "answer_rule": "таблица неправильных глаголов; для правильных — -ed с правилами (stop → stopped, study → studied, live → lived)",
+   "mistakes": [
+    "teached, bringed, catched",
+    "stoped, studyed",
+    "Present Perfect при маркере yesterday/ago"
+   ],
+   "kim": {
+    "section": "грамматика и лексика",
+    "score": 1,
+    "time_min": 2,
+    "answer": "слово или несколько слов, в бланк — без пробелов; орфографическая ошибка = 0",
+    "source": "спецификация и демоверсия ЕГЭ 2026 (ФИПИ, 05.11.2025; 2027 — без изменений)"
+   },
+   "gen": {
+    "kind": "param",
+    "fn": "tools/research/proto_eng.py:g_past",
+    "check": "c_past"
+   },
+   "capacity": 2000,
+   "capacity_note": "замер до 2000 разных условий",
+   "example": {
+    "k": "word",
+    "q": "On Monday I ____ a strange old coin.  (FIND)",
+    "a": [
+     "found"
+    ],
+    "e": "маркер прошедшего времени → Past Simple (V2 / -ed)",
+    "blank": [
+     "found"
+    ]
+   },
+   "fidelity": {
+    "status": "pass",
+    "checked": 3,
+    "passed": 3,
+    "note": "",
+    "history": {
+     "1": "3/3"
+    }
+   }
+  },
+  {
+   "id": "eng-oge-21-past-simple",
+   "exam": "ОГЭ",
+   "n": 21,
+   "n_range": "20–28",
+   "title": "Past Simple: правильные и неправильные глаголы",
+   "kes": [
+    "2.4.30"
+   ],
+   "level": "Б",
+   "invariant": "одно предложение с маркером прошедшего времени, глагол заглавными",
+   "varies": "маркер, подлежащее, глагол, дополнение",
+   "answer_rule": "таблица неправильных глаголов или -ed с правилами орфографии",
+   "mistakes": [
+    "goed, teached",
+    "stoped"
+   ],
+   "kim": {
+    "section": "грамматика и лексика",
+    "score": 1,
+    "time_min": 2,
+    "answer": "слово или несколько слов, в бланк — без пробелов; орфографическая ошибка = 0",
+    "source": "спецификация и демоверсия ОГЭ 2026 (ФИПИ, 06.11.2025; 2027 — без изменений)"
+   },
+   "gen": {
+    "kind": "param",
+    "fn": "tools/research/proto_eng.py:g_past_oge (как eng-ege-19-past-simple)",
+    "check": "c_past"
+   },
+   "capacity": 2000,
+   "capacity_note": "замер до 2000 разных условий",
+   "example": {
+    "k": "word",
+    "q": "In 2021 you ____ the kitchen after the party.  (CLEAN)",
+    "a": [
+     "cleaned"
+    ],
+    "e": "маркер прошедшего времени → Past Simple (V2 / -ed)",
+    "blank": [
+     "cleaned"
+    ]
+   },
+   "fidelity": {
+    "status": "pass",
+    "checked": 3,
+    "passed": 3,
+    "note": "",
+    "history": {
+     "1": "3/3"
+    }
+   }
+  },
+  {
+   "id": "eng-ege-19-past-neg",
+   "exam": "ЕГЭ",
+   "n": 19,
+   "n_range": "19–24",
+   "title": "Past Simple: отрицание (did not / didn't)",
+   "kes": [
+    "2.4.24"
+   ],
+   "level": "Б",
+   "invariant": "предложение с маркером прошедшего времени, в скобках NOT + глагол",
+   "varies": "подлежащее, глагол, дополнение, маркер",
+   "answer_rule": "did not + инфинитив; в ключе два варианта: полная и краткая форма",
+   "mistakes": [
+    "did not went",
+    "didn't + -ed",
+    "not + V2 без did"
+   ],
+   "kim": {
+    "section": "грамматика и лексика",
+    "score": 1,
+    "time_min": 2,
+    "answer": "слово или несколько слов, в бланк — без пробелов; орфографическая ошибка = 0",
+    "source": "спецификация и демоверсия ЕГЭ 2026 (ФИПИ, 05.11.2025; 2027 — без изменений)"
+   },
+   "gen": {
+    "kind": "param",
+    "fn": "tools/research/proto_eng.py:g_past_neg",
+    "check": "c_past_neg"
+   },
+   "capacity": 2000,
+   "capacity_note": "замер до 2000 разных условий",
+   "example": {
+    "k": "word",
+    "q": "I ____ the dishes without complaining in 2019.  (NOT WASH)",
+    "a": [
+     "did not wash",
+     "didn't wash"
+    ],
+    "e": "отрицание в прошлом → did not + V (глагол без окончания)",
+    "blank": [
+     "didnotwash",
+     "didn'twash"
+    ]
+   },
+   "fidelity": {
+    "status": "pass",
+    "checked": 3,
+    "passed": 3,
+    "note": "раунд 1: маркер внутри предложения терял заглавную (on monday); исправлено",
+    "history": {
+     "1": "2/3",
+     "2": "3/3"
+    }
+   }
+  },
+  {
+   "id": "eng-oge-21-past-neg",
+   "exam": "ОГЭ",
+   "n": 21,
+   "n_range": "20–28",
+   "title": "Past Simple: отрицание",
+   "kes": [
+    "2.4.30"
+   ],
+   "level": "Б",
+   "invariant": "маркер прошедшего времени, в скобках NOT + глагол",
+   "varies": "подлежащее, глагол, маркер",
+   "answer_rule": "did not / didn't + инфинитив",
+   "mistakes": [
+    "did not went"
+   ],
+   "kim": {
+    "section": "грамматика и лексика",
+    "score": 1,
+    "time_min": 2,
+    "answer": "слово или несколько слов, в бланк — без пробелов; орфографическая ошибка = 0",
+    "source": "спецификация и демоверсия ОГЭ 2026 (ФИПИ, 06.11.2025; 2027 — без изменений)"
+   },
+   "gen": {
+    "kind": "param",
+    "fn": "tools/research/proto_eng.py:g_past_neg_oge (как eng-ege-19-past-neg)",
+    "check": "c_past_neg"
+   },
+   "capacity": 2000,
+   "capacity_note": "замер до 2000 разных условий",
+   "example": {
+    "k": "word",
+    "q": "I ____ sandwiches for the whole team a week ago.  (NOT BRING)",
+    "a": [
+     "did not bring",
+     "didn't bring"
+    ],
+    "e": "отрицание в прошлом → did not + V (глагол без окончания)",
+    "blank": [
+     "didnotbring",
+     "didn'tbring"
+    ]
+   },
+   "fidelity": {
+    "status": "pass",
+    "checked": 3,
+    "passed": 3,
+    "note": "",
+    "history": {
+     "1": "3/3"
+    }
+   }
+  },
+  {
+   "id": "eng-ege-20-present-simple",
+   "exam": "ЕГЭ",
+   "n": 20,
+   "n_range": "19–24",
+   "title": "Present Simple: окончание -s/-es у 3-го лица",
+   "kes": [
+    "2.4.24"
+   ],
+   "level": "Б",
+   "invariant": "маркер регулярности (every Sunday, usually, twice a month), глагол заглавными",
+   "varies": "подлежащее (лицо и число), глагол, дополнение, маркер",
+   "answer_rule": "he/she/it → -s; после s, x, ch, sh, o → -es; согласная + y → -ies; have → has; остальные лица — словарная форма",
+   "mistakes": [
+    "studys, gos, watchs",
+    "haves",
+    "нет -s у he/she"
+   ],
+   "kim": {
+    "section": "грамматика и лексика",
+    "score": 1,
+    "time_min": 2,
+    "answer": "слово или несколько слов, в бланк — без пробелов; орфографическая ошибка = 0",
+    "source": "спецификация и демоверсия ЕГЭ 2026 (ФИПИ, 05.11.2025; 2027 — без изменений)"
+   },
+   "gen": {
+    "kind": "param",
+    "fn": "tools/research/proto_eng.py:g_pres",
+    "check": "c_pres"
+   },
+   "capacity": 2000,
+   "capacity_note": "замер до 2000 разных условий",
+   "example": {
+    "k": "word",
+    "q": "On Fridays my brother ____ our grandparents.  (VISIT)",
+    "a": [
+     "visits"
+    ],
+    "e": "регулярное действие → Present Simple; he/she/it → -s/-es",
+    "blank": [
+     "visits"
+    ]
+   },
+   "fidelity": {
+    "status": "pass",
+    "checked": 3,
+    "passed": 3,
+    "note": "раунд 1: одноразовые действия при маркере регулярности (they paint the fence green every Sunday); заведён пул привычных действий",
+    "history": {
+     "1": "1/3",
+     "2": "3/3"
+    }
+   }
+  },
+  {
+   "id": "eng-oge-22-present-simple",
+   "exam": "ОГЭ",
+   "n": 22,
+   "n_range": "20–28",
+   "title": "Present Simple: -s/-es у 3-го лица",
+   "kes": [
+    "2.4.30"
+   ],
+   "level": "Б",
+   "invariant": "маркер регулярности, глагол заглавными",
+   "varies": "подлежащее, глагол, маркер",
+   "answer_rule": "-s/-es/-ies у he/she/it, иначе словарная форма",
+   "mistakes": [
+    "gos, studys"
+   ],
+   "kim": {
+    "section": "грамматика и лексика",
+    "score": 1,
+    "time_min": 2,
+    "answer": "слово или несколько слов, в бланк — без пробелов; орфографическая ошибка = 0",
+    "source": "спецификация и демоверсия ОГЭ 2026 (ФИПИ, 06.11.2025; 2027 — без изменений)"
+   },
+   "gen": {
+    "kind": "param",
+    "fn": "tools/research/proto_eng.py:g_pres_oge (как eng-ege-20-present-simple)",
+    "check": "c_pres"
+   },
+   "capacity": 2000,
+   "capacity_note": "замер до 2000 разных условий",
+   "example": {
+    "k": "word",
+    "q": "As a rule you ____ friends in the park.  (MEET)",
+    "a": [
+     "meet"
+    ],
+    "e": "регулярное действие → Present Simple; he/she/it → -s/-es",
+    "blank": [
+     "meet"
+    ]
+   },
+   "fidelity": {
+    "status": "pass",
+    "checked": 3,
+    "passed": 3,
+    "note": "раунд 1: одноразовые действия при маркере регулярности (they paint the fence green every Sunday); заведён пул привычных действий",
+    "history": {
+     "1": "1/3",
+     "2": "3/3"
+    }
+   }
+  },
+  {
+   "id": "eng-ege-20-present-cont",
+   "exam": "ЕГЭ",
+   "n": 20,
+   "n_range": "19–24",
+   "title": "Present Continuous: действие в момент речи",
+   "kes": [
+    "2.4.24"
+   ],
+   "level": "Б",
+   "invariant": "маркер момента речи (Look!, right now, at the moment), глагол заглавными",
+   "varies": "подлежащее, глагол (не моментальный), дополнение, рамка",
+   "answer_rule": "am/is/are + V-ing; орфография -ing (make → making, swim → swimming); стяжение в ключе как второй вариант",
+   "mistakes": [
+    "is makeing, swiming",
+    "пропущен be",
+    "Present Simple при Look!"
+   ],
+   "kim": {
+    "section": "грамматика и лексика",
+    "score": 1,
+    "time_min": 2,
+    "answer": "слово или несколько слов, в бланк — без пробелов; орфографическая ошибка = 0",
+    "source": "спецификация и демоверсия ЕГЭ 2026 (ФИПИ, 05.11.2025; 2027 — без изменений)"
+   },
+   "gen": {
+    "kind": "param",
+    "fn": "tools/research/proto_eng.py:g_cont",
+    "check": "c_cont"
+   },
+   "capacity": 1315,
+   "capacity_note": "замер до 2000 разных условий",
+   "example": {
+    "k": "word",
+    "q": "Look! I ____ breakfast right now.  (HAVE)",
+    "a": [
+     "am having",
+     "'m having"
+    ],
+    "e": "Look!/right now → Present Continuous: am/is/are + V-ing",
+    "blank": [
+     "amhaving",
+     "'mhaving"
+    ]
+   },
+   "fidelity": {
+    "status": "pass",
+    "checked": 3,
+    "passed": 3,
+    "note": "раунд 1: Listen! We are visiting the museum — глагол не процесс; раунд 2: заглавная после двоеточия; пул процессов и правило заглавной",
+    "history": {
+     "1": "2/3",
+     "2": "2/3",
+     "3": "3/3"
+    }
+   }
+  },
+  {
+   "id": "eng-oge-22-present-cont",
+   "exam": "ОГЭ",
+   "n": 22,
+   "n_range": "20–28",
+   "title": "Present Continuous",
+   "kes": [
+    "2.4.30"
+   ],
+   "level": "Б",
+   "invariant": "маркер момента речи, глагол заглавными",
+   "varies": "подлежащее, глагол, рамка",
+   "answer_rule": "am/is/are + V-ing",
+   "mistakes": [
+    "swiming",
+    "без be"
+   ],
+   "kim": {
+    "section": "грамматика и лексика",
+    "score": 1,
+    "time_min": 2,
+    "answer": "слово или несколько слов, в бланк — без пробелов; орфографическая ошибка = 0",
+    "source": "спецификация и демоверсия ОГЭ 2026 (ФИПИ, 06.11.2025; 2027 — без изменений)"
+   },
+   "gen": {
+    "kind": "param",
+    "fn": "tools/research/proto_eng.py:g_cont_oge (как eng-ege-20-present-cont)",
+    "check": "c_cont"
+   },
+   "capacity": 1315,
+   "capacity_note": "замер до 2000 разных условий",
+   "example": {
+    "k": "word",
+    "q": "Can you call back later? They ____ the suitcases at the moment.  (PACK)",
+    "a": [
+     "are packing",
+     "'re packing"
+    ],
+    "e": "Look!/right now → Present Continuous: am/is/are + V-ing",
+    "blank": [
+     "arepacking",
+     "'repacking"
+    ]
+   },
+   "fidelity": {
+    "status": "pass",
+    "checked": 3,
+    "passed": 3,
+    "note": "раунд 1: Listen! We are visiting the museum — глагол не процесс; раунд 2: заглавная после двоеточия; пул процессов и правило заглавной",
+    "history": {
+     "1": "2/3",
+     "2": "2/3",
+     "3": "3/3"
+    }
+   }
+  },
+  {
+   "id": "eng-ege-20-past-cont",
+   "exam": "ЕГЭ",
+   "n": 20,
+   "n_range": "19–24",
+   "title": "Past Continuous: процесс в момент в прошлом",
+   "kes": [
+    "2.4.24"
+   ],
+   "level": "Б",
+   "invariant": "момент в прошлом задан (at six o'clock yesterday, when Mum came home, while …), глагол заглавными",
+   "varies": "подлежащее, глагол (не моментальный), дополнение, рамка",
+   "answer_rule": "was/were + V-ing; число по подлежащему",
+   "mistakes": [
+    "were с I/he",
+    "Past Simple вместо процесса",
+    "орфография -ing"
+   ],
+   "kim": {
+    "section": "грамматика и лексика",
+    "score": 1,
+    "time_min": 2,
+    "answer": "слово или несколько слов, в бланк — без пробелов; орфографическая ошибка = 0",
+    "source": "спецификация и демоверсия ЕГЭ 2026 (ФИПИ, 05.11.2025; 2027 — без изменений)"
+   },
+   "gen": {
+    "kind": "param",
+    "fn": "tools/research/proto_eng.py:g_pastcont",
+    "check": "c_pastcont"
+   },
+   "capacity": 1334,
+   "capacity_note": "замер до 2000 разных условий",
+   "example": {
+    "k": "word",
+    "q": "Sorry, I didn't hear the doorbell: my sister ____ breakfast.  (HAVE)",
+    "a": [
+     "was having"
+    ],
+    "e": "в конкретный момент в прошлом → Past Continuous: was/were + V-ing",
+    "blank": [
+     "washaving"
+    ]
+   },
+   "fidelity": {
+    "status": "pass",
+    "checked": 3,
+    "passed": 3,
+    "note": "",
+    "history": {
+     "1": "3/3"
+    }
+   }
+  },
+  {
+   "id": "eng-oge-23-past-cont",
+   "exam": "ОГЭ",
+   "n": 23,
+   "n_range": "20–28",
+   "title": "Past Continuous",
+   "kes": [
+    "2.4.30"
+   ],
+   "level": "Б",
+   "invariant": "момент в прошлом задан, глагол заглавными",
+   "varies": "подлежащее, глагол, рамка",
+   "answer_rule": "was/were + V-ing",
+   "mistakes": [
+    "were с he",
+    "Past Simple"
+   ],
+   "kim": {
+    "section": "грамматика и лексика",
+    "score": 1,
+    "time_min": 2,
+    "answer": "слово или несколько слов, в бланк — без пробелов; орфографическая ошибка = 0",
+    "source": "спецификация и демоверсия ОГЭ 2026 (ФИПИ, 06.11.2025; 2027 — без изменений)"
+   },
+   "gen": {
+    "kind": "param",
+    "fn": "tools/research/proto_eng.py:g_pastcont_oge (как eng-ege-20-past-cont)",
+    "check": "c_pastcont"
+   },
+   "capacity": 1334,
+   "capacity_note": "замер до 2000 разных условий",
+   "example": {
+    "k": "word",
+    "q": "While my brother ____ pancakes, the phone rang.  (COOK)",
+    "a": [
+     "was cooking"
+    ],
+    "e": "в конкретный момент в прошлом → Past Continuous: was/were + V-ing",
+    "blank": [
+     "wascooking"
+    ]
+   },
+   "fidelity": {
+    "status": "pass",
+    "checked": 3,
+    "passed": 3,
+    "note": "раунд 1: painting the fence green in the kitchen — рамка задавала место; место убрано из рамки",
+    "history": {
+     "1": "2/3",
+     "2": "3/3"
+    }
+   }
+  },
+  {
+   "id": "eng-ege-21-present-perfect",
+   "exam": "ЕГЭ",
+   "n": 21,
+   "n_range": "19–24",
+   "title": "Present Perfect: результат к настоящему, since/for",
+   "kes": [
+    "2.4.24"
+   ],
+   "level": "Б",
+   "invariant": "маркер результата или периода до настоящего (already, since 2019, for three years, twice this week, this is the first time …), глагол заглавными",
+   "varies": "подлежащее, глагол, дополнение, маркер; для since/for — глаголы состояния и длительной деятельности",
+   "answer_rule": "have/has + V3; число по подлежащему; стяжение ('ve, 's) — второй вариант ключа",
+   "mistakes": [
+    "Past Simple при since/for",
+    "has с they",
+    "V2 вместо V3 (has went)"
+   ],
+   "kim": {
+    "section": "грамматика и лексика",
+    "score": 1,
+    "time_min": 2,
+    "answer": "слово или несколько слов, в бланк — без пробелов; орфографическая ошибка = 0",
+    "source": "спецификация и демоверсия ЕГЭ 2026 (ФИПИ, 05.11.2025; 2027 — без изменений)"
+   },
+   "gen": {
+    "kind": "param",
+    "fn": "tools/research/proto_eng.py:g_perf",
+    "check": "c_perf"
+   },
+   "capacity": 2000,
+   "capacity_note": "замер до 2000 разных условий",
+   "example": {
+    "k": "word",
+    "q": "I ____ English since 2016.  (STUDY)",
+    "a": [
+     "have studied",
+     "'ve studied",
+     "have been studying"
+    ],
+    "e": "already/just → Present Perfect: have/has + V3",
+    "blank": [
+     "havestudied",
+     "'vestudied",
+     "havebeenstudying"
+    ]
+   },
+   "fidelity": {
+    "status": "pass",
+    "checked": 3,
+    "passed": 3,
+    "note": "раунды 1–2: already после длинного дополнения, странные дела (washed the dishes without complaining already); пул дел с результатом, к since/for добавлен вариант Perfect Continuous",
+    "history": {
+     "1": "2/3",
+     "2": "2/3",
+     "3": "3/3"
+    }
+   }
+  },
+  {
+   "id": "eng-oge-23-present-perfect",
+   "exam": "ОГЭ",
+   "n": 23,
+   "n_range": "20–28",
+   "title": "Present Perfect",
+   "kes": [
+    "2.4.30"
+   ],
+   "level": "Б",
+   "invariant": "маркер already / since / for / this is the first time, глагол заглавными",
+   "varies": "подлежащее, глагол, маркер",
+   "answer_rule": "have/has + V3",
+   "mistakes": [
+    "has went",
+    "Past Simple при since"
+   ],
+   "kim": {
+    "section": "грамматика и лексика",
+    "score": 1,
+    "time_min": 2,
+    "answer": "слово или несколько слов, в бланк — без пробелов; орфографическая ошибка = 0",
+    "source": "спецификация и демоверсия ОГЭ 2026 (ФИПИ, 06.11.2025; 2027 — без изменений)"
+   },
+   "gen": {
+    "kind": "param",
+    "fn": "tools/research/proto_eng.py:g_perf_oge (как eng-ege-21-present-perfect)",
+    "check": "c_perf"
+   },
+   "capacity": 2000,
+   "capacity_note": "замер до 2000 разных условий",
+   "example": {
+    "k": "word",
+    "q": "Look at the result! Our neighbours ____ the old radio at last.  (REPAIR)",
+    "a": [
+     "have repaired"
+    ],
+    "e": "already/just → Present Perfect: have/has + V3",
+    "blank": [
+     "haverepaired"
+    ]
+   },
+   "fidelity": {
+    "status": "pass",
+    "checked": 3,
+    "passed": 3,
+    "note": "раунды 1–2: already после длинного дополнения, странные дела (washed the dishes without complaining already); пул дел с результатом, к since/for добавлен вариант Perfect Continuous",
+    "history": {
+     "1": "2/3",
+     "2": "2/3",
+     "3": "3/3"
+    }
+   }
+  },
+  {
+   "id": "eng-ege-21-past-perfect",
+   "exam": "ЕГЭ",
+   "n": 21,
+   "n_range": "19–24",
+   "title": "Past Perfect: действие раньше другого в прошлом",
+   "kes": [
+    "2.4.24"
+   ],
+   "level": "Б",
+   "invariant": "два действия в прошлом, порядок задан союзом или рамкой (by the time, before, after, when … already), глагол заглавными",
+   "varies": "подлежащее, глагол, дополнение, рамка",
+   "answer_rule": "had + V3 для любого лица",
+   "mistakes": [
+    "Past Simple для более раннего действия",
+    "had + V2",
+    "has вместо had"
+   ],
+   "kim": {
+    "section": "грамматика и лексика",
+    "score": 1,
+    "time_min": 2,
+    "answer": "слово или несколько слов, в бланк — без пробелов; орфографическая ошибка = 0",
+    "source": "спецификация и демоверсия ЕГЭ 2026 (ФИПИ, 05.11.2025; 2027 — без изменений)"
+   },
+   "gen": {
+    "kind": "param",
+    "fn": "tools/research/proto_eng.py:g_pastperf",
+    "check": "c_pastperf"
+   },
+   "capacity": 911,
+   "capacity_note": "замер до 2000 разных условий",
+   "example": {
+    "k": "word",
+    "q": "Our neighbours was proud: they ____ the photos to the organisers without any help.  (SEND)",
+    "a": [
+     "had sent"
+    ],
+    "e": "более раннее из двух прошедших действий → Past Perfect: had + V3",
+    "blank": [
+     "hadsent"
+    ]
+   },
+   "fidelity": {
+    "status": "pass",
+    "checked": 3,
+    "passed": 3,
+    "note": "раунд 1: ever перед пропуском давал неверный порядок (he ever had tasted) и бессмысленные пары; рамка убрана, глаголы — дела с результатом",
+    "history": {
+     "1": "1/3",
+     "2": "2/3",
+     "3": "3/3"
+    }
+   }
+  },
+  {
+   "id": "eng-ege-21-perfect-cont",
+   "exam": "ЕГЭ",
+   "n": 21,
+   "n_range": "19–24",
+   "title": "Present Perfect Continuous: процесс, длящийся до сих пор",
+   "kes": [
+    "2.4.24"
+   ],
+   "level": "Б",
+   "invariant": "длительное действие с since/for, продолжающееся в момент речи; глагол деятельности заглавными",
+   "varies": "подлежащее, глагол, период",
+   "answer_rule": "have/has been + V-ing; в ключе второй вариант — Present Perfect (has worked), как в ключах ФИПИ",
+   "mistakes": [
+    "is working при since/for",
+    "has been work",
+    "Past Simple"
+   ],
+   "kim": {
+    "section": "грамматика и лексика",
+    "score": 1,
+    "time_min": 2,
+    "answer": "слово или несколько слов, в бланк — без пробелов; орфографическая ошибка = 0",
+    "source": "спецификация и демоверсия ЕГЭ 2026 (ФИПИ, 05.11.2025; 2027 — без изменений)"
+   },
+   "gen": {
+    "kind": "param",
+    "fn": "tools/research/proto_eng.py:g_perfcont",
+    "check": "c_perfcont"
+   },
+   "capacity": 61,
+   "capacity_note": "замер до 2000 разных условий",
+   "example": {
+    "k": "word",
+    "q": "You ____ for the bus for forty minutes, and it still hasn't come.  (WAIT)",
+    "a": [
+     "have been waiting",
+     "have waited",
+     "'ve been waiting"
+    ],
+    "e": "since/for + действие продолжается → Present Perfect Continuous: have/has been + V-ing",
+    "blank": [
+     "havebeenwaiting",
+     "havewaited",
+     "'vebeenwaiting"
+    ]
+   },
+   "fidelity": {
+    "status": "pass",
+    "checked": 3,
+    "passed": 3,
+    "note": "",
+    "history": {
+     "1": "3/3"
+    }
+   }
+  },
+  {
+   "id": "eng-ege-22-future",
+   "exam": "ЕГЭ",
+   "n": 22,
+   "n_range": "19–24",
+   "title": "Future Simple: will + инфинитив",
+   "kes": [
+    "2.4.24",
+    "2.4.25"
+   ],
+   "level": "Б",
+   "invariant": "маркер будущего (tomorrow, next week, in a few days) или I'm sure / I think, глагол заглавными",
+   "varies": "подлежащее, глагол, дополнение, маркер, рамка",
+   "answer_rule": "will + инфинитив без to; стяжение 'll — второй вариант ключа для местоимений",
+   "mistakes": [
+    "will + V-s / V-ed",
+    "shall с he",
+    "Present Simple при tomorrow"
+   ],
+   "kim": {
+    "section": "грамматика и лексика",
+    "score": 1,
+    "time_min": 2,
+    "answer": "слово или несколько слов, в бланк — без пробелов; орфографическая ошибка = 0",
+    "source": "спецификация и демоверсия ЕГЭ 2026 (ФИПИ, 05.11.2025; 2027 — без изменений)"
+   },
+   "gen": {
+    "kind": "param",
+    "fn": "tools/research/proto_eng.py:g_fut",
+    "check": "c_fut"
+   },
+   "capacity": 2000,
+   "capacity_note": "замер до 2000 разных условий",
+   "example": {
+    "k": "word",
+    "q": "I think the twins ____ his notes to a classmate next weekend.  (LEND)",
+    "a": [
+     "will lend"
+    ],
+    "e": "маркер будущего → will + V",
+    "blank": [
+     "willlend"
+    ]
+   },
+   "fidelity": {
+    "status": "pass",
+    "checked": 3,
+    "passed": 3,
+    "note": "раунд 1: маркер внутри предложения терял заглавную (on monday); исправлено",
+    "history": {
+     "1": "2/3",
+     "2": "3/3"
+    }
+   }
+  },
+  {
+   "id": "eng-oge-24-future",
+   "exam": "ОГЭ",
+   "n": 24,
+   "n_range": "20–28",
+   "title": "Future Simple",
+   "kes": [
+    "2.4.19"
+   ],
+   "level": "Б",
+   "invariant": "маркер будущего, глагол заглавными",
+   "varies": "подлежащее, глагол, маркер",
+   "answer_rule": "will + инфинитив",
+   "mistakes": [
+    "will + V-s",
+    "Present Simple при tomorrow"
+   ],
+   "kim": {
+    "section": "грамматика и лексика",
+    "score": 1,
+    "time_min": 2,
+    "answer": "слово или несколько слов, в бланк — без пробелов; орфографическая ошибка = 0",
+    "source": "спецификация и демоверсия ОГЭ 2026 (ФИПИ, 06.11.2025; 2027 — без изменений)"
+   },
+   "gen": {
+    "kind": "param",
+    "fn": "tools/research/proto_eng.py:g_fut_oge (как eng-ege-22-future)",
+    "check": "c_fut"
+   },
+   "capacity": 2000,
+   "capacity_note": "замер до 2000 разных условий",
+   "example": {
+    "k": "word",
+    "q": "Next summer our neighbours ____ an old friend at the station.  (MEET)",
+    "a": [
+     "will meet"
+    ],
+    "e": "маркер будущего → will + V",
+    "blank": [
+     "willmeet"
+    ]
+   },
+   "fidelity": {
+    "status": "pass",
+    "checked": 3,
+    "passed": 3,
+    "note": "",
+    "history": {
+     "1": "3/3"
+    }
+   }
+  },
+  {
+   "id": "eng-ege-22-passive-past",
+   "exam": "ЕГЭ",
+   "n": 22,
+   "n_range": "19–24",
+   "title": "Past Simple Passive",
+   "kes": [
+    "2.4.24"
+   ],
+   "level": "Б",
+   "invariant": "подлежащее не выполняет действие, есть маркер прошедшего (in 1898, last night, by …), глагол заглавными",
+   "varies": "подлежащее (ед./мн.), глагол, обстоятельство",
+   "answer_rule": "was/were + V3; число по подлежащему",
+   "mistakes": [
+    "V3 без be (The bridge built in 1898)",
+    "was с множественным числом",
+    "Past Simple актив"
+   ],
+   "kim": {
+    "section": "грамматика и лексика",
+    "score": 1,
+    "time_min": 2,
+    "answer": "слово или несколько слов, в бланк — без пробелов; орфографическая ошибка = 0",
+    "source": "спецификация и демоверсия ЕГЭ 2026 (ФИПИ, 05.11.2025; 2027 — без изменений)"
+   },
+   "gen": {
+    "kind": "param",
+    "fn": "tools/research/proto_eng.py:g_pass_past",
+    "check": "c_pass"
+   },
+   "capacity": 31,
+   "capacity_note": "замер до 2000 разных условий",
+   "example": {
+    "k": "word",
+    "q": "The pyramids ____ thousands of years ago.  (BUILD)",
+    "a": [
+     "were built"
+    ],
+    "e": "подлежащее не выполняет действие → пассив: was/were + V3",
+    "blank": [
+     "werebuilt"
+    ]
+   },
+   "fidelity": {
+    "status": "pass",
+    "checked": 3,
+    "passed": 3,
+    "note": "",
+    "history": {
+     "1": "3/3"
+    }
+   }
+  },
+  {
+   "id": "eng-oge-25-passive-past",
+   "exam": "ОГЭ",
+   "n": 25,
+   "n_range": "20–28",
+   "title": "Past Simple Passive",
+   "kes": [
+    "2.4.31"
+   ],
+   "level": "Б",
+   "invariant": "подлежащее — объект действия, маркер прошедшего, глагол заглавными",
+   "varies": "подлежащее, глагол, обстоятельство",
+   "answer_rule": "was/were + V3",
+   "mistakes": [
+    "без be",
+    "V2 вместо V3"
+   ],
+   "kim": {
+    "section": "грамматика и лексика",
+    "score": 1,
+    "time_min": 2,
+    "answer": "слово или несколько слов, в бланк — без пробелов; орфографическая ошибка = 0",
+    "source": "спецификация и демоверсия ОГЭ 2026 (ФИПИ, 06.11.2025; 2027 — без изменений)"
+   },
+   "gen": {
+    "kind": "param",
+    "fn": "tools/research/proto_eng.py:g_pass_past_oge (как eng-ege-22-passive-past)",
+    "check": "c_pass"
+   },
+   "capacity": 31,
+   "capacity_note": "замер до 2000 разных условий",
+   "example": {
+    "k": "word",
+    "q": "The first metro line in Moscow ____ in 1935.  (OPEN)",
+    "a": [
+     "was opened"
+    ],
+    "e": "подлежащее не выполняет действие → пассив: was/were + V3",
+    "blank": [
+     "wasopened"
+    ]
+   },
+   "fidelity": {
+    "status": "pass",
+    "checked": 3,
+    "passed": 3,
+    "note": "",
+    "history": {
+     "1": "3/3"
+    }
+   }
+  },
+  {
+   "id": "eng-ege-22-passive-present",
+   "exam": "ЕГЭ",
+   "n": 22,
+   "n_range": "19–24",
+   "title": "Present Simple Passive",
+   "kes": [
+    "2.4.24"
+   ],
+   "level": "Б",
+   "invariant": "регулярное действие над подлежащим (every year, twice a day), глагол заглавными",
+   "varies": "подлежащее, глагол, обстоятельство",
+   "answer_rule": "is/are + V3; число по подлежащему",
+   "mistakes": [
+    "is visit",
+    "are visits",
+    "актив (visits)"
+   ],
+   "kim": {
+    "section": "грамматика и лексика",
+    "score": 1,
+    "time_min": 2,
+    "answer": "слово или несколько слов, в бланк — без пробелов; орфографическая ошибка = 0",
+    "source": "спецификация и демоверсия ЕГЭ 2026 (ФИПИ, 05.11.2025; 2027 — без изменений)"
+   },
+   "gen": {
+    "kind": "param",
+    "fn": "tools/research/proto_eng.py:g_pass_pres",
+    "check": "c_pass"
+   },
+   "capacity": 20,
+   "capacity_note": "замер до 2000 разных условий",
+   "example": {
+    "k": "word",
+    "q": "This cheese ____ in a small village in the Alps.  (PRODUCE)",
+    "a": [
+     "is produced"
+    ],
+    "e": "регулярное действие над подлежащим → Present Simple Passive: is/are + V3",
+    "blank": [
+     "isproduced"
+    ]
+   },
+   "fidelity": {
+    "status": "pass",
+    "checked": 3,
+    "passed": 3,
+    "note": "",
+    "history": {
+     "1": "3/3"
+    }
+   }
+  },
+  {
+   "id": "eng-oge-25-passive-present",
+   "exam": "ОГЭ",
+   "n": 25,
+   "n_range": "20–28",
+   "title": "Present Simple Passive",
+   "kes": [
+    "2.4.31"
+   ],
+   "level": "Б",
+   "invariant": "регулярное действие над подлежащим, глагол заглавными",
+   "varies": "подлежащее, глагол, обстоятельство",
+   "answer_rule": "is/are + V3",
+   "mistakes": [
+    "без be",
+    "актив"
+   ],
+   "kim": {
+    "section": "грамматика и лексика",
+    "score": 1,
+    "time_min": 2,
+    "answer": "слово или несколько слов, в бланк — без пробелов; орфографическая ошибка = 0",
+    "source": "спецификация и демоверсия ОГЭ 2026 (ФИПИ, 06.11.2025; 2027 — без изменений)"
+   },
+   "gen": {
+    "kind": "param",
+    "fn": "tools/research/proto_eng.py:g_pass_pres_oge (как eng-ege-22-passive-present)",
+    "check": "c_pass"
+   },
+   "capacity": 20,
+   "capacity_note": "замер до 2000 разных условий",
+   "example": {
+    "k": "word",
+    "q": "Oranges ____ in warm countries.  (GROW)",
+    "a": [
+     "are grown"
+    ],
+    "e": "регулярное действие над подлежащим → Present Simple Passive: is/are + V3",
+    "blank": [
+     "aregrown"
+    ]
+   },
+   "fidelity": {
+    "status": "pass",
+    "checked": 3,
+    "passed": 3,
+    "note": "",
+    "history": {
+     "1": "3/3"
+    }
+   }
+  },
+  {
+   "id": "eng-ege-22-passive-perfect-modal",
+   "exam": "ЕГЭ",
+   "n": 22,
+   "n_range": "19–24",
+   "title": "Пассив в Present Perfect и после модальных глаголов",
+   "kes": [
+    "2.4.24",
+    "2.4.26"
+   ],
+   "level": "Б",
+   "invariant": "подлежащее — объект действия; маркер результата (so far, since 2010, already) или модальный глагол перед пропуском; глагол заглавными",
+   "varies": "подлежащее, глагол, обстоятельство, модальный глагол",
+   "answer_rule": "has/have been + V3 или be + V3 после модального",
+   "mistakes": [
+    "has been V2",
+    "must be send",
+    "must been sent"
+   ],
+   "kim": {
+    "section": "грамматика и лексика",
+    "score": 1,
+    "time_min": 2,
+    "answer": "слово или несколько слов, в бланк — без пробелов; орфографическая ошибка = 0",
+    "source": "спецификация и демоверсия ЕГЭ 2026 (ФИПИ, 05.11.2025; 2027 — без изменений)"
+   },
+   "gen": {
+    "kind": "param",
+    "fn": "tools/research/proto_eng.py:g_pass_perf",
+    "check": "c_pass_perf"
+   },
+   "capacity": 20,
+   "capacity_note": "замер до 2000 разных условий",
+   "example": {
+    "k": "word",
+    "q": "The photos can ____ in ten minutes.  (PRINT)",
+    "a": [
+     "be printed"
+    ],
+    "e": "после модального глагола пассив: be + V3",
+    "blank": [
+     "beprinted"
+    ]
+   },
+   "fidelity": {
+    "status": "pass",
+    "checked": 3,
+    "passed": 3,
+    "note": "",
+    "history": {
+     "1": "3/3"
+    }
+   }
+  },
+  {
+   "id": "eng-ege-23-conditional-1",
+   "exam": "ЕГЭ",
+   "n": 23,
+   "n_range": "19–24",
+   "title": "Условное I и придаточные времени: Present Simple после if/when, will в главном",
+   "kes": [
+    "2.4.12",
+    "2.4.24"
+   ],
+   "level": "Б",
+   "invariant": "сложное предложение с if / when / as soon as о будущем; пропуск либо в придаточном (нужен Present Simple), либо в главном (will + V); глагол заглавными",
+   "varies": "какая часть с пропуском, союз, подлежащие, глаголы",
+   "answer_rule": "придаточное условия/времени — Present Simple (-s у 3-го лица), главное — will + инфинитив",
+   "mistakes": [
+    "will после if/when",
+    "нет -s в придаточном (if he come)",
+    "Present Simple в главном"
+   ],
+   "kim": {
+    "section": "грамматика и лексика",
+    "score": 1,
+    "time_min": 2,
+    "answer": "слово или несколько слов, в бланк — без пробелов; орфографическая ошибка = 0",
+    "source": "спецификация и демоверсия ЕГЭ 2026 (ФИПИ, 05.11.2025; 2027 — без изменений)"
+   },
+   "gen": {
+    "kind": "param",
+    "fn": "tools/research/proto_eng.py:g_cond1",
+    "check": "c_cond1"
+   },
+   "capacity": 32,
+   "capacity_note": "замер до 2000 разных условий",
+   "example": {
+    "k": "word",
+    "q": "If the bus comes, we ____ to the theatre in time.  (GET)",
+    "a": [
+     "will get",
+     "'ll get"
+    ],
+    "e": "после if/when/as soon as о будущем — Present Simple; в главном предложении — will + V",
+    "blank": [
+     "willget",
+     "'llget"
+    ]
+   },
+   "fidelity": {
+    "status": "pass",
+    "checked": 3,
+    "passed": 3,
+    "note": "",
+    "history": {
+     "1": "3/3"
+    }
+   }
+  },
+  {
+   "id": "eng-oge-26-conditional-1",
+   "exam": "ОГЭ",
+   "n": 26,
+   "n_range": "20–28",
+   "title": "Условное I и придаточные времени",
+   "kes": [
+    "2.4.10",
+    "2.4.19"
+   ],
+   "level": "Б",
+   "invariant": "if / when о будущем, пропуск в одной части, глагол заглавными",
+   "varies": "часть с пропуском, союз, подлежащие, глаголы",
+   "answer_rule": "Present Simple после if/when, will в главном",
+   "mistakes": [
+    "will после if"
+   ],
+   "kim": {
+    "section": "грамматика и лексика",
+    "score": 1,
+    "time_min": 2,
+    "answer": "слово или несколько слов, в бланк — без пробелов; орфографическая ошибка = 0",
+    "source": "спецификация и демоверсия ОГЭ 2026 (ФИПИ, 06.11.2025; 2027 — без изменений)"
+   },
+   "gen": {
+    "kind": "param",
+    "fn": "tools/research/proto_eng.py:g_cond1_oge (как eng-ege-23-conditional-1)",
+    "check": "c_cond1"
+   },
+   "capacity": 32,
+   "capacity_note": "замер до 2000 разных условий",
+   "example": {
+    "k": "word",
+    "q": "As soon as the guests ____, I will open the door.  (ARRIVE)",
+    "a": [
+     "arrive"
+    ],
+    "e": "после if/when/as soon as о будущем — Present Simple; в главном предложении — will + V",
+    "blank": [
+     "arrive"
+    ]
+   },
+   "fidelity": {
+    "status": "pass",
+    "checked": 3,
+    "passed": 3,
+    "note": "",
+    "history": {
+     "1": "3/3"
+    }
+   }
+  },
+  {
+   "id": "eng-ege-23-conditional-2",
+   "exam": "ЕГЭ",
+   "n": 23,
+   "n_range": "19–24",
+   "title": "Условное II: Past Simple после if, would в главном",
+   "kes": [
+    "2.4.12"
+   ],
+   "level": "Б",
+   "invariant": "нереальное условие в настоящем: во второй части would + V (если пропуск в if-части) или Past Simple в if-части (если пропуск в главной); глагол заглавными",
+   "varies": "часть с пропуском, подлежащие, глаголы",
+   "answer_rule": "if-часть — Past Simple (be → were, was допустим), главная — would + инфинитив",
+   "mistakes": [
+    "would после if",
+    "Present Simple в if-части",
+    "would + V2"
+   ],
+   "kim": {
+    "section": "грамматика и лексика",
+    "score": 1,
+    "time_min": 2,
+    "answer": "слово или несколько слов, в бланк — без пробелов; орфографическая ошибка = 0",
+    "source": "спецификация и демоверсия ЕГЭ 2026 (ФИПИ, 05.11.2025; 2027 — без изменений)"
+   },
+   "gen": {
+    "kind": "param",
+    "fn": "tools/research/proto_eng.py:g_cond2",
+    "check": "c_cond2"
+   },
+   "capacity": 32,
+   "capacity_note": "замер до 2000 разных условий",
+   "example": {
+    "k": "word",
+    "q": "If my parents ____ a car, we would go to the sea every weekend.  (HAVE)",
+    "a": [
+     "had"
+    ],
+    "e": "нереальное условие: If + Past Simple, … would + V",
+    "blank": [
+     "had"
+    ]
+   },
+   "fidelity": {
+    "status": "pass",
+    "checked": 3,
+    "passed": 3,
+    "note": "",
+    "history": {
+     "1": "3/3"
+    }
+   }
+  },
+  {
+   "id": "eng-oge-26-conditional-2",
+   "exam": "ОГЭ",
+   "n": 26,
+   "n_range": "20–28",
+   "title": "Условное II",
+   "kes": [
+    "2.4.11"
+   ],
+   "level": "Б",
+   "invariant": "нереальное условие, пропуск в одной части, глагол заглавными",
+   "varies": "часть с пропуском, подлежащие, глаголы",
+   "answer_rule": "Past Simple после if, would + V в главном",
+   "mistakes": [
+    "would после if"
+   ],
+   "kim": {
+    "section": "грамматика и лексика",
+    "score": 1,
+    "time_min": 2,
+    "answer": "слово или несколько слов, в бланк — без пробелов; орфографическая ошибка = 0",
+    "source": "спецификация и демоверсия ОГЭ 2026 (ФИПИ, 06.11.2025; 2027 — без изменений)"
+   },
+   "gen": {
+    "kind": "param",
+    "fn": "tools/research/proto_eng.py:g_cond2_oge (как eng-ege-23-conditional-2)",
+    "check": "c_cond2"
+   },
+   "capacity": 32,
+   "capacity_note": "замер до 2000 разных условий",
+   "example": {
+    "k": "word",
+    "q": "If we lived nearer, we ____ you more often.  (VISIT)",
+    "a": [
+     "would visit",
+     "'d visit"
+    ],
+    "e": "нереальное условие: If + Past Simple, … would + V",
+    "blank": [
+     "wouldvisit",
+     "'dvisit"
+    ]
+   },
+   "fidelity": {
+    "status": "pass",
+    "checked": 3,
+    "passed": 3,
+    "note": "",
+    "history": {
+     "1": "3/3"
+    }
+   }
+  },
+  {
+   "id": "eng-ege-23-reported",
+   "exam": "ЕГЭ",
+   "n": 23,
+   "n_range": "19–24",
+   "title": "Косвенная речь: сдвиг времён",
+   "kes": [
+    "2.4.14",
+    "2.4.15"
+   ],
+   "level": "Б",
+   "invariant": "главное предложение в прошедшем (said / told … that), в придаточном — маркер сдвига (the day before, the following day, at that moment); глагол заглавными",
+   "varies": "тип сдвига (Past → Past Perfect, will → would, Present Continuous → Past Continuous, can → could, is → was), подлежащее, глагол",
+   "answer_rule": "таблица сдвига времён; ключ допускает стяжения и, для будущего, was/were going to",
+   "mistakes": [
+    "нет сдвига (he finishes / he will)",
+    "had + V2",
+    "would + V-ed"
+   ],
+   "kim": {
+    "section": "грамматика и лексика",
+    "score": 1,
+    "time_min": 2,
+    "answer": "слово или несколько слов, в бланк — без пробелов; орфографическая ошибка = 0",
+    "source": "спецификация и демоверсия ЕГЭ 2026 (ФИПИ, 05.11.2025; 2027 — без изменений)"
+   },
+   "gen": {
+    "kind": "param",
+    "fn": "tools/research/proto_eng.py:g_reported",
+    "check": "c_reported"
+   },
+   "capacity": 15,
+   "capacity_note": "замер до 2000 разных условий",
+   "example": {
+    "k": "word",
+    "q": "Kate said that she ____ a film at that moment.  (WATCH)",
+    "a": [
+     "was watching"
+    ],
+    "e": "косвенная речь после said/told: время сдвигается на шаг назад (Past → Past Perfect, will → would, is → was)",
+    "blank": [
+     "waswatching"
+    ]
+   },
+   "fidelity": {
+    "status": "pass",
+    "checked": 3,
+    "passed": 3,
+    "note": "",
+    "history": {
+     "1": "3/3"
+    }
+   }
+  },
+  {
+   "id": "eng-oge-27-reported",
+   "exam": "ОГЭ",
+   "n": 27,
+   "n_range": "20–28",
+   "title": "Косвенная речь: сдвиг времён",
+   "kes": [
+    "2.4.12",
+    "2.4.13"
+   ],
+   "level": "Б",
+   "invariant": "said/told … that + маркер сдвига, глагол заглавными",
+   "varies": "тип сдвига, подлежащее, глагол",
+   "answer_rule": "таблица сдвига времён",
+   "mistakes": [
+    "нет сдвига"
+   ],
+   "kim": {
+    "section": "грамматика и лексика",
+    "score": 1,
+    "time_min": 2,
+    "answer": "слово или несколько слов, в бланк — без пробелов; орфографическая ошибка = 0",
+    "source": "спецификация и демоверсия ОГЭ 2026 (ФИПИ, 06.11.2025; 2027 — без изменений)"
+   },
+   "gen": {
+    "kind": "param",
+    "fn": "tools/research/proto_eng.py:g_reported_oge (как eng-ege-23-reported)",
+    "check": "c_reported"
+   },
+   "capacity": 15,
+   "capacity_note": "замер до 2000 разных условий",
+   "example": {
+    "k": "word",
+    "q": "Nick told us that he ____ the camera the next day.  (BRING)",
+    "a": [
+     "would bring",
+     "was going to bring"
+    ],
+    "e": "косвенная речь после said/told: время сдвигается на шаг назад (Past → Past Perfect, will → would, is → was)",
+    "blank": [
+     "wouldbring",
+     "wasgoingtobring"
+    ]
+   },
+   "fidelity": {
+    "status": "pass",
+    "checked": 3,
+    "passed": 3,
+    "note": "",
+    "history": {
+     "1": "3/3"
+    }
+   }
+  },
+  {
+   "id": "eng-ege-23-gerund-infinitive",
+   "exam": "ЕГЭ",
+   "n": 23,
+   "n_range": "19–24",
+   "title": "Герундий, инфинитив с to и без to после глаголов",
+   "kes": [
+    "2.4.18",
+    "2.4.19",
+    "2.4.27"
+   ],
+   "level": "Б",
+   "invariant": "управляющий глагол или выражение стоит перед пропуском (enjoy, want, let, would rather, look forward to); глагол заглавными",
+   "varies": "управляющее слово, глагол в пропуске, дополнение",
+   "answer_rule": "таблица управления: enjoy/finish/mind/look forward to → V-ing; want/decide/hope → to + V; let/make/modal/had better → V",
+   "mistakes": [
+    "enjoy to swim",
+    "look forward to see",
+    "let me to carry",
+    "орфография -ing"
+   ],
+   "kim": {
+    "section": "грамматика и лексика",
+    "score": 1,
+    "time_min": 2,
+    "answer": "слово или несколько слов, в бланк — без пробелов; орфографическая ошибка = 0",
+    "source": "спецификация и демоверсия ЕГЭ 2026 (ФИПИ, 05.11.2025; 2027 — без изменений)"
+   },
+   "gen": {
+    "kind": "param",
+    "fn": "tools/research/proto_eng.py:g_gov",
+    "check": "c_gov"
+   },
+   "capacity": 36,
+   "capacity_note": "замер до 2000 разных условий",
+   "example": {
+    "k": "word",
+    "q": "Last year I learnt ____ chess.  (PLAY)",
+    "a": [
+     "to play"
+    ],
+    "e": "после enjoy, finish, mind, look forward to — V-ing; после want, decide, hope — to + V; после let, make, модальных — V",
+    "blank": [
+     "toplay"
+    ]
+   },
+   "fidelity": {
+    "status": "pass",
+    "checked": 3,
+    "passed": 3,
+    "note": "",
+    "history": {
+     "1": "3/3"
+    }
+   }
+  },
+  {
+   "id": "eng-oge-27-gerund-infinitive",
+   "exam": "ОГЭ",
+   "n": 27,
+   "n_range": "20–28",
+   "title": "Герундий и инфинитив после глаголов",
+   "kes": [
+    "2.4.15",
+    "2.4.33"
+   ],
+   "level": "Б",
+   "invariant": "управляющее слово перед пропуском, глагол заглавными",
+   "varies": "управляющее слово, глагол",
+   "answer_rule": "таблица управления",
+   "mistakes": [
+    "enjoy to swim",
+    "let me to go"
+   ],
+   "kim": {
+    "section": "грамматика и лексика",
+    "score": 1,
+    "time_min": 2,
+    "answer": "слово или несколько слов, в бланк — без пробелов; орфографическая ошибка = 0",
+    "source": "спецификация и демоверсия ОГЭ 2026 (ФИПИ, 06.11.2025; 2027 — без изменений)"
+   },
+   "gen": {
+    "kind": "param",
+    "fn": "tools/research/proto_eng.py:g_gov_oge (как eng-ege-23-gerund-infinitive)",
+    "check": "c_gov"
+   },
+   "capacity": 36,
+   "capacity_note": "замер до 2000 разных условий",
+   "example": {
+    "k": "word",
+    "q": "Let me ____ the bag for you.  (CARRY)",
+    "a": [
+     "carry"
+    ],
+    "e": "после enjoy, finish, mind, look forward to — V-ing; после want, decide, hope — to + V; после let, make, модальных — V",
+    "blank": [
+     "carry"
+    ]
+   },
+   "fidelity": {
+    "status": "pass",
+    "checked": 3,
+    "passed": 3,
+    "note": "",
+    "history": {
+     "1": "3/3"
+    }
+   }
+  },
+  {
+   "id": "eng-ege-23-modal",
+   "exam": "ЕГЭ",
+   "n": 23,
+   "n_range": "19–24",
+   "title": "Модальные глаголы и эквиваленты: can → could, have to → had to / has to, be able to",
+   "kes": [
+    "2.4.26"
+   ],
+   "level": "Б",
+   "invariant": "маркер времени и подлежащее задают форму модального глагола или эквивалента; в скобках CAN, HAVE TO или BE ABLE TO",
+   "varies": "рамка, подлежащее, маркер",
+   "answer_rule": "таблица: can → could в прошедшем, have to → had to / has to, be able to → was/were able to",
+   "mistakes": [
+    "can в прошедшем",
+    "have to с he/she",
+    "was able с they"
+   ],
+   "kim": {
+    "section": "грамматика и лексика",
+    "score": 1,
+    "time_min": 2,
+    "answer": "слово или несколько слов, в бланк — без пробелов; орфографическая ошибка = 0",
+    "source": "спецификация и демоверсия ЕГЭ 2026 (ФИПИ, 05.11.2025; 2027 — без изменений)"
+   },
+   "gen": {
+    "kind": "param",
+    "fn": "tools/research/proto_eng.py:g_modal",
+    "check": "c_modal"
+   },
+   "capacity": 20,
+   "capacity_note": "замер до 2000 разных условий",
+   "example": {
+    "k": "word",
+    "q": "In the end I ____ open the old lock.  (BE ABLE TO)",
+    "a": [
+     "was able to"
+    ],
+    "e": "can → could, have to → had to (прошедшее) / has to (he, she), be able to → was/were able to",
+    "blank": [
+     "wasableto"
+    ]
+   },
+   "fidelity": {
+    "status": "pass",
+    "checked": 3,
+    "passed": 3,
+    "note": "",
+    "history": {
+     "1": "3/3"
+    }
+   }
+  },
+  {
+   "id": "eng-oge-28-modal",
+   "exam": "ОГЭ",
+   "n": 28,
+   "n_range": "20–28",
+   "title": "Модальные глаголы и эквиваленты",
+   "kes": [
+    "2.4.34"
+   ],
+   "level": "Б",
+   "invariant": "маркер времени задаёт форму, в скобках CAN / HAVE TO / BE ABLE TO",
+   "varies": "рамка, подлежащее",
+   "answer_rule": "таблица форм",
+   "mistakes": [
+    "can в прошедшем"
+   ],
+   "kim": {
+    "section": "грамматика и лексика",
+    "score": 1,
+    "time_min": 2,
+    "answer": "слово или несколько слов, в бланк — без пробелов; орфографическая ошибка = 0",
+    "source": "спецификация и демоверсия ОГЭ 2026 (ФИПИ, 06.11.2025; 2027 — без изменений)"
+   },
+   "gen": {
+    "kind": "param",
+    "fn": "tools/research/proto_eng.py:g_modal_oge (как eng-ege-23-modal)",
+    "check": "c_modal"
+   },
+   "capacity": 20,
+   "capacity_note": "замер до 2000 разных условий",
+   "example": {
+    "k": "word",
+    "q": "After a few lessons Ann ____ swim across the pool.  (BE ABLE TO)",
+    "a": [
+     "was able to"
+    ],
+    "e": "can → could, have to → had to (прошедшее) / has to (he, she), be able to → was/were able to",
+    "blank": [
+     "wasableto"
+    ]
+   },
+   "fidelity": {
+    "status": "pass",
+    "checked": 3,
+    "passed": 3,
+    "note": "",
+    "history": {
+     "1": "3/3"
+    }
+   }
+  },
+  {
+   "id": "eng-ege-24-plural",
+   "exam": "ЕГЭ",
+   "n": 24,
+   "n_range": "19–24",
+   "title": "Множественное число существительных",
+   "kes": [
+    "2.4.29",
+    "2.4.30"
+   ],
+   "level": "Б",
+   "invariant": "числительное или контекст множественности перед пропуском, существительное заглавными в единственном числе",
+   "varies": "существительное: правильное (-s, -es, -ies), исключения (children, feet, knives, sheep), рамка",
+   "answer_rule": "таблица исключений, иначе правило: -s; после s, x, ch, sh → -es; согласная + y → -ies; -f(e) → -ves",
+   "mistakes": [
+    "childs, mans, foots",
+    "citys, familys",
+    "knifes",
+    "sheeps, fishes"
+   ],
+   "kim": {
+    "section": "грамматика и лексика",
+    "score": 1,
+    "time_min": 2,
+    "answer": "слово или несколько слов, в бланк — без пробелов; орфографическая ошибка = 0",
+    "source": "спецификация и демоверсия ЕГЭ 2026 (ФИПИ, 05.11.2025; 2027 — без изменений)"
+   },
+   "gen": {
+    "kind": "param",
+    "fn": "tools/research/proto_eng.py:g_plural",
+    "check": "c_plural"
+   },
+   "capacity": 50,
+   "capacity_note": "замер до 2000 разных условий",
+   "example": {
+    "k": "word",
+    "q": "After the hike my ____ hurt a lot.  (FOOT)",
+    "a": [
+     "feet"
+    ],
+    "e": "множественное число: -s; после s, x, ch, sh → -es; согласная + y → -ies; исключения учим списком",
+    "blank": [
+     "feet"
+    ]
+   },
+   "fidelity": {
+    "status": "pass",
+    "checked": 3,
+    "passed": 3,
+    "note": "",
+    "history": {
+     "1": "3/3"
+    }
+   }
+  },
+  {
+   "id": "eng-oge-28-plural",
+   "exam": "ОГЭ",
+   "n": 28,
+   "n_range": "20–28",
+   "title": "Множественное число существительных",
+   "kes": [
+    "2.4.37",
+    "2.4.38"
+   ],
+   "level": "Б",
+   "invariant": "контекст множественности, существительное заглавными",
+   "varies": "существительное, рамка",
+   "answer_rule": "правило -s/-es/-ies/-ves и таблица исключений",
+   "mistakes": [
+    "childs",
+    "citys"
+   ],
+   "kim": {
+    "section": "грамматика и лексика",
+    "score": 1,
+    "time_min": 2,
+    "answer": "слово или несколько слов, в бланк — без пробелов; орфографическая ошибка = 0",
+    "source": "спецификация и демоверсия ОГЭ 2026 (ФИПИ, 06.11.2025; 2027 — без изменений)"
+   },
+   "gen": {
+    "kind": "param",
+    "fn": "tools/research/proto_eng.py:g_plural_oge (как eng-ege-24-plural)",
+    "check": "c_plural"
+   },
+   "capacity": 50,
+   "capacity_note": "замер до 2000 разных условий",
+   "example": {
+    "k": "word",
+    "q": "About fifty ____ came to the fair.  (PERSON)",
+    "a": [
+     "people"
+    ],
+    "e": "множественное число: -s; после s, x, ch, sh → -es; согласная + y → -ies; исключения учим списком",
+    "blank": [
+     "people"
+    ]
+   },
+   "fidelity": {
+    "status": "pass",
+    "checked": 3,
+    "passed": 3,
+    "note": "",
+    "history": {
+     "1": "3/3"
+    }
+   }
+  },
+  {
+   "id": "eng-ege-24-comparison",
+   "exam": "ЕГЭ",
+   "n": 24,
+   "n_range": "19–24",
+   "title": "Степени сравнения прилагательных и наречий",
+   "kes": [
+    "2.4.33",
+    "2.4.35"
+   ],
+   "level": "Б",
+   "invariant": "than → сравнительная, the … in/of → превосходная; прилагательное (или many/much/little/far) заглавными",
+   "varies": "прилагательное: короткое (-er/-est с орфографией), длинное (more/most), исключения (good, bad, far, little, many)",
+   "answer_rule": "две таблицы (исключения, длинные) и правило орфографии: big → bigger, easy → easier, nice → nicer; для far — farther/further оба в ключе",
+   "mistakes": [
+    "more better, most biggest",
+    "biger, easyer",
+    "gooder",
+    "much вместо more"
+   ],
+   "kim": {
+    "section": "грамматика и лексика",
+    "score": 1,
+    "time_min": 2,
+    "answer": "слово или несколько слов, в бланк — без пробелов; орфографическая ошибка = 0",
+    "source": "спецификация и демоверсия ЕГЭ 2026 (ФИПИ, 05.11.2025; 2027 — без изменений)"
+   },
+   "gen": {
+    "kind": "param",
+    "fn": "tools/research/proto_eng.py:g_cmp",
+    "check": "c_cmp"
+   },
+   "capacity": 234,
+   "capacity_note": "замер до 2000 разных условий",
+   "example": {
+    "k": "word",
+    "q": "The film was ____ than the book, to be honest.  (INTERESTING)",
+    "a": [
+     "more interesting"
+    ],
+    "e": "than → сравнительная степень; the … of/in → превосходная; длинные — more/most; good — better — best",
+    "blank": [
+     "moreinteresting"
+    ]
+   },
+   "fidelity": {
+    "status": "pass",
+    "checked": 3,
+    "passed": 3,
+    "note": "раунд 1: прилагательное не по смыслу рамки (the wettest exam); у каждой рамки — свой список прилагательных",
+    "history": {
+     "1": "1/3",
+     "2": "3/3"
+    }
+   }
+  },
+  {
+   "id": "eng-oge-28-comparison",
+   "exam": "ОГЭ",
+   "n": 28,
+   "n_range": "20–28",
+   "title": "Степени сравнения",
+   "kes": [
+    "2.4.39",
+    "2.4.40",
+    "2.4.42"
+   ],
+   "level": "Б",
+   "invariant": "than или the … in/of, прилагательное заглавными",
+   "varies": "прилагательное, рамка",
+   "answer_rule": "таблицы и правило орфографии",
+   "mistakes": [
+    "more better",
+    "biger"
+   ],
+   "kim": {
+    "section": "грамматика и лексика",
+    "score": 1,
+    "time_min": 2,
+    "answer": "слово или несколько слов, в бланк — без пробелов; орфографическая ошибка = 0",
+    "source": "спецификация и демоверсия ОГЭ 2026 (ФИПИ, 06.11.2025; 2027 — без изменений)"
+   },
+   "gen": {
+    "kind": "param",
+    "fn": "tools/research/proto_eng.py:g_cmp_oge (как eng-ege-24-comparison)",
+    "check": "c_cmp"
+   },
+   "capacity": 234,
+   "capacity_note": "замер до 2000 разных условий",
+   "example": {
+    "k": "word",
+    "q": "It was the ____ day of the whole trip.  (BORING)",
+    "a": [
+     "most boring"
+    ],
+    "e": "than → сравнительная степень; the … of/in → превосходная; длинные — more/most; good — better — best",
+    "blank": [
+     "mostboring"
+    ]
+   },
+   "fidelity": {
+    "status": "pass",
+    "checked": 3,
+    "passed": 3,
+    "note": "раунд 1: прилагательное не по смыслу рамки (the wettest exam); у каждой рамки — свой список прилагательных",
+    "history": {
+     "1": "1/3",
+     "2": "3/3"
+    }
+   }
+  },
+  {
+   "id": "eng-ege-24-ordinal",
+   "exam": "ЕГЭ",
+   "n": 24,
+   "n_range": "19–24",
+   "title": "Порядковые числительные",
+   "kes": [
+    "2.4.37"
+   ],
+   "level": "Б",
+   "invariant": "контекст порядка (the … floor, came … in the race, on the … of May, … century), количественное числительное словом заглавными",
+   "varies": "число 1–99 (для century — до 21), рамка",
+   "answer_rule": "таблица исключений (first, second, third, fifth, eighth, ninth, twelfth), -y → -ieth, иначе -th; в составных меняется последняя часть",
+   "mistakes": [
+    "fiveth, nineth, twelveth",
+    "twentyth",
+    "oneth",
+    "twenty-oneth"
+   ],
+   "kim": {
+    "section": "грамматика и лексика",
+    "score": 1,
+    "time_min": 2,
+    "answer": "слово или несколько слов, в бланк — без пробелов; орфографическая ошибка = 0",
+    "source": "спецификация и демоверсия ЕГЭ 2026 (ФИПИ, 05.11.2025; 2027 — без изменений)"
+   },
+   "gen": {
+    "kind": "param",
+    "fn": "tools/research/proto_eng.py:g_ord",
+    "check": "c_ord"
+   },
+   "capacity": 349,
+   "capacity_note": "замер до 2000 разных условий",
+   "example": {
+    "k": "word",
+    "q": "Anna came ____ in the race.  (TWENTY-FIVE)",
+    "a": [
+     "twenty-fifth"
+    ],
+    "e": "one → first, two → second, three → third, five → fifth, nine → ninth, twelve → twelfth, twenty → twentieth; в составных меняется только последнее слово",
+    "blank": [
+     "twenty-fifth"
+    ]
+   },
+   "fidelity": {
+    "status": "pass",
+    "checked": 3,
+    "passed": 3,
+    "note": "раунд 1: the thirty-third time I have read this book; у рамок — пределы числа",
+    "history": {
+     "1": "2/3",
+     "2": "3/3"
+    }
+   }
+  },
+  {
+   "id": "eng-oge-28-ordinal",
+   "exam": "ОГЭ",
+   "n": 28,
+   "n_range": "20–28",
+   "title": "Порядковые числительные",
+   "kes": [
+    "2.4.50"
+   ],
+   "level": "Б",
+   "invariant": "контекст порядка, числительное словом заглавными",
+   "varies": "число, рамка",
+   "answer_rule": "таблица исключений и -th",
+   "mistakes": [
+    "fiveth",
+    "twelveth"
+   ],
+   "kim": {
+    "section": "грамматика и лексика",
+    "score": 1,
+    "time_min": 2,
+    "answer": "слово или несколько слов, в бланк — без пробелов; орфографическая ошибка = 0",
+    "source": "спецификация и демоверсия ОГЭ 2026 (ФИПИ, 06.11.2025; 2027 — без изменений)"
+   },
+   "gen": {
+    "kind": "param",
+    "fn": "tools/research/proto_eng.py:g_ord_oge (как eng-ege-24-ordinal)",
+    "check": "c_ord"
+   },
+   "capacity": 349,
+   "capacity_note": "замер до 2000 разных условий",
+   "example": {
+    "k": "word",
+    "q": "We got off at the ____ stop.  (TEN)",
+    "a": [
+     "tenth"
+    ],
+    "e": "one → first, two → second, three → third, five → fifth, nine → ninth, twelve → twelfth, twenty → twentieth; в составных меняется только последнее слово",
+    "blank": [
+     "tenth"
+    ]
+   },
+   "fidelity": {
+    "status": "pass",
+    "checked": 3,
+    "passed": 3,
+    "note": "",
+    "history": {
+     "1": "3/3"
+    }
+   }
+  },
+  {
+   "id": "eng-ege-24-pronoun",
+   "exam": "ЕГЭ",
+   "n": 24,
+   "n_range": "19–24",
+   "title": "Местоимения: объектные, притяжательные (two forms), возвратные",
+   "kes": [
+    "2.4.36"
+   ],
+   "level": "Б",
+   "invariant": "личное местоимение заглавными (I, HE, THEY…); рамка задаёт падеж или разряд: после глагола/предлога — объектное, перед существительным — притяжательное, без существительного — абсолютное, by/сам — возвратное",
+   "varies": "местоимение, разряд, рамка",
+   "answer_rule": "таблица форм по лицу и разряду",
+   "mistakes": [
+    "between you and I",
+    "theirs umbrellas",
+    "hisself, theirselves",
+    "me вместо my"
+   ],
+   "kim": {
+    "section": "грамматика и лексика",
+    "score": 1,
+    "time_min": 2,
+    "answer": "слово или несколько слов, в бланк — без пробелов; орфографическая ошибка = 0",
+    "source": "спецификация и демоверсия ЕГЭ 2026 (ФИПИ, 05.11.2025; 2027 — без изменений)"
+   },
+   "gen": {
+    "kind": "param",
+    "fn": "tools/research/proto_eng.py:g_pron",
+    "check": "c_pron"
+   },
+   "capacity": 69,
+   "capacity_note": "замер до 2000 разных условий",
+   "example": {
+    "k": "word",
+    "q": "My brother lost ____ keys again.  (HE)",
+    "a": [
+     "his"
+    ],
+    "e": "после глагола/предлога — me, him, us; перед существительным — my, his, their; без существительного — mine, hers; сам — -self/-selves",
+    "blank": [
+     "his"
+    ]
+   },
+   "fidelity": {
+    "status": "pass",
+    "checked": 3,
+    "passed": 3,
+    "note": "",
+    "history": {
+     "1": "3/3"
+    }
+   }
+  },
+  {
+   "id": "eng-oge-28-pronoun",
+   "exam": "ОГЭ",
+   "n": 28,
+   "n_range": "20–28",
+   "title": "Местоимения",
+   "kes": [
+    "2.4.43",
+    "2.4.44",
+    "2.4.45"
+   ],
+   "level": "Б",
+   "invariant": "личное местоимение заглавными, рамка задаёт разряд",
+   "varies": "местоимение, разряд, рамка",
+   "answer_rule": "таблица форм",
+   "mistakes": [
+    "we вместо us",
+    "theirselves"
+   ],
+   "kim": {
+    "section": "грамматика и лексика",
+    "score": 1,
+    "time_min": 2,
+    "answer": "слово или несколько слов, в бланк — без пробелов; орфографическая ошибка = 0",
+    "source": "спецификация и демоверсия ОГЭ 2026 (ФИПИ, 06.11.2025; 2027 — без изменений)"
+   },
+   "gen": {
+    "kind": "param",
+    "fn": "tools/research/proto_eng.py:g_pron_oge (как eng-ege-24-pronoun)",
+    "check": "c_pron"
+   },
+   "capacity": 69,
+   "capacity_note": "замер до 2000 разных условий",
+   "example": {
+    "k": "word",
+    "q": "Did you make this cake ____?  (YOU)",
+    "a": [
+     "yourself"
+    ],
+    "e": "после глагола/предлога — me, him, us; перед существительным — my, his, their; без существительного — mine, hers; сам — -self/-selves",
+    "blank": [
+     "yourself"
+    ]
+   },
+   "fidelity": {
+    "status": "pass",
+    "checked": 3,
+    "passed": 3,
+    "note": "",
+    "history": {
+     "1": "3/3"
+    }
+   }
+  },
+  {
+   "id": "eng-ege-25-wf-noun",
+   "exam": "ЕГЭ",
+   "n": 25,
+   "n_range": "25–29",
+   "title": "Словообразование: абстрактное существительное (-tion/-sion, -ment, -ness, -ity, -ance/-ence, -ship, -ing)",
+   "kes": [
+    "2.3.11"
+   ],
+   "level": "Б",
+   "invariant": "в предложении нужно существительное (после артикля, притяжательного, of, прилагательного); основа заглавными в конце строки, аффиксы — только из кодификатора",
+   "varies": "основа и её гнездо, предложение (собственные), при одной основе — разные производные",
+   "answer_rule": "таблица гнёзд: основа + аффиксы с правилами орфографии (drop e, y → i, удвоение); -ise/-ize оба в ключе; проверка — независимый вывод формы по аффиксам",
+   "mistakes": [
+    "глагол или прилагательное вместо существительного",
+    "decission, goverment",
+    "begining",
+    "-ance/-ence"
+   ],
+   "kim": {
+    "section": "грамматика и лексика",
+    "score": 1,
+    "time_min": 2,
+    "answer": "слово или несколько слов, в бланк — без пробелов; орфографическая ошибка = 0",
+    "source": "спецификация и демоверсия ЕГЭ 2026 (ФИПИ, 05.11.2025; 2027 — без изменений)"
+   },
+   "gen": {
+    "kind": "dict",
+    "fn": "tools/research/proto_eng.py:g",
+    "check": "c_wf"
+   },
+   "capacity": 101,
+   "capacity_note": "замер до 2000 разных условий",
+   "example": {
+    "k": "word",
+    "q": "He spoke with such ____ that everybody believed him.  (CONFIDENT)",
+    "a": [
+     "confidence"
+    ],
+    "e": "CONFIDENT → confidence: -ence.",
+    "blank": [
+     "confidence"
+    ]
+   },
+   "fidelity": {
+    "status": "pass",
+    "checked": 3,
+    "passed": 3,
+    "note": "",
+    "history": {
+     "1": "3/3"
+    }
+   }
+  },
+  {
+   "id": "eng-ege-25-wf-agent",
+   "exam": "ЕГЭ",
+   "n": 25,
+   "n_range": "25–29",
+   "title": "Словообразование: деятель и профессия (-er/-or, -ist, -ian)",
+   "kes": [
+    "2.3.11"
+   ],
+   "level": "Б",
+   "invariant": "нужно существительное-лицо (a/an, множественное число, профессия); основа заглавными в конце строки, аффиксы — только из кодификатора",
+   "varies": "основа и её гнездо, предложение (собственные), при одной основе — разные производные",
+   "answer_rule": "таблица гнёзд: основа + аффиксы с правилами орфографии (drop e, y → i, удвоение); -ise/-ize оба в ключе; проверка — независимый вывод формы по аффиксам",
+   "mistakes": [
+    "-er вместо -or (visiter)",
+    "нет множественного числа (thousands of visitor)",
+    "scientist без t"
+   ],
+   "kim": {
+    "section": "грамматика и лексика",
+    "score": 1,
+    "time_min": 2,
+    "answer": "слово или несколько слов, в бланк — без пробелов; орфографическая ошибка = 0",
+    "source": "спецификация и демоверсия ЕГЭ 2026 (ФИПИ, 05.11.2025; 2027 — без изменений)"
+   },
+   "gen": {
+    "kind": "dict",
+    "fn": "tools/research/proto_eng.py:g",
+    "check": "c_wf"
+   },
+   "capacity": 64,
+   "capacity_note": "замер до 2000 разных условий",
+   "example": {
+    "k": "word",
+    "q": "An ____ came to repair the lights in the hall.  (ELECTRIC)",
+    "a": [
+     "electrician"
+    ],
+    "e": "ELECTRIC → electrician: -ian. Не путать с: electrical.",
+    "blank": [
+     "electrician"
+    ]
+   },
+   "fidelity": {
+    "status": "pass",
+    "checked": 3,
+    "passed": 3,
+    "note": "",
+    "history": {
+     "1": "3/3"
+    }
+   }
+  },
+  {
+   "id": "eng-ege-26-wf-adj",
+   "exam": "ЕГЭ",
+   "n": 26,
+   "n_range": "25–29",
+   "title": "Словообразование: прилагательное с суффиксом (-ful, -less, -ous, -ive, -al, -able/-ible, -y, -ish, -ical)",
+   "kes": [
+    "2.3.11"
+   ],
+   "level": "Б",
+   "invariant": "нужно прилагательное (перед существительным, после be/look/seem); основа заглавными в конце строки, аффиксы — только из кодификатора",
+   "varies": "основа и её гнездо, предложение (собственные), при одной основе — разные производные",
+   "answer_rule": "таблица гнёзд: основа + аффиксы с правилами орфографии (drop e, y → i, удвоение); -ise/-ize оба в ключе; проверка — независимый вывод формы по аффиксам",
+   "mistakes": [
+    "существительное вместо прилагательного",
+    "carefull, successfull",
+    "-able/-ible",
+    "famouse, dangerouse"
+   ],
+   "kim": {
+    "section": "грамматика и лексика",
+    "score": 1,
+    "time_min": 2,
+    "answer": "слово или несколько слов, в бланк — без пробелов; орфографическая ошибка = 0",
+    "source": "спецификация и демоверсия ЕГЭ 2026 (ФИПИ, 05.11.2025; 2027 — без изменений)"
+   },
+   "gen": {
+    "kind": "dict",
+    "fn": "tools/research/proto_eng.py:g",
+    "check": "c_wf"
+   },
+   "capacity": 126,
+   "capacity_note": "замер до 2000 разных условий",
+   "example": {
+    "k": "word",
+    "q": "You are ____ to have such a big family.  (LUCK)",
+    "a": [
+     "lucky"
+    ],
+    "e": "LUCK → lucky: -y.",
+    "blank": [
+     "lucky"
+    ]
+   },
+   "fidelity": {
+    "status": "pass",
+    "checked": 3,
+    "passed": 3,
+    "note": "",
+    "history": {
+     "1": "3/3"
+    }
+   }
+  },
+  {
+   "id": "eng-ege-26-wf-nationality",
+   "exam": "ЕГЭ",
+   "n": 26,
+   "n_range": "25–29",
+   "title": "Словообразование: национальность и язык (-an/-ian, -ese, -ish)",
+   "kes": [
+    "2.3.11"
+   ],
+   "level": "Б",
+   "invariant": "название страны → прилагательное или язык; основа заглавными в конце строки, аффиксы — только из кодификатора",
+   "varies": "основа и её гнездо, предложение (собственные), при одной основе — разные производные",
+   "answer_rule": "таблица гнёзд: основа + аффиксы с правилами орфографии (drop e, y → i, удвоение); -ise/-ize оба в ключе; проверка — независимый вывод формы по аффиксам",
+   "mistakes": [
+    "Chinian, Japanish",
+    "строчная буква",
+    "Englander"
+   ],
+   "kim": {
+    "section": "грамматика и лексика",
+    "score": 1,
+    "time_min": 2,
+    "answer": "слово или несколько слов, в бланк — без пробелов; орфографическая ошибка = 0",
+    "source": "спецификация и демоверсия ЕГЭ 2026 (ФИПИ, 05.11.2025; 2027 — без изменений)"
+   },
+   "gen": {
+    "kind": "dict",
+    "fn": "tools/research/proto_eng.py:g",
+    "check": "c_wf"
+   },
+   "capacity": 32,
+   "capacity_note": "замер до 2000 разных условий",
+   "example": {
+    "k": "word",
+    "q": "The ____ coffee was very strong.  (VIETNAM)",
+    "a": [
+     "Vietnamese"
+    ],
+    "e": "VIETNAM → Vietnamese: -ese.",
+    "blank": [
+     "vietnamese"
+    ]
+   },
+   "fidelity": {
+    "status": "pass",
+    "checked": 3,
+    "passed": 3,
+    "note": "",
+    "history": {
+     "1": "3/3"
+    }
+   }
+  },
+  {
+   "id": "eng-ege-27-wf-participle",
+   "exam": "ЕГЭ",
+   "n": 27,
+   "n_range": "25–29",
+   "title": "Словообразование: причастия-прилагательные -ed / -ing",
+   "kes": [
+    "2.3.11"
+   ],
+   "level": "Б",
+   "invariant": "нужно прилагательное: чувство (-ed) или свойство вещи (-ing); основа заглавными в конце строки, аффиксы — только из кодификатора",
+   "varies": "основа и её гнездо, предложение (собственные), при одной основе — разные производные",
+   "answer_rule": "таблица гнёзд: основа + аффиксы с правилами орфографии (drop e, y → i, удвоение); -ise/-ize оба в ключе; проверка — независимый вывод формы по аффиксам",
+   "mistakes": [
+    "bored/boring по смыслу",
+    "exciteing",
+    "existing vs excited"
+   ],
+   "kim": {
+    "section": "грамматика и лексика",
+    "score": 1,
+    "time_min": 2,
+    "answer": "слово или несколько слов, в бланк — без пробелов; орфографическая ошибка = 0",
+    "source": "спецификация и демоверсия ЕГЭ 2026 (ФИПИ, 05.11.2025; 2027 — без изменений)"
+   },
+   "gen": {
+    "kind": "dict",
+    "fn": "tools/research/proto_eng.py:g",
+    "check": "c_wf"
+   },
+   "capacity": 50,
+   "capacity_note": "замер до 2000 разных условий",
+   "example": {
+    "k": "word",
+    "q": "The ____ boy plays the violin and the piano.  (TALENT)",
+    "a": [
+     "talented"
+    ],
+    "e": "TALENT → talented: -ed.",
+    "blank": [
+     "talented"
+    ]
+   },
+   "fidelity": {
+    "status": "pass",
+    "checked": 3,
+    "passed": 3,
+    "note": "",
+    "history": {
+     "1": "3/3"
+    }
+   }
+  },
+  {
+   "id": "eng-ege-27-wf-negative",
+   "exam": "ЕГЭ",
+   "n": 27,
+   "n_range": "25–29",
+   "title": "Словообразование: отрицательный префикс (un-, in-/im-, il-/ir-, dis-, non-)",
+   "kes": [
+    "2.3.11"
+   ],
+   "level": "Б",
+   "invariant": "по смыслу нужно отрицание; часть речи сохраняется или добавляется суффикс; основа заглавными в конце строки, аффиксы — только из кодификатора",
+   "varies": "основа и её гнездо, предложение (собственные), при одной основе — разные производные",
+   "answer_rule": "таблица гнёзд: основа + аффиксы с правилами орфографии (drop e, y → i, удвоение); -ise/-ize оба в ключе; проверка — независимый вывод формы по аффиксам",
+   "mistakes": [
+    "unpossible, inregular, unlegal",
+    "отрицание не услышано по смыслу",
+    "dis- вместо un-"
+   ],
+   "kim": {
+    "section": "грамматика и лексика",
+    "score": 1,
+    "time_min": 2,
+    "answer": "слово или несколько слов, в бланк — без пробелов; орфографическая ошибка = 0",
+    "source": "спецификация и демоверсия ЕГЭ 2026 (ФИПИ, 05.11.2025; 2027 — без изменений)"
+   },
+   "gen": {
+    "kind": "dict",
+    "fn": "tools/research/proto_eng.py:g",
+    "check": "c_wf"
+   },
+   "capacity": 46,
+   "capacity_note": "замер до 2000 разных условий",
+   "example": {
+    "k": "word",
+    "q": "The bird had ____ blue feathers.  (USUAL)",
+    "a": [
+     "unusual"
+    ],
+    "e": "USUAL → unusual: un-. Не путать с: unusually, usually.",
+    "blank": [
+     "unusual"
+    ]
+   },
+   "fidelity": {
+    "status": "pass",
+    "checked": 3,
+    "passed": 3,
+    "note": "раунд 1: seemed ____ at first — friendly подходит; 14 предложений гнезда дополнены контекстом",
+    "history": {
+     "1": "2/3",
+     "2": "3/3"
+    }
+   }
+  },
+  {
+   "id": "eng-ege-28-wf-adverb",
+   "exam": "ЕГЭ",
+   "n": 28,
+   "n_range": "25–29",
+   "title": "Словообразование: наречие на -ly (в том числе с un-, -ful + -ly, -ic + -ally)",
+   "kes": [
+    "2.3.11"
+   ],
+   "level": "Б",
+   "invariant": "нужно наречие (при глаголе или прилагательном); основа заглавными в конце строки, аффиксы — только из кодификатора",
+   "varies": "основа и её гнездо, предложение (собственные), при одной основе — разные производные",
+   "answer_rule": "таблица гнёзд: основа + аффиксы с правилами орфографии (drop e, y → i, удвоение); -ise/-ize оба в ключе; проверка — независимый вывод формы по аффиксам",
+   "mistakes": [
+    "прилагательное вместо наречия",
+    "happyly, easyly",
+    "basicly",
+    "carefuly"
+   ],
+   "kim": {
+    "section": "грамматика и лексика",
+    "score": 1,
+    "time_min": 2,
+    "answer": "слово или несколько слов, в бланк — без пробелов; орфографическая ошибка = 0",
+    "source": "спецификация и демоверсия ЕГЭ 2026 (ФИПИ, 05.11.2025; 2027 — без изменений)"
+   },
+   "gen": {
+    "kind": "dict",
+    "fn": "tools/research/proto_eng.py:g",
+    "check": "c_wf"
+   },
+   "capacity": 60,
+   "capacity_note": "замер до 2000 разных условий",
+   "example": {
+    "k": "word",
+    "q": "The police searched the forest ____ for two days.  (SUCCESS)",
+    "a": [
+     "unsuccessfully"
+    ],
+    "e": "SUCCESS → unsuccessfully: un-, -ful, -ly. Не путать с: successful, successfully.",
+    "blank": [
+     "unsuccessfully"
+    ]
+   },
+   "fidelity": {
+    "status": "pass",
+    "checked": 3,
+    "passed": 3,
+    "note": "",
+    "history": {
+     "1": "3/3"
+    }
+   }
+  },
+  {
+   "id": "eng-ege-28-wf-verb-prefix",
+   "exam": "ЕГЭ",
+   "n": 28,
+   "n_range": "25–29",
+   "title": "Словообразование: глагольный префикс (dis-, mis-, re-, over-, under-)",
+   "kes": [
+    "2.3.11"
+   ],
+   "level": "Б",
+   "invariant": "нужен глагол с изменённым значением; форма глагола задана рамкой; основа заглавными в конце строки, аффиксы — только из кодификатора",
+   "varies": "основа и её гнездо, предложение (собственные), при одной основе — разные производные",
+   "answer_rule": "таблица гнёзд: основа + аффиксы с правилами орфографии (drop e, y → i, удвоение); -ise/-ize оба в ключе; проверка — независимый вывод формы по аффиксам",
+   "mistakes": [
+    "префикс не по смыслу (misagree)",
+    "не изменена форма глагола (overslept)",
+    "unlike вместо dislike"
+   ],
+   "kim": {
+    "section": "грамматика и лексика",
+    "score": 1,
+    "time_min": 2,
+    "answer": "слово или несколько слов, в бланк — без пробелов; орфографическая ошибка = 0",
+    "source": "спецификация и демоверсия ЕГЭ 2026 (ФИПИ, 05.11.2025; 2027 — без изменений)"
+   },
+   "gen": {
+    "kind": "dict",
+    "fn": "tools/research/proto_eng.py:g",
+    "check": "c_wf"
+   },
+   "capacity": 36,
+   "capacity_note": "замер до 2000 разных условий",
+   "example": {
+    "k": "word",
+    "q": "The town was completely ____ after the war, so few old houses remain.  (BUILD)",
+    "a": [
+     "rebuilt"
+    ],
+    "e": "BUILD → rebuilt: re-. Не путать с: building.",
+    "blank": [
+     "rebuilt"
+    ]
+   },
+   "fidelity": {
+    "status": "pass",
+    "checked": 3,
+    "passed": 3,
+    "note": "раунд 1: I ____ getting up early — like и dislike оба верны; контекст дополнен",
+    "history": {
+     "1": "2/3",
+     "2": "3/3"
+    }
+   }
+  },
+  {
+   "id": "eng-ege-29-wf-verb-suffix",
+   "exam": "ЕГЭ",
+   "n": 29,
+   "n_range": "25–29",
+   "title": "Словообразование: глагол с суффиксом (-ise/-ize, -en)",
+   "kes": [
+    "2.3.11"
+   ],
+   "level": "Б",
+   "invariant": "нужен глагол (после to, модального или в личной форме); основа заглавными в конце строки, аффиксы — только из кодификатора",
+   "varies": "основа и её гнездо, предложение (собственные), при одной основе — разные производные",
+   "answer_rule": "таблица гнёзд: основа + аффиксы с правилами орфографии (drop e, y → i, удвоение); -ise/-ize оба в ключе; проверка — независимый вывод формы по аффиксам",
+   "mistakes": [
+    "-ise/-ize — оба верны",
+    "wide вместо widen",
+    "modernate"
+   ],
+   "kim": {
+    "section": "грамматика и лексика",
+    "score": 1,
+    "time_min": 2,
+    "answer": "слово или несколько слов, в бланк — без пробелов; орфографическая ошибка = 0",
+    "source": "спецификация и демоверсия ЕГЭ 2026 (ФИПИ, 05.11.2025; 2027 — без изменений)"
+   },
+   "gen": {
+    "kind": "dict",
+    "fn": "tools/research/proto_eng.py:g",
+    "check": "c_wf"
+   },
+   "capacity": 36,
+   "capacity_note": "замер до 2000 разных условий",
+   "example": {
+    "k": "word",
+    "q": "The sky ____ and it started to rain.  (DARK)",
+    "a": [
+     "darkened"
+    ],
+    "e": "DARK → darkened: -en, -ed. Не путать с: darkness.",
+    "blank": [
+     "darkened"
+    ]
+   },
+   "fidelity": {
+    "status": "pass",
+    "checked": 3,
+    "passed": 3,
+    "note": "",
+    "history": {
+     "1": "3/3"
+    }
+   }
+  },
+  {
+   "id": "eng-ege-29-wf-numeral",
+   "exam": "ЕГЭ",
+   "n": 29,
+   "n_range": "25–29",
+   "title": "Словообразование: числительные (-teen, -ty, -th)",
+   "kes": [
+    "2.3.11"
+   ],
+   "level": "Б",
+   "invariant": "нужно числительное другого разряда: -teen, -ty или порядковое; основа заглавными в конце строки, аффиксы — только из кодификатора",
+   "varies": "основа и её гнездо, предложение (собственные), при одной основе — разные производные",
+   "answer_rule": "таблица гнёзд: основа + аффиксы с правилами орфографии (drop e, y → i, удвоение); -ise/-ize оба в ключе; проверка — независимый вывод формы по аффиксам",
+   "mistakes": [
+    "fiveteen, fivety",
+    "fourty",
+    "nineth, twelveth"
+   ],
+   "kim": {
+    "section": "грамматика и лексика",
+    "score": 1,
+    "time_min": 2,
+    "answer": "слово или несколько слов, в бланк — без пробелов; орфографическая ошибка = 0",
+    "source": "спецификация и демоверсия ЕГЭ 2026 (ФИПИ, 05.11.2025; 2027 — без изменений)"
+   },
+   "gen": {
+    "kind": "dict",
+    "fn": "tools/research/proto_eng.py:g",
+    "check": "c_wf"
+   },
+   "capacity": 44,
+   "capacity_note": "замер до 2000 разных условий",
+   "example": {
+    "k": "word",
+    "q": "December is the ____ month of the year.  (TWELVE)",
+    "a": [
+     "twelfth"
+    ],
+    "e": "TWELVE → twelfth: -th.",
+    "blank": [
+     "twelfth"
+    ]
+   },
+   "fidelity": {
+    "status": "pass",
+    "checked": 3,
+    "passed": 3,
+    "note": "",
+    "history": {
+     "1": "3/3"
+    }
+   }
+  },
+  {
+   "id": "eng-ege-27-wf-inter-pre-post",
+   "exam": "ЕГЭ",
+   "n": 27,
+   "n_range": "25–29",
+   "title": "Словообразование: префиксы inter-, pre-, post-",
+   "kes": [
+    "2.3.11"
+   ],
+   "level": "Б",
+   "invariant": "нужно прилагательное или существительное с этим префиксом; основа заглавными в конце строки, аффиксы — только из кодификатора",
+   "varies": "основа и её гнездо, предложение (собственные), при одной основе — разные производные",
+   "answer_rule": "таблица гнёзд: основа + аффиксы с правилами орфографии (drop e, y → i, удвоение); -ise/-ize оба в ключе; проверка — независимый вывод формы по аффиксам",
+   "mistakes": [
+    "пропущен префикс",
+    "inter- vs intra-",
+    "prewar/postwar по смыслу"
+   ],
+   "kim": {
+    "section": "грамматика и лексика",
+    "score": 1,
+    "time_min": 2,
+    "answer": "слово или несколько слов, в бланк — без пробелов; орфографическая ошибка = 0",
+    "source": "спецификация и демоверсия ЕГЭ 2026 (ФИПИ, 05.11.2025; 2027 — без изменений)"
+   },
+   "gen": {
+    "kind": "dict",
+    "fn": "tools/research/proto_eng.py:g",
+    "check": "c_wf"
+   },
+   "capacity": 20,
+   "capacity_note": "замер до 2000 разных условий",
+   "example": {
+    "k": "word",
+    "q": "Our village finally got fast ____ last year.  (NET)",
+    "a": [
+     "internet"
+    ],
+    "e": "NET → internet: inter-.",
+    "blank": [
+     "internet"
+    ]
+   },
+   "fidelity": {
+    "status": "pass",
+    "checked": 3,
+    "passed": 3,
+    "note": "",
+    "history": {
+     "1": "3/3"
+    }
+   }
+  },
+  {
+   "id": "eng-oge-29-wf-noun",
+   "exam": "ОГЭ",
+   "n": 29,
+   "n_range": "29–34",
+   "title": "Словообразование: абстрактное существительное (-tion/-sion, -ment, -ness, -ity, -ance/-ence, -ship, -ing)",
+   "kes": [
+    "2.3.7"
+   ],
+   "level": "Б",
+   "invariant": "в предложении нужно существительное (после артикля, притяжательного, of, прилагательного); основа заглавными в конце строки, аффиксы — только из кодификатора",
+   "varies": "основа и её гнездо, предложение (собственные), при одной основе — разные производные",
+   "answer_rule": "таблица гнёзд: основа + аффиксы с правилами орфографии (drop e, y → i, удвоение); -ise/-ize оба в ключе; проверка — независимый вывод формы по аффиксам",
+   "mistakes": [
+    "глагол или прилагательное вместо существительного",
+    "decission, goverment",
+    "begining",
+    "-ance/-ence"
+   ],
+   "kim": {
+    "section": "грамматика и лексика",
+    "score": 1,
+    "time_min": 2,
+    "answer": "слово или несколько слов, в бланк — без пробелов; орфографическая ошибка = 0",
+    "source": "спецификация и демоверсия ОГЭ 2026 (ФИПИ, 06.11.2025; 2027 — без изменений)"
+   },
+   "gen": {
+    "kind": "dict",
+    "fn": "tools/research/proto_eng.py:g",
+    "check": "c_wf"
+   },
+   "capacity": 88,
+   "capacity_note": "замер до 2000 разных условий",
+   "example": {
+    "k": "word",
+    "q": "Can you spot the ____ between these two pictures?  (DIFFER)",
+    "a": [
+     "difference"
+    ],
+    "e": "DIFFER → difference: -ence.",
+    "blank": [
+     "difference"
+    ]
+   },
+   "fidelity": {
+    "status": "pass",
+    "checked": 3,
+    "passed": 3,
+    "note": "",
+    "history": {
+     "1": "3/3"
+    }
+   }
+  },
+  {
+   "id": "eng-oge-29-wf-agent",
+   "exam": "ОГЭ",
+   "n": 29,
+   "n_range": "29–34",
+   "title": "Словообразование: деятель и профессия (-er/-or, -ist, -ian)",
+   "kes": [
+    "2.3.7"
+   ],
+   "level": "Б",
+   "invariant": "нужно существительное-лицо (a/an, множественное число, профессия); основа заглавными в конце строки, аффиксы — только из кодификатора",
+   "varies": "основа и её гнездо, предложение (собственные), при одной основе — разные производные",
+   "answer_rule": "таблица гнёзд: основа + аффиксы с правилами орфографии (drop e, y → i, удвоение); -ise/-ize оба в ключе; проверка — независимый вывод формы по аффиксам",
+   "mistakes": [
+    "-er вместо -or (visiter)",
+    "нет множественного числа (thousands of visitor)",
+    "scientist без t"
+   ],
+   "kim": {
+    "section": "грамматика и лексика",
+    "score": 1,
+    "time_min": 2,
+    "answer": "слово или несколько слов, в бланк — без пробелов; орфографическая ошибка = 0",
+    "source": "спецификация и демоверсия ОГЭ 2026 (ФИПИ, 06.11.2025; 2027 — без изменений)"
+   },
+   "gen": {
+    "kind": "dict",
+    "fn": "tools/research/proto_eng.py:g",
+    "check": "c_wf"
+   },
+   "capacity": 62,
+   "capacity_note": "замер до 2000 разных условий",
+   "example": {
+    "k": "word",
+    "q": "The ____ helped the tourists talk to the guide.  (TRANSLATE)",
+    "a": [
+     "translator"
+    ],
+    "e": "TRANSLATE → translator: -or.",
+    "blank": [
+     "translator"
+    ]
+   },
+   "fidelity": {
+    "status": "pass",
+    "checked": 3,
+    "passed": 3,
+    "note": "",
+    "history": {
+     "1": "3/3"
+    }
+   }
+  },
+  {
+   "id": "eng-oge-30-wf-adj",
+   "exam": "ОГЭ",
+   "n": 30,
+   "n_range": "29–34",
+   "title": "Словообразование: прилагательное с суффиксом (-ful, -less, -ous, -ive, -al, -able/-ible, -y, -ish, -ical)",
+   "kes": [
+    "2.3.7"
+   ],
+   "level": "Б",
+   "invariant": "нужно прилагательное (перед существительным, после be/look/seem); основа заглавными в конце строки, аффиксы — только из кодификатора",
+   "varies": "основа и её гнездо, предложение (собственные), при одной основе — разные производные",
+   "answer_rule": "таблица гнёзд: основа + аффиксы с правилами орфографии (drop e, y → i, удвоение); -ise/-ize оба в ключе; проверка — независимый вывод формы по аффиксам",
+   "mistakes": [
+    "существительное вместо прилагательного",
+    "carefull, successfull",
+    "-able/-ible",
+    "famouse, dangerouse"
+   ],
+   "kim": {
+    "section": "грамматика и лексика",
+    "score": 1,
+    "time_min": 2,
+    "answer": "слово или несколько слов, в бланк — без пробелов; орфографическая ошибка = 0",
+    "source": "спецификация и демоверсия ОГЭ 2026 (ФИПИ, 06.11.2025; 2027 — без изменений)"
+   },
+   "gen": {
+    "kind": "dict",
+    "fn": "tools/research/proto_eng.py:g",
+    "check": "c_wf"
+   },
+   "capacity": 106,
+   "capacity_note": "замер до 2000 разных условий",
+   "example": {
+    "k": "word",
+    "q": "The village is quiet and ____ in winter.  (PEACE)",
+    "a": [
+     "peaceful"
+    ],
+    "e": "PEACE → peaceful: -ful.",
+    "blank": [
+     "peaceful"
+    ]
+   },
+   "fidelity": {
+    "status": "pass",
+    "checked": 3,
+    "passed": 3,
+    "note": "",
+    "history": {
+     "1": "3/3"
+    }
+   }
+  },
+  {
+   "id": "eng-oge-31-wf-participle",
+   "exam": "ОГЭ",
+   "n": 31,
+   "n_range": "29–34",
+   "title": "Словообразование: причастия-прилагательные -ed / -ing",
+   "kes": [
+    "2.3.7"
+   ],
+   "level": "Б",
+   "invariant": "нужно прилагательное: чувство (-ed) или свойство вещи (-ing); основа заглавными в конце строки, аффиксы — только из кодификатора",
+   "varies": "основа и её гнездо, предложение (собственные), при одной основе — разные производные",
+   "answer_rule": "таблица гнёзд: основа + аффиксы с правилами орфографии (drop e, y → i, удвоение); -ise/-ize оба в ключе; проверка — независимый вывод формы по аффиксам",
+   "mistakes": [
+    "bored/boring по смыслу",
+    "exciteing",
+    "existing vs excited"
+   ],
+   "kim": {
+    "section": "грамматика и лексика",
+    "score": 1,
+    "time_min": 2,
+    "answer": "слово или несколько слов, в бланк — без пробелов; орфографическая ошибка = 0",
+    "source": "спецификация и демоверсия ОГЭ 2026 (ФИПИ, 06.11.2025; 2027 — без изменений)"
+   },
+   "gen": {
+    "kind": "dict",
+    "fn": "tools/research/proto_eng.py:g",
+    "check": "c_wf"
+   },
+   "capacity": 44,
+   "capacity_note": "замер до 2000 разных условий",
+   "example": {
+    "k": "word",
+    "q": "I was ____ at how fast she learnt to skate.  (AMAZE)",
+    "a": [
+     "amazed"
+    ],
+    "e": "AMAZE → amazed: -ed. Не путать с: amazing.",
+    "blank": [
+     "amazed"
+    ]
+   },
+   "fidelity": {
+    "status": "pass",
+    "checked": 3,
+    "passed": 3,
+    "note": "",
+    "history": {
+     "1": "3/3"
+    }
+   }
+  },
+  {
+   "id": "eng-oge-31-wf-negative",
+   "exam": "ОГЭ",
+   "n": 31,
+   "n_range": "29–34",
+   "title": "Словообразование: отрицательный префикс (un-, in-/im-, il-/ir-, dis-, non-)",
+   "kes": [
+    "2.3.7"
+   ],
+   "level": "Б",
+   "invariant": "по смыслу нужно отрицание; часть речи сохраняется или добавляется суффикс; основа заглавными в конце строки, аффиксы — только из кодификатора",
+   "varies": "основа и её гнездо, предложение (собственные), при одной основе — разные производные",
+   "answer_rule": "таблица гнёзд: основа + аффиксы с правилами орфографии (drop e, y → i, удвоение); -ise/-ize оба в ключе; проверка — независимый вывод формы по аффиксам",
+   "mistakes": [
+    "unpossible, inregular, unlegal",
+    "отрицание не услышано по смыслу",
+    "dis- вместо un-"
+   ],
+   "kim": {
+    "section": "грамматика и лексика",
+    "score": 1,
+    "time_min": 2,
+    "answer": "слово или несколько слов, в бланк — без пробелов; орфографическая ошибка = 0",
+    "source": "спецификация и демоверсия ОГЭ 2026 (ФИПИ, 06.11.2025; 2027 — без изменений)"
+   },
+   "gen": {
+    "kind": "dict",
+    "fn": "tools/research/proto_eng.py:g",
+    "check": "c_wf"
+   },
+   "capacity": 38,
+   "capacity_note": "замер до 2000 разных условий",
+   "example": {
+    "k": "word",
+    "q": "Jeans are fine — it is an ____ party.  (FORMAL)",
+    "a": [
+     "informal"
+    ],
+    "e": "FORMAL → informal: in-.",
+    "blank": [
+     "informal"
+    ]
+   },
+   "fidelity": {
+    "status": "pass",
+    "checked": 3,
+    "passed": 3,
+    "note": "",
+    "history": {
+     "1": "3/3"
+    }
+   }
+  },
+  {
+   "id": "eng-oge-32-wf-adverb",
+   "exam": "ОГЭ",
+   "n": 32,
+   "n_range": "29–34",
+   "title": "Словообразование: наречие на -ly (в том числе с un-, -ful + -ly, -ic + -ally)",
+   "kes": [
+    "2.3.7"
+   ],
+   "level": "Б",
+   "invariant": "нужно наречие (при глаголе или прилагательном); основа заглавными в конце строки, аффиксы — только из кодификатора",
+   "varies": "основа и её гнездо, предложение (собственные), при одной основе — разные производные",
+   "answer_rule": "таблица гнёзд: основа + аффиксы с правилами орфографии (drop e, y → i, удвоение); -ise/-ize оба в ключе; проверка — независимый вывод формы по аффиксам",
+   "mistakes": [
+    "прилагательное вместо наречия",
+    "happyly, easyly",
+    "basicly",
+    "carefuly"
+   ],
+   "kim": {
+    "section": "грамматика и лексика",
+    "score": 1,
+    "time_min": 2,
+    "answer": "слово или несколько слов, в бланк — без пробелов; орфографическая ошибка = 0",
+    "source": "спецификация и демоверсия ОГЭ 2026 (ФИПИ, 06.11.2025; 2027 — без изменений)"
+   },
+   "gen": {
+    "kind": "dict",
+    "fn": "tools/research/proto_eng.py:g",
+    "check": "c_wf"
+   },
+   "capacity": 48,
+   "capacity_note": "замер до 2000 разных условий",
+   "example": {
+    "k": "word",
+    "q": "The vase fell, but ____ it did not break.  (LUCKY)",
+    "a": [
+     "luckily"
+    ],
+    "e": "LUCKY → luckily: -ly. Не путать с: unlucky.",
+    "blank": [
+     "luckily"
+    ]
+   },
+   "fidelity": {
+    "status": "pass",
+    "checked": 3,
+    "passed": 3,
+    "note": "",
+    "history": {
+     "1": "3/3"
+    }
+   }
+  },
+  {
+   "id": "eng-oge-33-wf-verb-prefix",
+   "exam": "ОГЭ",
+   "n": 33,
+   "n_range": "29–34",
+   "title": "Словообразование: глагольный префикс (dis-, mis-, re-, over-, under-)",
+   "kes": [
+    "2.3.7"
+   ],
+   "level": "Б",
+   "invariant": "нужен глагол с изменённым значением; форма глагола задана рамкой; основа заглавными в конце строки, аффиксы — только из кодификатора",
+   "varies": "основа и её гнездо, предложение (собственные), при одной основе — разные производные",
+   "answer_rule": "таблица гнёзд: основа + аффиксы с правилами орфографии (drop e, y → i, удвоение); -ise/-ize оба в ключе; проверка — независимый вывод формы по аффиксам",
+   "mistakes": [
+    "префикс не по смыслу (misagree)",
+    "не изменена форма глагола (overslept)",
+    "unlike вместо dislike"
+   ],
+   "kim": {
+    "section": "грамматика и лексика",
+    "score": 1,
+    "time_min": 2,
+    "answer": "слово или несколько слов, в бланк — без пробелов; орфографическая ошибка = 0",
+    "source": "спецификация и демоверсия ОГЭ 2026 (ФИПИ, 06.11.2025; 2027 — без изменений)"
+   },
+   "gen": {
+    "kind": "dict",
+    "fn": "tools/research/proto_eng.py:g",
+    "check": "c_wf"
+   },
+   "capacity": 18,
+   "capacity_note": "замер до 2000 разных условий",
+   "example": {
+    "k": "word",
+    "q": "People often ____ during the holidays and then feel sick.  (EAT)",
+    "a": [
+     "overeat"
+    ],
+    "e": "EAT → overeat: over-.",
+    "blank": [
+     "overeat"
+    ]
+   },
+   "fidelity": {
+    "status": "pass",
+    "checked": 3,
+    "passed": 3,
+    "note": "раунд 1: исходное слово тоже подходило (My parents agree…, People often eat…); контекст переписан так, чтобы подходила только производная",
+    "history": {
+     "1": "1/3",
+     "2": "3/3"
+    }
+   }
+  },
+  {
+   "id": "eng-oge-34-wf-numeral",
+   "exam": "ОГЭ",
+   "n": 34,
+   "n_range": "29–34",
+   "title": "Словообразование: числительные (-teen, -ty, -th)",
+   "kes": [
+    "2.3.7"
+   ],
+   "level": "Б",
+   "invariant": "нужно числительное другого разряда: -teen, -ty или порядковое; основа заглавными в конце строки, аффиксы — только из кодификатора",
+   "varies": "основа и её гнездо, предложение (собственные), при одной основе — разные производные",
+   "answer_rule": "таблица гнёзд: основа + аффиксы с правилами орфографии (drop e, y → i, удвоение); -ise/-ize оба в ключе; проверка — независимый вывод формы по аффиксам",
+   "mistakes": [
+    "fiveteen, fivety",
+    "fourty",
+    "nineth, twelveth"
+   ],
+   "kim": {
+    "section": "грамматика и лексика",
+    "score": 1,
+    "time_min": 2,
+    "answer": "слово или несколько слов, в бланк — без пробелов; орфографическая ошибка = 0",
+    "source": "спецификация и демоверсия ОГЭ 2026 (ФИПИ, 06.11.2025; 2027 — без изменений)"
+   },
+   "gen": {
+    "kind": "dict",
+    "fn": "tools/research/proto_eng.py:g",
+    "check": "c_wf"
+   },
+   "capacity": 44,
+   "capacity_note": "замер до 2000 разных условий",
+   "example": {
+    "k": "word",
+    "q": "My brother is ____ years old.  (FOUR)",
+    "a": [
+     "fourteen"
+    ],
+    "e": "FOUR → fourteen: -teen. Не путать с: forty, fourth.",
+    "blank": [
+     "fourteen"
+    ]
+   },
+   "fidelity": {
+    "status": "pass",
+    "checked": 3,
+    "passed": 3,
+    "note": "",
+    "history": {
+     "1": "3/3"
+    }
+   }
+  },
+  {
+   "id": "eng-ege-30-make-do",
+   "exam": "ЕГЭ",
+   "n": 30,
+   "n_range": "30–36",
+   "title": "Лексическая сочетаемость: make / do",
+   "kes": [
+    "2.3.1",
+    "2.3.2"
+   ],
+   "level": "В",
+   "invariant": "предложение с пропуском глагола перед устойчивым дополнением (a mistake, homework…); четыре варианта ответа, ответ — цифра",
+   "varies": "дополнение, время глагола, дистракторы (take, get, have, give)",
+   "answer_rule": "таблица сочетаний make/do; проверка — обратный словарь «дополнение → глагол»",
+   "mistakes": [
+    "make homework",
+    "do a mistake",
+    "take a decision"
+   ],
+   "kim": {
+    "section": "грамматика и лексика",
+    "score": 1,
+    "time_min": 2,
+    "answer": "цифра выбранного варианта",
+    "source": "спецификация и демоверсия ЕГЭ 2026 (ФИПИ, 05.11.2025; 2027 — без изменений)"
+   },
+   "gen": {
+    "kind": "dict",
+    "fn": "tools/research/proto_eng.py:g",
+    "check": "c_lex"
+   },
+   "capacity": 32,
+   "capacity_note": "замер до 2000 разных условий",
+   "example": {
+    "k": "one",
+    "q": "On Saturdays Mum ____ the shopping at the big market.\n1) makes\n2) gives\n3) does\n4) gets",
+    "a": [
+     "3"
+    ],
+    "e": "do + the shopping: устойчивое сочетание; make — «создать, произвести», do — «выполнить, заниматься»"
+   },
+   "fidelity": {
+    "status": "pass",
+    "checked": 3,
+    "passed": 3,
+    "note": "",
+    "history": {
+     "1": "3/3"
+    }
+   }
+  },
+  {
+   "id": "eng-ege-31-say-tell-speak-talk",
+   "exam": "ЕГЭ",
+   "n": 31,
+   "n_range": "30–36",
+   "title": "Лексическая сочетаемость: say / tell / speak / talk",
+   "kes": [
+    "2.3.1",
+    "2.3.2"
+   ],
+   "level": "В",
+   "invariant": "предложение с пропуском; признак в рамке: кому (tell), что (say), язык или громкость (speak), about (talk); четыре варианта ответа, ответ — цифра",
+   "varies": "признак, предложение, время",
+   "answer_rule": "правило по признаку; устойчивые сочетания (tell the truth, say sorry) — отдельная таблица",
+   "mistakes": [
+    "say me",
+    "tell that",
+    "talk English"
+   ],
+   "kim": {
+    "section": "грамматика и лексика",
+    "score": 1,
+    "time_min": 2,
+    "answer": "цифра выбранного варианта",
+    "source": "спецификация и демоверсия ЕГЭ 2026 (ФИПИ, 05.11.2025; 2027 — без изменений)"
+   },
+   "gen": {
+    "kind": "dict",
+    "fn": "tools/research/proto_eng.py:g",
+    "check": "c_lex"
+   },
+   "capacity": 26,
+   "capacity_note": "замер до 2000 разных условий",
+   "example": {
+    "k": "one",
+    "q": "The guide ____ the tourists about the history of the castle.\n1) talked\n2) spoke\n3) said\n4) told",
+    "a": [
+     "4"
+    ],
+    "e": "tell + кому (tell me, tell the truth); say + что (say that…, say sorry); speak + язык / громче; talk + about"
+   },
+   "fidelity": {
+    "status": "pass",
+    "checked": 3,
+    "passed": 3,
+    "note": "",
+    "history": {
+     "1": "3/3"
+    }
+   }
+  },
+  {
+   "id": "eng-ege-32-preposition",
+   "exam": "ЕГЭ",
+   "n": 32,
+   "n_range": "30–36",
+   "title": "Предлог после глагола или прилагательного",
+   "kes": [
+    "2.3.1",
+    "2.3.2"
+   ],
+   "level": "В",
+   "invariant": "предложение с пропуском предлога после слова с фиксированным управлением; дистракторы — предлоги, не образующие сочетания; четыре варианта ответа, ответ — цифра",
+   "varies": "слово (30 сочетаний), предложение",
+   "answer_rule": "таблица управления; проверка — вторая таблица",
+   "mistakes": [
+    "interested on",
+    "depend from",
+    "arrive to",
+    "good in"
+   ],
+   "kim": {
+    "section": "грамматика и лексика",
+    "score": 1,
+    "time_min": 2,
+    "answer": "цифра выбранного варианта",
+    "source": "спецификация и демоверсия ЕГЭ 2026 (ФИПИ, 05.11.2025; 2027 — без изменений)"
+   },
+   "gen": {
+    "kind": "dict",
+    "fn": "tools/research/proto_eng.py:g",
+    "check": "c_lex"
+   },
+   "capacity": 30,
+   "capacity_note": "замер до 2000 разных условий",
+   "example": {
+    "k": "one",
+    "q": "Who paid ____ the tickets?\n1) on\n2) at\n3) for\n4) to",
+    "a": [
+     "3"
+    ],
+    "e": "pay for — управление запоминается вместе со словом"
+   },
+   "fidelity": {
+    "status": "pass",
+    "checked": 3,
+    "passed": 3,
+    "note": "раунд 1: одно предложение дважды с перестановкой вариантов; уникальность теперь по предложению",
+    "history": {
+     "1": "2/3",
+     "2": "3/3"
+    }
+   }
+  },
+  {
+   "id": "eng-ege-33-ed-ing",
+   "exam": "ЕГЭ",
+   "n": 33,
+   "n_range": "30–36",
+   "title": "Прилагательные на -ed и -ing",
+   "kes": [
+    "2.3.4"
+   ],
+   "level": "В",
+   "invariant": "рамка задаёт носителя признака: человек (чувство → -ed) или предмет/событие (свойство → -ing); варианты: -ed, -ing, глагол, существительное; четыре варианта ответа, ответ — цифра",
+   "varies": "пара (15), рамка, событие",
+   "answer_rule": "правило: испытывающий → -ed, вызывающий → -ing; проверка по второй таблице пар",
+   "mistakes": [
+    "I am boring",
+    "the film was interested",
+    "excitement вместо exciting"
+   ],
+   "kim": {
+    "section": "грамматика и лексика",
+    "score": 1,
+    "time_min": 2,
+    "answer": "цифра выбранного варианта",
+    "source": "спецификация и демоверсия ЕГЭ 2026 (ФИПИ, 05.11.2025; 2027 — без изменений)"
+   },
+   "gen": {
+    "kind": "dict",
+    "fn": "tools/research/proto_eng.py:g",
+    "check": "c_lex"
+   },
+   "capacity": 80,
+   "capacity_note": "замер до 2000 разных условий",
+   "example": {
+    "k": "one",
+    "q": "Everybody in the room looked ____.\n1) exhausting\n2) exhaustion\n3) exhausted\n4) exhaust",
+    "a": [
+     "3"
+    ],
+    "e": "-ed — чувство человека (I am bored), -ing — свойство предмета или события (the film is boring)"
+   },
+   "fidelity": {
+    "status": "pass",
+    "checked": 3,
+    "passed": 3,
+    "note": "",
+    "history": {
+     "1": "3/3"
+    }
+   }
+  },
+  {
+   "id": "eng-ege-34-phrasal",
+   "exam": "ЕГЭ",
+   "n": 34,
+   "n_range": "30–36",
+   "title": "Фразовые глаголы: выбор частицы",
+   "kes": [
+    "2.3.5"
+   ],
+   "level": "В",
+   "invariant": "глагол дан, пропущена частица; четыре частицы одного глагола, только одна даёт нужное значение; четыре варианта ответа, ответ — цифра",
+   "varies": "глагол (10), значение (40), предложение",
+   "answer_rule": "таблица «глагол + частица → значение»; проверка — обратная таблица «значение → частица»",
+   "mistakes": [
+    "частица по русскому смыслу (look for = «заботиться»)",
+    "get on / get over"
+   ],
+   "kim": {
+    "section": "грамматика и лексика",
+    "score": 1,
+    "time_min": 2,
+    "answer": "цифра выбранного варианта",
+    "source": "спецификация и демоверсия ЕГЭ 2026 (ФИПИ, 05.11.2025; 2027 — без изменений)"
+   },
+   "gen": {
+    "kind": "dict",
+    "fn": "tools/research/proto_eng.py:g",
+    "check": "c_lex"
+   },
+   "capacity": 40,
+   "capacity_note": "замер до 2000 разных условий",
+   "example": {
+    "k": "one",
+    "q": "The new law brought ____ big changes in the school system.\n1) up\n2) about\n3) back\n4) along",
+    "a": [
+     "2"
+    ],
+    "e": "bring about — фразовый глагол; значение частицы учится вместе с глаголом"
+   },
+   "fidelity": {
+    "status": "pass",
+    "checked": 3,
+    "passed": 3,
+    "note": "",
+    "history": {
+     "1": "3/3"
+    }
+   }
+  },
+  {
+   "id": "eng-ege-35-linkers",
+   "exam": "ЕГЭ",
+   "n": 35,
+   "n_range": "30–36",
+   "title": "Союзы и связки: although / despite / however / because / so / unless…",
+   "kes": [
+    "2.3.2",
+    "2.4.9"
+   ],
+   "level": "В",
+   "invariant": "структура после пропуска (придаточное, именная группа, новое предложение) и смысл (уступка, причина, следствие, цель, условие) задают связку; набор из четырёх подобран так, что подходит одна; четыре варианта ответа, ответ — цифра",
+   "varies": "признак (12), предложение, набор вариантов",
+   "answer_rule": "правило «признак → связка»; проверка — вторая таблица",
+   "mistakes": [
+    "despite + придаточное",
+    "however внутри предложения",
+    "unless … not"
+   ],
+   "kim": {
+    "section": "грамматика и лексика",
+    "score": 1,
+    "time_min": 2,
+    "answer": "цифра выбранного варианта",
+    "source": "спецификация и демоверсия ЕГЭ 2026 (ФИПИ, 05.11.2025; 2027 — без изменений)"
+   },
+   "gen": {
+    "kind": "dict",
+    "fn": "tools/research/proto_eng.py:g",
+    "check": "c_lex"
+   },
+   "capacity": 31,
+   "capacity_note": "замер до 2000 разных условий",
+   "example": {
+    "k": "one",
+    "q": "The match was cancelled ____ the heavy rain.\n1) because of\n2) although\n3) despite\n4) unless",
+    "a": [
+     "1"
+    ],
+    "e": "although + придаточное, despite + существительное, however — начало нового предложения; because + причина, so + следствие, unless = if not"
+   },
+   "fidelity": {
+    "status": "pass",
+    "checked": 3,
+    "passed": 3,
+    "note": "",
+    "history": {
+     "1": "3/3"
+    }
+   }
+  },
+  {
+   "id": "eng-ege-36-confusables",
+   "exam": "ЕГЭ",
+   "n": 36,
+   "n_range": "30–36",
+   "title": "Пары-путаницы: rise/raise, lie/lay, borrow/lend, affect/effect, win/beat…",
+   "kes": [
+    "2.3.1",
+    "2.3.3"
+   ],
+   "level": "В",
+   "invariant": "предложение с признаком, различающим пару (есть ли дополнение, направление, часть речи); варианты — оба слова пары и два похожих; четыре варианта ответа, ответ — цифра",
+   "varies": "пара (14), признак, предложение",
+   "answer_rule": "таблица «пара + признак → слово»; проверка — лемматизация ответа и сверка со второй таблицей",
+   "mistakes": [
+    "rise your hand",
+    "borrow me",
+    "win the team",
+    "lose the bus"
+   ],
+   "kim": {
+    "section": "грамматика и лексика",
+    "score": 1,
+    "time_min": 2,
+    "answer": "цифра выбранного варианта",
+    "source": "спецификация и демоверсия ЕГЭ 2026 (ФИПИ, 05.11.2025; 2027 — без изменений)"
+   },
+   "gen": {
+    "kind": "dict",
+    "fn": "tools/research/proto_eng.py:g",
+    "check": "c_lex"
+   },
+   "capacity": 42,
+   "capacity_note": "замер до 2000 разных условий",
+   "example": {
+    "k": "one",
+    "q": "This song ____ me of our summer at the sea.\n1) recognises\n2) recalls\n3) remembers\n4) reminds",
+    "a": [
+     "4"
+    ],
+    "e": "remember/remind: remind + кому (remind me of / to), remember — помнить самому"
+   },
+   "fidelity": {
+    "status": "pass",
+    "checked": 3,
+    "passed": 3,
+    "note": "",
+    "history": {
+     "1": "3/3"
+    }
+   }
+  },
+  {
+   "id": "eng-ege-01-listening-match",
+   "exam": "ЕГЭ",
+   "n": 1,
+   "n_range": "1",
+   "title": "Аудирование: соответствие высказываний A–F и утверждений 1–7",
+   "kes": [
+    "3.1.1",
+    "3.1.2"
+   ],
+   "level": "Б",
+   "invariant": "шесть монологов одной темы (по 60–90 слов), семь утверждений, одно лишнее; каждый монолог подходит ровно к одному утверждению",
+   "varies": "тема (кодификатор: семья, хобби, путешествия, экология…), говорящие, утверждения",
+   "answer_rule": "последовательность из 6 цифр; 2 балла: без ошибок — 2, одна ошибка — 1",
+   "mistakes": [
+    "выбор по совпавшему слову, а не по смыслу",
+    "одно утверждение на два монолога"
+   ],
+   "kim": {
+    "section": "аудирование",
+    "score": 2,
+    "time_min": 5,
+    "answer": "краткий ответ",
+    "source": "спецификация и демоверсия ЕГЭ 2026 (ФИПИ, 05.11.2025; 2027 — без изменений)"
+   },
+   "gen": {
+    "kind": "llm",
+    "recipe": "JSON: тема, шесть «идей» (по одной на говорящего), седьмая идея-дистрактор; модель пишет монологи так, чтобы ключевые слова утверждения в монологе не повторялись; скрипт проверяет длину и отсутствие дословных совпадений; вторая модель ставит соответствия вслепую, должно совпасть 6/6. Озвучка — TTS, вне репозитория. Тексты пишет модель по JSON-заданию (тема из кодификатора, уровень A2–B1 для ОГЭ, B1–B2 для ЕГЭ, длина); ключ строится из «фактов» задания, а не из текста; вторая модель решает вслепую; расхождение — брак; дедупликация по теме и нормализованному тексту; тексты ФИПИ и банков не используются."
+   },
+   "capacity": null,
+   "capacity_note": "по цене генерации и проверки",
+   "example": {
+    "k": "seq",
+    "q": "Вы услышите 6 высказываний о школьных поездках. Установите соответствие между высказываниями каждого говорящего A–F и утверждениями 1–7. Одно утверждение лишнее.\n1. The speaker prefers trips with a clear plan. …\nA. (монолог о том, как класс ездил в музей без экскурсовода и заблудился) …",
+    "a": "312746",
+    "e": "по одному утверждению на говорящего"
+   },
+   "fidelity": {
+    "status": "unchecked"
+   }
+  },
+  {
+   "id": "eng-ege-02-listening-tfns",
+   "exam": "ЕГЭ",
+   "n": 2,
+   "n_range": "2",
+   "title": "Аудирование: True / False / Not stated по диалогу",
+   "kes": [
+    "3.1.1",
+    "3.1.3"
+   ],
+   "level": "Б",
+   "invariant": "диалог 250–300 слов, семь утверждений A–G; для каждого ровно один статус: 1 — True, 2 — False, 3 — Not stated",
+   "varies": "тема, участники, порядок утверждений (следуют тексту)",
+   "answer_rule": "последовательность из 7 цифр 1/2/3; 3 балла (одна ошибка — 2, две — 1)",
+   "mistakes": [
+    "Not stated принимают за False",
+    "утверждение с перефразом принимают за Not stated"
+   ],
+   "kim": {
+    "section": "аудирование",
+    "score": 3,
+    "time_min": 5,
+    "answer": "краткий ответ",
+    "source": "спецификация и демоверсия ЕГЭ 2026 (ФИПИ, 05.11.2025; 2027 — без изменений)"
+   },
+   "gen": {
+    "kind": "llm",
+    "recipe": "JSON: список из 7 фактов с пометкой true/false/not-stated; модель пишет диалог, где true-факты пересказаны другими словами, false-факты противоречат тексту, not-stated в тексте не затрагиваются; скрипт проверяет, что слова not-stated-утверждений не встречаются в диалоге; вторая модель размечает вслепую. Тексты пишет модель по JSON-заданию (тема из кодификатора, уровень A2–B1 для ОГЭ, B1–B2 для ЕГЭ, длина); ключ строится из «фактов» задания, а не из текста; вторая модель решает вслепую; расхождение — брак; дедупликация по теме и нормализованному тексту; тексты ФИПИ и банков не используются."
+   },
+   "capacity": null,
+   "capacity_note": "по цене генерации и проверки",
+   "example": {
+    "k": "seq",
+    "q": "Вы услышите диалог. Определите, какие из утверждений A–G соответствуют содержанию текста (1), не соответствуют (2), о чём в тексте не сказано (3).\nA. Kate has been to the new sports centre twice. …",
+    "a": "1231223",
+    "e": "по фактам задания"
+   },
+   "fidelity": {
+    "status": "unchecked"
+   }
+  },
+  {
+   "id": "eng-ege-03-listening-choice",
+   "exam": "ЕГЭ",
+   "n": 3,
+   "n_range": "3–9",
+   "title": "Аудирование: полное понимание, выбор из трёх",
+   "kes": [
+    "3.1.3"
+   ],
+   "level": "Б",
+   "invariant": "интервью или беседа 400–500 слов, семь вопросов (3–9) по порядку текста, три варианта ответа, один верный",
+   "varies": "тема, собеседники, вопросы",
+   "answer_rule": "цифра 1–3; 1 балл",
+   "mistakes": [
+    "ответ по первому услышанному варианту",
+    "дистрактор с теми же словами, что в тексте"
+   ],
+   "kim": {
+    "section": "аудирование",
+    "score": 1,
+    "time_min": 3,
+    "answer": "краткий ответ",
+    "source": "спецификация и демоверсия ЕГЭ 2026 (ФИПИ, 05.11.2025; 2027 — без изменений)"
+   },
+   "gen": {
+    "kind": "llm",
+    "recipe": "JSON: 7 фактов интервью в порядке текста, к каждому верный ответ и два дистрактора, которые в тексте упомянуты, но не отвечают на вопрос; модель пишет интервью; скрипт проверяет порядок и что каждый вопрос опирается на свой фрагмент; вторая модель отвечает вслепую 7/7. Тексты пишет модель по JSON-заданию (тема из кодификатора, уровень A2–B1 для ОГЭ, B1–B2 для ЕГЭ, длина); ключ строится из «фактов» задания, а не из текста; вторая модель решает вслепую; расхождение — брак; дедупликация по теме и нормализованному тексту; тексты ФИПИ и банков не используются."
+   },
+   "capacity": null,
+   "capacity_note": "по цене генерации и проверки",
+   "example": {
+    "k": "one",
+    "q": "What does Mark say about his first marathon?\n1) He finished it faster than he expected.\n2) He nearly gave up halfway.\n3) He ran it with his brother.",
+    "a": "2",
+    "e": "по факту 4 из JSON"
+   },
+   "fidelity": {
+    "status": "unchecked"
+   }
+  },
+  {
+   "id": "eng-ege-04-listening-choice",
+   "exam": "ЕГЭ",
+   "n": 4,
+   "n_range": "3–9",
+   "title": "Аудирование: полное понимание, выбор из трёх",
+   "kes": [
+    "3.1.3"
+   ],
+   "level": "Б",
+   "invariant": "интервью или беседа 400–500 слов, семь вопросов (3–9) по порядку текста, три варианта ответа, один верный",
+   "varies": "тема, собеседники, вопросы",
+   "answer_rule": "цифра 1–3; 1 балл",
+   "mistakes": [
+    "ответ по первому услышанному варианту",
+    "дистрактор с теми же словами, что в тексте"
+   ],
+   "kim": {
+    "section": "аудирование",
+    "score": 1,
+    "time_min": 3,
+    "answer": "краткий ответ",
+    "source": "спецификация и демоверсия ЕГЭ 2026 (ФИПИ, 05.11.2025; 2027 — без изменений)"
+   },
+   "gen": {
+    "kind": "llm",
+    "recipe": "JSON: 7 фактов интервью в порядке текста, к каждому верный ответ и два дистрактора, которые в тексте упомянуты, но не отвечают на вопрос; модель пишет интервью; скрипт проверяет порядок и что каждый вопрос опирается на свой фрагмент; вторая модель отвечает вслепую 7/7. Тексты пишет модель по JSON-заданию (тема из кодификатора, уровень A2–B1 для ОГЭ, B1–B2 для ЕГЭ, длина); ключ строится из «фактов» задания, а не из текста; вторая модель решает вслепую; расхождение — брак; дедупликация по теме и нормализованному тексту; тексты ФИПИ и банков не используются."
+   },
+   "capacity": null,
+   "capacity_note": "по цене генерации и проверки",
+   "example": {
+    "k": "one",
+    "q": "What does Mark say about his first marathon?\n1) He finished it faster than he expected.\n2) He nearly gave up halfway.\n3) He ran it with his brother.",
+    "a": "2",
+    "e": "по факту 4 из JSON"
+   },
+   "fidelity": {
+    "status": "unchecked"
+   }
+  },
+  {
+   "id": "eng-ege-05-listening-choice",
+   "exam": "ЕГЭ",
+   "n": 5,
+   "n_range": "3–9",
+   "title": "Аудирование: полное понимание, выбор из трёх",
+   "kes": [
+    "3.1.3"
+   ],
+   "level": "Б",
+   "invariant": "интервью или беседа 400–500 слов, семь вопросов (3–9) по порядку текста, три варианта ответа, один верный",
+   "varies": "тема, собеседники, вопросы",
+   "answer_rule": "цифра 1–3; 1 балл",
+   "mistakes": [
+    "ответ по первому услышанному варианту",
+    "дистрактор с теми же словами, что в тексте"
+   ],
+   "kim": {
+    "section": "аудирование",
+    "score": 1,
+    "time_min": 3,
+    "answer": "краткий ответ",
+    "source": "спецификация и демоверсия ЕГЭ 2026 (ФИПИ, 05.11.2025; 2027 — без изменений)"
+   },
+   "gen": {
+    "kind": "llm",
+    "recipe": "JSON: 7 фактов интервью в порядке текста, к каждому верный ответ и два дистрактора, которые в тексте упомянуты, но не отвечают на вопрос; модель пишет интервью; скрипт проверяет порядок и что каждый вопрос опирается на свой фрагмент; вторая модель отвечает вслепую 7/7. Тексты пишет модель по JSON-заданию (тема из кодификатора, уровень A2–B1 для ОГЭ, B1–B2 для ЕГЭ, длина); ключ строится из «фактов» задания, а не из текста; вторая модель решает вслепую; расхождение — брак; дедупликация по теме и нормализованному тексту; тексты ФИПИ и банков не используются."
+   },
+   "capacity": null,
+   "capacity_note": "по цене генерации и проверки",
+   "example": {
+    "k": "one",
+    "q": "What does Mark say about his first marathon?\n1) He finished it faster than he expected.\n2) He nearly gave up halfway.\n3) He ran it with his brother.",
+    "a": "2",
+    "e": "по факту 4 из JSON"
+   },
+   "fidelity": {
+    "status": "unchecked"
+   }
+  },
+  {
+   "id": "eng-ege-06-listening-choice",
+   "exam": "ЕГЭ",
+   "n": 6,
+   "n_range": "3–9",
+   "title": "Аудирование: полное понимание, выбор из трёх",
+   "kes": [
+    "3.1.3"
+   ],
+   "level": "Б",
+   "invariant": "интервью или беседа 400–500 слов, семь вопросов (3–9) по порядку текста, три варианта ответа, один верный",
+   "varies": "тема, собеседники, вопросы",
+   "answer_rule": "цифра 1–3; 1 балл",
+   "mistakes": [
+    "ответ по первому услышанному варианту",
+    "дистрактор с теми же словами, что в тексте"
+   ],
+   "kim": {
+    "section": "аудирование",
+    "score": 1,
+    "time_min": 3,
+    "answer": "краткий ответ",
+    "source": "спецификация и демоверсия ЕГЭ 2026 (ФИПИ, 05.11.2025; 2027 — без изменений)"
+   },
+   "gen": {
+    "kind": "llm",
+    "recipe": "JSON: 7 фактов интервью в порядке текста, к каждому верный ответ и два дистрактора, которые в тексте упомянуты, но не отвечают на вопрос; модель пишет интервью; скрипт проверяет порядок и что каждый вопрос опирается на свой фрагмент; вторая модель отвечает вслепую 7/7. Тексты пишет модель по JSON-заданию (тема из кодификатора, уровень A2–B1 для ОГЭ, B1–B2 для ЕГЭ, длина); ключ строится из «фактов» задания, а не из текста; вторая модель решает вслепую; расхождение — брак; дедупликация по теме и нормализованному тексту; тексты ФИПИ и банков не используются."
+   },
+   "capacity": null,
+   "capacity_note": "по цене генерации и проверки",
+   "example": {
+    "k": "one",
+    "q": "What does Mark say about his first marathon?\n1) He finished it faster than he expected.\n2) He nearly gave up halfway.\n3) He ran it with his brother.",
+    "a": "2",
+    "e": "по факту 4 из JSON"
+   },
+   "fidelity": {
+    "status": "unchecked"
+   }
+  },
+  {
+   "id": "eng-ege-07-listening-choice",
+   "exam": "ЕГЭ",
+   "n": 7,
+   "n_range": "3–9",
+   "title": "Аудирование: полное понимание, выбор из трёх",
+   "kes": [
+    "3.1.3"
+   ],
+   "level": "Б",
+   "invariant": "интервью или беседа 400–500 слов, семь вопросов (3–9) по порядку текста, три варианта ответа, один верный",
+   "varies": "тема, собеседники, вопросы",
+   "answer_rule": "цифра 1–3; 1 балл",
+   "mistakes": [
+    "ответ по первому услышанному варианту",
+    "дистрактор с теми же словами, что в тексте"
+   ],
+   "kim": {
+    "section": "аудирование",
+    "score": 1,
+    "time_min": 3,
+    "answer": "краткий ответ",
+    "source": "спецификация и демоверсия ЕГЭ 2026 (ФИПИ, 05.11.2025; 2027 — без изменений)"
+   },
+   "gen": {
+    "kind": "llm",
+    "recipe": "JSON: 7 фактов интервью в порядке текста, к каждому верный ответ и два дистрактора, которые в тексте упомянуты, но не отвечают на вопрос; модель пишет интервью; скрипт проверяет порядок и что каждый вопрос опирается на свой фрагмент; вторая модель отвечает вслепую 7/7. Тексты пишет модель по JSON-заданию (тема из кодификатора, уровень A2–B1 для ОГЭ, B1–B2 для ЕГЭ, длина); ключ строится из «фактов» задания, а не из текста; вторая модель решает вслепую; расхождение — брак; дедупликация по теме и нормализованному тексту; тексты ФИПИ и банков не используются."
+   },
+   "capacity": null,
+   "capacity_note": "по цене генерации и проверки",
+   "example": {
+    "k": "one",
+    "q": "What does Mark say about his first marathon?\n1) He finished it faster than he expected.\n2) He nearly gave up halfway.\n3) He ran it with his brother.",
+    "a": "2",
+    "e": "по факту 4 из JSON"
+   },
+   "fidelity": {
+    "status": "unchecked"
+   }
+  },
+  {
+   "id": "eng-ege-08-listening-choice",
+   "exam": "ЕГЭ",
+   "n": 8,
+   "n_range": "3–9",
+   "title": "Аудирование: полное понимание, выбор из трёх",
+   "kes": [
+    "3.1.3"
+   ],
+   "level": "Б",
+   "invariant": "интервью или беседа 400–500 слов, семь вопросов (3–9) по порядку текста, три варианта ответа, один верный",
+   "varies": "тема, собеседники, вопросы",
+   "answer_rule": "цифра 1–3; 1 балл",
+   "mistakes": [
+    "ответ по первому услышанному варианту",
+    "дистрактор с теми же словами, что в тексте"
+   ],
+   "kim": {
+    "section": "аудирование",
+    "score": 1,
+    "time_min": 3,
+    "answer": "краткий ответ",
+    "source": "спецификация и демоверсия ЕГЭ 2026 (ФИПИ, 05.11.2025; 2027 — без изменений)"
+   },
+   "gen": {
+    "kind": "llm",
+    "recipe": "JSON: 7 фактов интервью в порядке текста, к каждому верный ответ и два дистрактора, которые в тексте упомянуты, но не отвечают на вопрос; модель пишет интервью; скрипт проверяет порядок и что каждый вопрос опирается на свой фрагмент; вторая модель отвечает вслепую 7/7. Тексты пишет модель по JSON-заданию (тема из кодификатора, уровень A2–B1 для ОГЭ, B1–B2 для ЕГЭ, длина); ключ строится из «фактов» задания, а не из текста; вторая модель решает вслепую; расхождение — брак; дедупликация по теме и нормализованному тексту; тексты ФИПИ и банков не используются."
+   },
+   "capacity": null,
+   "capacity_note": "по цене генерации и проверки",
+   "example": {
+    "k": "one",
+    "q": "What does Mark say about his first marathon?\n1) He finished it faster than he expected.\n2) He nearly gave up halfway.\n3) He ran it with his brother.",
+    "a": "2",
+    "e": "по факту 4 из JSON"
+   },
+   "fidelity": {
+    "status": "unchecked"
+   }
+  },
+  {
+   "id": "eng-ege-09-listening-choice",
+   "exam": "ЕГЭ",
+   "n": 9,
+   "n_range": "3–9",
+   "title": "Аудирование: полное понимание, выбор из трёх",
+   "kes": [
+    "3.1.3"
+   ],
+   "level": "Б",
+   "invariant": "интервью или беседа 400–500 слов, семь вопросов (3–9) по порядку текста, три варианта ответа, один верный",
+   "varies": "тема, собеседники, вопросы",
+   "answer_rule": "цифра 1–3; 1 балл",
+   "mistakes": [
+    "ответ по первому услышанному варианту",
+    "дистрактор с теми же словами, что в тексте"
+   ],
+   "kim": {
+    "section": "аудирование",
+    "score": 1,
+    "time_min": 3,
+    "answer": "краткий ответ",
+    "source": "спецификация и демоверсия ЕГЭ 2026 (ФИПИ, 05.11.2025; 2027 — без изменений)"
+   },
+   "gen": {
+    "kind": "llm",
+    "recipe": "JSON: 7 фактов интервью в порядке текста, к каждому верный ответ и два дистрактора, которые в тексте упомянуты, но не отвечают на вопрос; модель пишет интервью; скрипт проверяет порядок и что каждый вопрос опирается на свой фрагмент; вторая модель отвечает вслепую 7/7. Тексты пишет модель по JSON-заданию (тема из кодификатора, уровень A2–B1 для ОГЭ, B1–B2 для ЕГЭ, длина); ключ строится из «фактов» задания, а не из текста; вторая модель решает вслепую; расхождение — брак; дедупликация по теме и нормализованному тексту; тексты ФИПИ и банков не используются."
+   },
+   "capacity": null,
+   "capacity_note": "по цене генерации и проверки",
+   "example": {
+    "k": "one",
+    "q": "What does Mark say about his first marathon?\n1) He finished it faster than he expected.\n2) He nearly gave up halfway.\n3) He ran it with his brother.",
+    "a": "2",
+    "e": "по факту 4 из JSON"
+   },
+   "fidelity": {
+    "status": "unchecked"
+   }
+  },
+  {
+   "id": "eng-ege-10-reading-headings",
+   "exam": "ЕГЭ",
+   "n": 10,
+   "n_range": "10",
+   "title": "Чтение: заголовки 1–8 к текстам A–G",
+   "kes": [
+    "3.2.1"
+   ],
+   "level": "Б",
+   "invariant": "семь коротких текстов (60–90 слов) одной темы, восемь заголовков, один лишний",
+   "varies": "тема, тексты, заголовки",
+   "answer_rule": "последовательность из 7 цифр; 3 балла (одна ошибка — 2, две — 1)",
+   "mistakes": [
+    "заголовок по одному слову текста",
+    "лишний заголовок близок к двум текстам"
+   ],
+   "kim": {
+    "section": "чтение",
+    "score": 3,
+    "time_min": 10,
+    "answer": "краткий ответ",
+    "source": "спецификация и демоверсия ЕГЭ 2026 (ФИПИ, 05.11.2025; 2027 — без изменений)"
+   },
+   "gen": {
+    "kind": "llm",
+    "recipe": "JSON: тема, семь «главных мыслей» и восьмая-дистрактор; модель пишет тексты, не повторяя слова заголовка; скрипт проверяет длины и отсутствие дословного заголовка в тексте; вторая модель сопоставляет вслепую 7/7. Тексты пишет модель по JSON-заданию (тема из кодификатора, уровень A2–B1 для ОГЭ, B1–B2 для ЕГЭ, длина); ключ строится из «фактов» задания, а не из текста; вторая модель решает вслепую; расхождение — брак; дедупликация по теме и нормализованному тексту; тексты ФИПИ и банков не используются."
+   },
+   "capacity": null,
+   "capacity_note": "по цене генерации и проверки",
+   "example": {
+    "k": "seq",
+    "q": "Установите соответствие между текстами A–G и заголовками 1–8. Один заголовок лишний.\n1. A hobby that pays\n2. Learning from mistakes …",
+    "a": "4172836",
+    "e": "по главным мыслям"
+   },
+   "fidelity": {
+    "status": "unchecked"
+   }
+  },
+  {
+   "id": "eng-ege-11-reading-gaps",
+   "exam": "ЕГЭ",
+   "n": 11,
+   "n_range": "11",
+   "title": "Чтение: пропущенные части предложений A–F, фрагменты 1–7",
+   "kes": [
+    "3.2.2"
+   ],
+   "level": "Б",
+   "invariant": "связный текст 350–450 слов с шестью пропусками внутри предложений, семь фрагментов, один лишний; каждый фрагмент грамматически подходит только в одно место",
+   "varies": "тема, текст, фрагменты",
+   "answer_rule": "последовательность из 6 цифр; 2 балла (одна ошибка — 1)",
+   "mistakes": [
+    "фрагмент подставлен по грамматике, не по смыслу",
+    "лишний фрагмент подходит грамматически в два места"
+   ],
+   "kim": {
+    "section": "чтение",
+    "score": 2,
+    "time_min": 10,
+    "answer": "краткий ответ",
+    "source": "спецификация и демоверсия ЕГЭ 2026 (ФИПИ, 05.11.2025; 2027 — без изменений)"
+   },
+   "gen": {
+    "kind": "llm",
+    "recipe": "модель пишет текст, затем скрипт вырезает 6 фрагментов-концовок предложений (после союза или запятой) и модель добавляет седьмой того же типа; скрипт проверяет, что лишний фрагмент не начинается с того же слова, что и вырезанные; вторая модель восстанавливает текст вслепую 6/6. Тексты пишет модель по JSON-заданию (тема из кодификатора, уровень A2–B1 для ОГЭ, B1–B2 для ЕГЭ, длина); ключ строится из «фактов» задания, а не из текста; вторая модель решает вслепую; расхождение — брак; дедупликация по теме и нормализованному тексту; тексты ФИПИ и банков не используются."
+   },
+   "capacity": null,
+   "capacity_note": "по цене генерации и проверки",
+   "example": {
+    "k": "seq",
+    "q": "Прочитайте текст и заполните пропуски A–F частями предложений 1–7. Одна часть лишняя.\nThe old lighthouse, A ______, is now a small museum. …\n1. which was built in 1854 …",
+    "a": "351726",
+    "e": "по вырезанным фрагментам"
+   },
+   "fidelity": {
+    "status": "unchecked"
+   }
+  },
+  {
+   "id": "eng-ege-12-reading-detail",
+   "exam": "ЕГЭ",
+   "n": 12,
+   "n_range": "12–18",
+   "title": "Чтение: полное понимание, выбор из четырёх",
+   "kes": [
+    "3.2.3"
+   ],
+   "level": "В",
+   "invariant": "текст 600–700 слов (рассказ или публицистика), семь вопросов (12–18) по порядку текста, четыре варианта, один верный; последний вопрос часто о главной мысли или значении слова",
+   "varies": "тема, текст, вопросы",
+   "answer_rule": "цифра 1–4; 1 балл",
+   "mistakes": [
+    "ответ по совпавшим словам",
+    "вывод «от себя», которого в тексте нет"
+   ],
+   "kim": {
+    "section": "чтение",
+    "score": 1,
+    "time_min": 4,
+    "answer": "краткий ответ",
+    "source": "спецификация и демоверсия ЕГЭ 2026 (ФИПИ, 05.11.2025; 2027 — без изменений)"
+   },
+   "gen": {
+    "kind": "llm",
+    "recipe": "JSON: 7 «опорных фрагментов» в порядке текста, к каждому вопрос, верный ответ и три дистрактора (два — из текста, но не по вопросу, один — правдоподобный вывод, которого нет); модель пишет текст; скрипт проверяет, что фрагменты в тексте есть и идут по порядку; вторая модель отвечает вслепую 7/7 и объясняет, почему неверны три других. Тексты пишет модель по JSON-заданию (тема из кодификатора, уровень A2–B1 для ОГЭ, B1–B2 для ЕГЭ, длина); ключ строится из «фактов» задания, а не из текста; вторая модель решает вслепую; расхождение — брак; дедупликация по теме и нормализованному тексту; тексты ФИПИ и банков не используются."
+   },
+   "capacity": null,
+   "capacity_note": "по цене генерации и проверки",
+   "example": {
+    "k": "one",
+    "q": "According to the author, the main reason the shop survived was that\n1) its prices were the lowest in town.\n2) the owner knew every customer by name.\n3) it was the only shop open on Sundays.\n4) it sold goods from the local farms.",
+    "a": "2",
+    "e": "по опорному фрагменту 3"
+   },
+   "fidelity": {
+    "status": "unchecked"
+   }
+  },
+  {
+   "id": "eng-ege-13-reading-detail",
+   "exam": "ЕГЭ",
+   "n": 13,
+   "n_range": "12–18",
+   "title": "Чтение: полное понимание, выбор из четырёх",
+   "kes": [
+    "3.2.3"
+   ],
+   "level": "В",
+   "invariant": "текст 600–700 слов (рассказ или публицистика), семь вопросов (12–18) по порядку текста, четыре варианта, один верный; последний вопрос часто о главной мысли или значении слова",
+   "varies": "тема, текст, вопросы",
+   "answer_rule": "цифра 1–4; 1 балл",
+   "mistakes": [
+    "ответ по совпавшим словам",
+    "вывод «от себя», которого в тексте нет"
+   ],
+   "kim": {
+    "section": "чтение",
+    "score": 1,
+    "time_min": 4,
+    "answer": "краткий ответ",
+    "source": "спецификация и демоверсия ЕГЭ 2026 (ФИПИ, 05.11.2025; 2027 — без изменений)"
+   },
+   "gen": {
+    "kind": "llm",
+    "recipe": "JSON: 7 «опорных фрагментов» в порядке текста, к каждому вопрос, верный ответ и три дистрактора (два — из текста, но не по вопросу, один — правдоподобный вывод, которого нет); модель пишет текст; скрипт проверяет, что фрагменты в тексте есть и идут по порядку; вторая модель отвечает вслепую 7/7 и объясняет, почему неверны три других. Тексты пишет модель по JSON-заданию (тема из кодификатора, уровень A2–B1 для ОГЭ, B1–B2 для ЕГЭ, длина); ключ строится из «фактов» задания, а не из текста; вторая модель решает вслепую; расхождение — брак; дедупликация по теме и нормализованному тексту; тексты ФИПИ и банков не используются."
+   },
+   "capacity": null,
+   "capacity_note": "по цене генерации и проверки",
+   "example": {
+    "k": "one",
+    "q": "According to the author, the main reason the shop survived was that\n1) its prices were the lowest in town.\n2) the owner knew every customer by name.\n3) it was the only shop open on Sundays.\n4) it sold goods from the local farms.",
+    "a": "2",
+    "e": "по опорному фрагменту 3"
+   },
+   "fidelity": {
+    "status": "unchecked"
+   }
+  },
+  {
+   "id": "eng-ege-14-reading-detail",
+   "exam": "ЕГЭ",
+   "n": 14,
+   "n_range": "12–18",
+   "title": "Чтение: полное понимание, выбор из четырёх",
+   "kes": [
+    "3.2.3"
+   ],
+   "level": "В",
+   "invariant": "текст 600–700 слов (рассказ или публицистика), семь вопросов (12–18) по порядку текста, четыре варианта, один верный; последний вопрос часто о главной мысли или значении слова",
+   "varies": "тема, текст, вопросы",
+   "answer_rule": "цифра 1–4; 1 балл",
+   "mistakes": [
+    "ответ по совпавшим словам",
+    "вывод «от себя», которого в тексте нет"
+   ],
+   "kim": {
+    "section": "чтение",
+    "score": 1,
+    "time_min": 4,
+    "answer": "краткий ответ",
+    "source": "спецификация и демоверсия ЕГЭ 2026 (ФИПИ, 05.11.2025; 2027 — без изменений)"
+   },
+   "gen": {
+    "kind": "llm",
+    "recipe": "JSON: 7 «опорных фрагментов» в порядке текста, к каждому вопрос, верный ответ и три дистрактора (два — из текста, но не по вопросу, один — правдоподобный вывод, которого нет); модель пишет текст; скрипт проверяет, что фрагменты в тексте есть и идут по порядку; вторая модель отвечает вслепую 7/7 и объясняет, почему неверны три других. Тексты пишет модель по JSON-заданию (тема из кодификатора, уровень A2–B1 для ОГЭ, B1–B2 для ЕГЭ, длина); ключ строится из «фактов» задания, а не из текста; вторая модель решает вслепую; расхождение — брак; дедупликация по теме и нормализованному тексту; тексты ФИПИ и банков не используются."
+   },
+   "capacity": null,
+   "capacity_note": "по цене генерации и проверки",
+   "example": {
+    "k": "one",
+    "q": "According to the author, the main reason the shop survived was that\n1) its prices were the lowest in town.\n2) the owner knew every customer by name.\n3) it was the only shop open on Sundays.\n4) it sold goods from the local farms.",
+    "a": "2",
+    "e": "по опорному фрагменту 3"
+   },
+   "fidelity": {
+    "status": "unchecked"
+   }
+  },
+  {
+   "id": "eng-ege-15-reading-detail",
+   "exam": "ЕГЭ",
+   "n": 15,
+   "n_range": "12–18",
+   "title": "Чтение: полное понимание, выбор из четырёх",
+   "kes": [
+    "3.2.3"
+   ],
+   "level": "В",
+   "invariant": "текст 600–700 слов (рассказ или публицистика), семь вопросов (12–18) по порядку текста, четыре варианта, один верный; последний вопрос часто о главной мысли или значении слова",
+   "varies": "тема, текст, вопросы",
+   "answer_rule": "цифра 1–4; 1 балл",
+   "mistakes": [
+    "ответ по совпавшим словам",
+    "вывод «от себя», которого в тексте нет"
+   ],
+   "kim": {
+    "section": "чтение",
+    "score": 1,
+    "time_min": 4,
+    "answer": "краткий ответ",
+    "source": "спецификация и демоверсия ЕГЭ 2026 (ФИПИ, 05.11.2025; 2027 — без изменений)"
+   },
+   "gen": {
+    "kind": "llm",
+    "recipe": "JSON: 7 «опорных фрагментов» в порядке текста, к каждому вопрос, верный ответ и три дистрактора (два — из текста, но не по вопросу, один — правдоподобный вывод, которого нет); модель пишет текст; скрипт проверяет, что фрагменты в тексте есть и идут по порядку; вторая модель отвечает вслепую 7/7 и объясняет, почему неверны три других. Тексты пишет модель по JSON-заданию (тема из кодификатора, уровень A2–B1 для ОГЭ, B1–B2 для ЕГЭ, длина); ключ строится из «фактов» задания, а не из текста; вторая модель решает вслепую; расхождение — брак; дедупликация по теме и нормализованному тексту; тексты ФИПИ и банков не используются."
+   },
+   "capacity": null,
+   "capacity_note": "по цене генерации и проверки",
+   "example": {
+    "k": "one",
+    "q": "According to the author, the main reason the shop survived was that\n1) its prices were the lowest in town.\n2) the owner knew every customer by name.\n3) it was the only shop open on Sundays.\n4) it sold goods from the local farms.",
+    "a": "2",
+    "e": "по опорному фрагменту 3"
+   },
+   "fidelity": {
+    "status": "unchecked"
+   }
+  },
+  {
+   "id": "eng-ege-16-reading-detail",
+   "exam": "ЕГЭ",
+   "n": 16,
+   "n_range": "12–18",
+   "title": "Чтение: полное понимание, выбор из четырёх",
+   "kes": [
+    "3.2.3"
+   ],
+   "level": "В",
+   "invariant": "текст 600–700 слов (рассказ или публицистика), семь вопросов (12–18) по порядку текста, четыре варианта, один верный; последний вопрос часто о главной мысли или значении слова",
+   "varies": "тема, текст, вопросы",
+   "answer_rule": "цифра 1–4; 1 балл",
+   "mistakes": [
+    "ответ по совпавшим словам",
+    "вывод «от себя», которого в тексте нет"
+   ],
+   "kim": {
+    "section": "чтение",
+    "score": 1,
+    "time_min": 4,
+    "answer": "краткий ответ",
+    "source": "спецификация и демоверсия ЕГЭ 2026 (ФИПИ, 05.11.2025; 2027 — без изменений)"
+   },
+   "gen": {
+    "kind": "llm",
+    "recipe": "JSON: 7 «опорных фрагментов» в порядке текста, к каждому вопрос, верный ответ и три дистрактора (два — из текста, но не по вопросу, один — правдоподобный вывод, которого нет); модель пишет текст; скрипт проверяет, что фрагменты в тексте есть и идут по порядку; вторая модель отвечает вслепую 7/7 и объясняет, почему неверны три других. Тексты пишет модель по JSON-заданию (тема из кодификатора, уровень A2–B1 для ОГЭ, B1–B2 для ЕГЭ, длина); ключ строится из «фактов» задания, а не из текста; вторая модель решает вслепую; расхождение — брак; дедупликация по теме и нормализованному тексту; тексты ФИПИ и банков не используются."
+   },
+   "capacity": null,
+   "capacity_note": "по цене генерации и проверки",
+   "example": {
+    "k": "one",
+    "q": "According to the author, the main reason the shop survived was that\n1) its prices were the lowest in town.\n2) the owner knew every customer by name.\n3) it was the only shop open on Sundays.\n4) it sold goods from the local farms.",
+    "a": "2",
+    "e": "по опорному фрагменту 3"
+   },
+   "fidelity": {
+    "status": "unchecked"
+   }
+  },
+  {
+   "id": "eng-ege-17-reading-detail",
+   "exam": "ЕГЭ",
+   "n": 17,
+   "n_range": "12–18",
+   "title": "Чтение: полное понимание, выбор из четырёх",
+   "kes": [
+    "3.2.3"
+   ],
+   "level": "В",
+   "invariant": "текст 600–700 слов (рассказ или публицистика), семь вопросов (12–18) по порядку текста, четыре варианта, один верный; последний вопрос часто о главной мысли или значении слова",
+   "varies": "тема, текст, вопросы",
+   "answer_rule": "цифра 1–4; 1 балл",
+   "mistakes": [
+    "ответ по совпавшим словам",
+    "вывод «от себя», которого в тексте нет"
+   ],
+   "kim": {
+    "section": "чтение",
+    "score": 1,
+    "time_min": 4,
+    "answer": "краткий ответ",
+    "source": "спецификация и демоверсия ЕГЭ 2026 (ФИПИ, 05.11.2025; 2027 — без изменений)"
+   },
+   "gen": {
+    "kind": "llm",
+    "recipe": "JSON: 7 «опорных фрагментов» в порядке текста, к каждому вопрос, верный ответ и три дистрактора (два — из текста, но не по вопросу, один — правдоподобный вывод, которого нет); модель пишет текст; скрипт проверяет, что фрагменты в тексте есть и идут по порядку; вторая модель отвечает вслепую 7/7 и объясняет, почему неверны три других. Тексты пишет модель по JSON-заданию (тема из кодификатора, уровень A2–B1 для ОГЭ, B1–B2 для ЕГЭ, длина); ключ строится из «фактов» задания, а не из текста; вторая модель решает вслепую; расхождение — брак; дедупликация по теме и нормализованному тексту; тексты ФИПИ и банков не используются."
+   },
+   "capacity": null,
+   "capacity_note": "по цене генерации и проверки",
+   "example": {
+    "k": "one",
+    "q": "According to the author, the main reason the shop survived was that\n1) its prices were the lowest in town.\n2) the owner knew every customer by name.\n3) it was the only shop open on Sundays.\n4) it sold goods from the local farms.",
+    "a": "2",
+    "e": "по опорному фрагменту 3"
+   },
+   "fidelity": {
+    "status": "unchecked"
+   }
+  },
+  {
+   "id": "eng-ege-18-reading-detail",
+   "exam": "ЕГЭ",
+   "n": 18,
+   "n_range": "12–18",
+   "title": "Чтение: полное понимание, выбор из четырёх",
+   "kes": [
+    "3.2.3"
+   ],
+   "level": "В",
+   "invariant": "текст 600–700 слов (рассказ или публицистика), семь вопросов (12–18) по порядку текста, четыре варианта, один верный; последний вопрос часто о главной мысли или значении слова",
+   "varies": "тема, текст, вопросы",
+   "answer_rule": "цифра 1–4; 1 балл",
+   "mistakes": [
+    "ответ по совпавшим словам",
+    "вывод «от себя», которого в тексте нет"
+   ],
+   "kim": {
+    "section": "чтение",
+    "score": 1,
+    "time_min": 4,
+    "answer": "краткий ответ",
+    "source": "спецификация и демоверсия ЕГЭ 2026 (ФИПИ, 05.11.2025; 2027 — без изменений)"
+   },
+   "gen": {
+    "kind": "llm",
+    "recipe": "JSON: 7 «опорных фрагментов» в порядке текста, к каждому вопрос, верный ответ и три дистрактора (два — из текста, но не по вопросу, один — правдоподобный вывод, которого нет); модель пишет текст; скрипт проверяет, что фрагменты в тексте есть и идут по порядку; вторая модель отвечает вслепую 7/7 и объясняет, почему неверны три других. Тексты пишет модель по JSON-заданию (тема из кодификатора, уровень A2–B1 для ОГЭ, B1–B2 для ЕГЭ, длина); ключ строится из «фактов» задания, а не из текста; вторая модель решает вслепую; расхождение — брак; дедупликация по теме и нормализованному тексту; тексты ФИПИ и банков не используются."
+   },
+   "capacity": null,
+   "capacity_note": "по цене генерации и проверки",
+   "example": {
+    "k": "one",
+    "q": "According to the author, the main reason the shop survived was that\n1) its prices were the lowest in town.\n2) the owner knew every customer by name.\n3) it was the only shop open on Sundays.\n4) it sold goods from the local farms.",
+    "a": "2",
+    "e": "по опорному фрагменту 3"
+   },
+   "fidelity": {
+    "status": "unchecked"
+   }
+  },
+  {
+   "id": "eng-ege-37-email",
+   "exam": "ЕГЭ",
+   "n": 37,
+   "n_range": "37",
+   "title": "Письмо: электронное письмо личного характера, 100–140 слов",
+   "kes": [
+    "4.3",
+    "4.4"
+   ],
+   "level": "Б",
+   "invariant": "письмо-стимул от друга с тремя вопросами и новостью; нужно ответить на три вопроса и задать три вопроса о новости; 100–140 слов (меньше 90 — 0 баллов)",
+   "varies": "тема, три вопроса друга, новость",
+   "answer_rule": "развёрнутый ответ: К1 решение задачи (2), К2 организация (2), К3 язык (2); всего 6",
+   "mistakes": [
+    "не заданы три вопроса",
+    "вопросы не о новости",
+    "меньше 90 слов",
+    "нет обращения/подписи"
+   ],
+   "kim": {
+    "section": "письмо",
+    "score": 6,
+    "time_min": 30,
+    "answer": "развёрнутый ответ",
+    "source": "спецификация и демоверсия ЕГЭ 2026 (ФИПИ, 05.11.2025; 2027 — без изменений)"
+   },
+   "gen": {
+    "kind": "llm",
+    "recipe": "модель пишет письмо-стимул (тема из кодификатора, три вопроса на разные аспекты, новость с «крючком» для вопросов); скрипт проверяет число вопросов и длину; проверка ответа ученика — ИИ по критериям К1–К3 с подсчётом слов, как в студии; клише и порядок частей — карточки flip. Тексты пишет модель по JSON-заданию (тема из кодификатора, уровень A2–B1 для ОГЭ, B1–B2 для ЕГЭ, длина); ключ строится из «фактов» задания, а не из текста; вторая модель решает вслепую; расхождение — брак; дедупликация по теме и нормализованному тексту; тексты ФИПИ и банков не используются."
+   },
+   "capacity": null,
+   "capacity_note": "по цене генерации и проверки",
+   "example": {
+    "k": "open",
+    "q": "You have received an email from your English-speaking pen friend Ben: «…Last week I started learning to play the drums. What music do you like? Do you play any instrument? How do you usually spend your evenings?…» Write an email to Ben: answer his 3 questions, ask 3 questions about his drum lessons. Write 100–140 words.",
+    "a": "критерии К1–К3",
+    "e": "проверка по критериям"
+   },
+   "fidelity": {
+    "status": "unchecked"
+   }
+  },
+  {
+   "id": "eng-ege-38-project-essay",
+   "exam": "ЕГЭ",
+   "n": 38,
+   "n_range": "38",
+   "title": "Письмо: развёрнутое высказывание по таблице или диаграмме, 200–250 слов",
+   "kes": [
+    "4.5",
+    "4.6"
+   ],
+   "level": "Б",
+   "invariant": "проект на тему; данные опроса (таблица или диаграмма, 5 строк); план из 5 пунктов: вступление, 2–3 факта, 1–2 сравнения, проблема и решение, вывод; 200–250 слов (меньше 180 — 0)",
+   "varies": "тема проекта, данные опроса (числа), формулировка",
+   "answer_rule": "развёрнутый ответ: К1 (3), К2 (3), К3 (3), К4 (3), К5 (2); всего 14",
+   "mistakes": [
+    "факты без чисел",
+    "сравнение не по данным",
+    "нет проблемы и решения",
+    "меньше 180 слов"
+   ],
+   "kim": {
+    "section": "письмо",
+    "score": 14,
+    "time_min": 60,
+    "answer": "развёрнутый ответ",
+    "source": "спецификация и демоверсия ЕГЭ 2026 (ФИПИ, 05.11.2025; 2027 — без изменений)"
+   },
+   "gen": {
+    "kind": "llm",
+    "recipe": "param + llm: скрипт генерирует таблицу (тема, 5 категорий, проценты в сумме 100 либо независимые), модель пишет формулировку задания; опорные факты и сравнения считает скрипт (макс./мин., разница), карточки one/num на чтение диаграммы; ответ ученика — ИИ по К1–К5 плюс проверка, что названы верные числа. Тексты пишет модель по JSON-заданию (тема из кодификатора, уровень A2–B1 для ОГЭ, B1–B2 для ЕГЭ, длина); ключ строится из «фактов» задания, а не из текста; вторая модель решает вслепую; расхождение — брак; дедупликация по теме и нормализованному тексту; тексты ФИПИ и банков не используются."
+   },
+   "capacity": null,
+   "capacity_note": "по цене генерации и проверки",
+   "example": {
+    "k": "open",
+    "q": "Imagine that you are doing a project on what teenagers in Zetland do in their free time. You have found some data on the subject (see the table). Write 200–250 words: … Free-time activity | %: Sport 34, Computer games 28, Reading 15, Music 13, Volunteering 10.",
+    "a": "критерии К1–К5",
+    "e": "проверка по критериям; факты и сравнения — по таблице"
+   },
+   "fidelity": {
+    "status": "unchecked"
+   }
+  },
+  {
+   "id": "eng-ege-39-read-aloud",
+   "exam": "ЕГЭ",
+   "n": 39,
+   "n_range": "39",
+   "title": "Говорение: чтение текста вслух",
+   "kes": [
+    "5.1"
+   ],
+   "level": "Б",
+   "invariant": "научно-популярный текст 120–150 слов, 1,5 минуты подготовки, 1,5 минуты чтения",
+   "varies": "тема, текст",
+   "answer_rule": "развёрнутый ответ: 1 балл (не более пяти фонетических ошибок, не более двух грубых)",
+   "mistakes": [
+    "ударение в многосложных словах",
+    "th, окончания -ed",
+    "интонация перечисления"
+   ],
+   "kim": {
+    "section": "говорение",
+    "score": 1,
+    "time_min": 1.5,
+    "answer": "развёрнутый ответ",
+    "source": "спецификация и демоверсия ЕГЭ 2026 (ФИПИ, 05.11.2025; 2027 — без изменений)"
+   },
+   "gen": {
+    "kind": "llm",
+    "recipe": "модель пишет текст с 8–10 «фонетическими ловушками» из списка (слова с немыми буквами, -ed после глухих, ударение); скрипт проверяет длину и что ловушки есть; карточки flip на транскрипцию ловушек (словарь — CEFR-J/собственный). Оценка чтения — вне карточек. Тексты пишет модель по JSON-заданию (тема из кодификатора, уровень A2–B1 для ОГЭ, B1–B2 для ЕГЭ, длина); ключ строится из «фактов» задания, а не из текста; вторая модель решает вслепую; расхождение — брак; дедупликация по теме и нормализованному тексту; тексты ФИПИ и банков не используются."
+   },
+   "capacity": null,
+   "capacity_note": "по цене генерации и проверки",
+   "example": {
+    "k": "open",
+    "q": "Task 1. Imagine that you are preparing a project with your friend. You have found some interesting material and want to read this text to your friend. You have 1.5 minutes to read the text silently, then be ready to read it aloud. «Bees are among the most useful insects on the planet…»",
+    "a": "фонетическая оценка",
+    "e": "ловушки: insects, useful, planet, …"
+   },
+   "fidelity": {
+    "status": "unchecked"
+   }
+  },
+  {
+   "id": "eng-ege-40-questions",
+   "exam": "ЕГЭ",
+   "n": 40,
+   "n_range": "40",
+   "title": "Говорение: условный диалог-расспрос, четыре прямых вопроса по объявлению",
+   "kes": [
+    "5.2"
+   ],
+   "level": "Б",
+   "invariant": "объявление (курсы, экскурсия, клуб, отель) и четыре ключевых слова; нужно задать четыре прямых вопроса, по 20 секунд на вопрос",
+   "varies": "объект объявления, четыре ключевых слова (цена, время, место, скидки, длительность…)",
+   "answer_rule": "по 1 баллу за каждый прямой вопрос нужного содержания; всего 4",
+   "mistakes": [
+    "косвенный вопрос (I would like to know…)",
+    "вопрос без вспомогательного глагола",
+    "не по ключевому слову"
+   ],
+   "kim": {
+    "section": "говорение",
+    "score": 4,
+    "time_min": 2,
+    "answer": "развёрнутый ответ",
+    "source": "спецификация и демоверсия ЕГЭ 2026 (ФИПИ, 05.11.2025; 2027 — без изменений)"
+   },
+   "gen": {
+    "kind": "llm",
+    "recipe": "param + llm: скрипт выбирает объект и 4 ключевых слова из собственного списка (25 объектов × 12 ключей), модель пишет объявление на 40–60 слов; эталонные вопросы строит правило (ключ → шаблон вопроса), карточки open с проверкой ИИ «прямой ли вопрос и по ключу ли», плюс one на выбор правильно построенного вопроса. Тексты пишет модель по JSON-заданию (тема из кодификатора, уровень A2–B1 для ОГЭ, B1–B2 для ЕГЭ, длина); ключ строится из «фактов» задания, а не из текста; вторая модель решает вслепую; расхождение — брак; дедупликация по теме и нормализованному тексту; тексты ФИПИ и банков не используются."
+   },
+   "capacity": null,
+   "capacity_note": "по цене генерации и проверки",
+   "example": {
+    "k": "open",
+    "q": "Task 2. Study the advertisement. «Riverside Pottery Studio: evening classes for beginners». In 1.5 minutes you are to ask four direct questions about: 1) starting date; 2) price of the course; 3) group size; 4) discounts for students.",
+    "a": "When does the course start? How much does the course cost? …",
+    "e": "шаблон вопроса по ключу"
+   },
+   "fidelity": {
+    "status": "unchecked"
+   }
+  },
+  {
+   "id": "eng-ege-41-interview",
+   "exam": "ЕГЭ",
+   "n": 41,
+   "n_range": "41",
+   "title": "Говорение: условный диалог-интервью, пять ответов",
+   "kes": [
+    "5.3"
+   ],
+   "level": "Б",
+   "invariant": "интервьюер задаёт пять вопросов на тему; каждый ответ — не менее двух фраз, по 40 секунд",
+   "varies": "тема, пять вопросов",
+   "answer_rule": "по 1 баллу за полный ответ (две фразы по вопросу); всего 5",
+   "mistakes": [
+    "ответ одной фразой",
+    "ответ не на вопрос",
+    "нет обоснования"
+   ],
+   "kim": {
+    "section": "говорение",
+    "score": 5,
+    "time_min": 2.5,
+    "answer": "развёрнутый ответ",
+    "source": "спецификация и демоверсия ЕГЭ 2026 (ФИПИ, 05.11.2025; 2027 — без изменений)"
+   },
+   "gen": {
+    "kind": "llm",
+    "recipe": "модель пишет 5 вопросов по теме кодификатора (разного типа: факт, мнение, причина, совет); скрипт проверяет, что вопросы разные и открытые; ответы ученика — ИИ: две ли фразы, по вопросу ли. Аудио вопросов — TTS. Тексты пишет модель по JSON-заданию (тема из кодификатора, уровень A2–B1 для ОГЭ, B1–B2 для ЕГЭ, длина); ключ строится из «фактов» задания, а не из текста; вторая модель решает вслепую; расхождение — брак; дедупликация по теме и нормализованному тексту; тексты ФИПИ и банков не используются."
+   },
+   "capacity": null,
+   "capacity_note": "по цене генерации и проверки",
+   "example": {
+    "k": "open",
+    "q": "Task 3. You are going to take part in an interview on the topic «Sport in your life». Give full answers (at least two sentences) to five questions. Question 1: What sports are popular with teenagers in your region?",
+    "a": "две фразы по вопросу",
+    "e": "проверка ИИ"
+   },
+   "fidelity": {
+    "status": "unchecked"
+   }
+  },
+  {
+   "id": "eng-ege-42-photos",
+   "exam": "ЕГЭ",
+   "n": 42,
+   "n_range": "42",
+   "title": "Говорение: монолог с обоснованием выбора двух фотографий из трёх",
+   "kes": [
+    "5.4"
+   ],
+   "level": "Б",
+   "invariant": "проектная тема и три фотографии; выбрать две, описать по плану из 5 пунктов, 12–15 фраз (7 фраз и меньше — 0)",
+   "varies": "тема проекта, фотографии (описания-заглушки), план",
+   "answer_rule": "развёрнутый ответ: 10 баллов по критериям решения задачи, организации и языка",
+   "mistakes": [
+    "описаны все три фото",
+    "нет вывода",
+    "меньше 12 фраз",
+    "нет сравнения/различия"
+   ],
+   "kim": {
+    "section": "говорение",
+    "score": 10,
+    "time_min": 3.5,
+    "answer": "развёрнутый ответ",
+    "source": "спецификация и демоверсия ЕГЭ 2026 (ФИПИ, 05.11.2025; 2027 — без изменений)"
+   },
+   "gen": {
+    "kind": "llm",
+    "recipe": "модель пишет тему проекта и три текстовых описания фотографий (для карточек без картинок) и «эталонный» план ответа; карточки flip на клише по пунктам плана; ответ ученика — ИИ по критериям. Настоящие фото — только свои или CC0. Тексты пишет модель по JSON-заданию (тема из кодификатора, уровень A2–B1 для ОГЭ, B1–B2 для ЕГЭ, длина); ключ строится из «фактов» задания, а не из текста; вторая модель решает вслепую; расхождение — брак; дедупликация по теме и нормализованному тексту; тексты ФИПИ и банков не используются."
+   },
+   "capacity": null,
+   "capacity_note": "по цене генерации и проверки",
+   "example": {
+    "k": "open",
+    "q": "Task 4. Imagine that you and your friend are doing a school project «Ways of spending a summer weekend». You have found three photos. Choose two and explain your choice, describe them, compare, say why they illustrate the project, and give your opinion.",
+    "a": "12–15 фраз по плану",
+    "e": "проверка ИИ"
+   },
+   "fidelity": {
+    "status": "unchecked"
+   }
+  },
+  {
+   "id": "eng-oge-01-listening-dialogue",
+   "exam": "ОГЭ",
+   "n": 1,
+   "n_range": "1–4",
+   "title": "Аудирование: краткий диалог, выбор из трёх",
+   "kes": [
+    "3.1.2"
+   ],
+   "level": "Б",
+   "invariant": "бытовой диалог 60–90 слов, один вопрос с тремя вариантами (часто: где происходит разговор, что решили, о чём говорят)",
+   "varies": "ситуация, участники, вопрос",
+   "answer_rule": "цифра 1–3; 1 балл",
+   "mistakes": [
+    "ответ по первому упомянутому месту/предмету"
+   ],
+   "kim": {
+    "section": "аудирование",
+    "score": 1,
+    "time_min": 3,
+    "answer": "краткий ответ",
+    "source": "спецификация и демоверсия ОГЭ 2026 (ФИПИ, 06.11.2025; 2027 — без изменений)"
+   },
+   "gen": {
+    "kind": "llm",
+    "recipe": "JSON: ситуация, ответ и два дистрактора, упомянутых в диалоге; модель пишет диалог A2; вторая модель отвечает вслепую. TTS. Тексты пишет модель по JSON-заданию (тема из кодификатора, уровень A2–B1 для ОГЭ, B1–B2 для ЕГЭ, длина); ключ строится из «фактов» задания, а не из текста; вторая модель решает вслепую; расхождение — брак; дедупликация по теме и нормализованному тексту; тексты ФИПИ и банков не используются."
+   },
+   "capacity": null,
+   "capacity_note": "по цене генерации и проверки",
+   "example": {
+    "k": "one",
+    "q": "Вы услышите разговор друзей. Где они собираются встретиться?\n1) At the cinema.\n2) At the bus stop.\n3) At Ann's place.",
+    "a": "2",
+    "e": "по факту задания"
+   },
+   "fidelity": {
+    "status": "unchecked"
+   }
+  },
+  {
+   "id": "eng-oge-02-listening-dialogue",
+   "exam": "ОГЭ",
+   "n": 2,
+   "n_range": "1–4",
+   "title": "Аудирование: краткий диалог, выбор из трёх",
+   "kes": [
+    "3.1.2"
+   ],
+   "level": "Б",
+   "invariant": "бытовой диалог 60–90 слов, один вопрос с тремя вариантами (часто: где происходит разговор, что решили, о чём говорят)",
+   "varies": "ситуация, участники, вопрос",
+   "answer_rule": "цифра 1–3; 1 балл",
+   "mistakes": [
+    "ответ по первому упомянутому месту/предмету"
+   ],
+   "kim": {
+    "section": "аудирование",
+    "score": 1,
+    "time_min": 3,
+    "answer": "краткий ответ",
+    "source": "спецификация и демоверсия ОГЭ 2026 (ФИПИ, 06.11.2025; 2027 — без изменений)"
+   },
+   "gen": {
+    "kind": "llm",
+    "recipe": "JSON: ситуация, ответ и два дистрактора, упомянутых в диалоге; модель пишет диалог A2; вторая модель отвечает вслепую. TTS. Тексты пишет модель по JSON-заданию (тема из кодификатора, уровень A2–B1 для ОГЭ, B1–B2 для ЕГЭ, длина); ключ строится из «фактов» задания, а не из текста; вторая модель решает вслепую; расхождение — брак; дедупликация по теме и нормализованному тексту; тексты ФИПИ и банков не используются."
+   },
+   "capacity": null,
+   "capacity_note": "по цене генерации и проверки",
+   "example": {
+    "k": "one",
+    "q": "Вы услышите разговор друзей. Где они собираются встретиться?\n1) At the cinema.\n2) At the bus stop.\n3) At Ann's place.",
+    "a": "2",
+    "e": "по факту задания"
+   },
+   "fidelity": {
+    "status": "unchecked"
+   }
+  },
+  {
+   "id": "eng-oge-03-listening-dialogue",
+   "exam": "ОГЭ",
+   "n": 3,
+   "n_range": "1–4",
+   "title": "Аудирование: краткий диалог, выбор из трёх",
+   "kes": [
+    "3.1.2"
+   ],
+   "level": "Б",
+   "invariant": "бытовой диалог 60–90 слов, один вопрос с тремя вариантами (часто: где происходит разговор, что решили, о чём говорят)",
+   "varies": "ситуация, участники, вопрос",
+   "answer_rule": "цифра 1–3; 1 балл",
+   "mistakes": [
+    "ответ по первому упомянутому месту/предмету"
+   ],
+   "kim": {
+    "section": "аудирование",
+    "score": 1,
+    "time_min": 3,
+    "answer": "краткий ответ",
+    "source": "спецификация и демоверсия ОГЭ 2026 (ФИПИ, 06.11.2025; 2027 — без изменений)"
+   },
+   "gen": {
+    "kind": "llm",
+    "recipe": "JSON: ситуация, ответ и два дистрактора, упомянутых в диалоге; модель пишет диалог A2; вторая модель отвечает вслепую. TTS. Тексты пишет модель по JSON-заданию (тема из кодификатора, уровень A2–B1 для ОГЭ, B1–B2 для ЕГЭ, длина); ключ строится из «фактов» задания, а не из текста; вторая модель решает вслепую; расхождение — брак; дедупликация по теме и нормализованному тексту; тексты ФИПИ и банков не используются."
+   },
+   "capacity": null,
+   "capacity_note": "по цене генерации и проверки",
+   "example": {
+    "k": "one",
+    "q": "Вы услышите разговор друзей. Где они собираются встретиться?\n1) At the cinema.\n2) At the bus stop.\n3) At Ann's place.",
+    "a": "2",
+    "e": "по факту задания"
+   },
+   "fidelity": {
+    "status": "unchecked"
+   }
+  },
+  {
+   "id": "eng-oge-04-listening-dialogue",
+   "exam": "ОГЭ",
+   "n": 4,
+   "n_range": "1–4",
+   "title": "Аудирование: краткий диалог, выбор из трёх",
+   "kes": [
+    "3.1.2"
+   ],
+   "level": "Б",
+   "invariant": "бытовой диалог 60–90 слов, один вопрос с тремя вариантами (часто: где происходит разговор, что решили, о чём говорят)",
+   "varies": "ситуация, участники, вопрос",
+   "answer_rule": "цифра 1–3; 1 балл",
+   "mistakes": [
+    "ответ по первому упомянутому месту/предмету"
+   ],
+   "kim": {
+    "section": "аудирование",
+    "score": 1,
+    "time_min": 3,
+    "answer": "краткий ответ",
+    "source": "спецификация и демоверсия ОГЭ 2026 (ФИПИ, 06.11.2025; 2027 — без изменений)"
+   },
+   "gen": {
+    "kind": "llm",
+    "recipe": "JSON: ситуация, ответ и два дистрактора, упомянутых в диалоге; модель пишет диалог A2; вторая модель отвечает вслепую. TTS. Тексты пишет модель по JSON-заданию (тема из кодификатора, уровень A2–B1 для ОГЭ, B1–B2 для ЕГЭ, длина); ключ строится из «фактов» задания, а не из текста; вторая модель решает вслепую; расхождение — брак; дедупликация по теме и нормализованному тексту; тексты ФИПИ и банков не используются."
+   },
+   "capacity": null,
+   "capacity_note": "по цене генерации и проверки",
+   "example": {
+    "k": "one",
+    "q": "Вы услышите разговор друзей. Где они собираются встретиться?\n1) At the cinema.\n2) At the bus stop.\n3) At Ann's place.",
+    "a": "2",
+    "e": "по факту задания"
+   },
+   "fidelity": {
+    "status": "unchecked"
+   }
+  },
+  {
+   "id": "eng-oge-05-listening-match",
+   "exam": "ОГЭ",
+   "n": 5,
+   "n_range": "5",
+   "title": "Аудирование: пять высказываний A–E и шесть рубрик 1–6",
+   "kes": [
+    "3.1.1"
+   ],
+   "level": "Б",
+   "invariant": "пять монологов (40–60 слов) и шесть тем/рубрик, одна лишняя",
+   "varies": "тема, говорящие, рубрики",
+   "answer_rule": "последовательность из 5 цифр; 5 баллов (по 1 за каждое соответствие)",
+   "mistakes": [
+    "рубрика по совпавшему слову"
+   ],
+   "kim": {
+    "section": "аудирование",
+    "score": 5,
+    "time_min": 5,
+    "answer": "краткий ответ",
+    "source": "спецификация и демоверсия ОГЭ 2026 (ФИПИ, 06.11.2025; 2027 — без изменений)"
+   },
+   "gen": {
+    "kind": "llm",
+    "recipe": "как ЕГЭ 1, но пять говорящих, уровень A2 и по 1 баллу за позицию; вторая модель сопоставляет вслепую 5/5. Тексты пишет модель по JSON-заданию (тема из кодификатора, уровень A2–B1 для ОГЭ, B1–B2 для ЕГЭ, длина); ключ строится из «фактов» задания, а не из текста; вторая модель решает вслепую; расхождение — брак; дедупликация по теме и нормализованному тексту; тексты ФИПИ и банков не используются."
+   },
+   "capacity": null,
+   "capacity_note": "по цене генерации и проверки",
+   "example": {
+    "k": "seq",
+    "q": "Вы услышите пять высказываний о домашних животных. Установите соответствие между высказываниями A–E и рубриками 1–6. Одна рубрика лишняя.",
+    "a": "41625",
+    "e": "по идеям говорящих"
+   },
+   "fidelity": {
+    "status": "unchecked"
+   }
+  },
+  {
+   "id": "eng-oge-06-listening-table",
+   "exam": "ОГЭ",
+   "n": 6,
+   "n_range": "6–11",
+   "title": "Аудирование: заполнение таблицы одним словом",
+   "kes": [
+    "3.1.3"
+   ],
+   "level": "Б",
+   "invariant": "монолог или интервью 250–300 слов; таблица с шестью пропусками (6–11), в каждый — одно слово из текста (числа словами, без артиклей)",
+   "varies": "тема, факты таблицы",
+   "answer_rule": "слово как в тексте; 1 балл; в бланк — без артикля, числа словами",
+   "mistakes": [
+    "два слова вместо одного",
+    "число цифрами",
+    "слово не из текста"
+   ],
+   "kim": {
+    "section": "аудирование",
+    "score": 1,
+    "time_min": 3,
+    "answer": "одно слово из текста, числа словами, без артиклей",
+    "source": "спецификация и демоверсия ОГЭ 2026 (ФИПИ, 06.11.2025; 2027 — без изменений)"
+   },
+   "gen": {
+    "kind": "llm",
+    "recipe": "JSON: 6 фактов «поле → слово» (существительное, число словом, прилагательное); модель пишет монолог, где каждое слово встречается ровно один раз в нужном смысле; скрипт проверяет, что слово в тексте есть, а в таблице — нет; вторая модель заполняет вслепую 6/6. TTS. Тексты пишет модель по JSON-заданию (тема из кодификатора, уровень A2–B1 для ОГЭ, B1–B2 для ЕГЭ, длина); ключ строится из «фактов» задания, а не из текста; вторая модель решает вслепую; расхождение — брак; дедупликация по теме и нормализованному тексту; тексты ФИПИ и банков не используются."
+   },
+   "capacity": null,
+   "capacity_note": "по цене генерации и проверки",
+   "example": {
+    "k": "word",
+    "q": "Заполните пропуск в таблице одним словом из текста.\nSummer camp «Green Hill»: Number of days — ____ .",
+    "a": [
+     "ten"
+    ],
+    "e": "число словами"
+   },
+   "fidelity": {
+    "status": "unchecked"
+   }
+  },
+  {
+   "id": "eng-oge-07-listening-table",
+   "exam": "ОГЭ",
+   "n": 7,
+   "n_range": "6–11",
+   "title": "Аудирование: заполнение таблицы одним словом",
+   "kes": [
+    "3.1.3"
+   ],
+   "level": "Б",
+   "invariant": "монолог или интервью 250–300 слов; таблица с шестью пропусками (6–11), в каждый — одно слово из текста (числа словами, без артиклей)",
+   "varies": "тема, факты таблицы",
+   "answer_rule": "слово как в тексте; 1 балл; в бланк — без артикля, числа словами",
+   "mistakes": [
+    "два слова вместо одного",
+    "число цифрами",
+    "слово не из текста"
+   ],
+   "kim": {
+    "section": "аудирование",
+    "score": 1,
+    "time_min": 3,
+    "answer": "одно слово из текста, числа словами, без артиклей",
+    "source": "спецификация и демоверсия ОГЭ 2026 (ФИПИ, 06.11.2025; 2027 — без изменений)"
+   },
+   "gen": {
+    "kind": "llm",
+    "recipe": "JSON: 6 фактов «поле → слово» (существительное, число словом, прилагательное); модель пишет монолог, где каждое слово встречается ровно один раз в нужном смысле; скрипт проверяет, что слово в тексте есть, а в таблице — нет; вторая модель заполняет вслепую 6/6. TTS. Тексты пишет модель по JSON-заданию (тема из кодификатора, уровень A2–B1 для ОГЭ, B1–B2 для ЕГЭ, длина); ключ строится из «фактов» задания, а не из текста; вторая модель решает вслепую; расхождение — брак; дедупликация по теме и нормализованному тексту; тексты ФИПИ и банков не используются."
+   },
+   "capacity": null,
+   "capacity_note": "по цене генерации и проверки",
+   "example": {
+    "k": "word",
+    "q": "Заполните пропуск в таблице одним словом из текста.\nSummer camp «Green Hill»: Number of days — ____ .",
+    "a": [
+     "ten"
+    ],
+    "e": "число словами"
+   },
+   "fidelity": {
+    "status": "unchecked"
+   }
+  },
+  {
+   "id": "eng-oge-08-listening-table",
+   "exam": "ОГЭ",
+   "n": 8,
+   "n_range": "6–11",
+   "title": "Аудирование: заполнение таблицы одним словом",
+   "kes": [
+    "3.1.3"
+   ],
+   "level": "Б",
+   "invariant": "монолог или интервью 250–300 слов; таблица с шестью пропусками (6–11), в каждый — одно слово из текста (числа словами, без артиклей)",
+   "varies": "тема, факты таблицы",
+   "answer_rule": "слово как в тексте; 1 балл; в бланк — без артикля, числа словами",
+   "mistakes": [
+    "два слова вместо одного",
+    "число цифрами",
+    "слово не из текста"
+   ],
+   "kim": {
+    "section": "аудирование",
+    "score": 1,
+    "time_min": 3,
+    "answer": "одно слово из текста, числа словами, без артиклей",
+    "source": "спецификация и демоверсия ОГЭ 2026 (ФИПИ, 06.11.2025; 2027 — без изменений)"
+   },
+   "gen": {
+    "kind": "llm",
+    "recipe": "JSON: 6 фактов «поле → слово» (существительное, число словом, прилагательное); модель пишет монолог, где каждое слово встречается ровно один раз в нужном смысле; скрипт проверяет, что слово в тексте есть, а в таблице — нет; вторая модель заполняет вслепую 6/6. TTS. Тексты пишет модель по JSON-заданию (тема из кодификатора, уровень A2–B1 для ОГЭ, B1–B2 для ЕГЭ, длина); ключ строится из «фактов» задания, а не из текста; вторая модель решает вслепую; расхождение — брак; дедупликация по теме и нормализованному тексту; тексты ФИПИ и банков не используются."
+   },
+   "capacity": null,
+   "capacity_note": "по цене генерации и проверки",
+   "example": {
+    "k": "word",
+    "q": "Заполните пропуск в таблице одним словом из текста.\nSummer camp «Green Hill»: Number of days — ____ .",
+    "a": [
+     "ten"
+    ],
+    "e": "число словами"
+   },
+   "fidelity": {
+    "status": "unchecked"
+   }
+  },
+  {
+   "id": "eng-oge-09-listening-table",
+   "exam": "ОГЭ",
+   "n": 9,
+   "n_range": "6–11",
+   "title": "Аудирование: заполнение таблицы одним словом",
+   "kes": [
+    "3.1.3"
+   ],
+   "level": "Б",
+   "invariant": "монолог или интервью 250–300 слов; таблица с шестью пропусками (6–11), в каждый — одно слово из текста (числа словами, без артиклей)",
+   "varies": "тема, факты таблицы",
+   "answer_rule": "слово как в тексте; 1 балл; в бланк — без артикля, числа словами",
+   "mistakes": [
+    "два слова вместо одного",
+    "число цифрами",
+    "слово не из текста"
+   ],
+   "kim": {
+    "section": "аудирование",
+    "score": 1,
+    "time_min": 3,
+    "answer": "одно слово из текста, числа словами, без артиклей",
+    "source": "спецификация и демоверсия ОГЭ 2026 (ФИПИ, 06.11.2025; 2027 — без изменений)"
+   },
+   "gen": {
+    "kind": "llm",
+    "recipe": "JSON: 6 фактов «поле → слово» (существительное, число словом, прилагательное); модель пишет монолог, где каждое слово встречается ровно один раз в нужном смысле; скрипт проверяет, что слово в тексте есть, а в таблице — нет; вторая модель заполняет вслепую 6/6. TTS. Тексты пишет модель по JSON-заданию (тема из кодификатора, уровень A2–B1 для ОГЭ, B1–B2 для ЕГЭ, длина); ключ строится из «фактов» задания, а не из текста; вторая модель решает вслепую; расхождение — брак; дедупликация по теме и нормализованному тексту; тексты ФИПИ и банков не используются."
+   },
+   "capacity": null,
+   "capacity_note": "по цене генерации и проверки",
+   "example": {
+    "k": "word",
+    "q": "Заполните пропуск в таблице одним словом из текста.\nSummer camp «Green Hill»: Number of days — ____ .",
+    "a": [
+     "ten"
+    ],
+    "e": "число словами"
+   },
+   "fidelity": {
+    "status": "unchecked"
+   }
+  },
+  {
+   "id": "eng-oge-10-listening-table",
+   "exam": "ОГЭ",
+   "n": 10,
+   "n_range": "6–11",
+   "title": "Аудирование: заполнение таблицы одним словом",
+   "kes": [
+    "3.1.3"
+   ],
+   "level": "Б",
+   "invariant": "монолог или интервью 250–300 слов; таблица с шестью пропусками (6–11), в каждый — одно слово из текста (числа словами, без артиклей)",
+   "varies": "тема, факты таблицы",
+   "answer_rule": "слово как в тексте; 1 балл; в бланк — без артикля, числа словами",
+   "mistakes": [
+    "два слова вместо одного",
+    "число цифрами",
+    "слово не из текста"
+   ],
+   "kim": {
+    "section": "аудирование",
+    "score": 1,
+    "time_min": 3,
+    "answer": "одно слово из текста, числа словами, без артиклей",
+    "source": "спецификация и демоверсия ОГЭ 2026 (ФИПИ, 06.11.2025; 2027 — без изменений)"
+   },
+   "gen": {
+    "kind": "llm",
+    "recipe": "JSON: 6 фактов «поле → слово» (существительное, число словом, прилагательное); модель пишет монолог, где каждое слово встречается ровно один раз в нужном смысле; скрипт проверяет, что слово в тексте есть, а в таблице — нет; вторая модель заполняет вслепую 6/6. TTS. Тексты пишет модель по JSON-заданию (тема из кодификатора, уровень A2–B1 для ОГЭ, B1–B2 для ЕГЭ, длина); ключ строится из «фактов» задания, а не из текста; вторая модель решает вслепую; расхождение — брак; дедупликация по теме и нормализованному тексту; тексты ФИПИ и банков не используются."
+   },
+   "capacity": null,
+   "capacity_note": "по цене генерации и проверки",
+   "example": {
+    "k": "word",
+    "q": "Заполните пропуск в таблице одним словом из текста.\nSummer camp «Green Hill»: Number of days — ____ .",
+    "a": [
+     "ten"
+    ],
+    "e": "число словами"
+   },
+   "fidelity": {
+    "status": "unchecked"
+   }
+  },
+  {
+   "id": "eng-oge-11-listening-table",
+   "exam": "ОГЭ",
+   "n": 11,
+   "n_range": "6–11",
+   "title": "Аудирование: заполнение таблицы одним словом",
+   "kes": [
+    "3.1.3"
+   ],
+   "level": "Б",
+   "invariant": "монолог или интервью 250–300 слов; таблица с шестью пропусками (6–11), в каждый — одно слово из текста (числа словами, без артиклей)",
+   "varies": "тема, факты таблицы",
+   "answer_rule": "слово как в тексте; 1 балл; в бланк — без артикля, числа словами",
+   "mistakes": [
+    "два слова вместо одного",
+    "число цифрами",
+    "слово не из текста"
+   ],
+   "kim": {
+    "section": "аудирование",
+    "score": 1,
+    "time_min": 3,
+    "answer": "одно слово из текста, числа словами, без артиклей",
+    "source": "спецификация и демоверсия ОГЭ 2026 (ФИПИ, 06.11.2025; 2027 — без изменений)"
+   },
+   "gen": {
+    "kind": "llm",
+    "recipe": "JSON: 6 фактов «поле → слово» (существительное, число словом, прилагательное); модель пишет монолог, где каждое слово встречается ровно один раз в нужном смысле; скрипт проверяет, что слово в тексте есть, а в таблице — нет; вторая модель заполняет вслепую 6/6. TTS. Тексты пишет модель по JSON-заданию (тема из кодификатора, уровень A2–B1 для ОГЭ, B1–B2 для ЕГЭ, длина); ключ строится из «фактов» задания, а не из текста; вторая модель решает вслепую; расхождение — брак; дедупликация по теме и нормализованному тексту; тексты ФИПИ и банков не используются."
+   },
+   "capacity": null,
+   "capacity_note": "по цене генерации и проверки",
+   "example": {
+    "k": "word",
+    "q": "Заполните пропуск в таблице одним словом из текста.\nSummer camp «Green Hill»: Number of days — ____ .",
+    "a": [
+     "ten"
+    ],
+    "e": "число словами"
+   },
+   "fidelity": {
+    "status": "unchecked"
+   }
+  },
+  {
+   "id": "eng-oge-12-reading-match",
+   "exam": "ОГЭ",
+   "n": 12,
+   "n_range": "12",
+   "title": "Чтение: тексты A–F и вопросы 1–7",
+   "kes": [
+    "3.2.1"
+   ],
+   "level": "Б",
+   "invariant": "шесть текстов (50–80 слов) одной темы, семь вопросов «в каком тексте говорится о…», один лишний",
+   "varies": "тема, тексты, вопросы",
+   "answer_rule": "последовательность из 6 цифр; 6 баллов (по 1 за позицию)",
+   "mistakes": [
+    "вопрос по общему слову подходит к двум текстам"
+   ],
+   "kim": {
+    "section": "чтение",
+    "score": 6,
+    "time_min": 10,
+    "answer": "краткий ответ",
+    "source": "спецификация и демоверсия ОГЭ 2026 (ФИПИ, 06.11.2025; 2027 — без изменений)"
+   },
+   "gen": {
+    "kind": "llm",
+    "recipe": "JSON: тема, шесть фактов-«ответов» и седьмой-дистрактор; модель пишет тексты A2; скрипт проверяет, что слово из вопроса не стоит дословно в тексте; вторая модель решает вслепую 6/6. Тексты пишет модель по JSON-заданию (тема из кодификатора, уровень A2–B1 для ОГЭ, B1–B2 для ЕГЭ, длина); ключ строится из «фактов» задания, а не из текста; вторая модель решает вслепую; расхождение — брак; дедупликация по теме и нормализованному тексту; тексты ФИПИ и банков не используются."
+   },
+   "capacity": null,
+   "capacity_note": "по цене генерации и проверки",
+   "example": {
+    "k": "seq",
+    "q": "Прочитайте тексты A–F о музеях. Установите, в каком тексте можно найти ответ на каждый из вопросов 1–7. Один вопрос лишний.\n1. Which museum is free for schoolchildren? …",
+    "a": "352614",
+    "e": "по фактам"
+   },
+   "fidelity": {
+    "status": "unchecked"
+   }
+  },
+  {
+   "id": "eng-oge-13-reading-tfns",
+   "exam": "ОГЭ",
+   "n": 13,
+   "n_range": "13–19",
+   "title": "Чтение: True / False / Not stated по тексту",
+   "kes": [
+    "3.2.3"
+   ],
+   "level": "Б",
+   "invariant": "текст 350–450 слов, семь утверждений (13–19) по порядку текста; 1 — True, 2 — False, 3 — Not stated",
+   "varies": "тема, текст, утверждения",
+   "answer_rule": "цифра 1–3; 1 балл",
+   "mistakes": [
+    "Not stated принимают за False",
+    "вывод от себя"
+   ],
+   "kim": {
+    "section": "чтение",
+    "score": 1,
+    "time_min": 4,
+    "answer": "краткий ответ",
+    "source": "спецификация и демоверсия ОГЭ 2026 (ФИПИ, 06.11.2025; 2027 — без изменений)"
+   },
+   "gen": {
+    "kind": "llm",
+    "recipe": "как ЕГЭ 2, но по письменному тексту A2–B1; JSON из 7 фактов с пометками; скрипт проверяет, что слова not-stated-утверждений в тексте отсутствуют; вторая модель размечает вслепую 7/7. Тексты пишет модель по JSON-заданию (тема из кодификатора, уровень A2–B1 для ОГЭ, B1–B2 для ЕГЭ, длина); ключ строится из «фактов» задания, а не из текста; вторая модель решает вслепую; расхождение — брак; дедупликация по теме и нормализованному тексту; тексты ФИПИ и банков не используются."
+   },
+   "capacity": null,
+   "capacity_note": "по цене генерации и проверки",
+   "example": {
+    "k": "one",
+    "q": "Ann's family moved to the village because of her father's job.\n1) True\n2) False\n3) Not stated",
+    "a": "3",
+    "e": "по факту задания"
+   },
+   "fidelity": {
+    "status": "unchecked"
+   }
+  },
+  {
+   "id": "eng-oge-14-reading-tfns",
+   "exam": "ОГЭ",
+   "n": 14,
+   "n_range": "13–19",
+   "title": "Чтение: True / False / Not stated по тексту",
+   "kes": [
+    "3.2.3"
+   ],
+   "level": "Б",
+   "invariant": "текст 350–450 слов, семь утверждений (13–19) по порядку текста; 1 — True, 2 — False, 3 — Not stated",
+   "varies": "тема, текст, утверждения",
+   "answer_rule": "цифра 1–3; 1 балл",
+   "mistakes": [
+    "Not stated принимают за False",
+    "вывод от себя"
+   ],
+   "kim": {
+    "section": "чтение",
+    "score": 1,
+    "time_min": 4,
+    "answer": "краткий ответ",
+    "source": "спецификация и демоверсия ОГЭ 2026 (ФИПИ, 06.11.2025; 2027 — без изменений)"
+   },
+   "gen": {
+    "kind": "llm",
+    "recipe": "как ЕГЭ 2, но по письменному тексту A2–B1; JSON из 7 фактов с пометками; скрипт проверяет, что слова not-stated-утверждений в тексте отсутствуют; вторая модель размечает вслепую 7/7. Тексты пишет модель по JSON-заданию (тема из кодификатора, уровень A2–B1 для ОГЭ, B1–B2 для ЕГЭ, длина); ключ строится из «фактов» задания, а не из текста; вторая модель решает вслепую; расхождение — брак; дедупликация по теме и нормализованному тексту; тексты ФИПИ и банков не используются."
+   },
+   "capacity": null,
+   "capacity_note": "по цене генерации и проверки",
+   "example": {
+    "k": "one",
+    "q": "Ann's family moved to the village because of her father's job.\n1) True\n2) False\n3) Not stated",
+    "a": "3",
+    "e": "по факту задания"
+   },
+   "fidelity": {
+    "status": "unchecked"
+   }
+  },
+  {
+   "id": "eng-oge-15-reading-tfns",
+   "exam": "ОГЭ",
+   "n": 15,
+   "n_range": "13–19",
+   "title": "Чтение: True / False / Not stated по тексту",
+   "kes": [
+    "3.2.3"
+   ],
+   "level": "Б",
+   "invariant": "текст 350–450 слов, семь утверждений (13–19) по порядку текста; 1 — True, 2 — False, 3 — Not stated",
+   "varies": "тема, текст, утверждения",
+   "answer_rule": "цифра 1–3; 1 балл",
+   "mistakes": [
+    "Not stated принимают за False",
+    "вывод от себя"
+   ],
+   "kim": {
+    "section": "чтение",
+    "score": 1,
+    "time_min": 4,
+    "answer": "краткий ответ",
+    "source": "спецификация и демоверсия ОГЭ 2026 (ФИПИ, 06.11.2025; 2027 — без изменений)"
+   },
+   "gen": {
+    "kind": "llm",
+    "recipe": "как ЕГЭ 2, но по письменному тексту A2–B1; JSON из 7 фактов с пометками; скрипт проверяет, что слова not-stated-утверждений в тексте отсутствуют; вторая модель размечает вслепую 7/7. Тексты пишет модель по JSON-заданию (тема из кодификатора, уровень A2–B1 для ОГЭ, B1–B2 для ЕГЭ, длина); ключ строится из «фактов» задания, а не из текста; вторая модель решает вслепую; расхождение — брак; дедупликация по теме и нормализованному тексту; тексты ФИПИ и банков не используются."
+   },
+   "capacity": null,
+   "capacity_note": "по цене генерации и проверки",
+   "example": {
+    "k": "one",
+    "q": "Ann's family moved to the village because of her father's job.\n1) True\n2) False\n3) Not stated",
+    "a": "3",
+    "e": "по факту задания"
+   },
+   "fidelity": {
+    "status": "unchecked"
+   }
+  },
+  {
+   "id": "eng-oge-16-reading-tfns",
+   "exam": "ОГЭ",
+   "n": 16,
+   "n_range": "13–19",
+   "title": "Чтение: True / False / Not stated по тексту",
+   "kes": [
+    "3.2.3"
+   ],
+   "level": "Б",
+   "invariant": "текст 350–450 слов, семь утверждений (13–19) по порядку текста; 1 — True, 2 — False, 3 — Not stated",
+   "varies": "тема, текст, утверждения",
+   "answer_rule": "цифра 1–3; 1 балл",
+   "mistakes": [
+    "Not stated принимают за False",
+    "вывод от себя"
+   ],
+   "kim": {
+    "section": "чтение",
+    "score": 1,
+    "time_min": 4,
+    "answer": "краткий ответ",
+    "source": "спецификация и демоверсия ОГЭ 2026 (ФИПИ, 06.11.2025; 2027 — без изменений)"
+   },
+   "gen": {
+    "kind": "llm",
+    "recipe": "как ЕГЭ 2, но по письменному тексту A2–B1; JSON из 7 фактов с пометками; скрипт проверяет, что слова not-stated-утверждений в тексте отсутствуют; вторая модель размечает вслепую 7/7. Тексты пишет модель по JSON-заданию (тема из кодификатора, уровень A2–B1 для ОГЭ, B1–B2 для ЕГЭ, длина); ключ строится из «фактов» задания, а не из текста; вторая модель решает вслепую; расхождение — брак; дедупликация по теме и нормализованному тексту; тексты ФИПИ и банков не используются."
+   },
+   "capacity": null,
+   "capacity_note": "по цене генерации и проверки",
+   "example": {
+    "k": "one",
+    "q": "Ann's family moved to the village because of her father's job.\n1) True\n2) False\n3) Not stated",
+    "a": "3",
+    "e": "по факту задания"
+   },
+   "fidelity": {
+    "status": "unchecked"
+   }
+  },
+  {
+   "id": "eng-oge-17-reading-tfns",
+   "exam": "ОГЭ",
+   "n": 17,
+   "n_range": "13–19",
+   "title": "Чтение: True / False / Not stated по тексту",
+   "kes": [
+    "3.2.3"
+   ],
+   "level": "Б",
+   "invariant": "текст 350–450 слов, семь утверждений (13–19) по порядку текста; 1 — True, 2 — False, 3 — Not stated",
+   "varies": "тема, текст, утверждения",
+   "answer_rule": "цифра 1–3; 1 балл",
+   "mistakes": [
+    "Not stated принимают за False",
+    "вывод от себя"
+   ],
+   "kim": {
+    "section": "чтение",
+    "score": 1,
+    "time_min": 4,
+    "answer": "краткий ответ",
+    "source": "спецификация и демоверсия ОГЭ 2026 (ФИПИ, 06.11.2025; 2027 — без изменений)"
+   },
+   "gen": {
+    "kind": "llm",
+    "recipe": "как ЕГЭ 2, но по письменному тексту A2–B1; JSON из 7 фактов с пометками; скрипт проверяет, что слова not-stated-утверждений в тексте отсутствуют; вторая модель размечает вслепую 7/7. Тексты пишет модель по JSON-заданию (тема из кодификатора, уровень A2–B1 для ОГЭ, B1–B2 для ЕГЭ, длина); ключ строится из «фактов» задания, а не из текста; вторая модель решает вслепую; расхождение — брак; дедупликация по теме и нормализованному тексту; тексты ФИПИ и банков не используются."
+   },
+   "capacity": null,
+   "capacity_note": "по цене генерации и проверки",
+   "example": {
+    "k": "one",
+    "q": "Ann's family moved to the village because of her father's job.\n1) True\n2) False\n3) Not stated",
+    "a": "3",
+    "e": "по факту задания"
+   },
+   "fidelity": {
+    "status": "unchecked"
+   }
+  },
+  {
+   "id": "eng-oge-18-reading-tfns",
+   "exam": "ОГЭ",
+   "n": 18,
+   "n_range": "13–19",
+   "title": "Чтение: True / False / Not stated по тексту",
+   "kes": [
+    "3.2.3"
+   ],
+   "level": "Б",
+   "invariant": "текст 350–450 слов, семь утверждений (13–19) по порядку текста; 1 — True, 2 — False, 3 — Not stated",
+   "varies": "тема, текст, утверждения",
+   "answer_rule": "цифра 1–3; 1 балл",
+   "mistakes": [
+    "Not stated принимают за False",
+    "вывод от себя"
+   ],
+   "kim": {
+    "section": "чтение",
+    "score": 1,
+    "time_min": 4,
+    "answer": "краткий ответ",
+    "source": "спецификация и демоверсия ОГЭ 2026 (ФИПИ, 06.11.2025; 2027 — без изменений)"
+   },
+   "gen": {
+    "kind": "llm",
+    "recipe": "как ЕГЭ 2, но по письменному тексту A2–B1; JSON из 7 фактов с пометками; скрипт проверяет, что слова not-stated-утверждений в тексте отсутствуют; вторая модель размечает вслепую 7/7. Тексты пишет модель по JSON-заданию (тема из кодификатора, уровень A2–B1 для ОГЭ, B1–B2 для ЕГЭ, длина); ключ строится из «фактов» задания, а не из текста; вторая модель решает вслепую; расхождение — брак; дедупликация по теме и нормализованному тексту; тексты ФИПИ и банков не используются."
+   },
+   "capacity": null,
+   "capacity_note": "по цене генерации и проверки",
+   "example": {
+    "k": "one",
+    "q": "Ann's family moved to the village because of her father's job.\n1) True\n2) False\n3) Not stated",
+    "a": "3",
+    "e": "по факту задания"
+   },
+   "fidelity": {
+    "status": "unchecked"
+   }
+  },
+  {
+   "id": "eng-oge-19-reading-tfns",
+   "exam": "ОГЭ",
+   "n": 19,
+   "n_range": "13–19",
+   "title": "Чтение: True / False / Not stated по тексту",
+   "kes": [
+    "3.2.3"
+   ],
+   "level": "Б",
+   "invariant": "текст 350–450 слов, семь утверждений (13–19) по порядку текста; 1 — True, 2 — False, 3 — Not stated",
+   "varies": "тема, текст, утверждения",
+   "answer_rule": "цифра 1–3; 1 балл",
+   "mistakes": [
+    "Not stated принимают за False",
+    "вывод от себя"
+   ],
+   "kim": {
+    "section": "чтение",
+    "score": 1,
+    "time_min": 4,
+    "answer": "краткий ответ",
+    "source": "спецификация и демоверсия ОГЭ 2026 (ФИПИ, 06.11.2025; 2027 — без изменений)"
+   },
+   "gen": {
+    "kind": "llm",
+    "recipe": "как ЕГЭ 2, но по письменному тексту A2–B1; JSON из 7 фактов с пометками; скрипт проверяет, что слова not-stated-утверждений в тексте отсутствуют; вторая модель размечает вслепую 7/7. Тексты пишет модель по JSON-заданию (тема из кодификатора, уровень A2–B1 для ОГЭ, B1–B2 для ЕГЭ, длина); ключ строится из «фактов» задания, а не из текста; вторая модель решает вслепую; расхождение — брак; дедупликация по теме и нормализованному тексту; тексты ФИПИ и банков не используются."
+   },
+   "capacity": null,
+   "capacity_note": "по цене генерации и проверки",
+   "example": {
+    "k": "one",
+    "q": "Ann's family moved to the village because of her father's job.\n1) True\n2) False\n3) Not stated",
+    "a": "3",
+    "e": "по факту задания"
+   },
+   "fidelity": {
+    "status": "unchecked"
+   }
+  },
+  {
+   "id": "eng-oge-35-email",
+   "exam": "ОГЭ",
+   "n": 35,
+   "n_range": "35",
+   "title": "Письмо: электронное письмо другу, 100–120 слов",
+   "kes": [
+    "4.3"
+   ],
+   "level": "Б",
+   "invariant": "письмо-стимул с тремя вопросами; ответить на три вопроса; 100–120 слов (меньше 90 — 0; больше 132 — проверяются первые 120)",
+   "varies": "тема, три вопроса",
+   "answer_rule": "развёрнутый ответ: К1 (3), К2 (2), К3 (3), К4 (2); всего 10",
+   "mistakes": [
+    "нет ответа на один из вопросов",
+    "меньше 90 слов",
+    "нет благодарности/ссылки на письмо"
+   ],
+   "kim": {
+    "section": "письмо",
+    "score": 10,
+    "time_min": 30,
+    "answer": "развёрнутый ответ",
+    "source": "спецификация и демоверсия ОГЭ 2026 (ФИПИ, 06.11.2025; 2027 — без изменений)"
+   },
+   "gen": {
+    "kind": "llm",
+    "recipe": "модель пишет письмо-стимул с тремя вопросами по теме кодификатора; скрипт проверяет число вопросов; ответ ученика — ИИ по К1–К4 с подсчётом слов; клише — flip. Тексты пишет модель по JSON-заданию (тема из кодификатора, уровень A2–B1 для ОГЭ, B1–B2 для ЕГЭ, длина); ключ строится из «фактов» задания, а не из текста; вторая модель решает вслепую; расхождение — брак; дедупликация по теме и нормализованному тексту; тексты ФИПИ и банков не используются."
+   },
+   "capacity": null,
+   "capacity_note": "по цене генерации и проверки",
+   "example": {
+    "k": "open",
+    "q": "You have received an email from your English-speaking pen friend Emma: «…We are going to get a puppy next month! Have you got a pet? What do you usually do after school? What is your favourite season and why?…» Write an email to Emma and answer her 3 questions. Write 100–120 words.",
+    "a": "критерии К1–К4",
+    "e": "проверка по критериям"
+   },
+   "fidelity": {
+    "status": "unchecked"
+   }
+  },
+  {
+   "id": "eng-oge-u1-read-aloud",
+   "exam": "ОГЭ",
+   "n": 1,
+   "n_range": "1",
+   "title": "Говорение: чтение текста вслух",
+   "kes": [
+    "5.1"
+   ],
+   "level": "Б",
+   "invariant": "научно-популярный текст 100–120 слов; 1,5 минуты подготовки, 2 минуты чтения",
+   "varies": "тема, текст",
+   "answer_rule": "2 балла: фонетика (не более 5 ошибок, не более 2 грубых)",
+   "mistakes": [
+    "th, -ed",
+    "ударение",
+    "паузы не по смыслу"
+   ],
+   "kim": {
+    "section": "говорение",
+    "score": 2,
+    "time_min": 2,
+    "answer": "развёрнутый ответ",
+    "source": "спецификация и демоверсия ОГЭ 2026 (ФИПИ, 06.11.2025; 2027 — без изменений)"
+   },
+   "gen": {
+    "kind": "llm",
+    "recipe": "как ЕГЭ 39, уровень A2; текст с 6–8 ловушками; карточки flip на ловушки. Тексты пишет модель по JSON-заданию (тема из кодификатора, уровень A2–B1 для ОГЭ, B1–B2 для ЕГЭ, длина); ключ строится из «фактов» задания, а не из текста; вторая модель решает вслепую; расхождение — брак; дедупликация по теме и нормализованному тексту; тексты ФИПИ и банков не используются."
+   },
+   "capacity": null,
+   "capacity_note": "по цене генерации и проверки",
+   "example": {
+    "k": "open",
+    "q": "Task 1. You are going to read the text aloud. You have 1.5 minutes to read the text silently, and then be ready to read it aloud. «Many families in Britain keep a cat or a dog…»",
+    "a": "фонетическая оценка",
+    "e": "ловушки в тексте"
+   },
+   "fidelity": {
+    "status": "unchecked"
+   }
+  },
+  {
+   "id": "eng-oge-u2-dialogue",
+   "exam": "ОГЭ",
+   "n": 2,
+   "n_range": "2",
+   "title": "Говорение: условный диалог-расспрос, шесть ответов на вопросы",
+   "kes": [
+    "5.2"
+   ],
+   "level": "Б",
+   "invariant": "участие в телефонном опросе: шесть вопросов, на каждый — полный ответ (не менее одной фразы), по 40 секунд",
+   "varies": "тема опроса, шесть вопросов",
+   "answer_rule": "по 1 баллу за каждый ответ; всего 6",
+   "mistakes": [
+    "ответ одним словом",
+    "не на вопрос"
+   ],
+   "kim": {
+    "section": "говорение",
+    "score": 6,
+    "time_min": 3,
+    "answer": "развёрнутый ответ",
+    "source": "спецификация и демоверсия ОГЭ 2026 (ФИПИ, 06.11.2025; 2027 — без изменений)"
+   },
+   "gen": {
+    "kind": "llm",
+    "recipe": "модель пишет 6 вопросов опроса по теме кодификатора (возраст/класс, частота, предпочтение, причина, совет…); скрипт проверяет, что вопросы разные; ответы — ИИ. TTS. Тексты пишет модель по JSON-заданию (тема из кодификатора, уровень A2–B1 для ОГЭ, B1–B2 для ЕГЭ, длина); ключ строится из «фактов» задания, а не из текста; вторая модель решает вслепую; расхождение — брак; дедупликация по теме и нормализованному тексту; тексты ФИПИ и банков не используются."
+   },
+   "capacity": null,
+   "capacity_note": "по цене генерации и проверки",
+   "example": {
+    "k": "open",
+    "q": "Task 2. Take part in a telephone survey about reading. Answer six questions. Question 1: How old are you?",
+    "a": "полный ответ на каждый вопрос",
+    "e": "проверка ИИ"
+   },
+   "fidelity": {
+    "status": "unchecked"
+   }
+  },
+  {
+   "id": "eng-oge-u3-monologue",
+   "exam": "ОГЭ",
+   "n": 3,
+   "n_range": "3",
+   "title": "Говорение: тематическое монологическое высказывание по плану",
+   "kes": [
+    "5.3"
+   ],
+   "level": "Б",
+   "invariant": "тема и план из трёх пунктов; 10–12 фраз, 1,5 минуты подготовки, 2 минуты ответа",
+   "varies": "тема, три пункта плана",
+   "answer_rule": "7 баллов: К1 решение (3), К2 организация (2), К3 язык (2)",
+   "mistakes": [
+    "пункт плана пропущен",
+    "нет вступления и заключения",
+    "меньше 10 фраз"
+   ],
+   "kim": {
+    "section": "говорение",
+    "score": 7,
+    "time_min": 4,
+    "answer": "развёрнутый ответ",
+    "source": "спецификация и демоверсия ОГЭ 2026 (ФИПИ, 06.11.2025; 2027 — без изменений)"
+   },
+   "gen": {
+    "kind": "llm",
+    "recipe": "модель пишет тему и три пункта плана (что, почему, совет/мнение) по кодификатору; карточки flip на клише; ответ ученика — ИИ по К1–К3 с подсчётом фраз. Тексты пишет модель по JSON-заданию (тема из кодификатора, уровень A2–B1 для ОГЭ, B1–B2 для ЕГЭ, длина); ключ строится из «фактов» задания, а не из текста; вторая модель решает вслепую; расхождение — брак; дедупликация по теме и нормализованному тексту; тексты ФИПИ и банков не используются."
+   },
+   "capacity": null,
+   "capacity_note": "по цене генерации и проверки",
+   "example": {
+    "k": "open",
+    "q": "Task 3. You are going to give a talk about your school. Remember to say: what subjects you like and why; what you do after lessons; what you would like to change in your school.",
+    "a": "10–12 фраз по плану",
+    "e": "проверка ИИ"
+   },
+   "fidelity": {
+    "status": "unchecked"
+   }
+  }
+ ]
+}
