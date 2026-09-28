@@ -373,3 +373,59 @@ def svg_bars(values, labels, title='', width=360, height=220, line=False):
         out += f'<polyline fill="none" stroke="{BLUE}" stroke-width="2.2" points="{" ".join(pts)}"/>'
     out += f'<line x1="{L}" y1="{sy(0):.1f}" x2="{width - 10}" y2="{sy(0):.1f}" stroke="{INK}"/>'
     return _svg(width, height, out)
+
+
+# ================================================================ защита от копий ФИПИ
+# fipi_fingerprints.txt — отпечатки (sha1) кусков формул из открытого банка и демоверсий ФИПИ.
+# Самих текстов в репозитории нет. Пересборка: gen_math.py --make-fingerprints --fipi DIR.
+# Самопроверка и сборка отбрасывают карточку, если её формула целиком состоит из кусков банка.
+
+import hashlib  # noqa: E402
+import os  # noqa: E402
+import re  # noqa: E402
+
+FP_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'fipi_fingerprints.txt')
+_FP = None
+_SCRIPT = str.maketrans('⁰¹²³⁴⁵⁶⁷⁸⁹₀₁₂₃₄₅₆₇₈₉', '01234567890123456789')
+
+
+def formula_shingles(text):
+    """6-токенные куски записи (числа, латинские буквы, знаки + − = < >), где нет русских слов, ≥ 2 чисел
+    и есть знак или буква — то есть кусок формулы, а не строка таблицы."""
+    t = text.lower().replace('ё', 'е').translate(_SCRIPT).replace('−', '-').replace('–', '-').replace('≤', '<').replace('≥', '>')
+    t = re.sub(r'<[^>]+>', ' ', t)
+    w = re.findall(r'[а-яa-z]+|\d+(?:[.,]\d+)?|[-+=<>]', t)
+    out = []
+    for i in range(len(w) - 5):
+        g = w[i:i + 6]
+        if (sum(x[0].isdigit() for x in g) >= 2 and not any('а' <= x[0] <= 'я' for x in g)
+                and any(x in '-+=<>' or 'a' <= x[0] <= 'z' for x in g)):
+            out.append(' '.join(g))
+    return out
+
+
+def fipi_copy(text):
+    """True, если какая-то формула условия целиком (все её куски) есть в банке ФИПИ.
+    Формулы берутся из разметки ⟦…⟧, без неё — всё условие. Общие законы без своих чисел
+    (нет двух обычных чисел, из которых хотя бы одно не 0/1/2) копией не считаются."""
+    global _FP
+    if _FP is None:
+        _FP = set()
+        if os.path.exists(FP_PATH):
+            _FP = {x.strip() for x in open(FP_PATH, encoding='utf-8') if x.strip() and not x.startswith('#')}
+    if not _FP:
+        return False
+    parts = re.findall(r'⟦(.+?)⟧', text)
+    if not parts:
+        # без разметки проверяем только «формульные» условия: в сюжетном тексте формула — лишь часть
+        if len(re.findall(r'[а-яё]{3,}', text.lower())) >= 8:
+            return False
+        parts = [text]
+    for f in parts:
+        plain = re.findall(r'\d+(?:[.,]\d+)?', re.sub(r'[⁰-⁹₀-₉]', '', f))
+        if len(plain) < 2 or all(p in ('0', '1', '2') for p in plain):
+            continue
+        sh = formula_shingles(f)
+        if sh and all(hashlib.sha1(g.encode()).hexdigest()[:8] in _FP for g in sh):
+            return True
+    return False

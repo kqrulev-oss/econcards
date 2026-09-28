@@ -1293,7 +1293,9 @@ def gen_og09_quad(r):
         if p2 == 0:
             return None
     else:  # 2x² − 3x + 1 = 0: небольшие коэффициенты, один корень дробный
-        p1, p2 = F(r.choice([x for x in range(-7, 8) if x % a]), a), F(r.randint(-6, 6))
+        p1, p2 = F(r.choice([x for x in range(-7, 8) if x % a]), a), F(r.choice([-6, -5, -4, -3, -2, 2, 3, 4, 5, 6]))
+        if abs(p1.numerator) < 3:
+            return None
     if p1 == p2 or p1 == 0 and p2 == 0:
         return None
     co = [a, -a * (p1 + p2), a * p1 * p2]
@@ -1302,6 +1304,8 @@ def gen_og09_quad(r):
     if a > 1 and math.gcd(math.gcd(int(co[0]), int(co[1])), int(co[2])) != 1:
         return None
     txt = f'{poly(co)} = 0'
+    if txt in ('2x² − 9x − 18 = 0', 'x² − 9x − 36 = 0'):  # дословно встречаются в заданиях ФИПИ
+        return None
     D = co[1] ** 2 - 4 * co[0] * co[2]
     return _roots_card(r, txt, [p1, p2], f'D = {tnum(D)}, корни {fr(min(p1, p2))} и {fr(max(p1, p2))}.', poly(co), '0')
 
@@ -1316,7 +1320,7 @@ def gen_og09_quad_incomplete(r):
     # масштаб банка: 9x² = 54x, x² = 5x, x² − 49 = 0, x² − 144 = 0 — целые корни
     a = r.choice([1, 2, 3, 4, 5, 6, 7, 8, 9])
     if r.random() < 0.5:
-        root = F(r.randint(1, 10)) * r.choice([1, -1])
+        root = F(r.randint(2, 10) if a > 1 else r.randint(11, 16)) * r.choice([1, -1])
         b = -a * root
         if F(b).denominator != 1:
             return None
@@ -1695,7 +1699,8 @@ def svg_euler(counts, labels=('A', 'B'), width=320, height=190, seed=0):
         while placed < n and tries < 20000:
             tries += 1
             x, y = rr.uniform(18, width - 18), rr.uniform(18, height - 18)
-            if z(x, y) and all(math.hypot(x - a, y - b) > 13 for a, b in pts):
+            labels_ok = math.hypot(x - (cx1 - R_ + 9), y - (cy - R_ + 9)) > 16 and math.hypot(x - (cx2 + R_ - 9), y - (cy - R_ + 9)) > 16
+            if z(x, y) and labels_ok and all(math.hypot(x - a, y - b) > 13 for a, b in pts):
                 pts.append((x, y))
                 placed += 1
         if placed < n:
@@ -1849,7 +1854,7 @@ def gen_og10_second_draw(r):
     p = F(x - 1, a_ + b_ - 1)
     if not nice(p, 3):
         return None
-    q = (f'{head} {a_} {cols[0][0]} и {b_} {cols[1][0]} {noun}. Не глядя, из него вынимают один предмет за другим — всего два. '
+    q = (f'{head} {a_} {cols[0][0]} и {b_} {cols[1][0]} {noun}. Не глядя, один за другим достают два предмета. '
          f'{w1} {verb} {cols[j][1]}. Найдите вероятность того, что {w2} тоже {verb.replace("оказалась", "окажется").replace("оказался", "окажется")} {cols[j][1]}.')
     e = f'Осталось {a_ + b_ - 1}, из них нужных {x - 1}: P = {x - 1}/{a_ + b_ - 1} = {tnum(p)}.'
     pool = [0] * a_ + [1] * b_
@@ -2127,7 +2132,7 @@ FIND = ('Пользуясь этой формулой, найдите',)
 
 
 def _f12(r, head, ask, ans, e, chk, unit=''):
-    q = f'{head} {pick(r, *FIND)} {ask}' + (f' Ответ дайте {unit}.' if unit else '')
+    q = f'{head} {pick(r, *FIND)}{"" if ask.startswith(",") else " "}{ask}' + (f' Ответ дайте {unit}.' if unit else '')
     return pcard(q, num(ans), e=e), chk
 
 
@@ -2264,7 +2269,7 @@ def gen_og12_solve_factor(r):
             ask, ans, unit = f'массу воды, если при нагревании на {dt} °C она получила {tnum(Q)} Дж.', m, 'в килограммах'
             e = f'm = Q/(cΔt) = {tnum(Q)}/(4200·{dt}) = {tnum(m)}.'
         else:
-            ask, ans, unit = f'на сколько градусов нагрелась вода массой {tnum(m)} кг, получив {tnum(Q)} Дж.', F(dt), 'в градусах Цельсия'
+            ask, ans, unit = f', на сколько градусов нагрелась вода массой {tnum(m)} кг, получив {tnum(Q)} Дж.', F(dt), 'в градусах Цельсия'
             e = f'Δt = Q/(cm) = {tnum(Q)}/(4200·{tnum(m)}) = {dt}.'
         chk = lambda: same(num(ans), R(Q) / (4200 * (R(m) if ans == dt else dt)))
     elif kind == 3:
@@ -2659,7 +2664,7 @@ def gen_og13_quad(r):
         lhs, rhs = f'{p * p}x²', f'{q_ * q_}'
         sol = quad_sol(1, -F(q_, p), F(q_, p), rel)
     else:
-        k = r.randint(7, 15)
+        k = r.randint(9, 16)
         if r.random() < 0.6:
             lhs, rhs = f'{k if k > 1 else ""}x − x²', '0'
             sol = quad_sol(-1, 0, k, rel)
@@ -2785,7 +2790,7 @@ def _tyre_block(r):
         for d in Ds:
             if r.random() < 0.65:
                 table[(W, d)] = sorted(r.sample(v['P'], r.choice([1, 1, 2])), reverse=True)
-    if not all(any((W, d) in table for W in Ws) for d in Ds):
+    if not all(any((W, d) in table for W in Ws) for d in Ds) or not all(any((W, d) in table for d in Ds) for W in Ws):
         return None
     base = r.choice(sorted(table))
     W0, d0 = base
@@ -3714,7 +3719,7 @@ def _map_block(r):
     s = r.choice([1, 1, 2]) if a_ <= 16 else 1
     x0, y0 = 1, 1
     cols, rows = x0 + a_ + 2, y0 + b_ + 2
-    q_ = r.randint(1, b_ - 1)
+    q_ = r.randint(2, b_ - 3)  # пункт на северном участке — не вплотную к финишу, цифры не слипаются
     S, V, C, W, T = (x0, y0), (x0 + p_, y0), (x0 + a_, y0), (x0 + a_, y0 + q_), (x0 + a_, y0 + b_)
     pl = ctx['places']
     digits = list(range(1, 5))
@@ -3911,7 +3916,8 @@ def gen_og05_map_shop(r):
     rows = [['Товар'] + [f'п. {j + 1}' for j in range(4)]]
     for i, it in enumerate(items):
         rows.append([it[0]] + [str(prices[j][i]) for j in range(4)])
-    parts = [f'{k} {plural(k, *items[i][3])} {items[i][4]}' for i, k in enumerate(qty) if k]
+    acc = {'пачка': 'пачку', 'банка': 'банку'}  # винительный падеж: «купить 1 пачку печенья»
+    parts = [f'{k} {acc.get(plural(k, *items[i][3]), plural(k, *items[i][3]))} {items[i][4]}' for i, k in enumerate(qty) if k]
     buy = ', '.join(parts[:-1]) + ' и ' + parts[-1]
     q = (f'В каждом из четырёх пунктов маршрута ({", ".join("«" + n + "»" for n in b["names"])} — в таблице п. 1–4 в этом порядке) есть магазин. '
          f'Цены (в рублях) приведены в таблице. {b["ctx"]["who"]} хотят купить {buy}. В каком магазине такой набор обойдётся дешевле всего? '
