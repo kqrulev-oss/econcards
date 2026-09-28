@@ -733,7 +733,9 @@ def fipi_packs(packs):
 
 if __name__ == '__main__':
     packs = [rus_pack(), math_pack()]
-    extra = fipi_packs(packs)
+    # Новые наборы — в привычном порядке предметов (как в FIPI_IDS), а не по именам файлов
+    order = [f'{e}-{v}' for e in ('ege', 'oge') for v in dict.fromkeys(FIPI_IDS.values())]
+    extra = sorted(fipi_packs(packs), key=lambda p: order.index(p['id']) if p['id'] in order else len(order))
     ege = [p for p in extra if p['id'].startswith('ege-')]
     oge = [p for p in extra if not p['id'].startswith('ege-')]
     index = [write(p) for p in packs + ege + [econ_pack(), stress_pack()] + oge]
