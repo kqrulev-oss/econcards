@@ -261,7 +261,7 @@ export async function loginDialog({ why = '', onDone, onCancel, role = '', resum
         `<button class="btn big login-${id}" data-oauth="${id}">${icon}${label}</button>`).join('')}
     </div>
     <div class="login-step"></div>
-    <p class="muted small-note">Входя, вы соглашаетесь с <a href="${new URL('privacy.html', import.meta.url)}" target="_blank" rel="noopener">политикой обработки данных</a>.</p>`;
+    <p class="muted small-note">Входя, вы соглашаетесь с <a href="${new URL('privacy', import.meta.url)}" target="_blank" rel="noopener">политикой обработки данных</a>.</p>`;
   let box, close, entered = false;
   if (into) { into.innerHTML = html; box = into; close = () => {}; } else ({ box, close } = modal(html, { onClose: () => { if (!entered) onCancel?.(); } }));
   const step = box.querySelector('.login-step');
@@ -405,7 +405,7 @@ export async function payDialog({ product, forAcct = null, forName = '' }) {
         <button class="pay-opt best" data-m="3"><b data-price="3">${pr[product][3]} ₽</b><span>3 месяца · выгоднее на ${Math.round((1 - pr[product][3] / (pr[product][1] * 3)) * 100)}%</span></button>
       </div>
       <div class="field pay-mail"><label for="pay-email">Почта для чека</label><input id="pay-email" type="email" inputmode="email" autocomplete="email" placeholder="you@mail.ru" value="${esc(account()?.email || '')}"></div>
-      <p class="muted small-note">Оплата картой или через СБП на странице ЮKassa. Без автосписаний — продлеваете сами, мы напомним. Чек из «Мой налог» пришлём на почту. <a href="${new URL('offer.html', import.meta.url)}" target="_blank" rel="noopener">Оферта</a></p>`
+      <p class="muted small-note">Оплата картой или через СБП на странице ЮKassa. Без автосписаний — продлеваете сами, мы напомним. Чек из «Мой налог» пришлём на почту. <a href="${new URL('offer', import.meta.url)}" target="_blank" rel="noopener">Оферта</a></p>`
     : `<p class="panel warn-box">Онлайн-оплата скоро появится. Сейчас напишите в Telegram <a href="https://t.me/trwqxp" target="_blank" rel="noopener">@trwqxp</a> — включим доступ вручную.</p>`}
     <details class="promo"><summary>Есть промокод?</summary>
       <div class="row"><input id="promo" placeholder="Например, START20" autocapitalize="characters" autocomplete="off"><button class="btn" id="promo-ok">Применить</button></div>

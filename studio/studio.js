@@ -168,7 +168,7 @@ function hideNotice(kind) {
 const initials = a => esc((a?.name || a?.email || '?').trim().slice(0, 2).toUpperCase());
 // Путь в личный кабинет виден всегда, и на телефоне: аватар + «Кабинет»
 function accountBar() {
-  if (!signedIn()) return `<a class="btn small primary" href="${ROOT}login.html?role=tutor&next=studio/">Войти</a>`;
+  if (!signedIn()) return `<a class="btn small primary" href="${ROOT}login?role=tutor&next=studio/">Войти</a>`;
   const a = account();
   return `${cloudBadge()}<a class="acct-link" href="${ROOT}cabinet/#tutor" title="Личный кабинет"><span class="avatar small">${initials(a)}</span>
     <span class="acct-text"><span class="acct-name">${esc(a?.name || a?.email || 'Аккаунт')}</span><small>Кабинет</small></span></a>`;
@@ -398,7 +398,7 @@ function viewList() {
       </section>`}
     ${published && signedIn() && apiBase() ? '<div id="tg-me"></div>' : ''}
     ${tariffPanel()}
-    ${!signedIn() && !fresh ? `<section class="panel login-hint"><b>Войдите, чтобы ничего не потерять.</b> Сейчас тренажёры и доступ к ученикам хранятся только в этом браузере. С аккаунтом они сохраняются в облаке и открываются с телефона и компьютера. <a class="link-btn" href="${ROOT}login.html?role=tutor&next=studio/">Войти</a></section>` : ''}
+    ${!signedIn() && !fresh ? `<section class="panel login-hint"><b>Войдите, чтобы ничего не потерять.</b> Сейчас тренажёры и доступ к ученикам хранятся только в этом браузере. С аккаунтом они сохраняются в облаке и открываются с телефона и компьютера. <a class="link-btn" href="${ROOT}login?role=tutor&next=studio/">Войти</a></section>` : ''}
     ${signedIn() ? accountPanel() : ''}
     ${apiBase() ? '' : `<section class="panel warn-box"><b>Сервер не подключён.</b> Собирать тренажёры и смотреть их можно, а ИИ, ссылки ученикам и отчёты заработают, когда появится связь с сервером.${DEBUG ? ' Адрес — во вкладке тренажёра «Настройки».' : ''}</section>`}
     <p class="muted small-note studio-help">Вопросы, идеи, хотите, чтобы тренажёр собрали за вас? <a href="https://t.me/trwqxp" target="_blank" rel="noopener">Напишите в Telegram @trwqxp</a></p>`;
@@ -603,7 +603,7 @@ function viewCards(p) {
     const i = +b.closest('.card-row').dataset.i;
     if (b.dataset.a === 'view') preview(p, i);
     if (b.dataset.a === 'edit') editCard(p, i, draw);
-    if (b.dataset.a === 'more') similarCards(p, p.cards[i], draw);
+    if (b.dataset.a === 'more') { if (!signedIn()) return login({ why: 'Похожие карточки делает ИИ — для вошедших репетиторов.', then: () => route() }); similarCards(p, p.cards[i], draw); }
     if (b.dataset.a === 'del' && confirm('Удалить карточку?')) { p.cards.splice(i, 1); touch(p); draw(); }
   };
 }
@@ -797,6 +797,8 @@ function viewAdd(p, sub) {
   const gen = async () => {
     const material = mat.value.trim();
     if (material.length < 80 && !files.length) return toast('Добавьте текст (хотя бы абзац), PDF или фото');
+    // ИИ — только с аккаунтом (лимит и расходы — на аккаунт). Вставленный текст сохранён в этой вкладке
+    if (!signedIn()) return login({ why: 'ИИ делает карточки из материалов для вошедших репетиторов. Вставленный текст не пропадёт.', then: () => route() });
     const out = box.querySelector('#gen-out'), btn = box.querySelector('#gen');
     btn.disabled = true;
     out.innerHTML = `<p class="muted">ИИ читает материал и делает карточки — это до ${files.length ? 'двух минут' : 'минуты'}…</p>`;
@@ -1300,7 +1302,7 @@ function studentCard(p, s, hw, demo = false) {
   box.querySelector('#stu-code').onclick = async () => {
     try {
       const { code } = await api(`/packs/${p.id}/parent-code`, { method: 'POST', body: { sid: s.sid }, key: db.keys[p.id] });
-      out.innerHTML = `<div class="code-big">${esc(code)}</div><p class="muted">Родитель открывает ${esc(new URL(ROOT + 'login.html?role=parent', location.href).href)}, входит и вводит код. Действует сутки.</p>`;
+      out.innerHTML = `<div class="code-big">${esc(code)}</div><p class="muted">Родитель открывает ${esc(new URL(ROOT + 'login?role=parent', location.href).href)}, входит и вводит код. Действует сутки.</p>`;
     } catch (err) { out.innerHTML = `<p class="muted">${esc(err.message)}</p>`; }
   };
 

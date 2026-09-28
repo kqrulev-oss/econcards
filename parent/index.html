@@ -7,7 +7,12 @@
   <meta name="robots" content="noindex">
   <!-- Кабинет родителя переехал в общий личный кабинет: старые ссылки /parent/ ведём туда сразу,
        не загружая стили, шрифты и скрипты. Параметры (?…) сохраняются, вкладка — «Родитель» -->
-  <script>location.replace('../cabinet/' + location.search + '#parent');</script>
+  <script>
+    // Гость — сразу на вход родителя (без промежуточного кабинета), вошедший — в кабинет
+    var signed = false;
+    try { signed = !!(JSON.parse(localStorage.getItem('zd-session') || 'null') || {}).token; } catch (e) { /* нет хранилища */ }
+    location.replace(signed ? '../cabinet/' + location.search + '#parent' : '../login?role=parent&next=' + encodeURIComponent('cabinet/' + location.search + '#parent'));
+  </script>
   <noscript><meta http-equiv="refresh" content="0; url=../cabinet/#parent"></noscript>
 </head>
 <body>

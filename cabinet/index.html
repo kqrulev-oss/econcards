@@ -9,6 +9,22 @@
   <link rel="icon" href="../icons/favicon-48.png" sizes="48x48">
   <link rel="icon" href="../icons/icon-192.png" sizes="192x192">
   <link rel="apple-touch-icon" href="../icons/apple-touch-icon.png">
+  <script>
+    // Гость (нет сессии, не возвращается со входа) — сразу на вход, не загружая кабинет:
+    // иначе страница грузится дважды. Вкладка из адреса (#parent) — роль на странице входа
+    (function () {
+      try {
+        var s = JSON.parse(localStorage.getItem('zd-session') || 'null');
+        if (s && s.token) return;
+        if (/^#login/.test(location.hash) || localStorage.getItem('zd-tg-pending') && localStorage.getItem('zd-tg-pending') !== 'null') return;
+        var want = location.hash.slice(1), roles = { tutor: 1, student: 1, parent: 1 };
+        // Ссылка на оплату (?pay=) переживает вход — как это делает cabinet.js (zd-pay-want)
+        var pay = new URLSearchParams(location.search).get('pay');
+        if (pay === 'tutor' || pay === 'lib') sessionStorage.setItem('zd-pay-want', pay);
+        location.replace('../login?' + (roles[want] ? 'role=' + want + '&' : '') + 'next=' + encodeURIComponent('cabinet/' + location.search + location.hash));
+      } catch (e) { /* хранилище недоступно — решит cabinet.js */ }
+    })();
+  </script>
   <link rel="stylesheet" href="../app.css">
   <link rel="modulepreload" href="../lib.js">
   <link rel="modulepreload" href="../account.js">
