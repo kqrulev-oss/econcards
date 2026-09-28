@@ -238,6 +238,11 @@ def export(exam, key, batch, size, kinds):
 
 def solve_subject(exam, key, args, gem_key):
     data, out, answers = load_subject(exam, key)
+    if args.forget_wrong:  # варианты пересобраны — прежние «неверно» у выбора могли быть по другим вариантам
+        for t in data['tasks']:
+            rec = answers.get(t['id'])
+            if rec and t.get('opts') and 'a' not in rec:
+                rec.pop('no', None)
     cands = load_candidates(args.candidates)
     # Несколько независимых сессий ФИПИ: сайт отвечает секунды, по одной проверке — очень долго
     checkers = queue.Queue()
@@ -372,6 +377,8 @@ def main():
     ap.add_argument('--candidates', nargs='+', help='файлы с ответами и решениями (например, от ChatGPT)')
     ap.add_argument('--brute', action='store_true',
                     help='подбирать перебором и ответы с несколькими вариантами (до 31 проверки на задание из 5 вариантов)')
+    ap.add_argument('--forget-wrong', action='store_true',
+                    help='забыть прежние неверные попытки у заданий с выбором (после пересборки вариантов)')
     ap.add_argument('--jobs', type=int, default=1, help='параллельных сессий проверки на сайте ФИПИ (не больше 4)')
     ap.add_argument('--export', type=int, metavar='N', help='вывести пачку №N заданий для чата и выйти (без сети)')
     ap.add_argument('--batch', type=int, default=40, help='заданий в пачке для --export')
