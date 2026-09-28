@@ -1916,7 +1916,7 @@ def gen_og17_par_bisector(r):
         q = pick(r, f'Биссектриса угла {_v(nm, 0)} параллелограмма {nm} пересекает сторону {nm[1]}{nm[2]} в точке {E} и образует с ней угол {x}{DEG}. Найдите {ask} угол параллелограмма. Ответ дайте в градусах.',
                  f'В параллелограмме {nm} луч {nm[0]}{E} делит угол {_v(nm, 0)} пополам ({E} лежит на {nm[1]}{nm[2]}), ∠{nm[0]}{E}{nm[1]} = {x}{DEG}. Найдите {ask} угол параллелограмма. Ответ дайте в градусах.')
         chk = lambda: close(ang(P[nm[0]], P[E], P[nm[1]]), x, 1e-6) and close(ang(P[nm[3]], P[nm[0]], P[nm[1]]) if ask == 'острый' else 180 - ang(P[nm[3]], P[nm[0]], P[nm[1]]), ans, 1e-6)
-        e = 'Треугольник ABE равнобедренный: ∠BAE = ∠AEB = x, значит ∠A = 2x.'
+        e = f'Треугольник {nm[0]}{nm[1]}{E} равнобедренный ({nm[0]}{nm[3]} ∥ {nm[1]}{nm[2]}, накрест лежащие углы): ∠{nm[1]}{nm[0]}{E} = ∠{nm[0]}{E}{nm[1]} = {x}{DEG}, значит ∠{nm[0]} = {A}{DEG}, тупой угол {180 - A}{DEG}.'
     else:
         be, ec = r.randint(2, 20), r.randint(2, 20)
         A = r.randint(40, 80)
@@ -1927,7 +1927,7 @@ def gen_og17_par_bisector(r):
                  f'В параллелограмме {nm} биссектриса угла {nm[0]} делит сторону {nm[1]}{nm[2]} на отрезки {nm[1]}{E} = {be} и {E}{nm[2]} = {ec}. Найдите периметр параллелограмма.')
         ans = 2 * (be + be + ec)
         chk = lambda: close(2 * (dist(P[nm[0]], P[nm[1]]) + dist(P[nm[1]], P[nm[2]])), ans, 1e-6) and close(ang(P[nm[1]], P[nm[0]], P[E]), ang(P[E], P[nm[0]], P[nm[3]]), 1e-6)
-        e = 'AB = BE (равнобедренный треугольник ABE), BC = BE + EC.'
+        e = f'{nm[0]}{nm[1]} = {nm[1]}{E} = {be} (равнобедренный треугольник {nm[0]}{nm[1]}{E}), {nm[1]}{nm[2]} = {be} + {ec} = {be + ec}; периметр 2 · ({be} + {be + ec}) = {ans}.'
     return pcard(q, num(ans), e=e, svg=_geo(P, nm, segs=[nm[0] + E])), chk
 
 
@@ -5385,7 +5385,7 @@ def gen_og25_bisector_height_ratio(r):
         # проверка отношения: в △ABH (прямой угол H) биссектриса делит BH как AB : AH = 1 : cos A
         ratio = 1 / cosA
         return ratio == sp.Rational(p_, q_) and same(num(Rr), R(BC) / (2 * sp.sin(A_)))
-    return pcard(q, num(Rr), e=f'AB : AH = {p_} : {q_} ⇒ cos A = {q_}/{p_}, sin A = {s_}/{p_}; R = BC/(2 sin A) = {tnum(Rr)}.'), chk
+    return pcard(q, num(Rr), e=f'Биссектриса делит высоту как {a_}{b_} : {a_}H = {p_} : {q_} ⇒ cos {a_} = {q_}/{p_}, sin {a_} = {s_}/{p_}; R = {b_}{c_}/(2 sin {a_}) = {tnum(Rr)}.'), chk
 
 
 @proto('og25-bisector-median', 'oge', 25, 'Перпендикулярные и равные биссектриса и медиана',
@@ -5683,7 +5683,7 @@ def gen_og25_tangent_ray(r):
         # точка касания должна лежать на луче AB (проекция центра на AB положительна)
         rs = [rv for rv, yv in zip(rs, sols) if (x0 * cA + yv * sA) > 0]
         return any(same(num(Rr), rv) for rv in rs)
-    return pcard(q, num(Rr), e=f'AT² = AM·AN = {m * n}; R = |{tnum(F(m + n, 2))} − AT·cos A| / sin A = {tnum(Rr)}.'), chk
+    return pcard(q, num(Rr), e=f'Касательная из {a_}: {a_}T² = {a_}{P1}·{a_}{P2} = {m * n}; R = |{tnum(F(m + n, 2))} − {a_}T·cos {a_}| / sin {a_} = {tnum(Rr)}.'), chk
 
 
 # ==== КОНЕЦ
