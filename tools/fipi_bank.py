@@ -12,8 +12,9 @@ tools/build_packs.py.
   python3 tools/fipi_bank.py --offline         # пересобрать JSON из кэша страниц, без сети
   python3 tools/fipi_bank.py --list            # ключи предметов
 
-Если Python не доверяет сертификату ФИПИ: FIPI_CA=russian_trusted_root_ca.pem
-(корневой сертификат Минцифры) или, в крайнем случае, --insecure.
+Сервер ФИПИ не отдаёт промежуточный сертификат GlobalSign (браузеры догружают
+его сами, Python — нет), поэтому он встроен ниже. Если ФИПИ сменит сертификат:
+FIPI_CA=файл.pem с недостающими сертификатами или, в крайнем случае, --insecure.
 
 Результат — data/source/fipi/<exam>-<предмет>.json:
   {exam, key, title, proj, count, kes: [{code, name, themes: [{code, name}]}],
@@ -60,7 +61,7 @@ SUBJECTS = {
         'social': ('Обществознание', '756DF168F63F9A6341711C61AA5EC578'),
         'geography': ('География', '20E79180061DB32845C11FC7BD87C7C8'),
         'literature': ('Литература', '4F431E63B9C9B25246F00AD7B5253996'),
-        'english': ('Английский язык', '4B53A6CB75B0B5E1427E596EB4931A2A'),
+        'english': ('Английский язык', 'FA441EFD2C9397C7496CC7A4792EB0E9'),
         'german': ('Немецкий язык', 'B5963A8D84CF9020461EAE42F37F541F'),
         'french': ('Французский язык', '5BAC840990A3AF0A4EE80D1B5A1F9527'),
         'spanish': ('Испанский язык', '8C65A335D93D9DA047C42613F61416F3'),
@@ -77,12 +78,44 @@ SUBJECTS = {
         'social': ('Обществознание', 'AE63AB28A2D28E194A286FA5A8EB9A78'),
         'geography': ('География', '0FA4DA9E3AE2BA1547B75F0B08EF6445'),
         'literature': ('Литература', '6B2CD4C77304B2A3478E5A5B61F6899A'),
-        'english': ('Английский язык', '8BBD5C99F37898B6402964AB11955663'),
+        'english': ('Английский язык', '33F288E8C504BE754292A6AEC463487D'),
         'german': ('Немецкий язык', 'A2AC67AE354EBC5242C49482CBC13451'),
         'french': ('Французский язык', '2A4C52ED5AC1ADA644B8BBF169FEC0FC'),
         'spanish': ('Испанский язык', '7FF0B02E53DFBCDE4F56B0148BE9A236'),
     },
 }
+
+# Промежуточный сертификат, которым подписан *.fipi.ru (GlobalSign GCC R3 DV TLS CA 2020,
+# до 18.03.2029, http://secure.globalsign.com/cacert/gsgccr3dvtlsca2020.crt). Корень
+# GlobalSign R3 есть в системных сертификатах, так что проверка остаётся полной.
+FIPI_INTERMEDIATE = """-----BEGIN CERTIFICATE-----
+MIIEsDCCA5igAwIBAgIQd70OB0LV2enQSdd00CpvmjANBgkqhkiG9w0BAQsFADBM
+MSAwHgYDVQQLExdHbG9iYWxTaWduIFJvb3QgQ0EgLSBSMzETMBEGA1UEChMKR2xv
+YmFsU2lnbjETMBEGA1UEAxMKR2xvYmFsU2lnbjAeFw0yMDA3MjgwMDAwMDBaFw0y
+OTAzMTgwMDAwMDBaMFMxCzAJBgNVBAYTAkJFMRkwFwYDVQQKExBHbG9iYWxTaWdu
+IG52LXNhMSkwJwYDVQQDEyBHbG9iYWxTaWduIEdDQyBSMyBEViBUTFMgQ0EgMjAy
+MDCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBAKxnlJV/de+OpwyvCXAJ
+IcxPCqkFPh1lttW2oljS3oUqPKq8qX6m7K0OVKaKG3GXi4CJ4fHVUgZYE6HRdjqj
+hhnuHY6EBCBegcUFgPG0scB12Wi8BHm9zKjWxo3Y2bwhO8Fvr8R42pW0eINc6OTb
+QXC0VWFCMVzpcqgz6X49KMZowAMFV6XqtItcG0cMS//9dOJs4oBlpuqX9INxMTGp
+6EASAF9cnlAGy/RXkVS9nOLCCa7pCYV+WgDKLTF+OK2Vxw3RUJ/p8009lQeUARv2
+UCcNNPCifYX1xIspvarkdjzLwzOdLahDdQbJON58zN4V+lMj0msg+c0KnywPIRp3
+BMkCAwEAAaOCAYUwggGBMA4GA1UdDwEB/wQEAwIBhjAdBgNVHSUEFjAUBggrBgEF
+BQcDAQYIKwYBBQUHAwIwEgYDVR0TAQH/BAgwBgEB/wIBADAdBgNVHQ4EFgQUDZjA
+c3+rvb3ZR0tJrQpKDKw+x3wwHwYDVR0jBBgwFoAUj/BLf6guRSSuTVD6Y5qL3uLd
+G7wwewYIKwYBBQUHAQEEbzBtMC4GCCsGAQUFBzABhiJodHRwOi8vb2NzcDIuZ2xv
+YmFsc2lnbi5jb20vcm9vdHIzMDsGCCsGAQUFBzAChi9odHRwOi8vc2VjdXJlLmds
+b2JhbHNpZ24uY29tL2NhY2VydC9yb290LXIzLmNydDA2BgNVHR8ELzAtMCugKaAn
+hiVodHRwOi8vY3JsLmdsb2JhbHNpZ24uY29tL3Jvb3QtcjMuY3JsMEcGA1UdIARA
+MD4wPAYEVR0gADA0MDIGCCsGAQUFBwIBFiZodHRwczovL3d3dy5nbG9iYWxzaWdu
+LmNvbS9yZXBvc2l0b3J5LzANBgkqhkiG9w0BAQsFAAOCAQEAy8j/c550ea86oCkf
+r2W+ptTCYe6iVzvo7H0V1vUEADJOWelTv07Obf+YkEatdN1Jg09ctgSNv2h+LMTk
+KRZdAXmsE3N5ve+z1Oa9kuiu7284LjeS09zHJQB4DJJJkvtIbjL/ylMK1fbMHhAW
+i0O194TWvH3XWZGXZ6ByxTUIv1+kAIql/Mt29PmKraTT5jrzcVzQ5A9jw16yysuR
+XRrLODlkS1hyBjsfyTNZrmL1h117IFgntBA5SQNVl9ckedq5r4RSAU85jV8XK5UL
+REjRZt2I6M9Po9QL7guFLu4sPFJpwR1sPJvubS2THeo7SxYoNDtdyBHs7euaGcMa
+D/fayQ==
+-----END CERTIFICATE-----"""
 
 KINDS = {'краткий ответ': 'short', 'развернутый ответ': 'full', 'развёрнутый ответ': 'full',
          'выбор ответа': 'select', 'выбор ответа из предложенных вариантов': 'select'}
@@ -100,7 +133,10 @@ class Client:
 
     def __init__(self, exam, insecure=False, delay=0.4):
         self.base = BASE[exam]
-        ctx = ssl.create_default_context(cafile=os.environ.get('FIPI_CA') or None)
+        ctx = ssl.create_default_context()
+        ctx.load_verify_locations(cadata=FIPI_INTERMEDIATE)
+        if os.environ.get('FIPI_CA'):
+            ctx.load_verify_locations(cafile=os.environ['FIPI_CA'])
         if insecure:
             ctx.check_hostname = False
             ctx.verify_mode = ssl.CERT_NONE
@@ -126,8 +162,8 @@ class Client:
                     content = r.read()
                 return content if raw else content.decode('windows-1251', errors='replace')
             except ssl.SSLCertVerificationError:
-                sys.exit('Python не доверяет сертификату ФИПИ. Укажите корневой сертификат: '
-                         'FIPI_CA=путь/к/russian_trusted_root_ca.pem, или запустите с --insecure.')
+                sys.exit('Python не доверяет сертификату ФИПИ. Укажите недостающие сертификаты: '
+                         'FIPI_CA=путь/к/файлу.pem, или запустите с --insecure.')
             except urllib.error.HTTPError as e:
                 if e.code == 404 or attempt == 5:
                     raise
@@ -236,7 +272,7 @@ ATTRS = {
     'mspace': {'width'}, 'mi': {'mathvariant'}, 'mn': {'mathvariant'}, 'mtext': {'mathvariant'},
     'menclose': {'notation'},
 }
-PICTURE = re.compile(r"ShowPicture\w*\s*\(\s*'([^']+)'(?:\s*,\s*'([^']*)')?")
+PICTURE = re.compile(r"""ShowPicture\w*\s*\(\s*(['"])([^'"]+)\1""")
 INVISIBLE = dict.fromkeys(map(ord, '⁡⁢⁣⁤​﻿'), None)
 
 
@@ -249,7 +285,7 @@ def pictures(script):
     У ShowPictureQ2/Q3 первым идёт большая картинка, вторым — превью; берём большую."""
     out = []
     for m in PICTURE.finditer(script):
-        s = re.sub(r'\.\s+', '.', m.group(1))
+        s = re.sub(r'\.\s+', '.', m.group(2))
         out.append(s)
     return out
 
@@ -400,6 +436,11 @@ def tidy(kids):
             if k.tag in ('p', 'div', 'li', 'b', 'i', 'u', 'sub', 'sup') and not any(
                     isinstance(x, Node) or x.strip(' \xa0') for x in k.kids):
                 continue
+            # Картинка-формула в <sub> (так выравнивал Word) — индексом её делать не нужно
+            if k.tag in ('sub', 'sup') and all(isinstance(x, Node) and x.tag == 'img' or isinstance(x, str) and not x.strip()
+                                               for x in k.kids):
+                out.extend(x for x in k.kids if isinstance(x, Node))
+                continue
         out.append(k)
     # пробелы в начале и конце блока
     while out and isinstance(out[0], str) and not out[0].strip():
@@ -453,6 +494,8 @@ def math_text(n):
     if tag == 'mroot' and len(t) == 2:
         idx = t[1].strip()
         return (ROOTS[idx] if idx in ROOTS else f'√[{idx}]') + _group(t[0])
+    if tag in ('msup', 'msub', 'msubsup') and t:
+        t[0] = t[0].rstrip()  # log ₂, а не «log  ₂»
     if tag == 'msup' and len(t) == 2:
         e = t[1].strip()
         return t[0] + (f'^{e}' if re.fullmatch(r'[0-9A-Za-zА-Яа-я]|[+\-−][0-9]+', e) else f'^{{{e}}}')
@@ -461,7 +504,7 @@ def math_text(n):
         return t[0] + (s.translate(SUB) if re.fullmatch(r'[0-9+\-−=()]+', s) else f'_{s}')
     if tag == 'msubsup' and len(t) == 3:
         s = t[1].strip()
-        return t[0] + (s.translate(SUB) if s.isdigit() else f'_{s}') + f'^{{{t[2].strip()}}}'
+        return t[0] + (s.translate(SUB) if s.isdigit() else f'_{{{s}}}') + f'^{{{t[2].strip()}}}'
     if tag == 'mover' and len(t) == 2:
         acc = t[1].strip()
         if acc in ('→', '⟶', '⇀'):
@@ -474,8 +517,8 @@ def math_text(n):
     if tag in ('munder', 'munderover') and len(t) >= 2:
         s = f'{t[0]}_{{{t[1].strip()}}}'
         return s + (f'^{{{t[2].strip()}}}' if len(t) == 3 else '')
-    if tag == 'mtable':
-        return '{ ' + '; '.join(x.strip() for x in t) + ' }'
+    if tag == 'mtable':  # система: фигурная скобка обычно стоит перед таблицей отдельным mo
+        return '; '.join(x.strip().rstrip(',;') for x in t)
     if tag == 'mtr':
         return ' '.join(x.strip() for x in t)
     if tag == 'mphantom':
