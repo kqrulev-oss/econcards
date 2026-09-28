@@ -659,8 +659,13 @@ RANK = {'metal': 0, 'nonmetal': 1, 'water': 2, 'nh3': 3, 'oxb': 4, 'oxam': 4, 'o
         'alk': 6, 'bins': 6, 'bamp': 6, 'salt': 7}
 
 
+DISPUTED = {frozenset((x, y)) for x, y, _ in D.DISPUTED}
+
+
 def R(a, b):
-    """Реагируют ли a и b (правила школьного курса). None — спорно."""
+    """Реагируют ли a и b (правила школьного курса). None — спорно (в т. ч. исключения D.DISPUTED)."""
+    if frozenset((a, b)) in DISPUTED:
+        return None
     ka, kb = kind(a), kind(b)
     if ka is None or kb is None:
         return None
@@ -719,6 +724,13 @@ def db_reactions(a, b, conc=False):
 
 def db_react(a, b):
     return bool(db_reactions(a, b))
+
+
+def agrees(a, b):
+    """Отбор вариантов с учётом ВСЕЙ объединённой базы: правило R и chemdb.load() должны давать одно и то же.
+    Новая реакция в чужом модуле, противоречащая правилу, выключает пару до разбора (затем — D.DISPUTED)."""
+    r = R(a, b)
+    return r is not None and r == db_react(a, b)
 
 
 # ================================================================= общее для карточек
@@ -1075,7 +1087,7 @@ STEM8N = ['Какие два из перечисленных веществ не
 def _gen8(rng, pid, xs):
     x = rng.choice(xs)
     neg = rng.random() < 0.3
-    cands = [y for y in REAGENTS if y != x and R(x, y) is not None and y not in REACTIVE_M]
+    cands = [y for y in REAGENTS if y != x and R(x, y) is not None and y not in REACTIVE_M and agrees(x, y)]
     yes = [y for y in cands if R(x, y)]
     no = [y for y in cands if R(x, y) is False]
     if len(yes) < 3 or len(no) < 3:
@@ -1178,7 +1190,7 @@ def _gen10(rng, pid, groups, names=False):
     subs = [rng.choice(g) for g in groups]
     if len(set(subs)) < 3:
         raise Retry
-    cands = [y for y in REAGENTS if y not in subs and all(R(s, y) is not None for s in subs)]
+    cands = [y for y in REAGENTS if y not in subs and all(R(s, y) is not None and agrees(s, y) for s in subs)]
     T = [[y for y in cands if R(s, y)] for s in subs]
     pairs = []
     used = set()
