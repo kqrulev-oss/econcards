@@ -1773,7 +1773,7 @@ def parse_args(args):
         if '=' in a:
             k, v = a.split('=', 1)
             kw[k] = v
-        elif a in ('each', 'diff', 'obj', 'prop', 'cls', 'rev', 'max', 'min', 'ru', 'world', 'same', 'city', 'center'):  # флаги
+        elif a in ('each', 'diff', 'obj', 'prop', 'cls', 'rev', 'max', 'min', 'ru', 'world', 'same', 'city', 'center', 'two', 'fed'):  # флаги
             kw[a] = True
         else:
             pos.append(a)
@@ -2238,7 +2238,10 @@ def gen_d_seq(rng, args, topic='dict'):
         rest = [i for i in range(len(steps)) if i not in keep]
         idx = sorted(rng.sample(keep, m) if len(keep) > m else keep + rng.sample(rest, m - len(keep)))
     shown = idx[:]
-    rng.shuffle(shown)
+    for _ in range(20):                # не выдавать исходный порядок и «почти исходный»
+        rng.shuffle(shown)
+        if sum(a == b for a, b in zip(shown, idx)) <= 1:
+            break
     order = sorted(range(m), key=lambda j: shown[j])
     e = 'Порядок: ' + ' → '.join(steps[i] for i in idx) + '.'
     q = Q['q'] if Q['q'].startswith('Установите') else 'Установите последовательность: ' + Q['q'][:1].lower() + Q['q'][1:]
@@ -3208,6 +3211,8 @@ def gen_d_statements(rng, args, topic='dict'):
     gi = [i for i, s in enumerate(items) if s in good]
     about = STMT_Q.get(tag, f'о явлении «{B[tag]["title"]}»')
     q = f'Выберите все высказывания, в которых говорится {about}. Запишите цифры, под которыми они указаны.'
+    if kw.get('two'):                  # ОГЭ: «в каких двух»
+        q = f'В каких двух из приведённых высказываний говорится {about}? Запишите цифры, под которыми они указаны.'
     if tag in ('rational_use', 'irrational_use'):
         kind = 'рационального' if tag == 'rational_use' else 'нерационального'
         q = (f'Какие {"два" if k == 2 else "три"} из перечисленных видов деятельности являются примерами {kind} природопользования? '
@@ -3285,6 +3290,22 @@ def graph_series(rng, shape, n, lo=5, hi=90, dec=0, peak=None):
     return [rnd(x) for x in down + [down[-1]] * (n - k)]
 
 
+# верные по биологии утверждения, которые НЕ следуют из графика (главная ловушка ЕГЭ 21)
+BIO_NOT_FROM_DATA = {
+    'активность пепсина': ['Пепсин расщепляет белки до полипептидов', 'Пепсин вырабатывается клетками слизистой оболочки желудка'],
+    'активность амилазы слюны': ['Амилаза слюны расщепляет крахмал', 'При кипячении амилаза необратимо теряет активность'],
+    'скорость фотосинтеза элодеи': ['Кислород при фотосинтезе выделяется в результате фотолиза воды', 'Фотосинтез элодеи идёт в хлоропластах'],
+    'интенсивность фотосинтеза': ['Световая фаза фотосинтеза идёт на мембранах тилакоидов', 'Углекислый газ фиксируется в темновой фазе фотосинтеза'],
+    'скорость ферментативной реакции': ['Ферменты снижают энергию активации реакции', 'Большинство ферментов — белки'],
+    'частота сердечных сокращений': ['Частоту сердечных сокращений повышает адреналин', 'Работа сердца регулируется блуждающим нервом'],
+    'жизненная ёмкость лёгких': ['Регулярные тренировки увеличивают жизненную ёмкость лёгких', 'Жизненную ёмкость лёгких измеряют спирометром'],
+    'концентрация глюкозы в крови': ['Инсулин снижает концентрацию глюкозы в крови', 'Избыток глюкозы запасается в печени в виде гликогена'],
+    'урожайность пшеницы': ['Азот входит в состав белков и нуклеиновых кислот растений', 'Избыток азотных удобрений накапливается в продукции в виде нитратов'],
+    'содержание растворённого кислорода': ['При недостатке кислорода в водоёме возможны заморы рыбы', 'Кислород в воду поступает при фотосинтезе водорослей'],
+    'число бактерий в колонии': ['Бактерии размножаются делением надвое', 'Рост колонии со временем ограничивается нехваткой питательных веществ'],
+}
+
+
 def graph_statements(xs, ys, fx, fy, xu, yu=''):
     """(текст, верно по данным?) — утверждения в духе КИМ, проверяемые по точкам графика."""
     n = len(xs)
@@ -3333,9 +3354,11 @@ def graph_statements(xs, ys, fx, fy, xu, yu=''):
     j = (i + 1) % n
     if ys[j] != ys[i]:
         out.append((f'при значении фактора {X(i)} {fy} составляет {V(ys[j])}', False))
+    out += [(t, False) for t in BIO_NOT_FROM_DATA.get(fy, [])]      # «не следует из данных» — неверно для задания
     loc, gen = inflect(fx0, 'loct'), inflect(fx0, 'gent')
     fix = lambda t: (t.replace('при значении фактора', f'при {loc}').replace('при значениях фактора', f'при {loc}')
-                      .replace('увеличении фактора', f'увеличении {gen}').replace('со значения фактора', 'со значения'))
+                      .replace('увеличении фактора', f'увеличении {gen}').replace('со значения фактора', 'со значения')
+                      .replace('при возрасте', 'в возрасте'))
     return [(cap(fix(t)), ok) for t, ok in out]
 
 
@@ -3351,26 +3374,29 @@ def gen_b_graph(rng):
             uniq.append((t, ok))
     good = [t for t, ok in uniq if ok]
     bad = [t for t, ok in uniq if not ok]
-    k = rng.choice([2, 2, 3])
+    ex = rng.choice(['oge', 'ege'])   # ОГЭ 4: ровно два верных, «какие два»; ЕГЭ 21: «выберите все», 2–3 верных
+    k = 2 if ex == 'oge' else rng.choice([2, 3])
+    if ex == 'oge':
+        bad = [t for t in bad if t not in BIO_NOT_FROM_DATA.get(fy, [])]
     if len(good) < k or len(bad) < 5 - k:
         return gen_b_graph(rng)
     topic_of = lambda t: re.sub(r'(возрастает|снижается|(максимальн|минимальн)\w+( только)? при [\w ]+? [\d,]+|составляет .*)', '', t)
     for _ in range(60):                # без пар-антонимов об одном интервале: они подсказывают ответ
         items = rng.sample(good, k) + rng.sample(bad, 5 - k)
-        if len({topic_of(t) for t in items}) == 5:
+        if len({topic_of(t) for t in items}) == 5 and (ex == 'oge' or any(t in BIO_NOT_FROM_DATA.get(fy, []) for t in items) or rng.random() < 0.2):
             break
     rng.shuffle(items)
     gi = [i for i, t in enumerate(items) if t in good]
     pts = '; '.join(f'({fmt(Fraction(str(x)))}; {fmt(Fraction(str(y)))})' for x, y in zip(xs, ys))
     axes = f'по оси абсцисс — {fx}{" (" + xu + ")" if xu else ""}, по оси ординат — {fy} ({yu})'
-    if k == 2:
+    if ex == 'oge':
         q = (f'Изучите график зависимости: {axes}. Точки графика: {pts}. Какие два из приведённых ниже описаний '
              'верно характеризуют данную зависимость? Запишите в ответе цифры, под которыми они указаны.')
     else:
         q = (f'Проанализируйте график: {axes}. Точки графика: {pts}. Выберите все утверждения, которые можно '
              'сформулировать на основании анализа представленных данных. Запишите в ответе цифры, под которыми они указаны.')
     c = many_card('bio-ege-21', q, items, gi, 'По точкам графика: ' + '; '.join(items[i] for i in gi) + '.',
-                  {'xs': xs, 'ys': ys, 'fx': fx, 'fy': fy, 'xu': xu, 'yu': yu, 'items': items, 'nk': k, 'shape': shape, 'cat': cat})
+                  {'xs': xs, 'ys': ys, 'fx': fx, 'fy': fy, 'xu': xu, 'yu': yu, 'items': items, 'nk': k, 'shape': shape, 'cat': cat, 'ex': ex})
     return c
 
 
@@ -3392,6 +3418,7 @@ PLOIDY = {
                             'клетка кожуры семени': 2, 'микроспора': 1},
     'зелёной водоросли улотрикса': {'клетка нити': 1, 'зигота': 2, 'гамета': 1, 'зооспора': 1},
 }
+PLOIDY_N = {'мха кукушкина льна': 7, 'сосны обыкновенной': 12}   # реальные гаплоидные наборы; для прочих — учебные условные
 PLANT_2N = [12, 14, 16, 18, 20, 22, 24, 26, 28, 30, 32, 36, 40, 42, 48]
 
 
@@ -3400,10 +3427,11 @@ def gen_b_ploidy(rng):
     cell = rng.choice(list(PLOIDY[sp]))
     k = PLOIDY[sp][cell]
     shown_cell = rng.choice([c for c in PLOIDY[sp] if PLOIDY[sp][c] != k] or [cell])
-    n = rng.choice(PLANT_2N) // 2
+    n = PLOIDY_N.get(sp) or rng.choice(PLANT_2N) // 2
     given = n * PLOIDY[sp][shown_cell]
     ans = n * k
-    q = (f'У {sp} {shown_cell} содержит {agree(given, "хромосома")}. Какое число хромосом содержит {cell}? '
+    strip = lambda t: re.sub(r'\s*\((спорофит|гаметофит|мужской гаметофит)\)', '', t)   # подсказку поколения не даём
+    q = (f'У {sp} {strip(shown_cell)} содержит {agree(given, "хромосома")}. Какое число хромосом содержит {strip(cell)}? '
          'В ответе запишите только число.')
     e = f'{cap(shown_cell)} — {PLOIDY[sp][shown_cell]}n = {given}, n = {n}; {cell} — {k}n = {ans}.'
     return card('num', 'bio-ege-3', q, str(ans), e, {'sp': sp, 'cell': cell, 'shown': shown_cell, 'given': given})
