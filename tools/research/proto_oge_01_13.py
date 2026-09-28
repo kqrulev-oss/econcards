@@ -1854,7 +1854,7 @@ def gen_og10_second_draw(r):
     p = F(x - 1, a_ + b_ - 1)
     if not nice(p, 3):
         return None
-    q = (f'{head} {a_} {cols[0][0]} и {b_} {cols[1][0]} {noun}. Не глядя, из него вынимают один предмет за другим — всего два. '
+    q = (f'{head} {a_} {cols[0][0]} и {b_} {cols[1][0]} {noun}. Не глядя, один за другим достают два предмета. '
          f'{w1} {verb} {cols[j][1]}. Найдите вероятность того, что {w2} тоже {verb.replace("оказалась", "окажется").replace("оказался", "окажется")} {cols[j][1]}.')
     e = f'Осталось {a_ + b_ - 1}, из них нужных {x - 1}: P = {x - 1}/{a_ + b_ - 1} = {tnum(p)}.'
     pool = [0] * a_ + [1] * b_
@@ -2132,7 +2132,7 @@ FIND = ('Пользуясь этой формулой, найдите',)
 
 
 def _f12(r, head, ask, ans, e, chk, unit=''):
-    q = f'{head} {pick(r, *FIND)} {ask}' + (f' Ответ дайте {unit}.' if unit else '')
+    q = f'{head} {pick(r, *FIND)}{"" if ask.startswith(",") else " "}{ask}' + (f' Ответ дайте {unit}.' if unit else '')
     return pcard(q, num(ans), e=e), chk
 
 
@@ -2269,7 +2269,7 @@ def gen_og12_solve_factor(r):
             ask, ans, unit = f'массу воды, если при нагревании на {dt} °C она получила {tnum(Q)} Дж.', m, 'в килограммах'
             e = f'm = Q/(cΔt) = {tnum(Q)}/(4200·{dt}) = {tnum(m)}.'
         else:
-            ask, ans, unit = f'на сколько градусов нагрелась вода массой {tnum(m)} кг, получив {tnum(Q)} Дж.', F(dt), 'в градусах Цельсия'
+            ask, ans, unit = f', на сколько градусов нагрелась вода массой {tnum(m)} кг, получив {tnum(Q)} Дж.', F(dt), 'в градусах Цельсия'
             e = f'Δt = Q/(cm) = {tnum(Q)}/(4200·{tnum(m)}) = {dt}.'
         chk = lambda: same(num(ans), R(Q) / (4200 * (R(m) if ans == dt else dt)))
     elif kind == 3:
