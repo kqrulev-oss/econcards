@@ -1453,9 +1453,16 @@ def jitter(rng, v, pct=8, nd=1):
     return half_up(Fraction(str(v)) * (100 + rng.randint(-pct, pct)) / 100, nd)
 
 
+# субъекты с естественным приростом населения в 2022–2024 гг. (по данным Росстата); в остальных — убыль
+NAT_GROWTH = {'Чечня', 'Чеченская Республика', 'Ингушетия', 'Республика Ингушетия', 'Дагестан', 'Республика Дагестан',
+              'Тыва', 'Республика Тыва', 'Ямало-Ненецкий автономный округ', 'Ханты-Мансийский автономный округ — Югра',
+              'Ханты-Мансийский автономный округ', 'Тюменская область', 'Якутия', 'Республика Саха (Якутия)'}
+
+
 def subj(rng, big=False):
     S = FACTS['geo']['ru_subjects']
-    name = rng.choice([k for k, v in S.items() if v.get('pop') and v.get('area') and (not big or v['pop'] > 800000)])
+    name = rng.choice([k for k, v in S.items() if v.get('pop') and v.get('area') and k not in FED_CITIES
+                       and (not big or v['pop'] > 800000)])
     return name, S[name]
 
 
@@ -1464,8 +1471,12 @@ def demo_rows(rng, years=2):
     name, v = subj(rng, True)
     p = [v['pop'] + rng.randint(-3000, 3000)]
     nats, migs = [], []
+    pos = name in NAT_GROWTH
     for _ in range(years):
-        br, dr = Fraction(rng.randint(65, 130), 10), Fraction(rng.randint(95, 160), 10)
+        if pos:                            # регионы с естественным приростом (Росстат, 2022–2024)
+            br, dr = Fraction(rng.randint(120, 190), 10), Fraction(rng.randint(40, 80), 10)
+        else:                              # остальные — естественная убыль
+            br, dr = Fraction(rng.randint(65, 95), 10), Fraction(rng.randint(115, 165), 10)
         nat = int((br - dr) * p[-1] / 1000) + rng.randint(-50, 50)
         mig = int(p[-1] * Fraction(rng.randint(-80, 80), 10000)) + rng.randint(-50, 50)
         nats.append(nat)
@@ -1487,7 +1498,7 @@ def gen_g_demo(rng):
         chk = {'mode': mode, 'pop': pop, 'area': area}
     elif mode in ('natural', 'migr', 'nat_abs'):
         name, p, nats, migs = demo_rows(rng, 1)
-        tab = (f'Используя данные таблицы, ', f'Численность населения субъекта РФ «{name}»: на 1 января {Y} г. — {sp(p[0])} чел., '
+        tab = (f'Используя эти данные, ', f'Численность населения субъекта РФ «{name}»: на 1 января {Y} г. — {sp(p[0])} чел., '
                f'на 1 января {Y + 1} г. — {sp(p[1])} чел.')
         if mode == 'natural':
             avg = Fraction(p[0] + p[1], 2)
