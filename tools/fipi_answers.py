@@ -38,6 +38,7 @@ import threading
 import time
 import urllib.error
 import urllib.request
+from collections import Counter
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
@@ -110,10 +111,28 @@ def wire(t, parts):
     return ','.join(parts)
 
 
-def combos(t):
-    """Перебор ответов с несколькими вариантами: сначала по два и по три — так чаще всего."""
+NUMBERS = {'один': 1, 'одно': 1, 'одну': 1, 'два': 2, 'две': 2, 'двух': 2, 'три': 3, 'трёх': 3, 'трех': 3,
+           'четыре': 4, 'четырёх': 4}
+HOW_MANY = re.compile(r'(?:выберите|найдите|укажите|определите|какие|отметьте)\s+(?:[а-яё]+\s+){0,2}?('
+                      + '|'.join(NUMBERS) + r')\b', re.I)
+
+
+def how_many(text):
+    """Сколько вариантов верных, если условие говорит («выберите две реакции», «какие три…»)."""
+    m = HOW_MANY.search(text)
+    return NUMBERS[m.group(1).lower()] if m else None
+
+
+def combos(t, seen=None):
+    """Перебор ответов с несколькими вариантами: сначала столько, сколько назвало условие,
+    иначе — самые частые в предмете размеры ответа (seen: Counter), по умолчанию 2, 3, 1, 4."""
     ids = [o['id'] for o in t['opts']]
+    k = how_many(t['text'])
     sizes = [k for k in (2, 3, 1, 4) if k <= len(ids)] + list(range(5, len(ids) + 1))
+    if seen:
+        sizes.sort(key=lambda x: -seen.get(x, 0))
+    if k in sizes:
+        sizes = [k] + [x for x in sizes if x != k]
     return [''.join(c) if all(len(i) == 1 for i in ids) else ','.join(c)
             for k in sizes for c in itertools.combinations(ids, k)]
 
@@ -227,6 +246,9 @@ def solve_subject(exam, key, args, gem_key):
     lock = threading.RLock()  # ответы меняются из нескольких потоков
     stats = {'select': 0, 'short': 0, 'full': 0, 'miss': 0, 'e': 0}
     done = [0]
+    # Сколько вариантов обычно верно в этом предмете — по уже найденным ответам
+    sizes = Counter(len(choice(t, answers[t['id']]['a']) or []) for t in data['tasks']
+                    if t['kind'] == 'multi' and t.get('opts') and 'a' in answers.get(t['id'], {}))
 
     def save():
         with lock:
@@ -297,10 +319,12 @@ def solve_subject(exam, key, args, gem_key):
             # несколько — с --brute (до 2^n − 1 проверок на задание)
             ok = any(verify(t, x['a'][:1], ex(x)) for x in atts)
             if not ok and (t['kind'] == 'select' or args.brute):
-                ok = verify(t, [o['id'] for o in t['opts']] if t['kind'] == 'select' else combos(t))
+                ok = verify(t, [o['id'] for o in t['opts']] if t['kind'] == 'select' else combos(t, sizes))
             if ok:
                 with lock:
                     stats['select'] += 1
+                    if t['kind'] == 'multi':
+                        sizes[len(choice(t, answers[t['id']]['a']) or [])] += 1
         elif t['kind'] == 'short':
             ok = any(verify(t, x['a'], ex(x)) for x in atts)
             if not ok and args.ai and gem_key:
