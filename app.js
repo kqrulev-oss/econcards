@@ -1099,10 +1099,18 @@ function viewMe() {
 async function viewLibrary() {
   const lib = await loadLibrary();
   const recent = store.get('zd-recent', []);
+  // Предмет → наборы; экзамен берём из названия «ЕГЭ: …» / «ОГЭ: …», остальное — как есть
+  const subjects = [];
+  for (const p of lib) {
+    const m = /^(ЕГЭ|ОГЭ)\s*:\s*(.+)$/.exec(p.title);
+    const row = { ...p, exam: m ? m[1] : '', name: m ? m[2] : p.title };
+    const s = subjects.find(x => x[0] === p.subject);
+    if (s) s[1].push(row); else subjects.push([p.subject, [row]]);
+  }
   $app.innerHTML = `
-    <header class="top"><a class="back" href="./" aria-label="На главную">←</a><div class="brand-title">Открытые наборы</div></header>
+    <header class="top"><a class="back" href="./" aria-label="На главную">←</a><div class="brand-title">Тренажёр</div></header>
     <section class="panel intro">
-      <p>Тренажёр на 10 минут в день: карточки возвращаются, когда начинаешь их забывать, а репетитор видит, где ты ошибаешься.</p>
+      <p>Выбери предмет и экзамен — внутри все задания по номерам. 10 минут в день: карточки возвращаются, когда начинаешь их забывать.</p>
       <div class="field"><label for="code">Код от репетитора</label>
         <div class="row"><input id="code" placeholder="например, k7m2p9xq" autocapitalize="off"><button class="btn primary" id="join">Открыть</button></div>
       </div>
@@ -1110,10 +1118,10 @@ async function viewLibrary() {
     ${recent.length ? `<section class="topics"><h2>Недавние</h2>${recent.map(r =>
       `<a class="topic" href="?${r.ref.startsWith('t:') ? 't=' + encodeURIComponent(r.ref.slice(2)) : 'p=' + encodeURIComponent(r.ref)}">
         <span class="topic-title">${esc(r.title)}</span><span class="topic-meta">${esc(r.tutor || '')}</span></a>`).join('')}</section>` : ''}
-    <section class="topics"><h2>Открытые наборы</h2>${lib.map(p =>
+    ${subjects.map(([subject, packs]) => `<section class="topics"><h2>${esc(subject)}</h2>${packs.map(p =>
       `<a class="topic" href="?p=${encodeURIComponent(p.id)}"><span class="dot" style="background:${esc(p.color)}"></span>
-        <span class="topic-title">${esc(p.title)}<small>${esc(p.desc)}</small></span>
-        <span class="topic-meta">${p.cards}</span></a>`).join('')}</section>
+        <span class="topic-title">${p.exam ? `<span class="lib-exam" style="background:${esc(p.color)}">${esc(p.exam)}</span>` : ''}${esc(p.name)}<small>${esc(p.desc)}</small></span>
+        <span class="topic-meta">${p.topics} тем</span></a>`).join('')}</section>`).join('')}
     <footer class="foot"><a href="studio/">Я репетитор — собрать свой тренажёр</a></footer>`;
   const join = () => { openCode($app.querySelector('#code').value); };
   $app.querySelector('#join').onclick = join;

@@ -69,8 +69,9 @@ export function renderLanding(root, library) {
   const rounded = Math.floor(total / 500) * 500;
   root.innerHTML = `
   <header class="ld-nav">
-    <a class="ld-logo" href="./"><img class="ld-mark" src="icons/icon-192.png" alt="" width="40" height="40">Между уроками</a>
+    <a class="ld-logo" href="./"><img class="ld-mark" src="icons/icon-192.png" alt="Между уроками" width="40" height="40"><span class="ld-wordmark">Между уроками</span></a>
     <nav><a href="#how">Как это работает</a><a href="#prices">Тарифы</a><a href="#faq">Вопросы</a></nav>
+    <a class="ld-nav-trainer" href="#/library">Тренажёр</a>
     <a class="ld-nav-tg" href="${TG}" target="_blank" rel="noopener" aria-label="Написать в Telegram"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 4L3 11l6 2 2 6 3-4 5 4z"/><path d="M9 13l8-6"/></svg></a>
     ${signedIn() ? '<a class="ld-nav-cta" href="cabinet/">Кабинет</a>' : '<a class="ld-nav-cta" href="login">Войти</a>'}
   </header>
@@ -173,12 +174,12 @@ export function renderLanding(root, library) {
         <div class="sum"><span data-price="lib-1">390</span> ₽ <small>в месяц</small></div>
         <ul>
           <li>Первые <span data-trial="lib">7</span> дней — полный доступ</li>
-          <li>Все задания ЕГЭ по русскому и профильной математике</li>
+          <li>Все задания ЕГЭ по русскому, ЕГЭ и ОГЭ по математике</li>
           <li>Все прототипы, разборы, пробные варианты</li>
           <li>Кабинет родителя: прогресс ребёнка</li>
         </ul>
         <p>Бесплатно: теория и 2 прототипа в каждом задании. За 3 месяца — <span data-price="lib-3">990</span> ₽.</p>
-        <a class="ld-btn" href="?p=ege-rus">Начать заниматься</a>
+        <a class="ld-btn" href="#/library">Выбрать предмет</a>
       </article>
     </div>
     <p class="ld-price-note">Оплата картой или через СБП, без автосписаний. <a href="offer">Оферта</a> · <a href="privacy">Персональные данные</a></p>
