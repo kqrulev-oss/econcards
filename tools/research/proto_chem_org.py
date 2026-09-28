@@ -3651,8 +3651,7 @@ def _formula_opts(rng, true_cnt):
             out.append(s_)
     if len(out) < 3:
         raise Retry
-    opts_ = [right] + rng.sample(out, 3)
-    rng.shuffle(opts_)
+    opts_ = sorted([right] + rng.sample(sorted(out), 3), key=lambda x: (parse_formula(x).get('C', 0), x))
     return opts_, [pretty(x) for x in opts_]
 
 
@@ -3875,17 +3874,17 @@ T_CHON = [
                        'углеродный скелет', ('NaHCO3',), TK_NAHCO3, dict(cls=AC_, branched=False), ('O', 2)),
     T('(CH3)2CHCOOH', 'вещество А реагирует с гидрокарбонатом натрия с выделением газа и имеет разветвлённый углеродный '
                       'скелет', ('NaHCO3',), TK_NAHCO3, dict(cls=AC_, branched=True), ('O', 2)),
-    T('C2H5NH2', 'вещество А является первичным амином', ('HCl',), TK_HCL, dict(cls=AM_, deg=1), ('N', 1)),
-    T('(CH3)2NH', 'вещество А является вторичным амином', ('HCl',), TK_HCL, dict(cls=AM_, deg=2), ('N', 1)),
-    T('CH3CH2CH2NH2', 'вещество А является первичным амином с неразветвлённым углеродным скелетом', ('HCl',), TK_HCL,
+    T('C2H5NH2', 'в молекуле вещества А атом азота связан только с одним атомом углерода', ('HCl',), TK_HCL, dict(cls=AM_, deg=1), ('N', 1)),
+    T('(CH3)2NH', 'в молекуле вещества А атом азота связан с двумя атомами углерода', ('HCl',), TK_HCL, dict(cls=AM_, deg=2), ('N', 1)),
+    T('CH3CH2CH2NH2', 'в молекуле вещества А атом азота связан только с одним атомом углерода, углеродный скелет неразветвлённый', ('HCl',), TK_HCL,
       dict(cls=AM_, deg=1, nsec=False), ('N', 1)),
-    T('(CH3)2CHNH2', 'вещество А является первичным амином, аминогруппа которого связана со вторичным атомом углерода',
+    T('(CH3)2CHNH2', 'в молекуле вещества А атом азота связан только с одним атомом углерода, а этот атом углерода связан ещё с двумя атомами углерода',
       ('HCl',), TK_HCL, dict(cls=AM_, deg=1, nsec=True), ('N', 1)),
-    T('CH3NHC2H5', 'вещество А является вторичным амином', ('HCl',), TK_HCL, dict(cls=AM_, deg=2), ('N', 1)),
-    T('(CH3)3N', 'вещество А является третичным амином', ('HCl',), TK_HCL, dict(cls=AM_, deg=3), ('N', 1)),
-    T('(C2H5)2NH', 'вещество А является вторичным амином с одинаковыми радикалами', ('HCl',), TK_HCL,
+    T('CH3NHC2H5', 'в молекуле вещества А атом азота связан с двумя атомами углерода', ('HCl',), TK_HCL, dict(cls=AM_, deg=2), ('N', 1)),
+    T('(CH3)3N', 'в молекуле вещества А атом азота связан с тремя атомами углерода', ('HCl',), TK_HCL, dict(cls=AM_, deg=3), ('N', 1)),
+    T('(C2H5)2NH', 'в молекуле вещества А атом азота связан с двумя одинаковыми углеводородными радикалами', ('HCl',), TK_HCL,
       dict(cls=AM_, deg=2, sym=True), ('N', 1)),
-    T('(C2H5)3N', 'вещество А является третичным амином, все радикалы которого одинаковы', ('HCl',), TK_HCL,
+    T('(C2H5)3N', 'в молекуле вещества А атом азота связан с тремя одинаковыми углеводородными радикалами', ('HCl',), TK_HCL,
       dict(cls=AM_, deg=3, sym=True), ('N', 1)),
     T('H2NCH2COOH', 'вещество А проявляет амфотерные свойства: образует соли и с кислотами, и со щелочами', ('NaOH',),
       TK_NAOH, dict(cls=AA_), ('N', 1)),
@@ -4011,12 +4010,6 @@ def _known(rng):
 
 
 def _vary(rng, clue):
-    clue = clue.replace('вещество А является первичным амином', rng.choice([
-        'в молекуле вещества А атом азота связан с одним атомом углерода']))
-    clue = clue.replace('вещество А является вторичным амином', rng.choice([
-        'в молекуле вещества А атом азота связан с двумя атомами углерода']))
-    clue = clue.replace('вещество А является третичным амином', rng.choice([
-        'в молекуле вещества А атом азота связан с тремя атомами углерода']))
     return clue.replace('вещество А', rng.choice(['вещество А', 'это вещество']), 1)
 
 
@@ -4216,11 +4209,15 @@ def g33_mf(rng):
 SALT_R = {'H': ('формиат', 'HCHO', 'метаналь', None), 'CH3': ('ацетат', 'CH3COCH3', 'пропанон', None),
           'C2H5': ('пропионат', '(C2H5)2CO', 'пентанон-3', None),
           'CH3CH2CH2': ('бутират', '(CH3CH2CH2)2CO', 'гептанон-4', False),
-          '(CH3)2CH': ('изобутират', '((CH3)2CH)2CO', '2,4-диметилпентанон-3', True)}
+          '(CH3)2CH': ('изобутират', '((CH3)2CH)2CO', '2,4-диметилпентанон-3', True),
+          'CH3(CH2)3': ('валерат', '(CH3(CH2)3)2CO', 'нонанон-5', False)}
 
 
 def _salt_moles(p):
-    return {e: Fr(v) / AR[e] for e, v in p['w'].items()}
+    mo = {e: Fr(v) / AR[e] for e, v in p['w'].items()}
+    if p.get('rest'):
+        mo[p['rest']] = (100 - sum(Fr(v) for v in p['w'].values())) / AR[p['rest']]
+    return mo
 
 
 def _solve_salt(p):
@@ -4250,7 +4247,9 @@ def g33_salt(rng):
     M = molar(salt)
     w = {e: round(Fr(AR[e] * n * 100) / M, 2) for e, n in a.items()}
     order = ['C', 'H', 'O', metal]
-    ws = ', '.join(f'{fmt(w[e])} % {EL_GEN[e]}' for e in order)
+    rest = rng.choice([None, 'H', 'O', 'C'])
+    ws = ', '.join(f'{fmt(w[e])} % {EL_GEN[e]}' for e in order if e != rest) + \
+        (f', остальное — {({"H": "водород", "O": "кислород", "C": "углерод"})[rest]}' if rest else '')
     acid, ket, ketn, br = SALT_R[R]
     extra = '' if br is None else (' Кислотный остаток имеет ' + ('разветвлённый' if br else 'неразветвлённый') +
                                    ' углеродный скелет.')
@@ -4259,7 +4258,8 @@ def g33_salt(rng):
          + TAIL33.format(eq_task='напишите уравнение реакции разложения вещества А при нагревании') + TRAINER33)
     opts_raw, opts_txt = _formula_opts(rng, a)
     eq = balance([salt], [ket, metal + 'CO3'])
-    p = {'w': {k: str(v) for k, v in w.items()}, 'metal': metal, 'opts': opts_raw, 'order': order}
+    p = {'w': {k: str(v) for k, v in w.items() if k != rest}, 'rest': rest, 'metal': metal, 'opts': opts_raw,
+         'order': order}
     mo = _salt_moles(p)
     e = ('В 100 г: ' + '; '.join(f'n({x}) = {fmt(mo[x], 3)} моль' for x in order)
          + f'; на один атом {metal} — {pretty(hill(a))}, т. е. {pretty(salt)} ({acid} '
