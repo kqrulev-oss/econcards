@@ -8,6 +8,13 @@
   python3 tools/research/gen_math.py --json out.json  # все карточки в файл
   python3 tools/research/gen_math.py --export data/research/math.json  # отчёт в машинном виде
 
+Прототипы (модули proto_*.py, см. docs/research/math-prototypes.md):
+  python3 tools/research/gen_math.py --protos [--exam oge] [--proto ep07] [--n 60] [--fipi DIR]   # самопроверка
+  python3 tools/research/gen_math.py --export-protos data/source/math-prototypes.json --fipi DIR  # каталог + итог
+  python3 tools/research/gen_math.py --review-dump OUT.jsonl --fipi DIR   # аналоги для экзаменационной проверки
+  python3 tools/research/gen_math.py --make-fingerprints --fipi DIR       # отпечатки формул ФИПИ
+DIR — локальная выгрузка текстов ФИПИ (в репозиторий не кладётся).
+
 Каждый генератор — функция gen_*(rng) → (card, check) или None (вариант отсеян).
 card — карточка в формате packs/ege-math.json: {id, t, p, k, q, a, e, o?}.
 check — независимая проверка ответа: функция без аргументов, которая заново
