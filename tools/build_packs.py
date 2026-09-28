@@ -587,7 +587,7 @@ def math_pack():
 # ---------- производные: бесплатная часть библиотеки и «Готовый пример» ----------
 
 # Наборы библиотеки с платным доступом — как LIB_PACKS в worker/billing.js
-LIB_PACKS = ['ege-rus', 'ege-math', 'ege-math-base', 'oge-math', 'econ-olymp', 'udarenie']
+LIB_PACKS = ['ege-rus', 'ege-math', 'ege-math-base', 'oge-math', 'ege-phys', 'oge-phys', 'ege-chem', 'oge-chem', 'econ-olymp', 'udarenie']
 FREE_PROTOS = 2    # без доступа: по 2 первых прототипа в каждом задании
 FREE_PER_TOPIC = 15  # в наборах без прототипов — первые 15 карточек темы
 
@@ -682,7 +682,8 @@ if __name__ == '__main__':
         sys.exit()
     # Математика: три набора из каталога прототипов; теория прежнего набора профиля переносится
     from build_math_packs import math_packs
-    built = [rus_pack(), *math_packs(old_prof=math_pack()), econ_pack(), stress_pack()]
+    from build_proto_packs import proto_packs
+    built = [rus_pack(), *math_packs(old_prof=math_pack()), *proto_packs(), econ_pack(), stress_pack()]
     index = [write(p) for p in built]
     (OUT / 'index.json').write_text(json.dumps(index, ensure_ascii=False, indent=1) + '\n', 'utf-8')
     print('packs/index.json')
