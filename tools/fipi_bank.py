@@ -61,7 +61,7 @@ SUBJECTS = {
         'social': ('Обществознание', '756DF168F63F9A6341711C61AA5EC578'),
         'geography': ('География', '20E79180061DB32845C11FC7BD87C7C8'),
         'literature': ('Литература', '4F431E63B9C9B25246F00AD7B5253996'),
-        'english': ('Английский язык', 'FA441EFD2C9397C7496CC7A4792EB0E9'),
+        'english': ('Английский язык', '4B53A6CB75B0B5E1427E596EB4931A2A'),
         'german': ('Немецкий язык', 'B5963A8D84CF9020461EAE42F37F541F'),
         'french': ('Французский язык', '5BAC840990A3AF0A4EE80D1B5A1F9527'),
         'spanish': ('Испанский язык', '8C65A335D93D9DA047C42613F61416F3'),
@@ -78,7 +78,7 @@ SUBJECTS = {
         'social': ('Обществознание', 'AE63AB28A2D28E194A286FA5A8EB9A78'),
         'geography': ('География', '0FA4DA9E3AE2BA1547B75F0B08EF6445'),
         'literature': ('Литература', '6B2CD4C77304B2A3478E5A5B61F6899A'),
-        'english': ('Английский язык', '33F288E8C504BE754292A6AEC463487D'),
+        'english': ('Английский язык', '8BBD5C99F37898B6402964AB11955663'),
         'german': ('Немецкий язык', 'A2AC67AE354EBC5242C49482CBC13451'),
         'french': ('Французский язык', '2A4C52ED5AC1ADA644B8BBF169FEC0FC'),
         'spanish': ('Испанский язык', '7FF0B02E53DFBCDE4F56B0148BE9A236'),
@@ -118,7 +118,8 @@ D/fayQ==
 -----END CERTIFICATE-----"""
 
 KINDS = {'краткий ответ': 'short', 'развернутый ответ': 'full', 'развёрнутый ответ': 'full',
-         'выбор ответа': 'select', 'выбор ответа из предложенных вариантов': 'select'}
+         'выбор ответа': 'select', 'выбор ответа из предложенных вариантов': 'select',
+         'выбор ответов из предложенных вариантов': 'multi'}
 MEDIA = ('.mp3', '.mp4', '.flv', '.swf', '.wav', '.ogg', '.avi', 'show_media.php')
 
 
@@ -272,7 +273,7 @@ ATTRS = {
     'mspace': {'width'}, 'mi': {'mathvariant'}, 'mn': {'mathvariant'}, 'mtext': {'mathvariant'},
     'menclose': {'notation'},
 }
-PICTURE = re.compile(r"""ShowPicture\w*\s*\(\s*(['"])([^'"]+)\1""")
+PICTURE = re.compile(r"""(ShowPicture\w*)\s*\(\s*(['"])([^'"]+)\2""")
 INVISIBLE = dict.fromkeys(map(ord, '⁡⁢⁣⁤​﻿'), None)
 
 
@@ -281,21 +282,18 @@ def local(tag):
 
 
 def pictures(script):
-    """ShowPictureQ('docs/…/xs3qstsrc….png') и родственные → пути картинок.
+    """ShowPictureQ('docs/…/xs3qstsrc….png') и родственные → [(функция, путь)].
     У ShowPictureQ2/Q3 первым идёт большая картинка, вторым — превью; берём большую."""
-    out = []
-    for m in PICTURE.finditer(script):
-        s = re.sub(r'\.\s+', '.', m.group(2))
-        out.append(s)
-    return out
+    return [(m.group(1), re.sub(r'\.\s+', '.', m.group(3))) for m in PICTURE.finditer(script)]
 
 
 class Cleaner:
     """Переводит узел условия в компактный HTML: только разрешённые теги и атрибуты,
     MathML без префикса m: и без semantics, пути картинок — локальные."""
 
-    def __init__(self, resolve_img):
+    def __init__(self, resolve_img, files=''):
         self.resolve_img = resolve_img  # (путь из страницы, из скрипта?) → локальный путь или None
+        self.files = files  # files_location: папка картинок ShowPicture(...) в общих текстах
         self.images = []
         self.media = False
 
@@ -326,7 +324,9 @@ class Cleaner:
     def element(self, n, in_math):
         tag = local(n.tag)
         if tag == 'script':
-            imgs = [self.image(s, script=True) for s in pictures(n.text())]
+            # ShowPictureQ* — от qfiles_location, ShowPicture* — от files_location блока
+            imgs = [self.image(s, script=True) if fn.startswith('ShowPictureQ') else self.image(self.files + s)
+                    for fn, s in pictures(n.text())]
             return [Node('img', {'src': s}) for s in imgs if s]
         if tag in DROP or n.tag in DROP:
             return []
@@ -566,7 +566,7 @@ def plain(kids):
     s = re.sub(r'\n{3,}', '\n\n', s)
     # Знак препинания в конце формулы — за скобку; формула из одного числа — без скобок
     s = re.sub(r'\s*([.,;:])⟧', r'⟧\1', s)
-    s = re.sub(r'⟦\s*([\w.,]+)\s*⟧', r'\1', s)
+    s = re.sub(r'⟦\s*([\w.,]+|[^\w⟦⟧\s]{1,3})\s*⟧', r'\1', s)  # число или одиночный знак (тире) — не формула
     s = re.sub(r'(\w) +([)\]])', r'\1\2', s)
     return s.strip()
 
@@ -584,7 +584,8 @@ def is_rich(kids):
 
 # ---------- страница заданий ----------
 
-QBLOCK = re.compile(r'<div class=["\']qblock[^"\']*["\'] id=["\']q(\w+)["\']', re.I)
+QBLOCK = re.compile(r'<div class=["\']qblock[^"\']*["\'](?: id=["\']q(\w+)["\'])?', re.I)
+GROUP = re.compile(r'number-in-group"\s+title="Задание\s+(\d+)\s+в\s+(\w+)')
 
 
 def parse_meta(info):
@@ -615,9 +616,10 @@ def parse_options(block, cleaner):
         if row is None:
             continue
         holder = Node('div')
-        if row.tag == 'tr':  # текст варианта — в соседних ячейках строки
+        if row.tag == 'tr':  # текст варианта — в соседних ячейках строки, кроме номера «1)»
             for cell in row.kids:
-                if isinstance(cell, Node) and not cell.find(lambda x: x is inp):
+                if isinstance(cell, Node) and not cell.find(lambda x: x is inp) \
+                        and not re.fullmatch(r'[\s\xa0]*\d+\)?[\s\xa0]*', cell.text()):
                     holder.kids += cell.kids if cell.tag in ('td', 'th') else [cell]
         else:
             holder.kids = [k for k in row.kids if k is not inp]
@@ -632,25 +634,51 @@ def parse_options(block, cleaner):
             for o in opts if o['kids']]
 
 
-def parse_questions(html, resolve_img):
-    """Задания со страницы questions.php и счётчик setQCount(всего, страница, размер).
-    resolve_img(src, script) → локальный путь картинки."""
+def text_block(root, resolve_img, files):
+    """Общий текст группы заданий («Прочитайте текст и выполните задания»)."""
+    block = root.find(lambda n: 'qblock' in n.classes())
+    hint = block.find(lambda n: 'hint' in n.classes())
+    holder = Node('div')
+    holder.kids = [k for k in block.kids if k is not hint]
+    cleaner = Cleaner(resolve_img, files)
+    kids = tidy(cleaner.clean(holder))
+    out = {'text': plain(kids)}
+    if is_rich(kids):
+        out['html'] = serialize(kids)
+    if cleaner.images:
+        out['img'] = cleaner.images
+    if cleaner.media:
+        out['media'] = True
+    return out
+
+
+def parse_questions(html, resolve_img, pending=None):
+    """Задания со страницы questions.php, счётчик setQCount(всего, страница, размер),
+    общие тексты групп {номер группы: текст} и текст, чьи задания ушли на следующую
+    страницу (его передают в pending при разборе следующей). resolve_img(src, script) →
+    локальный путь картинки."""
     total = re.search(r'setQCount\((\d+)(?:\s*,\s*\d+\s*,\s*(\d+))?', html)
     starts = [m.start() for m in QBLOCK.finditer(html)]
-    tasks = []
+    tasks, groups = [], {}
     for i, st in enumerate(starts):
         seg = html[st:starts[i + 1] if i + 1 < len(starts) else len(html)]
         qid = QBLOCK.match(seg).group(1)
+        files = re.search(r"files_location\s*=\s*'([^']*)'", seg)
         root = parse(seg)
+        if not qid:  # блок без номера — общий текст для следующих заданий группы
+            pending = text_block(root, resolve_img, files.group(1) if files else '')
+            continue
         guid = root.find(lambda n: n.tag == 'input' and n.attrs.get('name') == 'guid')
         cell = root.find(lambda n: n.tag == 'td' and 'cell_0' in n.classes())
         hint = root.find(lambda n: 'hint' in n.classes())
         var = root.find(lambda n: 'varinats-block' in n.classes() or 'variants-block' in n.classes())
         info = root.find(lambda n: n.attrs.get('id') == f'i{qid}')
         meta = parse_meta(info)
-        cleaner = Cleaner(resolve_img)
+        cleaner = Cleaner(resolve_img, files.group(1) if files else '')
         kids = tidy(cleaner.clean(cell)) if cell is not None else []
         opts = parse_options(var, cleaner) if var is not None else []
+        # Ответ-маска: для выбора сайт ждёт «01100» — отмечены 2-й и 3-й варианты
+        mask = re.search(r"ans\s*\+=\s*'1'\s*;\s*else\s+ans\s*\+=\s*'0'", seg)
         kes = [re.match(r'[\d.]+', v).group(0).rstrip('.') for v in meta.get('КЭС', []) if re.match(r'\d', v)]
         atype = ' '.join(meta.get('Тип ответа', [])).lower().replace('ё', 'е')
         kind = KINDS.get(atype) or ('select' if opts else 'full' if 'развернут' in atype else 'short' if atype else '')
@@ -665,11 +693,20 @@ def parse_questions(html, resolve_img):
             task['img'] = cleaner.images
         if cleaner.media:
             task['media'] = True
+        if mask and opts:
+            task['mask'] = 1
+        grp = GROUP.search(seg)
+        if grp:
+            task['group'], task['gn'] = grp.group(2), int(grp.group(1))
+            if pending is not None and grp.group(2) not in groups:
+                groups[grp.group(2)] = pending
+            pending = None
         rest = {k: v for k, v in meta.items() if k not in ('КЭС', 'Тип ответа')}
         if rest:
             task['meta'] = rest
         tasks.append(task)
-    return tasks, int(total.group(1)) if total else None, int(total.group(2)) if total and total.group(2) else None
+    size = int(total.group(2)) if total and total.group(2) else None
+    return tasks, int(total.group(1)) if total else None, size, groups, pending
 
 
 def parse_project(html):
@@ -741,6 +778,10 @@ def crawl(exam, key, client, offline=False, pagesize=100):
         if offline:
             return None
         html = fetch()
+        # «Ошибка: Нет прав доступа» и прочие короткие ответы вместо страницы — не кэшируем
+        err = re.search(r'Ошибка:\s*([^<]+)', html[:2000]) if len(html) < 3000 else None
+        if err:
+            raise FipiError(f'сайт ответил «{err.group(1).strip()}» на {name}')
         f.write_text(html, 'utf-8')
         return html
 
@@ -758,7 +799,7 @@ def crawl(exam, key, client, offline=False, pagesize=100):
         sys.exit(f'{exam}-{key}: нет кэша страниц, запустите без --offline')
     loc = re.search(r"qfiles_location\s*=\s*'([^']*)'", first)
     resolve = image_resolver(client, exam, key, page_base, urllib.parse.urljoin(page_base, loc.group(1) if loc else ''), offline)
-    tasks, total, size = parse_questions(first, resolve)
+    tasks, total, size, groups, pending = parse_questions(first, resolve)
     by_id = {t['id']: t for t in tasks}
     # Сервер может урезать размер страницы — дальше листаем тем размером, что он назвал
     size = size or len(tasks) or pagesize
@@ -769,7 +810,9 @@ def crawl(exam, key, client, offline=False, pagesize=100):
         if html is None:
             print(f'  {exam}-{key}: в кэше нет страницы {n}, собрано {len(by_id)} из {total}')
             break
-        got, _, _ = parse_questions(html, resolve)
+        got, _, _, more, pending = parse_questions(html, resolve, pending)
+        for g, v in more.items():
+            groups.setdefault(g, v)
         new = [t for t in got if t['id'] not in by_id]
         if not new:
             break
@@ -777,7 +820,9 @@ def crawl(exam, key, client, offline=False, pagesize=100):
             by_id[t['id']] = t
         n += 1
         print(f'  {exam}-{key}: {len(by_id)}/{total}', end='\r', flush=True)
-    print(f'  {exam}-{key}: заданий {len(by_id)} из {total}' + ' ' * 10)
+    lost = sorted({t['group'] for t in by_id.values() if t.get('group') and t['group'] not in groups})
+    print(f'  {exam}-{key}: заданий {len(by_id)} из {total}, общих текстов {len(groups)}'
+          + (f', не найден текст групп {lost}' if lost else '') + ' ' * 10)
 
     # Позиция задания в КИМ, если банк даёт такой фильтр (у части предметов)
     try:
@@ -790,7 +835,7 @@ def crawl(exam, key, client, offline=False, pagesize=100):
                     'favorite': '', 'blind': '', 'crtm': int(time.time())}))
                 if html is None:
                     break
-                got, cnt, _ = parse_questions(html, lambda s, script=False: None)
+                got, cnt, _, _, _ = parse_questions(html, lambda s, script=False: None)
                 fresh = [t['id'] for t in got if t['id'] not in seen]
                 seen.update(fresh)
                 if not fresh or (cnt and len(seen) >= cnt):
@@ -805,7 +850,7 @@ def crawl(exam, key, client, offline=False, pagesize=100):
         print(f'  {exam}-{key}: позиция в КИМ у {sum(1 for t in by_id.values() if "pos" in t)} заданий')
 
     return {'exam': exam, 'key': key, 'title': title, 'proj': proj, 'count': total,
-            'fetched': time.strftime('%Y-%m-%d'), 'kes': kes, 'filters': filters,
+            'fetched': time.strftime('%Y-%m-%d'), 'kes': kes, 'filters': filters, 'groups': groups,
             'tasks': sorted(by_id.values(), key=lambda t: t['id'])}
 
 

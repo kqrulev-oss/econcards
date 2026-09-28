@@ -280,6 +280,10 @@ input:focus, select:focus, textarea:focus { outline: 2px solid var(--accent); ou
 .rich math { font-size: 1.1em; }
 .rich math[display="block"] { display: block; margin: 6px 0; overflow-x: auto; }
 .muted.small { font-size: 13px; margin: 8px 0 0; }
+/* общий текст группы заданий: свёрнут, чтобы вопрос был виден сразу */
+.rich details { margin: 0 0 12px; padding: 10px 14px; background: var(--bg); border-radius: 12px; font-size: 15px; }
+.rich details summary { cursor: pointer; font-weight: 600; color: var(--accent); }
+.rich details[open] summary { margin-bottom: 8px; }
 
 /* формулы из данных (⟦…⟧) */
 .f { white-space: nowrap; font-family: "Cambria Math", "STIX Two Math", Georgia, serif; font-size: 1.05em; }

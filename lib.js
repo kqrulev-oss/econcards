@@ -115,7 +115,7 @@ export const KIND_NAMES = {
 // Поле h: таблицы, картинки и формулы MathML (браузер рисует их сам). Разметка
 // может прийти и в наборе репетитора, поэтому пропускаем только безопасные теги
 // и атрибуты и вставляем готовые узлы, а не строку HTML.
-const RICH_TAGS = new Set(('p div br b i u sub sup table tbody thead tr td th ul ol li img span '
+const RICH_TAGS = new Set(('p div br b i u sub sup table tbody thead tr td th ul ol li img span details summary '
   + 'math mrow mi mn mo mtext mspace ms mfrac msqrt mroot msup msub msubsup mover munder munderover '
   + 'mtable mtr mtd mstyle mpadded mphantom menclose mmultiscripts mprescripts none').split(' '));
 const RICH_ATTRS = new Set(('colspan rowspan start display displaystyle scriptlevel stretchy fence separator '

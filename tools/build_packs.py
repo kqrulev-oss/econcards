@@ -588,60 +588,84 @@ def short_title(name, limit=70):
     return first if len(first) <= limit else first[:limit - 1].rstrip() + '…'
 
 
-def fipi_card(t, rec):
-    """Задание банка → карточка или None, если ключа к нему пока нет."""
-    if t.get('media'):
+def fipi_choice(t, a):
+    """Подтверждённый ответ-выбор «235» или «1,3» → номера вариантов."""
+    return a.split(',') if ',' in a else list(a)
+
+
+def fipi_card(t, rec, passage=None):
+    """Задание банка → карточка или None, если ключа к нему пока нет.
+    passage — общий текст группы заданий: он идёт в карточку свёрнутым блоком."""
+    if t.get('media') or (passage or {}).get('media'):
         return None  # аудирование и видео приложение не проигрывает
     card = {'q': t['text'], 'src': f'Банк ФИПИ · {t["id"]}'}
     if t.get('html'):
         card['h'] = t['html']
-    if t['kind'] == 'select' and t.get('opts') and rec.get('a'):
-        card.update(k='one', a=rec['a'], o=[{'id': o['id'], 't': o['text'], **({'h': o['html']} if o.get('html') else {})}
-                                             for o in t['opts']])
+    if passage:
+        card['q'] += '\n\nТекст к заданию:\n' + passage['text']
+        body = t.get('html') or ''.join(f'<p>{esc(x)}</p>' for x in re.sub(r'⟦(.+?)⟧', r'\1', t['text']).split('\n') if x.strip())
+        text = passage.get('html') or ''.join(f'<p>{esc(x)}</p>' for x in passage['text'].split('\n') if x.strip())
+        card['h'] = f'<details><summary>Текст к заданию</summary>{text}</details>{body}'
+    opts = [{'id': o['id'], 't': o['text'], **({'h': o['html']} if o.get('html') else {})} for o in t.get('opts', [])]
+    if t['kind'] == 'select' and opts and rec.get('a'):
+        card.update(k='one', a=rec['a'], o=opts)
+    elif t['kind'] == 'multi' and opts and rec.get('a'):
+        card.update(k='many', a=fipi_choice(t, rec['a']), o=opts)
     elif t['kind'] == 'short' and rec.get('a'):
         # «Запишите в ответ цифры…» — последовательность, а не число: 012 ≠ 12, порядок может не важен
         digits = re.search(r'цифр|номер|последовательност|соответстви', t['text'], re.I)
         card.update(k='num' if is_number(rec['a']) and not digits else 'short', a=rec['a'])
         if rec.get('any'):
             card['any'] = 1
-        if rec.get('e'):
-            card.update(e=rec['e'], ai=1)
     elif t['kind'] == 'full' and rec.get('sol'):
         card.update(k='open', a=rec['sol'], ai=1)
     else:
         return None
+    if rec.get('e') and card['k'] != 'open':
+        card.update(e=rec['e'], ai=1)
     return card
 
 
 def fipi_content(exam, key, section):
-    """Темы (разделы кодификатора), подтемы и карточки одного предмета банка."""
+    """Темы (разделы кодификатора), подтемы и карточки одного предмета банка.
+    Если в разделе есть третий уровень кодов (у русского: 3.7.5), темами становятся
+    подразделы (3.7 Орфография), а прототипами — их пункты."""
     data = json.loads((FIPI / f'{exam}-{key}.json').read_text('utf-8'))
     ans_file = FIPI / f'{exam}-{key}-answers.json'
     answers = json.loads(ans_file.read_text('utf-8')) if ans_file.exists() else {}
+    groups = data.get('groups', {})
     sections = {s['code']: s for s in data['kes']}
-    themes = {th['code']: th['name'] for s in data['kes'] for th in s['themes']}
+    names = {th['code']: th['name'] for s in data['kes'] for th in s['themes']}
+    deep = {s['code'] for s in data['kes'] if any(th['code'].count('.') >= 2 for th in s['themes'])}
     cards, used, skipped = [], {}, Counter()
     for t in data['tasks']:
-        body = fipi_card(t, answers.get(t['id'], {}))
+        if t.get('group') and t['group'] not in groups:
+            skipped[t['kind'] + ' (нет общего текста)'] += 1
+            continue
+        body = fipi_card(t, answers.get(t['id'], {}), groups.get(t.get('group')))
         if not body:
             skipped[t['kind'] + (' (медиа)' if t.get('media') else '')] += 1
             continue
-        # Тема — раздел кодификатора первого КЭС задания, подтема — его пункт
-        codes = t['kes'] or ['0']
-        sec = next((c.split('.')[0] for c in codes if c.split('.')[0] in sections), '0')
-        theme = next((c for c in codes if c.split('.')[0] == sec and c in themes), None)
-        card = {'id': f'fipi-{t["id"]}', 't': f'fk-{sec}'}
-        if theme:
-            card['p'] = f'fk-{theme}'
+        # Тема — раздел (или подраздел) кодификатора первого КЭС задания, прототип — его пункт
+        code = next((c for c in t['kes'] if c.split('.')[0] in sections), '0')
+        parts = code.split('.')
+        topic, proto = parts[0], '.'.join(parts[:2]) if len(parts) > 1 else None
+        if topic in deep and proto in names:
+            topic, proto = proto, code if len(parts) > 2 and code in names else None
+        card = {'id': f'fipi-{t["id"]}', 't': f'fk-{topic}'}
+        if proto in names:
+            card['p'] = f'fk-{proto}'
         cards.append({**card, **body})
-        used.setdefault(sec, set()).add(theme)
+        used.setdefault(topic, set()).add(card.get('p', '')[3:])
     topics = []
-    order = sorted(used, key=lambda c: [int(x) for x in c.split('.')])
-    for sec in order:
-        info = sections.get(sec, {'name': 'Другие задания', 'themes': []})
-        protos = [{'id': f'fk-{th["code"]}', 'title': f'{th["code"]} {short_title(th["name"])}', 'tip': ''}
-                  for th in info['themes'] if th['code'] in used[sec]]
-        topic = {'id': f'fk-{sec}', 'title': info['name'] or f'Раздел {sec}', 'section': section}
+    for code in sorted(used, key=lambda c: [int(x) for x in c.split('.') if x.isdigit()]):
+        sec = sections.get(code.split('.')[0], {'name': 'Другие задания', 'themes': []})
+        title = sec['name'] if code in sections else names.get(code, code)
+        protos = [{'id': f'fk-{c}', 'title': f'{c} {short_title(names[c])}', 'tip': ''}
+                  for c in sorted(used[code], key=lambda c: [int(x) for x in c.split('.')]) if c in names]
+        # Подразделы глубокого раздела собираются под его названием
+        head = f'{section} · {sec["name"]}' if code not in sections and code.split('.')[0] in deep else section
+        topic = {'id': f'fk-{code}', 'title': title or f'Раздел {code}', 'section': head}
         if protos:
             topic.update(protos=protos, pt='Темы кодификатора')
         topics.append(topic)
@@ -665,7 +689,7 @@ def fipi_packs(packs):
         exam, key = m.groups()
         pid = f'{exam}-{FIPI_IDS[key]}'
         base = by_id.get(pid)
-        topics, cards, data = fipi_content(exam, key, 'Открытый банк ФИПИ' if base else 'Темы кодификатора')
+        topics, cards, data = fipi_content(exam, key, 'Банк ФИПИ' if base else 'Темы кодификатора')
         if not cards:
             continue
         if base:
