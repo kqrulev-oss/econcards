@@ -930,7 +930,8 @@ def gen_b_foodweb(rng):
     mode = rng.choice(['chain', 'level', 'change'])
     letters = dict(zip(sorted(web, key=lambda _: rng.random()), 'АБВГДЕЖЗИКЛМН'))
     listing = '; '.join(f'{letters[x]} — {x}' for x in sorted(web, key=lambda x: letters[x]))
-    links = '; '.join(f'{x} питается: {", ".join(f)}' for x, f in web.items() if f)
+    links = '; '.join(f'{cap(x)} {"питаются" if plural_of(x) == "plur" else "питается"} ' + ', '.join(inflect(y, 'ablt') for y in f)
+                      for x, f in web.items() if f)
     if mode == 'chain':
         L = rng.choice([3, 4, 4])
         chains = web_chains(web, L)
@@ -2370,19 +2371,21 @@ CMANY_Q = {  # таблица → (начало вопроса, именная �
     'biotic_relation': ('Какие примеры иллюстрируют', '{x}'),
     'variability_examples': ('Какие примеры иллюстрируют', '{x}'),
     'adaptation_type': ('Какие примеры иллюстрируют', '{x} приспособление'),
-    'evo_evidence': 'Какие примеры относят к доказательствам эволюции группы «{x}»?',
-    'eco_factor': 'Какие из перечисленных факторов относят к группе «{x}»?',
-    'trophic_role': 'Какие из перечисленных организмов в экосистеме выполняют роль «{x}»?',
+    'evo_evidence': lambda x: f'Какие примеры относят к {inflect(x.replace("ое", "ые") + " доказательства", "datv")} эволюции?',
+    'eco_factor': lambda x: f'Какие из перечисленных факторов относят к {inflect(x + " фактор", "datv", "plur")}?',
+    'trophic_role': lambda x: f'Какие из перечисленных организмов в экосистеме являются {inflect(x, "ablt", "plur")}?',
     'biosphere_substance': 'Какие примеры относят к веществу биосферы, которое В. И. Вернадский назвал «{x}»?',
-    'cycle_process': 'Какие процессы относятся к круговороту {x}?',
-    'anthropo_factor': 'Какие из перечисленных факторов антропогенеза относят к группе «{x}»?',
-    'mutation_types': 'Какие примеры относят к мутациям типа «{x}»?',
-    'organ_system': 'Какие органы относят к системе «{x}»?',
-    'disease_cause': 'Какие заболевания относят к группе «{x}»?',
-    'animal_class': 'Какие из перечисленных животных относят к классу «{x}»?',
-    'habitat': 'Какие из перечисленных организмов обитают в среде «{x}»?',
+    'cycle_process': lambda x: f'Какие процессы относятся к {inflect(x, "datv")}?',
+    'anthropo_factor': lambda x: f'Какие из перечисленных факторов антропогенеза относят к {inflect(x + " фактор", "datv", "plur")}?',
+    'mutation_types': lambda x: f'Какие примеры относят к {inflect(x + " мутация", "datv", "plur")}?',
+    'organ_system': lambda x: f'Какие органы относят к {inflect(x + " система", "datv")}?',
+    'disease_cause': lambda x: (f'Какие заболевания относят к {inflect(x + " заболевание", "datv", "plur")}?' if x in ('инфекционное', 'наследственное')
+                                 else 'Какие заболевания относят к авитаминозам?' if x == 'авитаминоз'
+                                 else f'Какие заболевания вызваны {inflect(x, "ablt", "plur")}?'),
+    'animal_class': 'Какие из перечисленных животных относят к классу {x}?',
+    'habitat': lambda x: f'Какие из перечисленных организмов обитают в {inflect(x.lower() + " среда", "loct")}?',
     'development_examples': 'У каких из перечисленных животных {x}?',
-    'germ_layers': 'Какие органы развиваются из зародышевого листка «{x}»?',
+    'germ_layers': lambda x: f'Какие органы развиваются из {inflect(x, "gent")}?',
     'breeding_examples': 'Какие примеры иллюстрируют метод селекции «{x}»?',
     'organ_modification': 'Какие примеры относят к видоизменениям «{x}»?',
 }
@@ -2392,6 +2395,8 @@ def cmany_question(ref, x):
     t = CMANY_Q.get(ref.split('/', 1)[1], 'Какие примеры относятся к понятию «{x}»?')
     if isinstance(t, tuple):
         return f'{t[0]} {inflect(t[1].format(x=x), "accs")}?'
+    if callable(t):
+        return t(x)
     return t.format(x=x)
 
 
@@ -4150,7 +4155,8 @@ def gen_b_foodweb2(rng):
     web = WEBS[name]
     eaters = {x: [y for y, food in web.items() if x in food] for x in web}
     mode = rng.choice(['competitor', 'unrelated'])
-    links = '; '.join(f'{x} питается: {", ".join(f)}' for x, f in web.items() if f)
+    links = '; '.join(f'{cap(x)} {"питаются" if plural_of(x) == "plur" else "питается"} ' + ', '.join(inflect(y, 'ablt') for y in f)
+                      for x, f in web.items() if f)
     cons = [x for x in web if web[x]]
     rng.shuffle(cons)
     for x in cons:

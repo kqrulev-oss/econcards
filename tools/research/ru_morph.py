@@ -99,7 +99,7 @@ def inflect(phrase, case, number=None):
         if number:
             feats.add(number)
         if i != head:
-            if num == 'plur':
+            if (number or num) == 'plur':
                 feats.add('plur')
             elif gender:
                 feats.add(gender)
