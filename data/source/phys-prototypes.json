@@ -23,9 +23,9 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_ege_a.py:g_circle"
    },
-   "capacity": 134,
+   "capacity": 762,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
-   "fipi_sim_max": 0.12,
+   "fipi_sim_max": 0.148,
    "fidelity": {
     "answer_format": "число, м/с², м/с или «в … раз(а)»",
     "style": "Краткий ответ — число в указанных единицах, конечная десятичная дробь; строка «Ответ: ___ ед.» как в КИМ; справочные данные КИМ (g = 10 м/с²)",
@@ -68,7 +68,7 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_ege_a.py:g_freefall"
    },
-   "capacity": 167,
+   "capacity": 783,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
    "fipi_sim_max": 0.217,
    "fidelity": {
@@ -113,7 +113,7 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_ege_a.py:g_relative"
    },
-   "capacity": 173,
+   "capacity": 1234,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
    "fipi_sim_max": 0.056,
    "fidelity": {
@@ -157,9 +157,9 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_ege_a.py:g_uniacc"
    },
-   "capacity": 157,
+   "capacity": 1218,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
-   "fipi_sim_max": 0.091,
+   "fipi_sim_max": 0.1,
    "fidelity": {
     "answer_format": "число, м, м/с или м/с²",
     "style": "Краткий ответ — число в указанных единицах, конечная десятичная дробь; строка «Ответ: ___ ед.» как в КИМ; справочные данные КИМ (g = 10 м/с²)",
@@ -172,7 +172,7 @@
     "status": "pass",
     "checked": 5,
     "passed": 5,
-    "reason": "Ответы верны. Замечание: «пройдёт санки» (согласование); «с начальной скоростью 20 м/с … за 2-ю секунду движения» у самолёта двусмысленно — писать «за вторую секунду от начала отсчёта»."
+    "reason": "Ответы верны. Замечание: «пройдёт санки» (согласование); «[формулировка задания банка]» у самолёта двусмысленно — писать «за вторую секунду от начала отсчёта»."
    },
    "example": {
     "k": "num",
@@ -202,7 +202,7 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_ege_a.py:g_uniform"
    },
-   "capacity": 125,
+   "capacity": 1209,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
    "fipi_sim_max": 0.154,
    "fidelity": {
@@ -246,7 +246,7 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_ege_a.py:g_vt_accel"
    },
-   "capacity": 72,
+   "capacity": 732,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
    "fipi_sim_max": 0.167,
    "fidelity": {
@@ -291,7 +291,7 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_ege_a.py:g_vt_path"
    },
-   "capacity": 63,
+   "capacity": 616,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
    "fipi_sim_max": 0.174,
    "fidelity": {
@@ -335,7 +335,7 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_ege_a.py:g_xt_eq"
    },
-   "capacity": 153,
+   "capacity": 1541,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
    "fipi_sim_max": 0.184,
    "fidelity": {
@@ -379,7 +379,7 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_ege_a.py:g_friction"
    },
-   "capacity": 194,
+   "capacity": 1249,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
    "fipi_sim_max": 0.214,
    "fidelity": {
@@ -423,7 +423,7 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_ege_a.py:g_gravity"
    },
-   "capacity": 155,
+   "capacity": 1150,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
    "fipi_sim_max": 0.2,
    "fidelity": {
@@ -467,7 +467,7 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_ege_a.py:g_hooke"
    },
-   "capacity": 159,
+   "capacity": 844,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
    "fipi_sim_max": 0.15,
    "fidelity": {
@@ -511,7 +511,7 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_ege_a.py:g_newton_num"
    },
-   "capacity": 96,
+   "capacity": 874,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
    "fipi_sim_max": 0.133,
    "fidelity": {
@@ -554,9 +554,9 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_ege_a.py:g_newton_ratio"
    },
-   "capacity": 109,
+   "capacity": 845,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
-   "fipi_sim_max": 0.167,
+   "fipi_sim_max": 0.243,
    "fidelity": {
     "answer_format": "число, м/с², Н или кг",
     "style": "Краткий ответ — число в указанных единицах, конечная десятичная дробь; строка «Ответ: ___ ед.» как в КИМ; справочные данные КИМ (g = 10 м/с²); силы и массы заданы буквами с множителями (0,5m, 2F), как в демоверсии 2027",
@@ -599,7 +599,7 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_ege_a.py:g_weight"
    },
-   "capacity": 103,
+   "capacity": 697,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
    "fipi_sim_max": 0.276,
    "fidelity": {
@@ -643,7 +643,7 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_ege_a.py:g_collision"
    },
-   "capacity": 97,
+   "capacity": 723,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
    "fipi_sim_max": 0.208,
    "fidelity": {
@@ -687,7 +687,7 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_ege_a.py:g_energy"
    },
-   "capacity": 140,
+   "capacity": 604,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
    "fipi_sim_max": 0.25,
    "fidelity": {
@@ -731,7 +731,7 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_ege_a.py:g_efric"
    },
-   "capacity": 161,
+   "capacity": 841,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
    "fipi_sim_max": 0.143,
    "fidelity": {
@@ -775,7 +775,7 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_ege_a.py:g_kinetic"
    },
-   "capacity": 116,
+   "capacity": 241,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
    "fipi_sim_max": 0.214,
    "fidelity": {
@@ -820,7 +820,7 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_ege_a.py:g_momentum"
    },
-   "capacity": 153,
+   "capacity": 658,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
    "fipi_sim_max": 0.231,
    "fidelity": {
@@ -864,7 +864,7 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_ege_a.py:g_potential"
    },
-   "capacity": 165,
+   "capacity": 1029,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
    "fipi_sim_max": 0.062,
    "fidelity": {
@@ -909,7 +909,7 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_ege_a.py:g_work"
    },
-   "capacity": 182,
+   "capacity": 1482,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
    "fipi_sim_max": 0.2,
    "fidelity": {
@@ -953,7 +953,7 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_ege_a.py:g_archimedes"
    },
-   "capacity": 113,
+   "capacity": 472,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
    "fipi_sim_max": 0.267,
    "fidelity": {
@@ -996,7 +996,7 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_ege_a.py:g_float"
    },
-   "capacity": 36,
+   "capacity": 172,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
    "fipi_sim_max": 0.0,
    "fidelity": {
@@ -1004,7 +1004,7 @@
     "style": "Краткий ответ — число в указанных единицах, конечная десятичная дробь; строка «Ответ: ___ ед.» как в КИМ; справочные данные КИМ (g = 10 м/с²); плотности — из справочных данных КИМ",
     "level": "Б",
     "time_min": 3,
-    "scale": "бруски толщиной 2–40 см, плотности из таблицы КИМ — как в банке («брусок из древесины плотностью 400 кг/м³»)",
+    "scale": "бруски толщиной 2–40 см, плотности из таблицы КИМ — как в банке («[формулировка задания банка]»)",
     "trap": "какую долю объёма спрашивают — под или над поверхностью",
     "kes": "1.3.1, 1.3.3, 1.3.5, 1.3.6, 1.5.2, 1.5.4, 1.5.5",
     "score": "1 балл: ответ полностью совпадает с эталоном",
@@ -1041,9 +1041,9 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_ege_a.py:g_lever"
    },
-   "capacity": 120,
+   "capacity": 1021,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
-   "fipi_sim_max": 0.111,
+   "fipi_sim_max": 0.114,
    "fidelity": {
     "answer_format": "число, см, Н или кг",
     "style": "Краткий ответ — число в указанных единицах, конечная десятичная дробь; строка «Ответ: ___ ед.» как в КИМ; справочные данные КИМ (g = 10 м/с²); рисунок рычага заменён словесным описанием плеч",
@@ -1085,7 +1085,7 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_ege_a.py:g_moment"
    },
-   "capacity": 123,
+   "capacity": 271,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
    "fipi_sim_max": 0.088,
    "fidelity": {
@@ -1129,7 +1129,7 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_ege_a.py:g_oscillation"
    },
-   "capacity": 174,
+   "capacity": 1244,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
    "fipi_sim_max": 0.2,
    "fidelity": {
@@ -1173,7 +1173,7 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_ege_a.py:g_pendulum"
    },
-   "capacity": 100,
+   "capacity": 787,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
    "fipi_sim_max": 0.278,
    "fidelity": {
@@ -1217,7 +1217,7 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_ege_a.py:g_pressure"
    },
-   "capacity": 81,
+   "capacity": 444,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
    "fipi_sim_max": 0.077,
    "fidelity": {
@@ -1262,7 +1262,7 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_ege_a.py:g_wave"
    },
-   "capacity": 120,
+   "capacity": 457,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
    "fipi_sim_max": 0.211,
    "fidelity": {
@@ -1310,9 +1310,9 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_ege_a.py:g_block"
    },
-   "capacity": 171,
+   "capacity": 1690,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
-   "fipi_sim_max": 0.122,
+   "fipi_sim_max": 0.133,
    "fidelity": {
     "answer_format": "последовательность номеров верных утверждений (2–3 цифры)",
     "style": "Множественный выбор: 5 утверждений, верных 2 или 3; «Выберите все верные утверждения …» как в демоверсии 2027; график банка заменён таблицей значений; справочные данные КИМ",
@@ -1381,9 +1381,9 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_ege_a.py:g_bridge_many"
    },
-   "capacity": 81,
+   "capacity": 762,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
-   "fipi_sim_max": 0.219,
+   "fipi_sim_max": 0.242,
    "fidelity": {
     "answer_format": "последовательность номеров верных утверждений (2–3 цифры)",
     "style": "Множественный выбор: 5 утверждений, верных 2 или 3; «Выберите все верные утверждения …» как в демоверсии 2027; график банка заменён таблицей значений; справочные данные КИМ",
@@ -1439,7 +1439,7 @@
     "1.3.6"
    ],
    "invariant": "тело плавает, если ρт < ρж; тогда FA = mg и Vпогр = V·ρт/ρж; иначе тонет, Vпогр = V, FA = ρж·g·V",
-   "varies": "тело (цилиндр, кубик, шарик из пластика/парафина/дерева), его объём и плотность, набор жидкостей из таблицы (бензин, спирт, вода, глицерин, хлороформ, бромоформ …); утверждения о плавании, погружённом объёме, силе Архимеда",
+   "varies": "[формулировка задания банка]; утверждения о плавании, погружённом объёме, силе Архимеда",
    "answer_rule": "каждое утверждение проверяется сравнением плотностей и расчётом Vпогр, FA",
    "mistakes": [
     "для плавающего тела FA посчитана по всему объёму",
@@ -1449,9 +1449,9 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_ege_a.py:g_float_many"
    },
-   "capacity": 129,
+   "capacity": 1289,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
-   "fipi_sim_max": 0.08,
+   "fipi_sim_max": 0.107,
    "fidelity": {
     "answer_format": "последовательность номеров верных утверждений (2–3 цифры)",
     "style": "Множественный выбор: 5 утверждений, верных 2 или 3; «Выберите все верные утверждения …» как в демоверсии 2027; график банка заменён таблицей значений; справочные данные КИМ",
@@ -1522,9 +1522,9 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_ege_a.py:g_osc_many"
    },
-   "capacity": 158,
+   "capacity": 1622,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
-   "fipi_sim_max": 0.158,
+   "fipi_sim_max": 0.164,
    "fidelity": {
     "answer_format": "последовательность номеров верных утверждений (2–3 цифры)",
     "style": "Множественный выбор: 5 утверждений, верных 2 или 3; «Выберите все верные утверждения …» как в демоверсии 2027; график банка заменён таблицей значений; справочные данные КИМ",
@@ -1595,9 +1595,9 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_ege_a.py:g_throw_many"
    },
-   "capacity": 145,
+   "capacity": 1424,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
-   "fipi_sim_max": 0.058,
+   "fipi_sim_max": 0.06,
    "fidelity": {
     "answer_format": "последовательность номеров верных утверждений (2–3 цифры)",
     "style": "Множественный выбор: 5 утверждений, верных 2 или 3; «Выберите все верные утверждения …» как в демоверсии 2027; график банка заменён таблицей значений; справочные данные КИМ; «Сопротивлением воздуха пренебречь.»",
@@ -1668,7 +1668,7 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_ege_a.py:g_vx_many"
    },
-   "capacity": 53,
+   "capacity": 411,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
    "fipi_sim_max": 0.173,
    "fidelity": {
@@ -1736,7 +1736,7 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_ege_a.py:g_change_float"
    },
-   "capacity": 184,
+   "capacity": 1437,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
    "fipi_sim_max": 0.135,
    "fidelity": {
@@ -1810,7 +1810,7 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_ege_a.py:g_change_forces"
    },
-   "capacity": 126,
+   "capacity": 246,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
    "fipi_sim_max": 0.119,
    "fidelity": {
@@ -1883,9 +1883,9 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_ege_a.py:g_change_orbit"
    },
-   "capacity": 179,
+   "capacity": 825,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
-   "fipi_sim_max": 0.088,
+   "fipi_sim_max": 0.121,
    "fidelity": {
     "answer_format": "две цифры 1/2/3",
     "style": "Ответ — 2 цифры (по одной на величину), цифры могут повторяться; формулировка «Как изменятся …? Для каждой величины определите соответствующий характер изменения» как в демоверсии 2027",
@@ -1955,7 +1955,7 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_ege_a.py:g_change_osc"
    },
-   "capacity": 168,
+   "capacity": 620,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
    "fipi_sim_max": 0.161,
    "fidelity": {
@@ -2027,7 +2027,7 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_ege_a.py:g_change_throw"
    },
-   "capacity": 179,
+   "capacity": 922,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
    "fipi_sim_max": 0.286,
    "fidelity": {
@@ -2103,7 +2103,7 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_ege_a.py:g_evolve"
    },
-   "capacity": 125,
+   "capacity": 224,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
    "fipi_sim_max": 0.172,
    "fidelity": {
@@ -2111,7 +2111,7 @@
     "style": "Ответ — 2 цифры (по одной на величину), цифры могут повторяться; формулировка «Как изменяются …? Для каждой величины определите соответствующий характер изменения» как в демоверсии 2027",
     "level": "Б",
     "time_min": 4,
-    "scale": "качественно, как в банке («Мяч подбросили вертикально вверх. Как меняются по мере подъёма …»)",
+    "scale": "качественно, как в банке («[формулировка задания банка]»)",
     "trap": "постоянство ускорения и механической энергии; частота при смене среды",
     "kes": "раздел 1 «Механика»",
     "score": "2 балла: ответ из 2 цифр, 1 балл — если неверна одна позиция",
@@ -2178,9 +2178,9 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_ege_a.py:g_formula"
    },
-   "capacity": 199,
+   "capacity": 1787,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
-   "fipi_sim_max": 0.206,
+   "fipi_sim_max": 0.244,
    "fidelity": {
     "answer_format": "две цифры (номер формулы для величин А и Б)",
     "style": "Соответствие «ФИЗИЧЕСКИЕ ВЕЛИЧИНЫ — ФОРМУЛЫ» как в банке",
@@ -2247,7 +2247,7 @@
     "1.4.7"
    ],
    "invariant": "в поле тяжести: y = υ0t − gt²/2, υy = υ0 − gt, ay = −g; Eк, Eп, p — через скорость и высоту; горизонтальная составляющая скорости постоянна",
-   "varies": "процесс (мяч вверх, шайба вверх по гладкой наклонной плоскости с углом 30°, бросок горизонтально), масса, начальная скорость, высота, моменты времени; графики банка заменены таблицами значений",
+   "varies": "[формулировка задания банка]; графики банка заменены таблицами значений",
    "answer_rule": "для каждой таблицы вычислить значения всех предложенных величин в указанные моменты и найти совпадающую",
    "mistakes": [
     "кинетическая энергия путается с потенциальной",
@@ -2257,7 +2257,7 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_ege_a.py:g_table_match"
    },
-   "capacity": 165,
+   "capacity": 1598,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
    "fipi_sim_max": 0.045,
    "fidelity": {
@@ -2335,7 +2335,7 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_ege_a.py:g_clap_ratio"
    },
-   "capacity": 139,
+   "capacity": 1169,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
    "fipi_sim_max": 0.235,
    "fidelity": {
@@ -2379,7 +2379,7 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_ege_a.py:g_ekT"
    },
-   "capacity": 129,
+   "capacity": 590,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
    "fipi_sim_max": 0.136,
    "fidelity": {
@@ -2423,7 +2423,7 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_ege_a.py:g_iso"
    },
-   "capacity": 123,
+   "capacity": 1248,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
    "fipi_sim_max": 0.048,
    "fidelity": {
@@ -2467,7 +2467,7 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_ege_a.py:g_leak"
    },
-   "capacity": 163,
+   "capacity": 1397,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
    "fipi_sim_max": 0.083,
    "fidelity": {
@@ -2511,7 +2511,7 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_ege_a.py:g_mendeleev"
    },
-   "capacity": 126,
+   "capacity": 1222,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
    "fipi_sim_max": 0.286,
    "fidelity": {
@@ -2556,7 +2556,7 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_ege_a.py:g_pnkt"
    },
-   "capacity": 159,
+   "capacity": 770,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
    "fipi_sim_max": 0.167,
    "fidelity": {
@@ -2600,7 +2600,7 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_ege_a.py:g_carnot"
    },
-   "capacity": 111,
+   "capacity": 717,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
    "fipi_sim_max": 0.25,
    "fidelity": {
@@ -2644,7 +2644,7 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_ege_a.py:g_engine"
    },
-   "capacity": 191,
+   "capacity": 1594,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
    "fipi_sim_max": 0.056,
    "fidelity": {
@@ -2689,7 +2689,7 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_ege_a.py:g_first"
    },
-   "capacity": 153,
+   "capacity": 762,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
    "fipi_sim_max": 0.133,
    "fidelity": {
@@ -2734,7 +2734,7 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_ege_a.py:g_gaswork"
    },
-   "capacity": 177,
+   "capacity": 896,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
    "fipi_sim_max": 0.231,
    "fidelity": {
@@ -2778,7 +2778,7 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_ege_a.py:g_heat"
    },
-   "capacity": 122,
+   "capacity": 1172,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
    "fipi_sim_max": 0.286,
    "fidelity": {
@@ -2823,7 +2823,7 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_ege_a.py:g_balance"
    },
-   "capacity": 69,
+   "capacity": 394,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
    "fipi_sim_max": 0.156,
    "fidelity": {
@@ -2867,7 +2867,7 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_ege_a.py:g_U"
    },
-   "capacity": 151,
+   "capacity": 551,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
    "fipi_sim_max": 0.176,
    "fidelity": {
@@ -2912,7 +2912,7 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_ege_a.py:g_latent"
    },
-   "capacity": 96,
+   "capacity": 168,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
    "fipi_sim_max": 0.077,
    "fidelity": {
@@ -2959,9 +2959,9 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_ege_a.py:g_cycle"
    },
-   "capacity": 164,
+   "capacity": 1704,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
-   "fipi_sim_max": 0.06,
+   "fipi_sim_max": 0.063,
    "fidelity": {
     "answer_format": "последовательность номеров верных утверждений (2–3 цифры)",
     "style": "Множественный выбор: 5 утверждений, верных 2 или 3; «Выберите все верные утверждения …» как в демоверсии 2027; график банка заменён таблицей значений; справочные данные КИМ; pV-диаграмма цикла заменена таблицей состояний",
@@ -3029,9 +3029,9 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_ege_a.py:g_curve"
    },
-   "capacity": 189,
+   "capacity": 1927,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
-   "fipi_sim_max": 0.103,
+   "fipi_sim_max": 0.109,
    "fidelity": {
     "answer_format": "последовательность номеров верных утверждений (2–3 цифры)",
     "style": "Множественный выбор: 5 утверждений, верных 2 или 3; «Выберите все верные утверждения …» как в демоверсии 2027; график банка заменён таблицей значений; справочные данные КИМ",
@@ -3100,9 +3100,9 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_ege_a.py:g_humidity"
    },
-   "capacity": 20,
+   "capacity": 199,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
-   "fipi_sim_max": 0.053,
+   "fipi_sim_max": 0.056,
    "fidelity": {
     "answer_format": "последовательность номеров верных утверждений (2–3 цифры)",
     "style": "Множественный выбор: 5 утверждений, верных 2 или 3; «Выберите все верные утверждения …» как в демоверсии 2027; график банка заменён таблицей значений; справочные данные КИМ; давления насыщенного пара заданы таблицей",
@@ -3173,9 +3173,9 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_ege_a.py:g_iso_many"
    },
-   "capacity": 72,
+   "capacity": 639,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
-   "fipi_sim_max": 0.093,
+   "fipi_sim_max": 0.104,
    "fidelity": {
     "answer_format": "последовательность номеров верных утверждений (2–3 цифры)",
     "style": "Множественный выбор: 5 утверждений, верных 2 или 3; «Выберите все верные утверждения …» как в демоверсии 2027; график банка заменён таблицей значений; справочные данные КИМ",
@@ -3243,9 +3243,9 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_ege_a.py:g_vessels"
    },
-   "capacity": 54,
+   "capacity": 415,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
-   "fipi_sim_max": 0.035,
+   "fipi_sim_max": 0.037,
    "fidelity": {
     "answer_format": "последовательность номеров верных утверждений (2–3 цифры)",
     "style": "Множественный выбор: 5 утверждений, верных 2 или 3; «Выберите все верные утверждения …» как в демоверсии 2027; график банка заменён таблицей значений; справочные данные КИМ",
@@ -3313,15 +3313,15 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_ege_a.py:g_change_engine"
    },
-   "capacity": 141,
+   "capacity": 287,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
-   "fipi_sim_max": 0.133,
+   "fipi_sim_max": 0.167,
    "fidelity": {
     "answer_format": "две цифры 1/2/3",
     "style": "Ответ — 2 цифры (по одной на величину), цифры могут повторяться; формулировка «Как изменятся …? Для каждой величины определите соответствующий характер изменения» как в демоверсии 2027",
     "level": "Б",
     "time_min": 4,
-    "scale": "качественно, как в банке («Температуру нагревателя тепловой машины Карно понизили …»)",
+    "scale": "качественно, как в банке («[формулировка задания банка]»)",
     "trap": "связь КПД с отданной холодильнику теплотой",
     "kes": "раздел 2 «Молекулярная физика»",
     "score": "2 балла: ответ из 2 цифр, 1 балл — если неверна одна позиция",
@@ -3388,7 +3388,7 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_ege_a.py:g_change_iso"
    },
-   "capacity": 155,
+   "capacity": 415,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
    "fipi_sim_max": 0.192,
    "fidelity": {
@@ -3461,7 +3461,7 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_ege_a.py:g_change_vapor"
    },
-   "capacity": 146,
+   "capacity": 422,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
    "fipi_sim_max": 0.139,
    "fidelity": {
@@ -3469,7 +3469,7 @@
     "style": "Ответ — 2 цифры (по одной на величину), цифры могут повторяться; формулировка «Как изменятся …? Для каждой величины определите соответствующий характер изменения» как в демоверсии 2027",
     "level": "Б",
     "time_min": 4,
-    "scale": "качественно, как в банке («В сосуде под поршнем находятся вода и её насыщенный пар …»)",
+    "scale": "качественно, как в банке («[формулировка задания банка]»)",
     "trap": "давление насыщенного пара не зависит от объёма",
     "kes": "раздел 2 «Молекулярная физика»",
     "score": "2 балла: ответ из 2 цифр, 1 балл — если неверна одна позиция",
@@ -3535,7 +3535,7 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_ege_a.py:g_change_vessel"
    },
-   "capacity": 148,
+   "capacity": 408,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
    "fipi_sim_max": 0.167,
    "fidelity": {
@@ -3610,9 +3610,9 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_ege_a.py:g_formula10"
    },
-   "capacity": 176,
+   "capacity": 874,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
-   "fipi_sim_max": 0.222,
+   "fipi_sim_max": 0.268,
    "fidelity": {
     "answer_format": "две цифры (номер формулы для величин А и Б)",
     "style": "Соответствие «ФИЗИЧЕСКИЕ ВЕЛИЧИНЫ — ФОРМУЛЫ» как в банке",
@@ -3688,9 +3688,9 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_ege_a.py:g_formula_coef"
    },
-   "capacity": 66,
+   "capacity": 679,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
-   "fipi_sim_max": 0.19,
+   "fipi_sim_max": 0.198,
    "fidelity": {
     "answer_format": "две цифры (номер формулы для величин А и Б)",
     "style": "Соответствие «ФИЗИЧЕСКИЕ ВЕЛИЧИНЫ — ФОРМУЛЫ» с числовыми коэффициентами, как в банке (аргон под поршнем, 10⁵ Па)",
@@ -3765,9 +3765,9 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_ege_a.py:g_coulomb"
    },
-   "capacity": 113,
+   "capacity": 1000,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
-   "fipi_sim_max": 0.156,
+   "fipi_sim_max": 0.167,
    "fidelity": {
     "answer_format": "число (мН, мкН, Н или «в … раз(а)»)",
     "style": "Краткий ответ — число в указанных единицах, конечная десятичная дробь; строка «Ответ: ___ ед.» как в КИМ; справочные данные КИМ (g = 10 м/с²); k = 9·10⁹ Н·м²/Кл² из справочных данных",
@@ -3809,7 +3809,7 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_ege_a.py:g_current"
    },
-   "capacity": 129,
+   "capacity": 864,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
    "fipi_sim_max": 0.136,
    "fidelity": {
@@ -3855,12 +3855,12 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_ege_a.py:g_fdir"
    },
-   "capacity": 167,
+   "capacity": 976,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
-   "fipi_sim_max": 0.049,
+   "fipi_sim_max": 0.05,
    "fidelity": {
     "answer_format": "номер направления из списка (в банке ответ записывается словом: вправо, влево, вверх, вниз, к наблюдателю, от наблюдателя)",
-    "style": "Как в банке: «Куда направлен относительно рисунка (вправо, влево, вверх, вниз, к наблюдателю, от наблюдателя) вектор напряжённости …»; рисунок заменён словами",
+    "style": "Как в банке: «[формулировка задания банка]»; рисунок заменён словами",
     "level": "Б",
     "time_min": 3,
     "scale": "как в банке: +q и −5q, +Q и −Q, одинаковые заряды",
@@ -3926,7 +3926,7 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_ege_a.py:g_joule"
    },
-   "capacity": 132,
+   "capacity": 647,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
    "fipi_sim_max": 0.188,
    "fidelity": {
@@ -3969,7 +3969,7 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_ege_a.py:g_network"
    },
-   "capacity": 90,
+   "capacity": 195,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
    "fipi_sim_max": 0.077,
    "fidelity": {
@@ -4013,7 +4013,7 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_ege_a.py:g_series"
    },
-   "capacity": 156,
+   "capacity": 1427,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
    "fipi_sim_max": 0.167,
    "fidelity": {
@@ -4058,7 +4058,7 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_ege_a.py:g_power"
    },
-   "capacity": 126,
+   "capacity": 367,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
    "fipi_sim_max": 0.231,
    "fidelity": {
@@ -4102,7 +4102,7 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_ege_a.py:g_ampere"
    },
-   "capacity": 151,
+   "capacity": 755,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
    "fipi_sim_max": 0.125,
    "fidelity": {
@@ -4146,12 +4146,12 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_ege_a.py:g_direction"
    },
-   "capacity": 152,
+   "capacity": 360,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
    "fipi_sim_max": 0.048,
    "fidelity": {
     "answer_format": "одно слово из списка (вправо, влево, вверх, вниз, к наблюдателю, от наблюдателя) — в банке ответ записывается словом",
-    "style": "Как в банке: «Как направлена относительно рисунка (вправо, влево, вверх, вниз, к наблюдателю, от наблюдателя) сила …»; рисунок заменён словами",
+    "style": "Как в банке: «[формулировка задания банка]»; рисунок заменён словами",
     "level": "Б",
     "time_min": 3,
     "scale": "качественно",
@@ -4216,9 +4216,9 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_ege_a.py:g_faraday"
    },
-   "capacity": 92,
+   "capacity": 759,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
-   "fipi_sim_max": 0.071,
+   "fipi_sim_max": 0.077,
    "fidelity": {
     "answer_format": "число (В, мВ, А)",
     "style": "Краткий ответ — число в указанных единицах, конечная десятичная дробь; строка «Ответ: ___ ед.» как в КИМ; справочные данные КИМ (g = 10 м/с²); график Φ(t) заменён таблицей",
@@ -4260,7 +4260,7 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_ege_a.py:g_induct"
    },
-   "capacity": 155,
+   "capacity": 916,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
    "fipi_sim_max": 0.083,
    "fidelity": {
@@ -4304,7 +4304,7 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_ege_a.py:g_lorentz"
    },
-   "capacity": 91,
+   "capacity": 180,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
    "fipi_sim_max": 0.097,
    "fidelity": {
@@ -4348,7 +4348,7 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_ege_a.py:g_wmag"
    },
-   "capacity": 118,
+   "capacity": 477,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
    "fipi_sim_max": 0.231,
    "fidelity": {
@@ -4392,7 +4392,7 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_ege_a.py:g_lc"
    },
-   "capacity": 102,
+   "capacity": 498,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
    "fipi_sim_max": 0.095,
    "fidelity": {
@@ -4435,7 +4435,7 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_ege_a.py:g_lc_table"
    },
-   "capacity": 154,
+   "capacity": 324,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
    "fipi_sim_max": 0.188,
    "fidelity": {
@@ -4479,9 +4479,9 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_ege_a.py:g_lens"
    },
-   "capacity": 65,
+   "capacity": 485,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
-   "fipi_sim_max": 0.192,
+   "fipi_sim_max": 0.211,
    "fidelity": {
     "answer_format": "число (см, дптр)",
     "style": "Краткий ответ — число в указанных единицах, конечная десятичная дробь; строка «Ответ: ___ ед.» как в КИМ; справочные данные КИМ (g = 10 м/с²)",
@@ -4522,7 +4522,7 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_ege_a.py:g_mirror"
    },
-   "capacity": 126,
+   "capacity": 254,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
    "fipi_sim_max": 0.125,
    "fidelity": {
@@ -4565,7 +4565,7 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_ege_a.py:g_reflect"
    },
-   "capacity": 150,
+   "capacity": 378,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
    "fipi_sim_max": 0.25,
    "fidelity": {
@@ -4609,9 +4609,9 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_ege_b.py:g14_amp"
    },
-   "capacity": 200,
+   "capacity": 2000,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
-   "fipi_sim_max": 0.02,
+   "fipi_sim_max": 0.021,
    "fidelity": {
     "answer_format": "последовательность 2–3 цифр",
     "style": "КИМ: «Проводник АБ подвешен… подключён к источнику… выберите все верные утверждения»; рисунок заменён осями координат",
@@ -4682,9 +4682,9 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_ege_b.py:g14_cap"
    },
-   "capacity": 200,
+   "capacity": 2000,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
-   "fipi_sim_max": 0.085,
+   "fipi_sim_max": 0.091,
    "fidelity": {
     "answer_format": "последовательность 2–3 цифр без пробелов",
     "style": "как демо 2027 №14: описание опыта + «выберите все верные утверждения»",
@@ -4757,9 +4757,9 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_ege_b.py:g14_circ"
    },
-   "capacity": 9,
+   "capacity": 113,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
-   "fipi_sim_max": 0.081,
+   "fipi_sim_max": 0.082,
    "fidelity": {
     "answer_format": "последовательность 2–3 цифр",
     "style": "КИМ: цепь описана словами (вместо схемы), пять утверждений",
@@ -4832,9 +4832,9 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_ege_b.py:g14_coul"
    },
-   "capacity": 147,
+   "capacity": 1520,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
-   "fipi_sim_max": 0.041,
+   "fipi_sim_max": 0.045,
    "fidelity": {
     "answer_format": "последовательность 2–3 цифр",
     "style": "КИМ: условие с числами + пять утверждений",
@@ -4906,7 +4906,7 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_ege_b.py:g14_ind"
    },
-   "capacity": 73,
+   "capacity": 662,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
    "fipi_sim_max": 0.027,
    "fidelity": {
@@ -4978,7 +4978,7 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_ege_b.py:g14_lc"
    },
-   "capacity": 161,
+   "capacity": 1562,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
    "fipi_sim_max": 0.094,
    "fidelity": {
@@ -5051,9 +5051,9 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_ege_b.py:g14_lens"
    },
-   "capacity": 11,
+   "capacity": 125,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
-   "fipi_sim_max": 0.13,
+   "fipi_sim_max": 0.14,
    "fidelity": {
     "answer_format": "последовательность 2–3 цифр",
     "style": "КИМ: предмет на главной оптической оси, утверждения об изображении",
@@ -5124,9 +5124,9 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_ege_b.py:g14_lor"
    },
-   "capacity": 121,
+   "capacity": 1208,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
-   "fipi_sim_max": 0.043,
+   "fipi_sim_max": 0.045,
    "fidelity": {
     "answer_format": "последовательность 2–3 цифр",
     "style": "КИМ: частица движется по окружности, утверждения о зависимостях",
@@ -5197,9 +5197,9 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_ege_b.py:g14_refr"
    },
-   "capacity": 54,
+   "capacity": 510,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
-   "fipi_sim_max": 0.019,
+   "fipi_sim_max": 0.02,
    "fidelity": {
     "answer_format": "последовательность 2–3 цифр",
     "style": "КИМ: описание опыта по преломлению + утверждения",
@@ -5270,7 +5270,7 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_ege_b.py:g14_self"
    },
-   "capacity": 73,
+   "capacity": 694,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
    "fipi_sim_max": 0.078,
    "fidelity": {
@@ -5342,9 +5342,9 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_ege_b.py:g15_cap"
    },
-   "capacity": 186,
+   "capacity": 925,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
-   "fipi_sim_max": 0.139,
+   "fipi_sim_max": 0.172,
    "fidelity": {
     "answer_format": "две цифры 1/2/3 без пробелов",
     "style": "КИМ: «Как изменятся … ? Для каждой величины определите соответствующий характер изменения»",
@@ -5419,9 +5419,9 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_ege_b.py:g15_circ"
    },
-   "capacity": 92,
-   "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
-   "fipi_sim_max": 0.25,
+   "capacity": 116,
+   "capacity_note": "разных условий на 2000 попыток",
+   "fipi_sim_max": 0.283,
    "fidelity": {
     "answer_format": "две цифры 1/2/3",
     "style": "КИМ: схема описана словами, «Как изменятся …»",
@@ -5497,9 +5497,9 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_ege_b.py:g15_fcirc"
    },
-   "capacity": 198,
+   "capacity": 1833,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
-   "fipi_sim_max": 0.146,
+   "fipi_sim_max": 0.149,
    "fidelity": {
     "answer_format": "две цифры (номера формул)",
     "style": "КИМ: «Установите соответствие между физическими величинами и формулами, по которым их можно рассчитать»",
@@ -5578,7 +5578,7 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_ege_b.py:g15_flc"
    },
-   "capacity": 200,
+   "capacity": 1935,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
    "fipi_sim_max": 0.262,
    "fidelity": {
@@ -5657,12 +5657,12 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_ege_b.py:g15_fpart"
    },
-   "capacity": 200,
+   "capacity": 1971,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
    "fipi_sim_max": 0.182,
    "fidelity": {
     "answer_format": "две цифры",
-    "style": "КИМ: «Частица массой m, несущая заряд q, движется… Установите соответствие…»",
+    "style": "КИМ: «[формулировка задания банка]»",
     "level": "Б",
     "time_min": 3,
     "scale": "буквенные формулы",
@@ -5737,7 +5737,7 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_ege_b.py:g15_lc"
    },
-   "capacity": 165,
+   "capacity": 472,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
    "fipi_sim_max": 0.108,
    "fidelity": {
@@ -5814,7 +5814,7 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_ege_b.py:g15_lg"
    },
-   "capacity": 194,
+   "capacity": 1317,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
    "fipi_sim_max": 0.06,
    "fidelity": {
@@ -5890,12 +5890,12 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_ege_b.py:g15_ln"
    },
-   "capacity": 154,
+   "capacity": 398,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
-   "fipi_sim_max": 0.119,
+   "fipi_sim_max": 0.125,
    "fidelity": {
     "answer_format": "две цифры 1/2/3",
-    "style": "КИМ: «Предмет расположен на главной оптической оси… Как изменятся…»",
+    "style": "КИМ: «[формулировка задания банка]»",
     "level": "Б",
     "time_min": 3,
     "scale": "качественно",
@@ -5965,9 +5965,9 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_ege_b.py:g15_pc"
    },
-   "capacity": 160,
+   "capacity": 612,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
-   "fipi_sim_max": 0.108,
+   "fipi_sim_max": 0.188,
    "fidelity": {
     "answer_format": "две цифры 1/2/3",
     "style": "КИМ: «Протон движется по окружности… Как изменятся…»",
@@ -6039,9 +6039,9 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_ege_b.py:g15_rf"
    },
-   "capacity": 195,
+   "capacity": 1637,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
-   "fipi_sim_max": 0.107,
+   "fipi_sim_max": 0.114,
    "fidelity": {
     "answer_format": "две цифры 1/2/3",
     "style": "КИМ: «Пучок света переходит из воздуха в … Как изменятся…»",
@@ -6114,9 +6114,9 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_ege_b.py:g15_wire"
    },
-   "capacity": 160,
+   "capacity": 424,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
-   "fipi_sim_max": 0.17,
+   "fipi_sim_max": 0.186,
    "fidelity": {
     "answer_format": "две цифры 1/2/3",
     "style": "КИМ: «Как изменятся сопротивление и мощность…»",
@@ -6189,7 +6189,7 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_ege_b.py:g16_chain"
    },
-   "capacity": 102,
+   "capacity": 393,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
    "fipi_sim_max": 0.182,
    "fidelity": {
@@ -6236,9 +6236,9 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_ege_b.py:g16_decay"
    },
-   "capacity": 138,
+   "capacity": 234,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
-   "fipi_sim_max": 0.111,
+   "fipi_sim_max": 0.125,
    "fidelity": {
     "answer_format": "целое число",
     "style": "КИМ: «Ядро … испытывает α-распад, при этом образуется ядро ᴬ_Z X. Каков заряд Z…?»",
@@ -6283,8 +6283,8 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_ege_b.py:g16_fis"
    },
-   "capacity": 89,
-   "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
+   "capacity": 100,
+   "capacity_note": "разных условий на 2000 попыток",
    "fipi_sim_max": 0.077,
    "fidelity": {
     "answer_format": "целое число",
@@ -6328,9 +6328,9 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_ege_b.py:g16_hl"
    },
-   "capacity": 181,
+   "capacity": 1745,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
-   "fipi_sim_max": 0.045,
+   "fipi_sim_max": 0.091,
    "fidelity": {
     "answer_format": "число, единицы указаны после «Ответ: ___»",
     "style": "как демо 2027 №16 (период полураспада Mg-28, мкмоль)",
@@ -6374,7 +6374,7 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_ege_b.py:g16_hlf"
    },
-   "capacity": 160,
+   "capacity": 678,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
    "fipi_sim_max": 0.235,
    "fidelity": {
@@ -6421,7 +6421,7 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_ege_b.py:g16_comp"
    },
-   "capacity": 186,
+   "capacity": 1382,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
    "fipi_sim_max": 0.0,
    "fidelity": {
@@ -6468,8 +6468,8 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_ege_b.py:g16_react"
    },
-   "capacity": 113,
-   "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
+   "capacity": 162,
+   "capacity_note": "разных условий на 2000 попыток",
    "fipi_sim_max": 0.0,
    "fidelity": {
     "answer_format": "целое число",
@@ -6514,12 +6514,12 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_ege_b.py:g17_dc"
    },
-   "capacity": 174,
+   "capacity": 809,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
-   "fipi_sim_max": 0.208,
+   "fipi_sim_max": 0.25,
    "fidelity": {
     "answer_format": "две цифры 1/2/3",
-    "style": "КИМ: «Как изменятся при β⁻-распаде массовое число ядра и его заряд?»",
+    "style": "КИМ: «[формулировка задания банка]»",
     "level": "Б",
     "time_min": 3,
     "scale": "реальные изотопы в условии",
@@ -6590,12 +6590,12 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_ege_b.py:g17_deq"
    },
-   "capacity": 200,
+   "capacity": 2000,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
    "fipi_sim_max": 0.0,
    "fidelity": {
     "answer_format": "две цифры",
-    "style": "КИМ: «Установите соответствие между видами радиоактивного распада и уравнениями»",
+    "style": "КИМ: «[формулировка задания банка]»",
     "level": "Б",
     "time_min": 3,
     "scale": "реальные нуклиды",
@@ -6671,9 +6671,9 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_ege_b.py:g17_phf"
    },
-   "capacity": 200,
+   "capacity": 1974,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
-   "fipi_sim_max": 0.217,
+   "fipi_sim_max": 0.222,
    "fidelity": {
     "answer_format": "две цифры",
     "style": "КИМ: «Установите соответствие между физическими величинами и формулами (λ — длина волны, A — работа выхода…)»",
@@ -6751,9 +6751,9 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_ege_b.py:g17_lv"
    },
-   "capacity": 110,
+   "capacity": 1264,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
-   "fipi_sim_max": 0.213,
+   "fipi_sim_max": 0.217,
    "fidelity": {
     "answer_format": "две цифры",
     "style": "как демо 2027 №17: диаграмма уровней (здесь — значения Eₙ и список переходов)",
@@ -6832,12 +6832,12 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_ege_b.py:g17_ph"
    },
-   "capacity": 156,
+   "capacity": 544,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
-   "fipi_sim_max": 0.244,
+   "fipi_sim_max": 0.25,
    "fidelity": {
     "answer_format": "две цифры 1/2/3",
-    "style": "КИМ: «На металлическую пластинку направили пучок света от лазера… Как изменятся…»",
+    "style": "КИМ: «[формулировка задания банка]»",
     "level": "Б",
     "time_min": 3,
     "scale": "качественно, как в банке",
@@ -6908,12 +6908,12 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_ege_b.py:g17_pt"
    },
-   "capacity": 158,
+   "capacity": 396,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
-   "fipi_sim_max": 0.152,
+   "fipi_sim_max": 0.161,
    "fidelity": {
     "answer_format": "две цифры 1/2/3",
-    "style": "КИМ: «При замене одного лазера на другой… Как изменятся…»",
+    "style": "КИМ: «[формулировка задания банка]»",
     "level": "Б",
     "time_min": 3,
     "scale": "качественно",
@@ -6987,9 +6987,9 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_ege_b.py:g18_laws"
    },
-   "capacity": 200,
+   "capacity": 2000,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
-   "fipi_sim_max": 0.085,
+   "fipi_sim_max": 0.087,
    "fidelity": {
     "answer_format": "последовательность 2–3 цифр",
     "style": "как демо 2027 №18: «Выберите все верные утверждения о физических явлениях, величинах и закономерностях»",
@@ -7062,7 +7062,7 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_ege_b.py:g18_mixed"
    },
-   "capacity": 200,
+   "capacity": 2000,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
    "fipi_sim_max": 0.089,
    "fidelity": {
@@ -7139,9 +7139,9 @@
     "kind": "dict",
     "fn": "tools/research/proto_phys_ege_b.py:g18_phen"
    },
-   "capacity": 200,
+   "capacity": 2000,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
-   "fipi_sim_max": 0.079,
+   "fipi_sim_max": 0.095,
    "fidelity": {
     "answer_format": "последовательность 2–3 цифр",
     "style": "КИМ: пять утверждений из разных разделов",
@@ -7216,9 +7216,9 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_ege_b.py:g18_trend"
    },
-   "capacity": 200,
+   "capacity": 1999,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
-   "fipi_sim_max": 0.074,
+   "fipi_sim_max": 0.08,
    "fidelity": {
     "answer_format": "последовательность 2–3 цифр",
     "style": "КИМ №18: качественные утверждения о закономерностях (ср. «чем больше сопротивление резистора, тем больше напряжение на нём»)",
@@ -7289,7 +7289,7 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_ege_b.py:g19_bk"
    },
-   "capacity": 47,
+   "capacity": 380,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
    "fipi_sim_max": 0.043,
    "fidelity": {
@@ -7337,7 +7337,7 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_ege_b.py:g19_dyn"
    },
-   "capacity": 70,
+   "capacity": 333,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
    "fipi_sim_max": 0.128,
    "fidelity": {
@@ -7345,7 +7345,7 @@
     "level": "Б",
     "time_min": 2,
     "score": "1 балл, ответ должен полностью совпасть с эталоном",
-    "style": "КИМ: «Определите показания динамометра, если погрешность прямого измерения силы равна цене деления»",
+    "style": "КИМ: «[формулировка задания банка]»",
     "scale": "школьный динамометр 0–4/0–5 Н",
     "trap": "цена деления",
     "kes": [
@@ -7387,7 +7387,7 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_ege_b.py:g19_el"
    },
-   "capacity": 53,
+   "capacity": 395,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
    "fipi_sim_max": 0.157,
    "fidelity": {
@@ -7437,7 +7437,7 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_ege_b.py:g19_given"
    },
-   "capacity": 141,
+   "capacity": 1242,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
    "fipi_sim_max": 0.119,
    "fidelity": {
@@ -7445,7 +7445,7 @@
     "level": "Б",
     "time_min": 2,
     "score": "1 балл, ответ должен полностью совпасть с эталоном",
-    "style": "КИМ: «В паспорте барометра указано, что абсолютная погрешность … равна 3 гПа»",
+    "style": "КИМ: «[формулировка задания банка]»",
     "scale": "как в банке",
     "trap": "паспортная погрешность вместо цены деления",
     "kes": [
@@ -7487,7 +7487,7 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_ege_b.py:g19_per"
    },
-   "capacity": 91,
+   "capacity": 573,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
    "fipi_sim_max": 0.026,
    "fidelity": {
@@ -7495,7 +7495,7 @@
     "level": "Б",
     "time_min": 2,
     "score": "1 балл, ответ должен полностью совпасть с эталоном",
-    "style": "КИМ: «150 одинаковых болтов… Чему равна масса одного болта по результатам этих измерений?»",
+    "style": "КИМ: «[формулировка задания банка]»",
     "scale": "реалистичные размеры: лист ≈0,1 мм, монета ≈2 мм, проволока 0,2–1 мм, гайка 4–15 г",
     "trap": "деление погрешности на N",
     "kes": [
@@ -7536,7 +7536,7 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_ege_b.py:g19_pr"
    },
-   "capacity": 133,
+   "capacity": 985,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
    "fipi_sim_max": 0.091,
    "fidelity": {
@@ -7544,7 +7544,7 @@
     "level": "Б",
     "time_min": 2,
     "score": "1 балл, ответ должен полностью совпасть с эталоном",
-    "style": "КИМ: «Чему равно атмосферное давление… если погрешность прямого измерения равна цене деления барометра»",
+    "style": "КИМ: «[формулировка задания банка]»",
     "scale": "барометр 730–780 мм рт. ст. / 980–1040 гПа, манометр до 400 кПа",
     "trap": "цена деления",
     "kes": [
@@ -7584,7 +7584,7 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_ege_b.py:g19_th"
    },
-   "capacity": 128,
+   "capacity": 1031,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
    "fipi_sim_max": 0.083,
    "fidelity": {
@@ -7592,7 +7592,7 @@
     "level": "Б",
     "time_min": 2,
     "score": "1 балл, ответ должен полностью совпасть с эталоном",
-    "style": "КИМ: «Запишите показания термометра с учётом абсолютной погрешности»",
+    "style": "КИМ: «[формулировка задания банка]»",
     "scale": "температура соответствует сюжету",
     "trap": "знак и цена деления",
     "kes": [
@@ -7634,7 +7634,7 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_ege_b.py:g20_el"
    },
-   "capacity": 200,
+   "capacity": 1999,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
    "fipi_sim_max": 0.133,
    "fidelity": {
@@ -7708,7 +7708,7 @@
     "kind": "dict",
     "fn": "tools/research/proto_phys_ege_b.py:g20_eq"
    },
-   "capacity": 199,
+   "capacity": 1845,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
    "fipi_sim_max": 0.188,
    "fidelity": {
@@ -7781,7 +7781,7 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_ege_b.py:g20_mech"
    },
-   "capacity": 200,
+   "capacity": 1998,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
    "fipi_sim_max": 0.094,
    "fidelity": {
@@ -7789,7 +7789,7 @@
     "level": "Б",
     "time_min": 3,
     "score": "1 балл, порядок цифр не важен",
-    "style": "КИМ: «Необходимо экспериментально изучить зависимость силы Архимеда… Какие два опыта…»",
+    "style": "КИМ: «[формулировка задания банка]»",
     "scale": "значения из банка",
     "trap": "лишний изменённый параметр",
     "kes": [
@@ -7852,7 +7852,7 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_ege_b.py:g20_opt"
    },
-   "capacity": 200,
+   "capacity": 1998,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
    "fipi_sim_max": 0.067,
    "fidelity": {
@@ -7924,15 +7924,15 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_ege_b.py:g20_pend"
    },
-   "capacity": 200,
+   "capacity": 1999,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
-   "fipi_sim_max": 0.154,
+   "fipi_sim_max": 0.167,
    "fidelity": {
     "answer_format": "две цифры (номера установок), порядок не важен",
     "level": "Б",
     "time_min": 3,
     "score": "1 балл, порядок цифр не важен",
-    "style": "КИМ: «Какие два маятника необходимо взять ученику, чтобы…»; таблица — строками вариантов",
+    "style": "КИМ: «[формулировка задания банка]»; таблица — строками вариантов",
     "scale": "значения из банка",
     "trap": "лишний изменённый параметр",
     "kes": [
@@ -7996,15 +7996,15 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_ege_b.py:g20_th"
    },
-   "capacity": 200,
+   "capacity": 2000,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
-   "fipi_sim_max": 0.098,
+   "fipi_sim_max": 0.1,
    "fidelity": {
     "answer_format": "две цифры (номера установок), порядок не важен",
     "level": "Б",
     "time_min": 3,
     "score": "1 балл, порядок цифр не важен",
-    "style": "КИМ: «Ученику необходимо на опыте обнаружить зависимость давления газа, находящегося в сосуде, от…»",
+    "style": "КИМ: «[формулировка задания банка]»",
     "scale": "значения из банка",
     "trap": "лишний изменённый параметр",
     "kes": [
@@ -8069,7 +8069,7 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_ege_b.py:g21_cur"
    },
-   "capacity": 200,
+   "capacity": 1977,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
    "fipi_sim_max": 0.068,
    "fidelity": {
@@ -8130,7 +8130,7 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_ege_b.py:g21_d"
    },
-   "capacity": 169,
+   "capacity": 1272,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
    "fipi_sim_max": 0.07,
    "fidelity": {
@@ -8177,12 +8177,12 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_ege_b.py:g21_es"
    },
-   "capacity": 151,
+   "capacity": 853,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
    "fipi_sim_max": 0.12,
    "fidelity": {
     "answer_format": "в КИМ — развёрнутый ответ; здесь три вида карточек: вывод (цифры 1/2/3 или номер исхода), выбор верных звеньев объяснения (цифры), порядок звеньев (строка цифр)",
-    "style": "КИМ №21: «На столе установили два незаряженных электрометра… Объясните…»",
+    "style": "КИМ №21: «[формулировка задания банка]»",
     "level": "П",
     "time_min": 8,
     "scale": "без чисел",
@@ -8239,7 +8239,7 @@
     "3.4.2",
     "3.4.5"
    ],
-   "invariant": "индукционный ток возникает в замкнутом проводящем контуре при изменении потока; по правилу Ленца он препятствует изменению потока",
+   "invariant": "[формулировка задания банка]; по правилу Ленца он препятствует изменению потока",
    "varies": "кольцо (сплошное/разрезанное, металл/пластмасса), магнит вдвигают/выдвигают, какой полюс, катушка включается/выключается",
    "answer_rule": "номер верного исхода",
    "mistakes": [
@@ -8251,9 +8251,9 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_ege_b.py:g21_ind"
    },
-   "capacity": 165,
+   "capacity": 1051,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
-   "fipi_sim_max": 0.135,
+   "fipi_sim_max": 0.139,
    "fidelity": {
     "answer_format": "в КИМ — развёрнутый ответ; здесь три вида карточек: вывод (цифры 1/2/3 или номер исхода), выбор верных звеньев объяснения (цифры), порядок звеньев (строка цифр)",
     "style": "КИМ №21: «Как будет вести себя кольцо? Ответ поясните, указав законы»",
@@ -8287,7 +8287,7 @@
     "3.2.6",
     "3.2.7"
    ],
-   "invariant": "при замыкании ключа параллельная ветвь уменьшает общее сопротивление; закон Ома для полной цепи и для участка",
+   "invariant": "при замыкании ключа параллельная ветвь уменьшает общее сопротивление; [формулировка задания банка]",
    "varies": "где стоят амперметр (общий провод / ветвь R₂) и вольтметр (R₁, разветвление, полюса), ключ замыкают или размыкают",
    "answer_rule": "две цифры: А — амперметр, Б — вольтметр",
    "mistakes": [
@@ -8298,9 +8298,9 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_ege_b.py:g21_key"
    },
-   "capacity": 170,
+   "capacity": 1233,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
-   "fipi_sim_max": 0.086,
+   "fipi_sim_max": 0.088,
    "fidelity": {
     "answer_format": "в КИМ — развёрнутый ответ; здесь три вида карточек: вывод (цифры 1/2/3 или номер исхода), выбор верных звеньев объяснения (цифры), порядок звеньев (строка цифр)",
     "style": "КИМ №21 (как в демо: ключи, приборы)",
@@ -8345,9 +8345,9 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_ege_b.py:g21_lens"
    },
-   "capacity": 170,
+   "capacity": 1379,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
-   "fipi_sim_max": 0.054,
+   "fipi_sim_max": 0.056,
    "fidelity": {
     "answer_format": "в КИМ — развёрнутый ответ; здесь три вида карточек: вывод (цифры 1/2/3 или номер исхода), выбор верных звеньев объяснения (цифры), порядок звеньев (строка цифр)",
     "style": "КИМ №21 (оптика — раздел электродинамики)",
@@ -8421,9 +8421,9 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_ege_b.py:g21_rh"
    },
-   "capacity": 178,
+   "capacity": 1043,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
-   "fipi_sim_max": 0.106,
+   "fipi_sim_max": 0.111,
    "fidelity": {
     "answer_format": "в КИМ — развёрнутый ответ; здесь три вида карточек: вывод (цифры 1/2/3 или номер исхода), выбор верных звеньев объяснения (цифры), порядок звеньев (строка цифр)",
     "style": "КИМ №21: цепь описана словами (вместо рисунка), «Опираясь на законы электродинамики, объясните…»",
@@ -8497,7 +8497,7 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_ege_b.py:g21_tir"
    },
-   "capacity": 187,
+   "capacity": 1223,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
    "fipi_sim_max": 0.0,
    "fidelity": {
@@ -8572,7 +8572,7 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_ege_b.py:g22_arch"
    },
-   "capacity": 59,
+   "capacity": 553,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
    "fipi_sim_max": 0.068,
    "fidelity": {
@@ -8629,12 +8629,12 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_ege_b.py:g22_bt"
    },
-   "capacity": 107,
+   "capacity": 267,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
    "fipi_sim_max": 0.156,
    "fidelity": {
     "answer_format": "в КИМ — развёрнутое решение с числовым ответом; здесь — число в указанных единицах с указанным округлением",
-    "style": "КИМ: «Железный шар массой 2,5 кг подвешен на нити и полностью погружён в воду… / Деревянный шар привязан нитью ко дну…»",
+    "style": "КИМ: «[формулировка задания банка]»",
     "level": "П",
     "time_min": 8,
     "scale": "массы 0,1–5 кг, плотности из справочных таблиц КИМ",
@@ -8686,12 +8686,12 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_ege_b.py:g22_con"
    },
-   "capacity": 94,
+   "capacity": 414,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
    "fipi_sim_max": 0.051,
    "fidelity": {
     "answer_format": "в КИМ — развёрнутое решение с числовым ответом; здесь — число в указанных единицах с указанным округлением",
-    "style": "КИМ: «Груз, находящийся на столе, связан лёгкой нерастяжимой нитью, переброшенной через невесомый блок…»",
+    "style": "КИМ: «[формулировка задания банка]»",
     "level": "П",
     "time_min": 10,
     "scale": "массы 100 г – 2 кг, μ 0–0,4",
@@ -8743,12 +8743,12 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_ege_b.py:g22_el"
    },
-   "capacity": 153,
+   "capacity": 884,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
    "fipi_sim_max": 0.083,
    "fidelity": {
     "answer_format": "в КИМ — развёрнутое решение с числовым ответом; здесь — число в указанных единицах с указанным округлением",
-    "style": "КИМ: «Груз массой 200 г подвешен на пружине… к потолку лифта. Лифт равноускоренно…»",
+    "style": "КИМ: «[формулировка задания банка]»",
     "level": "П",
     "time_min": 7,
     "scale": "a 0,5–3 м/с²",
@@ -8799,12 +8799,12 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_ege_b.py:g22_two"
    },
-   "capacity": 118,
+   "capacity": 268,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
    "fipi_sim_max": 0.0,
    "fidelity": {
     "answer_format": "в КИМ — развёрнутое решение с числовым ответом; здесь — число в указанных единицах с указанным округлением",
-    "style": "КИМ: «В стакан налита вода, а поверх неё — керосин. Однородный шар плавает…»",
+    "style": "КИМ: «[формулировка задания банка]»",
     "level": "П",
     "time_min": 8,
     "scale": "плотности из справочных данных КИМ",
@@ -8855,7 +8855,7 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_ege_b.py:g22_col"
    },
-   "capacity": 61,
+   "capacity": 582,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
    "fipi_sim_max": 0.07,
    "fidelity": {
@@ -8912,12 +8912,12 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_ege_b.py:g22_kin"
    },
-   "capacity": 71,
+   "capacity": 612,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
    "fipi_sim_max": 0.207,
    "fidelity": {
     "answer_format": "в КИМ — развёрнутое решение с числовым ответом; здесь — число в указанных единицах с указанным округлением",
-    "style": "КИМ: «За 2 с прямолинейного движения с постоянным ускорением тело прошло 20 м, уменьшив скорость в 3 раза…»",
+    "style": "КИМ: «[формулировка задания банка]»",
     "level": "П",
     "time_min": 8,
     "scale": "пути десятки–сотни м, времена единицы–десятки с",
@@ -8969,12 +8969,12 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_ege_b.py:g22_pr"
    },
-   "capacity": 165,
+   "capacity": 1133,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
    "fipi_sim_max": 0.121,
    "fidelity": {
     "answer_format": "в КИМ — развёрнутое решение с числовым ответом; здесь — число в указанных единицах с указанным округлением",
-    "style": "КИМ: «Пушка, закреплённая на высоте 5 м, стреляет в горизонтальном направлении…»",
+    "style": "КИМ: «[формулировка задания банка]»",
     "level": "П",
     "time_min": 8,
     "scale": "высоты 1–80 м, скорости 1–50 м/с",
@@ -9027,12 +9027,12 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_ege_b.py:g22_spr"
    },
-   "capacity": 113,
+   "capacity": 1082,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
    "fipi_sim_max": 0.219,
    "fidelity": {
     "answer_format": "в КИМ — развёрнутое решение с числовым ответом; здесь — число в указанных единицах с указанным округлением",
-    "style": "КИМ: «Груз массой 2 кг на пружине жёсткостью 200 Н/м… Максимальная скорость 1 м/с. Чему равна максимальная сила упругости?»",
+    "style": "КИМ: «[формулировка задания банка]»",
     "level": "П",
     "time_min": 7,
     "scale": "массы 0,1–5 кг, k 10–500 Н/м",
@@ -9084,12 +9084,12 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_ege_b.py:g22_st"
    },
-   "capacity": 105,
+   "capacity": 567,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
    "fipi_sim_max": 0.049,
    "fidelity": {
     "answer_format": "в КИМ — развёрнутое решение с числовым ответом; здесь — число в указанных единицах с указанным округлением",
-    "style": "КИМ: «Деревянная линейка длиной 60 см выдвинута за край стола на 1/4 часть своей длины…»",
+    "style": "КИМ: «[формулировка задания банка]»",
     "level": "П",
     "time_min": 8,
     "scale": "линейки 30–100 см, массы 10–200 г",
@@ -9141,7 +9141,7 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_ege_b.py:g23_bub"
    },
-   "capacity": 141,
+   "capacity": 1154,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
    "fipi_sim_max": 0.026,
    "fidelity": {
@@ -9199,12 +9199,12 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_ege_b.py:g23_cal"
    },
-   "capacity": 119,
+   "capacity": 990,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
    "fipi_sim_max": 0.077,
    "fidelity": {
     "answer_format": "в КИМ — развёрнутое решение с числовым ответом; здесь — число в указанных единицах с указанным округлением",
-    "style": "КИМ: «В стакан калориметра, содержащий 250 г воды, опустили кусок льда…»",
+    "style": "КИМ: «[формулировка задания банка]»",
     "level": "П",
     "time_min": 10,
     "scale": "массы 50–500 г, c и λ — справочные КИМ",
@@ -9257,12 +9257,12 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_ege_b.py:g23_con"
    },
-   "capacity": 140,
+   "capacity": 1308,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
    "fipi_sim_max": 0.028,
    "fidelity": {
     "answer_format": "в КИМ — развёрнутое решение с числовым ответом; здесь — число в указанных единицах с указанным округлением",
-    "style": "КИМ: «Два баллона объёмами 10 и 20 л содержат… Каким станет давление после соединения?»",
+    "style": "КИМ: «[формулировка задания банка]»",
     "level": "П",
     "time_min": 8,
     "scale": "объёмы 1–30 л, давления 50–500 кПа",
@@ -9315,12 +9315,12 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_ege_b.py:g23_cyc"
    },
-   "capacity": 159,
+   "capacity": 821,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
    "fipi_sim_max": 0.042,
    "fidelity": {
     "answer_format": "в КИМ — развёрнутое решение с числовым ответом; здесь — число в указанных единицах с указанным округлением",
-    "style": "КИМ: «Один моль одноатомного идеального газа совершает цикл 1–2–3–4–1…» (pV-диаграмма заданными вершинами)",
+    "style": "КИМ: «[формулировка задания банка]» (pV-диаграмма заданными вершинами)",
     "level": "П",
     "time_min": 10,
     "scale": "p 10⁵ Па, V — л",
@@ -9373,12 +9373,12 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_ege_b.py:g23_fl"
    },
-   "capacity": 144,
+   "capacity": 686,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
    "fipi_sim_max": 0.125,
    "fidelity": {
     "answer_format": "в КИМ — развёрнутое решение с числовым ответом; здесь — число в указанных единицах с указанным округлением",
-    "style": "КИМ: «Один моль одноатомного идеального газа совершает процесс 1–2–3…», «Гелий изобарно расширили…»",
+    "style": "КИМ: «[формулировка задания банка]», «Гелий изобарно расширили…»",
     "level": "П",
     "time_min": 10,
     "scale": "p — 10⁵ Па, V — л, ν 1–5 моль, T 200–400 К",
@@ -9430,7 +9430,7 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_ege_b.py:g23_hum"
    },
-   "capacity": 126,
+   "capacity": 995,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
    "fipi_sim_max": 0.077,
    "fidelity": {
@@ -9484,7 +9484,7 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_ege_b.py:g23_leak"
    },
-   "capacity": 58,
+   "capacity": 573,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
    "fipi_sim_max": 0.18,
    "fidelity": {
@@ -9540,12 +9540,12 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_ege_b.py:g23_mt"
    },
-   "capacity": 131,
+   "capacity": 709,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
    "fipi_sim_max": 0.078,
    "fidelity": {
     "answer_format": "в КИМ — развёрнутое решение с числовым ответом; здесь — число в указанных единицах с указанным округлением",
-    "style": "КИМ: «В запаянной с одного конца стеклянной трубке… воздух отделён от атмосферы столбиком ртути…»",
+    "style": "КИМ: «[формулировка задания банка]»",
     "level": "П",
     "time_min": 8,
     "scale": "h 50–200 мм, L 10–50 см, p₀ 740–770 мм рт. ст.",
@@ -9596,7 +9596,7 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_ege_b.py:g23_mass"
    },
-   "capacity": 101,
+   "capacity": 1046,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
    "fipi_sim_max": 0.045,
    "fidelity": {
@@ -9655,12 +9655,12 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_ege_b.py:g24_ev"
    },
-   "capacity": 76,
+   "capacity": 180,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
    "fipi_sim_max": 0.015,
    "fidelity": {
     "answer_format": "в КИМ — развёрнутое решение с числовым ответом; здесь — число в указанных единицах с указанным округлением",
-    "style": "КИМ: «В вертикальном цилиндре, закрытом лёгким поршнем, находится бензол при температуре кипения… часть его превращается в пар…»",
+    "style": "КИМ: «[формулировка задания банка]»",
     "level": "В",
     "time_min": 15,
     "scale": "Q 10²–10⁴ Дж, L и M — в условии, p₀ = 10⁵ Па",
@@ -9712,12 +9712,12 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_ege_b.py:g24_ball"
    },
-   "capacity": 61,
+   "capacity": 648,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
    "fipi_sim_max": 0.021,
    "fidelity": {
     "answer_format": "в КИМ — развёрнутое решение с числовым ответом; здесь — число в указанных единицах с указанным округлением",
-    "style": "КИМ: «Воздушный шар, оболочка которого имеет массу M и объём V, наполняется горячим воздухом…»",
+    "style": "КИМ: «[формулировка задания банка]»",
     "level": "В",
     "time_min": 15,
     "scale": "V 200–3000 м³, M 50–400 кг",
@@ -9770,12 +9770,12 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_ege_b.py:g24_cmp"
    },
-   "capacity": 123,
+   "capacity": 557,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
    "fipi_sim_max": 0.093,
    "fidelity": {
     "answer_format": "в КИМ — развёрнутое решение с числовым ответом; здесь — число в указанных единицах с указанным округлением",
-    "style": "КИМ: «В сосуде под поршнем находится влажный воздух при давлении p₁… Объём изотермически уменьшили…»",
+    "style": "КИМ: «[формулировка задания банка]»",
     "level": "В",
     "time_min": 15,
     "scale": "pнас по таблице КИМ (кПа), k 2–5",
@@ -9827,12 +9827,12 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_ege_b.py:g24_part"
    },
-   "capacity": 78,
-   "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
+   "capacity": 128,
+   "capacity_note": "разных условий на 2000 попыток",
    "fipi_sim_max": 0.222,
    "fidelity": {
     "answer_format": "в КИМ — развёрнутое решение с числовым ответом; здесь — число в указанных единицах с указанным округлением",
-    "style": "как демо 2027 №24 (сосуд с перегородкой, масса пара в 2 раза больше массы воды)",
+    "style": "[формулировка задания банка])",
     "level": "В",
     "time_min": 15,
     "scale": "объёмы 1–10 л",
@@ -9884,12 +9884,12 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_ege_b.py:g24_pist"
    },
-   "capacity": 141,
+   "capacity": 981,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
    "fipi_sim_max": 0.081,
    "fidelity": {
     "answer_format": "в КИМ — развёрнутое решение с числовым ответом; здесь — число в указанных единицах с указанным округлением",
-    "style": "КИМ: «В вертикальном цилиндре с гладкими стенками под массивным поршнем находится одноатомный газ…»",
+    "style": "КИМ: «[формулировка задания банка]»",
     "level": "В",
     "time_min": 15,
     "scale": "S 10–100 см², M 1–20 кг",
@@ -9942,12 +9942,12 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_ege_b.py:g24_mix"
    },
-   "capacity": 114,
+   "capacity": 1205,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
    "fipi_sim_max": 0.098,
    "fidelity": {
     "answer_format": "в КИМ — развёрнутое решение с числовым ответом; здесь — число в указанных единицах с указанным округлением",
-    "style": "КИМ: «Два одинаковых теплоизолированных сосуда соединены короткой трубкой с краном…»",
+    "style": "КИМ: «[формулировка задания банка]»",
     "level": "В",
     "time_min": 15,
     "scale": "ν 1–5 моль, T 200–600 К, V — л",
@@ -10000,8 +10000,8 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_ege_b.py:g25_acc"
    },
-   "capacity": 97,
-   "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
+   "capacity": 153,
+   "capacity_note": "разных условий на 2000 попыток",
    "fipi_sim_max": 0.116,
    "fidelity": {
     "answer_format": "в КИМ — развёрнутое решение с числовым ответом; здесь — число в указанных единицах с указанным округлением",
@@ -10056,12 +10056,12 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_ege_b.py:g25_hang"
    },
-   "capacity": 131,
+   "capacity": 1032,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
    "fipi_sim_max": 0.091,
    "fidelity": {
     "answer_format": "в КИМ — развёрнутое решение с числовым ответом; здесь — число в указанных единицах с указанным округлением",
-    "style": "КИМ: «Горизонтальный проводник длиной 10 см и массой 25 г равномерно…/подвешен на двух лёгких нитях…»",
+    "style": "КИМ: «[формулировка задания банка]»",
     "level": "В",
     "time_min": 12,
     "scale": "m 5–50 г, l 5–30 см, B 0,01–0,5 Тл",
@@ -10109,7 +10109,7 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_ege_b.py:g25_rails"
    },
-   "capacity": 150,
+   "capacity": 1419,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
    "fipi_sim_max": 0.056,
    "fidelity": {
@@ -10167,7 +10167,7 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_ege_b.py:g25_cb"
    },
-   "capacity": 123,
+   "capacity": 1125,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
    "fipi_sim_max": 0.029,
    "fidelity": {
@@ -10226,7 +10226,7 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_ege_b.py:g25_cap"
    },
-   "capacity": 130,
+   "capacity": 1224,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
    "fipi_sim_max": 0.132,
    "fidelity": {
@@ -10284,12 +10284,12 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_ege_b.py:g25_ball"
    },
-   "capacity": 72,
+   "capacity": 398,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
    "fipi_sim_max": 0.057,
    "fidelity": {
     "answer_format": "в КИМ — развёрнутое решение с числовым ответом; здесь — число в указанных единицах с указанным округлением",
-    "style": "КИМ: «Маленький шарик массой m с зарядом q, подвешенный к потолку на лёгкой нити, находится в однородном горизонтальном поле…»",
+    "style": "КИМ: «[формулировка задания банка]»",
     "level": "В",
     "time_min": 12,
     "scale": "m 0,1–5 г, q 1–100 нКл, E 10³–10⁶ В/м",
@@ -10343,12 +10343,12 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_ege_b.py:g25_cp"
    },
-   "capacity": 133,
+   "capacity": 1057,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
    "fipi_sim_max": 0.04,
    "fidelity": {
     "answer_format": "в КИМ — развёрнутое решение с числовым ответом; здесь — число в указанных единицах с указанным округлением",
-    "style": "КИМ: «К аккумулятору с ЭДС 50 В и внутренним сопротивлением 4 Ом подключили…»",
+    "style": "КИМ: «[формулировка задания банка]»",
     "level": "В",
     "time_min": 12,
     "scale": "ℰ 6–60 В, r 0,5–5 Ом, R 2–40 Ом",
@@ -10401,7 +10401,7 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_ege_b.py:g25_heat"
    },
-   "capacity": 113,
+   "capacity": 967,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
    "fipi_sim_max": 0.095,
    "fidelity": {
@@ -10459,12 +10459,12 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_ege_b.py:g25_lc"
    },
-   "capacity": 127,
+   "capacity": 1137,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
    "fipi_sim_max": 0.056,
    "fidelity": {
     "answer_format": "в КИМ — развёрнутое решение с числовым ответом; здесь — число в указанных единицах с указанным округлением",
-    "style": "КИМ: «Идеальный колебательный контур состоит из катушки с индуктивностью… Амплитуда напряжения… Найдите силу тока в момент, когда…»",
+    "style": "КИМ: «[формулировка задания банка]»",
     "level": "В",
     "time_min": 12,
     "scale": "L 1–100 мГн, C 0,1–50 мкФ, Um 1–100 В",
@@ -10518,7 +10518,7 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_ege_b.py:g25_ind"
    },
-   "capacity": 178,
+   "capacity": 1589,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
    "fipi_sim_max": 0.176,
    "fidelity": {
@@ -10577,12 +10577,12 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_ege_b.py:g25_pc"
    },
-   "capacity": 113,
+   "capacity": 853,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
    "fipi_sim_max": 0.19,
    "fidelity": {
     "answer_format": "в КИМ — развёрнутое решение с числовым ответом; здесь — число в указанных единицах с указанным округлением",
-    "style": "КИМ: «Протон влетает в электрическое поле конденсатора параллельно его пластинам в точке посередине между пластинами… Найдите минимальную скорость…»",
+    "style": "КИМ: «[формулировка задания банка]»",
     "level": "В",
     "time_min": 15,
     "scale": "l 2–10 см, d 5–20 мм, U 10–1000 В",
@@ -10635,12 +10635,12 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_ege_b.py:g26_board"
    },
-   "capacity": 115,
+   "capacity": 942,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
    "fipi_sim_max": 0.083,
    "fidelity": {
     "answer_format": "в КИМ — развёрнутое решение с числовым ответом; здесь — число в указанных единицах с указанным округлением",
-    "style": "КИМ: «На гладком горизонтальном столе лежит доска массой M… На её левом конце находится брусок…»",
+    "style": "КИМ: «[формулировка задания банка]»",
     "level": "В",
     "time_min": 20,
     "scale": "массы 0,1–2 кг, μ 0,1–0,5, v₀ 1–5 м/с",
@@ -10693,12 +10693,12 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_ege_b.py:g26_bul"
    },
-   "capacity": 59,
+   "capacity": 533,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
    "fipi_sim_max": 0.044,
    "fidelity": {
     "answer_format": "в КИМ — развёрнутое решение с числовым ответом; здесь — число в указанных единицах с указанным округлением",
-    "style": "КИМ: «В маленький шар массой M = 250 г, висящий на нити длиной l = 50 см, попадает и застревает в нём горизонтально летящая пуля…»",
+    "style": "КИМ: «[формулировка задания банка]»",
     "level": "В",
     "time_min": 20,
     "scale": "m 5–20 г, M 0,2–2 кг, v 100–800 м/с",
@@ -10750,12 +10750,12 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_ege_b.py:g26_hem"
    },
-   "capacity": 47,
+   "capacity": 119,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
    "fipi_sim_max": 0.026,
    "fidelity": {
     "answer_format": "в КИМ — развёрнутое решение с числовым ответом; здесь — число в указанных единицах с указанным округлением",
-    "style": "КИМ: «Небольшое тело лежит на вершине гладкой полусферы радиусом R… соскальзывает…»",
+    "style": "КИМ: «[формулировка задания банка]»",
     "level": "В",
     "time_min": 20,
     "scale": "R 0,2–2,5 м, v₀ 0–2 м/с",
@@ -10805,12 +10805,12 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_ege_b.py:g26_inc"
    },
-   "capacity": 112,
+   "capacity": 1115,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
    "fipi_sim_max": 0.165,
    "fidelity": {
     "answer_format": "в КИМ — развёрнутое решение с числовым ответом; здесь — число в указанных единицах с указанным округлением",
-    "style": "КИМ: «По неподвижной гладкой наклонной плоскости с углом α движутся два одинаковых бруска, скреплённые лёгкой пружиной… Верхний брусок соединён нитью через блок с грузом M…»",
+    "style": "КИМ: «[формулировка задания банка]»",
     "level": "В",
     "time_min": 20,
     "scale": "m 0,1–0,5 кг, M 0,5–3 кг, k 50–400 Н/м, sin α 0,5/0,6",
@@ -10863,9 +10863,9 @@
     "kind": "dict",
     "fn": "tools/research/proto_phys_ege_b.py:g26_just"
    },
-   "capacity": 194,
+   "capacity": 1619,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
-   "fipi_sim_max": 0.014,
+   "fipi_sim_max": 0.015,
    "fidelity": {
     "answer_format": "последовательность 2–3 цифр (тренирует критерий «обоснование» задания 26; в КИМ обоснование пишется словами)",
     "style": "формулировки обоснований из критериев оценивания ФИПИ, своими словами",
@@ -10938,7 +10938,7 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_ege_b.py:g26_lev"
    },
-   "capacity": 24,
+   "capacity": 250,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
    "fipi_sim_max": 0.032,
    "fidelity": {
@@ -10997,9 +10997,9 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_ege_b.py:g26_spr"
    },
-   "capacity": 139,
+   "capacity": 1259,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
-   "fipi_sim_max": 0.037,
+   "fipi_sim_max": 0.038,
    "fidelity": {
     "answer_format": "в КИМ — развёрнутое решение с числовым ответом; здесь — число в указанных единицах с указанным округлением",
     "style": "как демо 2027 №26 (брусок M, два груза m, пружина l → L)",
@@ -11054,12 +11054,12 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_ege_b.py:g26_cone"
    },
-   "capacity": 93,
+   "capacity": 177,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
    "fipi_sim_max": 0.0,
    "fidelity": {
     "answer_format": "в КИМ — развёрнутое решение с числовым ответом; здесь — число в указанных единицах с указанным округлением",
-    "style": "КИМ: «Полый конус с углом при вершине 2α вращается вокруг вертикальной оси с угловой скоростью ω… Внутри конуса… вращается небольшое тело…»",
+    "style": "КИМ: «[формулировка задания банка]»",
     "level": "В",
     "time_min": 20,
     "scale": "ω 2–20 рад/с, tg α 0,5–2",
@@ -11111,12 +11111,12 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_ege_b.py:g26_burst"
    },
-   "capacity": 110,
-   "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
+   "capacity": 162,
+   "capacity_note": "разных условий на 2000 попыток",
    "fipi_sim_max": 0.074,
    "fidelity": {
     "answer_format": "в КИМ — развёрнутое решение с числовым ответом; здесь — число в указанных единицах с указанным округлением",
-    "style": "КИМ: «Снаряд в полёте разорвался на два равных осколка, один из которых…»",
+    "style": "КИМ: «[формулировка задания банка]»",
     "level": "В",
     "time_min": 18,
     "scale": "H 20–500 м, v 50–300 м/с",
@@ -11168,12 +11168,12 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_ege_b.py:g26_str"
    },
-   "capacity": 168,
+   "capacity": 445,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
    "fipi_sim_max": 0.053,
    "fidelity": {
     "answer_format": "в КИМ — развёрнутое решение с числовым ответом; здесь — число в указанных единицах с указанным округлением",
-    "style": "КИМ: «Шар массой 1 кг, подвешенный на нити длиной 90 см, отводят от положения равновесия на угол 60° и отпускают…»",
+    "style": "КИМ: «[формулировка задания банка]»",
     "level": "В",
     "time_min": 15,
     "scale": "m 0,1–2 кг, l 0,3–1,5 м",
@@ -11225,7 +11225,7 @@
     "kind": "dict",
     "fn": "tools/research/proto_phys_oge.py:g_concept"
    },
-   "capacity": 200,
+   "capacity": 2000,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
    "fipi_sim_max": 0.222,
    "fidelity": {
@@ -11313,9 +11313,9 @@
     "kind": "dict",
     "fn": "tools/research/proto_phys_oge.py:g_def"
    },
-   "capacity": 199,
+   "capacity": 1993,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
-   "fipi_sim_max": 0.083,
+   "fipi_sim_max": 0.085,
    "fidelity": {
     "answer_format": "последовательность цифр по буквам (соответствие), цифры могут повторяться (3 позиции, 5 вариантов)",
     "style": "как в банке: «физические величины и их определения»",
@@ -11405,9 +11405,9 @@
     "kind": "dict",
     "fn": "tools/research/proto_phys_oge.py:g_unit"
    },
-   "capacity": 200,
+   "capacity": 2000,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
-   "fipi_sim_max": 0.222,
+   "fipi_sim_max": 0.237,
    "fidelity": {
     "answer_format": "последовательность цифр по буквам (соответствие), цифры могут повторяться (3 позиции, 5 вариантов)",
     "style": "как в банке: «единица величины в СИ», единица в виде «ньютон (1 Н)»",
@@ -11499,7 +11499,7 @@
     "kind": "dict",
     "fn": "tools/research/proto_phys_oge.py:g_devlaw"
    },
-   "capacity": 191,
+   "capacity": 1684,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
    "fipi_sim_max": 0.17,
    "fidelity": {
@@ -11587,9 +11587,9 @@
     "kind": "dict",
     "fn": "tools/research/proto_phys_oge.py:g_devphen"
    },
-   "capacity": 160,
+   "capacity": 1591,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
-   "fipi_sim_max": 0.2,
+   "fipi_sim_max": 0.226,
    "fidelity": {
     "answer_format": "последовательность цифр по буквам (соответствие), цифры могут повторяться (2 позиции, 4 варианта)",
     "style": "как в демоверсии 2027 №2: «технические устройства и физические явления, лежащие в основе их работы»",
@@ -11665,7 +11665,7 @@
     "kind": "dict",
     "fn": "tools/research/proto_phys_oge.py:g_qdev"
    },
-   "capacity": 199,
+   "capacity": 1991,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
    "fipi_sim_max": 0.111,
    "fidelity": {
@@ -11747,9 +11747,9 @@
     "kind": "dict",
     "fn": "tools/research/proto_phys_oge.py:g_phen_em"
    },
-   "capacity": 199,
+   "capacity": 1923,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
-   "fipi_sim_max": 0.13,
+   "fipi_sim_max": 0.143,
    "fidelity": {
     "answer_format": "одна цифра — номер верного ответа (4 варианта)",
     "style": "как в демоверсии 2027 №3: описание опыта или наблюдения + «Какое явление…?»",
@@ -11814,9 +11814,9 @@
     "kind": "dict",
     "fn": "tools/research/proto_phys_oge.py:g_phen_mech"
    },
-   "capacity": 199,
+   "capacity": 1959,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
-   "fipi_sim_max": 0.1,
+   "fipi_sim_max": 0.111,
    "fidelity": {
     "answer_format": "одна цифра — номер верного ответа (4 варианта)",
     "style": "как в демоверсии 2027 №3: описание опыта или наблюдения + «Какое явление…?»",
@@ -11878,9 +11878,9 @@
     "kind": "dict",
     "fn": "tools/research/proto_phys_oge.py:g_phen_opt"
    },
-   "capacity": 199,
+   "capacity": 1872,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
-   "fipi_sim_max": 0.087,
+   "fipi_sim_max": 0.091,
    "fidelity": {
     "answer_format": "одна цифра — номер верного ответа (4 варианта)",
     "style": "как в демоверсии 2027 №3: описание опыта или наблюдения + «Какое явление…?»",
@@ -11945,9 +11945,9 @@
     "kind": "dict",
     "fn": "tools/research/proto_phys_oge.py:g_phen_therm"
    },
-   "capacity": 200,
+   "capacity": 1991,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
-   "fipi_sim_max": 0.118,
+   "fipi_sim_max": 0.188,
    "fidelity": {
     "answer_format": "одна цифра — номер верного ответа (4 варианта)",
     "style": "как в демоверсии 2027 №3: описание опыта или наблюдения + «Какое явление…?»",
@@ -12009,7 +12009,7 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_oge.py:g_4b"
    },
-   "capacity": 200,
+   "capacity": 1993,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
    "fipi_sim_max": 0.089,
    "fidelity": {
@@ -12114,7 +12114,7 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_oge.py:g_4a"
    },
-   "capacity": 200,
+   "capacity": 2000,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
    "fipi_sim_max": 0.03,
    "fidelity": {
@@ -12216,7 +12216,7 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_oge.py:g_4d"
    },
-   "capacity": 200,
+   "capacity": 2000,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
    "fipi_sim_max": 0.033,
    "fidelity": {
@@ -12320,7 +12320,7 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_oge.py:g_4e"
    },
-   "capacity": 199,
+   "capacity": 1997,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
    "fipi_sim_max": 0.03,
    "fidelity": {
@@ -12424,7 +12424,7 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_oge.py:g_4c"
    },
-   "capacity": 200,
+   "capacity": 2000,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
    "fipi_sim_max": 0.043,
    "fidelity": {
@@ -12528,7 +12528,7 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_oge.py:g_5a"
    },
-   "capacity": 170,
+   "capacity": 1654,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
    "fipi_sim_max": 0.027,
    "fidelity": {
@@ -12589,7 +12589,7 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_oge.py:g_5d"
    },
-   "capacity": 153,
+   "capacity": 1046,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
    "fipi_sim_max": 0.0,
    "fidelity": {
@@ -12650,9 +12650,9 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_oge.py:g_5b"
    },
-   "capacity": 164,
+   "capacity": 841,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
-   "fipi_sim_max": 0.034,
+   "fipi_sim_max": 0.036,
    "fidelity": {
     "answer_format": "одна цифра — номер верного ответа (4 варианта «вывод + обоснование»)",
     "style": "как в демоверсии 2027 №5: вопрос «Нарушится ли…/Какой…?» и четыре развёрнутых варианта ответа с объяснением",
@@ -12712,7 +12712,7 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_oge.py:g_5e"
    },
-   "capacity": 163,
+   "capacity": 470,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
    "fipi_sim_max": 0.061,
    "fidelity": {
@@ -12774,9 +12774,9 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_oge.py:g_5c"
    },
-   "capacity": 199,
+   "capacity": 1741,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
-   "fipi_sim_max": 0.087,
+   "fipi_sim_max": 0.09,
    "fidelity": {
     "answer_format": "одна цифра — номер верного ответа (4 варианта «вывод + обоснование»)",
     "style": "как в демоверсии 2027 №5: вопрос «Нарушится ли…/Какой…?» и четыре развёрнутых варианта ответа с объяснением",
@@ -12836,7 +12836,7 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_oge.py:g_6avg"
    },
-   "capacity": 117,
+   "capacity": 773,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
    "fipi_sim_max": 0.2,
    "fidelity": {
@@ -12880,7 +12880,7 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_oge.py:g_6circ"
    },
-   "capacity": 100,
+   "capacity": 378,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
    "fipi_sim_max": 0.057,
    "fidelity": {
@@ -12927,7 +12927,7 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_oge.py:g_6en"
    },
-   "capacity": 162,
+   "capacity": 575,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
    "fipi_sim_max": 0.217,
    "fidelity": {
@@ -12972,7 +12972,7 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_oge.py:g_6ff"
    },
-   "capacity": 137,
+   "capacity": 267,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
    "fipi_sim_max": 0.167,
    "fidelity": {
@@ -13015,9 +13015,9 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_oge.py:g_6grav"
    },
-   "capacity": 131,
+   "capacity": 332,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
-   "fipi_sim_max": 0.04,
+   "fipi_sim_max": 0.185,
    "fidelity": {
     "answer_format": "число (целое или конечная десятичная дробь) в указанных единицах, без единиц в ответе",
     "style": "как в банке: краткое условие, «Ответ: ___ ед.»; g = 10 Н/кг, справочные данные — со страницы КИМ",
@@ -13060,7 +13060,7 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_oge.py:g_6mom"
    },
-   "capacity": 119,
+   "capacity": 498,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
    "fipi_sim_max": 0.148,
    "fidelity": {
@@ -13105,7 +13105,7 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_oge.py:g_6fric"
    },
-   "capacity": 160,
+   "capacity": 697,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
    "fipi_sim_max": 0.188,
    "fidelity": {
@@ -13149,7 +13149,7 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_oge.py:g_6spring"
    },
-   "capacity": 177,
+   "capacity": 794,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
    "fipi_sim_max": 0.214,
    "fidelity": {
@@ -13193,7 +13193,7 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_oge.py:g_6acc"
    },
-   "capacity": 174,
+   "capacity": 779,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
    "fipi_sim_max": 0.158,
    "fidelity": {
@@ -13237,9 +13237,9 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_oge.py:g_6work"
    },
-   "capacity": 163,
+   "capacity": 901,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
-   "fipi_sim_max": 0.045,
+   "fipi_sim_max": 0.048,
    "fidelity": {
     "answer_format": "число (целое или конечная десятичная дробь) в указанных единицах, без единиц в ответе",
     "style": "как в банке: краткое условие, «Ответ: ___ ед.»; g = 10 Н/кг, справочные данные — со страницы КИМ",
@@ -13282,7 +13282,7 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_oge.py:g_6xt"
    },
-   "capacity": 200,
+   "capacity": 2000,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
    "fipi_sim_max": 0.159,
    "fidelity": {
@@ -13326,7 +13326,7 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_oge.py:g_7arch"
    },
-   "capacity": 123,
+   "capacity": 306,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
    "fipi_sim_max": 0.083,
    "fidelity": {
@@ -13370,9 +13370,9 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_oge.py:g_7rho"
    },
-   "capacity": 153,
+   "capacity": 499,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
-   "fipi_sim_max": 0.0,
+   "fipi_sim_max": 0.133,
    "fidelity": {
     "answer_format": "число (целое или конечная десятичная дробь) в указанных единицах, без единиц в ответе, ответ в кг/м³, л, г или кг",
     "style": "как в банке: краткое условие, «Ответ: ___ ед.»; g = 10 Н/кг, справочные данные — со страницы КИМ",
@@ -13414,9 +13414,9 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_oge.py:g_7hyd"
    },
-   "capacity": 123,
-   "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
-   "fipi_sim_max": 0.023,
+   "capacity": 199,
+   "capacity_note": "разных условий на 2000 попыток",
+   "fipi_sim_max": 0.048,
    "fidelity": {
     "answer_format": "число (целое или конечная десятичная дробь) в указанных единицах, без единиц в ответе, ответ в Па, кПа, м или кг/м³",
     "style": "как в банке: краткое условие, «Ответ: ___ ед.»; g = 10 Н/кг, справочные данные — со страницы КИМ",
@@ -13457,7 +13457,7 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_oge.py:g_7lev"
    },
-   "capacity": 135,
+   "capacity": 1012,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
    "fipi_sim_max": 0.156,
    "fidelity": {
@@ -13504,7 +13504,7 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_oge.py:g_7osc"
    },
-   "capacity": 125,
+   "capacity": 307,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
    "fipi_sim_max": 0.136,
    "fidelity": {
@@ -13548,7 +13548,7 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_oge.py:g_7ps"
    },
-   "capacity": 132,
+   "capacity": 238,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
    "fipi_sim_max": 0.0,
    "fidelity": {
@@ -13591,7 +13591,7 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_oge.py:g_7pul"
    },
-   "capacity": 164,
+   "capacity": 522,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
    "fipi_sim_max": 0.154,
    "fidelity": {
@@ -13634,7 +13634,7 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_oge.py:g_8fuel"
    },
-   "capacity": 124,
+   "capacity": 367,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
    "fipi_sim_max": 0.278,
    "fidelity": {
@@ -13678,7 +13678,7 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_oge.py:g_8q"
    },
-   "capacity": 183,
+   "capacity": 1382,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
    "fipi_sim_max": 0.263,
    "fidelity": {
@@ -13686,7 +13686,7 @@
     "style": "как в банке: краткое условие, «Ответ: ___ ед.»; g = 10 Н/кг, справочные данные — со страницы КИМ",
     "level": "Б",
     "time_min": 4,
-    "scale": "массы 0,1–10 кг, Δt до 200 °С, как в банке («стальная деталь 10 кг охлаждается на 200 °С»)",
+    "scale": "массы 0,1–10 кг, Δt до 200 °С, как в банке («[формулировка задания банка]»)",
     "trap": "разность температур и единицы",
     "kes": "2.8",
     "score": "1 балл за полное совпадение с эталоном",
@@ -13723,8 +13723,8 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_oge.py:g_8tab"
    },
-   "capacity": 84,
-   "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
+   "capacity": 134,
+   "capacity_note": "разных условий на 2000 попыток",
    "fipi_sim_max": 0.195,
    "fidelity": {
     "answer_format": "число (целое или конечная десятичная дробь) в указанных единицах, без единиц в ответе, ответ в Дж/(кг·°С) или кДж/кг",
@@ -13768,7 +13768,7 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_oge.py:g_8ph"
    },
-   "capacity": 124,
+   "capacity": 213,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
    "fipi_sim_max": 0.118,
    "fidelity": {
@@ -13811,7 +13811,7 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_oge.py:g_9ch"
    },
-   "capacity": 121,
+   "capacity": 337,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
    "fipi_sim_max": 0.207,
    "fidelity": {
@@ -13854,7 +13854,7 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_oge.py:g_9net"
    },
-   "capacity": 153,
+   "capacity": 507,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
    "fipi_sim_max": 0.087,
    "fidelity": {
@@ -13897,9 +13897,9 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_oge.py:g_9coul"
    },
-   "capacity": 102,
-   "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
-   "fipi_sim_max": 0.143,
+   "capacity": 156,
+   "capacity_note": "разных условий на 2000 попыток",
+   "fipi_sim_max": 0.15,
    "fidelity": {
     "answer_format": "число (целое или конечная десятичная дробь) в указанных единицах, без единиц в ответе",
     "style": "как в банке: краткое условие, «Ответ: ___ ед.»; g = 10 Н/кг, справочные данные — со страницы КИМ",
@@ -13940,7 +13940,7 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_oge.py:g_9it"
    },
-   "capacity": 188,
+   "capacity": 917,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
    "fipi_sim_max": 0.0,
    "fidelity": {
@@ -13983,7 +13983,7 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_oge.py:g_9ohm"
    },
-   "capacity": 146,
+   "capacity": 1053,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
    "fipi_sim_max": 0.206,
    "fidelity": {
@@ -14027,7 +14027,7 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_oge.py:g_9pow"
    },
-   "capacity": 135,
+   "capacity": 399,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
    "fipi_sim_max": 0.182,
    "fidelity": {
@@ -14071,7 +14071,7 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_oge.py:g_9rho"
    },
-   "capacity": 144,
+   "capacity": 798,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
    "fipi_sim_max": 0.062,
    "fidelity": {
@@ -14114,7 +14114,7 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_oge.py:g_10em"
    },
-   "capacity": 144,
+   "capacity": 282,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
    "fipi_sim_max": 0.25,
    "fidelity": {
@@ -14158,7 +14158,7 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_oge.py:g_10lens"
    },
-   "capacity": 64,
+   "capacity": 376,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
    "fipi_sim_max": 0.08,
    "fidelity": {
@@ -14201,7 +14201,7 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_oge.py:g_10mir"
    },
-   "capacity": 117,
+   "capacity": 194,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
    "fipi_sim_max": 0.214,
    "fidelity": {
@@ -14244,7 +14244,7 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_oge.py:g_10sh"
    },
-   "capacity": 70,
+   "capacity": 587,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
    "fipi_sim_max": 0.087,
    "fidelity": {
@@ -14290,7 +14290,7 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_oge.py:g_11d"
    },
-   "capacity": 111,
+   "capacity": 218,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
    "fipi_sim_max": 0.0,
    "fidelity": {
@@ -14333,7 +14333,7 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_oge.py:g_11hl"
    },
-   "capacity": 160,
+   "capacity": 678,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
    "fipi_sim_max": 0.067,
    "fidelity": {
@@ -14377,9 +14377,9 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_oge.py:g_11n"
    },
-   "capacity": 146,
+   "capacity": 380,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
-   "fipi_sim_max": 0.0,
+   "fipi_sim_max": 0.143,
    "fidelity": {
     "answer_format": "число (целое или конечная десятичная дробь) в указанных единицах, без единиц в ответе",
     "style": "как в банке: краткое условие, «Ответ: ___ ед.»; g = 10 Н/кг, справочные данные — со страницы КИМ",
@@ -14420,15 +14420,15 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_oge.py:g_11r"
    },
-   "capacity": 146,
+   "capacity": 317,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
-   "fipi_sim_max": 0.091,
+   "fipi_sim_max": 0.182,
    "fidelity": {
     "answer_format": "число (целое или конечная десятичная дробь) в указанных единицах, без единиц в ответе",
     "style": "как в банке: краткое условие, «Ответ: ___ ед.»; g = 10 Н/кг, справочные данные — со страницы КИМ",
     "level": "Б",
     "time_min": 4,
-    "scale": "как в демоверсии 2027 №11 (²³⁸U + ¹²C → X + 4n)",
+    "scale": "[формулировка задания банка])",
     "trap": "коэффициенты перед частицами",
     "kes": "4.5",
     "score": "1 балл за полное совпадение с эталоном",
@@ -14463,8 +14463,8 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_oge.py:g_12_dyn"
    },
-   "capacity": 135,
-   "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
+   "capacity": 216,
+   "capacity_note": "разных условий на 2000 попыток",
    "fipi_sim_max": 0.139,
    "fidelity": {
     "answer_format": "последовательность цифр по буквам (соответствие), цифры могут повторяться (2 величины, 3 варианта изменения)",
@@ -14534,8 +14534,8 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_oge.py:g_12_float"
    },
-   "capacity": 131,
-   "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
+   "capacity": 252,
+   "capacity_note": "разных условий на 2000 попыток",
    "fipi_sim_max": 0.114,
    "fidelity": {
     "answer_format": "последовательность цифр по буквам (соответствие), цифры могут повторяться (2 величины, 3 варианта изменения)",
@@ -14607,9 +14607,9 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_oge.py:g_12_gas"
    },
-   "capacity": 142,
+   "capacity": 299,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
-   "fipi_sim_max": 0.175,
+   "fipi_sim_max": 0.241,
    "fidelity": {
     "answer_format": "последовательность цифр по буквам (соответствие), цифры могут повторяться (2 величины, 3 варианта изменения)",
     "style": "как в демоверсии 2027 №12–13: описание процесса и «Для каждой величины определите соответствующий характер изменения»",
@@ -14680,9 +14680,9 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_oge.py:g_12_heat"
    },
-   "capacity": 185,
+   "capacity": 836,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
-   "fipi_sim_max": 0.069,
+   "fipi_sim_max": 0.071,
    "fidelity": {
     "answer_format": "последовательность цифр по буквам (соответствие), цифры могут повторяться (2 величины, 3 варианта изменения)",
     "style": "как в демоверсии 2027 №12–13: описание процесса и «Для каждой величины определите соответствующий характер изменения»",
@@ -14752,9 +14752,9 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_oge.py:g_12_incline"
    },
-   "capacity": 155,
+   "capacity": 359,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
-   "fipi_sim_max": 0.167,
+   "fipi_sim_max": 0.2,
    "fidelity": {
     "answer_format": "последовательность цифр по буквам (соответствие), цифры могут повторяться (2 величины, 3 варианта изменения)",
     "style": "как в демоверсии 2027 №12–13: описание процесса и «Для каждой величины определите соответствующий характер изменения»",
@@ -14824,9 +14824,9 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_oge.py:g_12_orbit"
    },
-   "capacity": 132,
-   "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
-   "fipi_sim_max": 0.222,
+   "capacity": 216,
+   "capacity_note": "разных условий на 2000 попыток",
+   "fipi_sim_max": 0.229,
    "fidelity": {
     "answer_format": "последовательность цифр по буквам (соответствие), цифры могут повторяться (2 величины, 3 варианта изменения)",
     "style": "как в демоверсии 2027 №12–13: описание процесса и «Для каждой величины определите соответствующий характер изменения»",
@@ -14896,9 +14896,9 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_oge.py:g_12_pend"
    },
-   "capacity": 152,
+   "capacity": 355,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
-   "fipi_sim_max": 0.147,
+   "fipi_sim_max": 0.152,
    "fidelity": {
     "answer_format": "последовательность цифр по буквам (соответствие), цифры могут повторяться (2 величины, 3 варианта изменения)",
     "style": "как в демоверсии 2027 №12–13: описание процесса и «Для каждой величины определите соответствующий характер изменения»",
@@ -14968,9 +14968,9 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_oge.py:g_12_phase"
    },
-   "capacity": 129,
-   "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
-   "fipi_sim_max": 0.133,
+   "capacity": 216,
+   "capacity_note": "разных условий на 2000 попыток",
+   "fipi_sim_max": 0.138,
    "fidelity": {
     "answer_format": "последовательность цифр по буквам (соответствие), цифры могут повторяться (2 величины, 3 варианта изменения)",
     "style": "как в демоверсии 2027 №12–13: описание процесса и «Для каждой величины определите соответствующий характер изменения»",
@@ -15040,9 +15040,9 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_oge.py:g_12_stop"
    },
-   "capacity": 139,
-   "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
-   "fipi_sim_max": 0.081,
+   "capacity": 252,
+   "capacity_note": "разных условий на 2000 попыток",
+   "fipi_sim_max": 0.086,
    "fidelity": {
     "answer_format": "последовательность цифр по буквам (соответствие), цифры могут повторяться (2 величины, 3 варианта изменения)",
     "style": "как в демоверсии 2027 №12–13: описание процесса и «Для каждой величины определите соответствующий характер изменения»",
@@ -15113,9 +15113,9 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_oge.py:g_12_throw"
    },
-   "capacity": 191,
+   "capacity": 1198,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
-   "fipi_sim_max": 0.152,
+   "fipi_sim_max": 0.156,
    "fidelity": {
     "answer_format": "последовательность цифр по буквам (соответствие), цифры могут повторяться (2 величины, 3 варианта изменения)",
     "style": "как в демоверсии 2027 №12–13: описание процесса и «Для каждой величины определите соответствующий характер изменения»",
@@ -15185,7 +15185,7 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_oge.py:g_13_decay"
    },
-   "capacity": 148,
+   "capacity": 287,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
    "fipi_sim_max": 0.235,
    "fidelity": {
@@ -15257,9 +15257,9 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_oge.py:g_13_elec"
    },
-   "capacity": 151,
+   "capacity": 732,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
-   "fipi_sim_max": 0.207,
+   "fipi_sim_max": 0.214,
    "fidelity": {
     "answer_format": "последовательность цифр по буквам (соответствие), цифры могут повторяться (2 величины, 3 варианта изменения)",
     "style": "как в демоверсии 2027 №12–13: описание процесса и «Для каждой величины определите соответствующий характер изменения»",
@@ -15328,9 +15328,9 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_oge.py:g_13_eye"
    },
-   "capacity": 177,
+   "capacity": 665,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
-   "fipi_sim_max": 0.188,
+   "fipi_sim_max": 0.226,
    "fidelity": {
     "answer_format": "последовательность цифр по буквам (соответствие), цифры могут повторяться (2 величины, 3 варианта изменения)",
     "style": "как в демоверсии 2027 №12–13: описание процесса и «Для каждой величины определите соответствующий характер изменения»",
@@ -15400,7 +15400,7 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_oge.py:g_13_lens"
    },
-   "capacity": 127,
+   "capacity": 488,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
    "fipi_sim_max": 0.167,
    "fidelity": {
@@ -15472,9 +15472,9 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_oge.py:g_13_light"
    },
-   "capacity": 184,
+   "capacity": 1029,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
-   "fipi_sim_max": 0.176,
+   "fipi_sim_max": 0.222,
    "fidelity": {
     "answer_format": "последовательность цифр по буквам (соответствие), цифры могут повторяться (2 величины, 3 варианта изменения)",
     "style": "как в демоверсии 2027 №12–13: описание процесса и «Для каждой величины определите соответствующий характер изменения»",
@@ -15544,7 +15544,7 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_oge.py:g_13_magnet"
    },
-   "capacity": 160,
+   "capacity": 410,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
    "fipi_sim_max": 0.033,
    "fidelity": {
@@ -15616,9 +15616,9 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_oge.py:g_13_net"
    },
-   "capacity": 181,
+   "capacity": 783,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
-   "fipi_sim_max": 0.119,
+   "fipi_sim_max": 0.128,
    "fidelity": {
     "answer_format": "последовательность цифр по буквам (соответствие), цифры могут повторяться (2 величины, 3 варианта изменения)",
     "style": "как в демоверсии 2027 №12–13: описание процесса и «Для каждой величины определите соответствующий характер изменения»",
@@ -15688,9 +15688,9 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_oge.py:g_13_rheo"
    },
-   "capacity": 181,
+   "capacity": 1184,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
-   "fipi_sim_max": 0.135,
+   "fipi_sim_max": 0.149,
    "fidelity": {
     "answer_format": "последовательность цифр по буквам (соответствие), цифры могут повторяться (2 величины, 3 варианта изменения)",
     "style": "как в демоверсии 2027 №12–13: описание процесса и «Для каждой величины определите соответствующий характер изменения»",
@@ -15760,8 +15760,8 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_oge.py:g_13_spiral"
    },
-   "capacity": 132,
-   "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
+   "capacity": 216,
+   "capacity_note": "разных условий на 2000 попыток",
    "fipi_sim_max": 0.075,
    "fidelity": {
     "answer_format": "последовательность цифр по буквам (соответствие), цифры могут повторяться (2 величины, 3 варианта изменения)",
@@ -15834,12 +15834,12 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_oge.py:g_14heat"
    },
-   "capacity": 175,
+   "capacity": 1738,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
-   "fipi_sim_max": 0.1,
+   "fipi_sim_max": 0.113,
    "fidelity": {
     "answer_format": "две цифры (номера верных утверждений), порядок не важен",
-    "style": "как в банке: «график зависимости температуры t от времени τ…», здесь — таблица значений",
+    "style": "как в банке: «[формулировка задания банка]», здесь — таблица значений",
     "level": "П",
     "time_min": 5,
     "scale": "температуры и время как на графиках банка",
@@ -15905,9 +15905,9 @@
     "kind": "dict",
     "fn": "tools/research/proto_phys_oge.py:g_14mat"
    },
-   "capacity": 200,
+   "capacity": 2000,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
-   "fipi_sim_max": 0.048,
+   "fipi_sim_max": 0.049,
    "fidelity": {
     "answer_format": "две цифры (номера верных утверждений)",
     "style": "как в банке: «В справочнике физических свойств различных материалов представлена следующая таблица»",
@@ -15975,12 +15975,12 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_oge.py:g_14xt"
    },
-   "capacity": 199,
+   "capacity": 1970,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
    "fipi_sim_max": 0.097,
    "fidelity": {
     "answer_format": "две цифры (номера верных утверждений)",
-    "style": "как в банке: «графики зависимости координаты x от времени t для … тел» (здесь — таблица)",
+    "style": "как в банке: «[формулировка задания банка]» (здесь — таблица)",
     "level": "П",
     "time_min": 5,
     "scale": "координаты до 100 м, время до 10 с",
@@ -16045,12 +16045,12 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_oge.py:g_14osc"
    },
-   "capacity": 200,
+   "capacity": 1999,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
-   "fipi_sim_max": 0.102,
+   "fipi_sim_max": 0.109,
    "fidelity": {
     "answer_format": "две цифры (номера верных утверждений)",
-    "style": "как в банке: «графики зависимости смещения x от времени t при колебаниях двух математических маятников» (здесь — таблица)",
+    "style": "как в банке: «[формулировка задания банка]» (здесь — таблица)",
     "level": "П",
     "time_min": 5,
     "scale": "амплитуды в см, периоды 0,4–4 с",
@@ -16115,9 +16115,9 @@
     "kind": "dict",
     "fn": "tools/research/proto_phys_oge.py:g_14pt"
    },
-   "capacity": 200,
+   "capacity": 2000,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
-   "fipi_sim_max": 0.048,
+   "fipi_sim_max": 0.053,
    "fidelity": {
     "answer_format": "две цифры (номера верных утверждений)",
     "style": "как в банке: «фрагмент Периодической системы химических элементов Д. И. Менделеева»",
@@ -16186,12 +16186,12 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_oge.py:g_15read"
    },
-   "capacity": 187,
+   "capacity": 1807,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
    "fipi_sim_max": 0.17,
    "fidelity": {
     "answer_format": "одна цифра (номер верного ответа из 4)",
-    "style": "как в банке: «Запишите результат измерения … с учётом абсолютной погрешности, которая равна …» (рисунок шкалы заменён описанием)",
+    "style": "как в банке: «[формулировка задания банка]» (рисунок шкалы заменён описанием)",
     "level": "Б",
     "time_min": 2,
     "scale": "шкалы школьных приборов",
@@ -16249,12 +16249,12 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_oge.py:g_15div"
    },
-   "capacity": 193,
+   "capacity": 1232,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
    "fipi_sim_max": 0.156,
    "fidelity": {
     "answer_format": "одна цифра (номер верного ответа из 4)",
-    "style": "как в банке: «Чему равны соответственно цена деления и предел измерения …?»",
+    "style": "как в банке: «[формулировка задания банка]»",
     "level": "Б",
     "time_min": 2,
     "scale": "шкалы школьных приборов",
@@ -16311,9 +16311,9 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_oge.py:g_15pair"
    },
-   "capacity": 200,
+   "capacity": 1999,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
-   "fipi_sim_max": 0.074,
+   "fipi_sim_max": 0.075,
    "fidelity": {
     "answer_format": "одна цифра (номер верной пары из 4)",
     "style": "как в демоверсии 2027 №15: «Какую из указанных пар … можно использовать для этой цели?» (рисунок заменён таблицей параметров)",
@@ -16373,9 +16373,9 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_oge.py:g_16_arch"
    },
-   "capacity": 200,
+   "capacity": 2000,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
-   "fipi_sim_max": 0.241,
+   "fipi_sim_max": 0.244,
    "fidelity": {
     "answer_format": "две цифры (номера верных утверждений), порядок не важен",
     "style": "как в демоверсии 2027 №16: описание опытов учителя/ученика + «Из предложенного перечня выберите два утверждения, соответствующих проведённым опытам»",
@@ -16442,9 +16442,9 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_oge.py:g_16_cool"
    },
-   "capacity": 200,
+   "capacity": 2000,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
-   "fipi_sim_max": 0.068,
+   "fipi_sim_max": 0.069,
    "fidelity": {
     "answer_format": "две цифры (номера верных утверждений), порядок не важен",
     "style": "как в демоверсии 2027 №16: описание опытов учителя/ученика + «Из предложенного перечня выберите два утверждения, соответствующих проведённым опытам»",
@@ -16511,9 +16511,9 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_oge.py:g_16_fric"
    },
-   "capacity": 200,
+   "capacity": 2000,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
-   "fipi_sim_max": 0.154,
+   "fipi_sim_max": 0.163,
    "fidelity": {
     "answer_format": "две цифры (номера верных утверждений), порядок не важен",
     "style": "как в демоверсии 2027 №16: описание опытов учителя/ученика + «Из предложенного перечня выберите два утверждения, соответствующих проведённым опытам»",
@@ -16580,9 +16580,9 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_oge.py:g_16_pend"
    },
-   "capacity": 200,
+   "capacity": 1997,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
-   "fipi_sim_max": 0.143,
+   "fipi_sim_max": 0.145,
    "fidelity": {
     "answer_format": "две цифры (номера верных утверждений), порядок не важен",
     "style": "как в демоверсии 2027 №16: описание опытов учителя/ученика + «Из предложенного перечня выберите два утверждения, соответствующих проведённым опытам»",
@@ -16649,9 +16649,9 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_oge.py:g_16_resist"
    },
-   "capacity": 200,
+   "capacity": 1998,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
-   "fipi_sim_max": 0.152,
+   "fipi_sim_max": 0.161,
    "fidelity": {
     "answer_format": "две цифры (номера верных утверждений), порядок не важен",
     "style": "как в демоверсии 2027 №16: описание опытов учителя/ученика + «Из предложенного перечня выберите два утверждения, соответствующих проведённым опытам»",
@@ -16718,7 +16718,7 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_oge.py:g_16_spring"
    },
-   "capacity": 187,
+   "capacity": 1886,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
    "fipi_sim_max": 0.155,
    "fidelity": {
@@ -16787,7 +16787,7 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_oge.py:g_17arch"
    },
-   "capacity": 142,
+   "capacity": 699,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
    "fipi_sim_max": 0.03,
    "fidelity": {
@@ -16842,7 +16842,7 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_oge.py:g_17rho"
    },
-   "capacity": 179,
+   "capacity": 960,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
    "fipi_sim_max": 0.035,
    "fidelity": {
@@ -16898,8 +16898,8 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_oge.py:g_17el"
    },
-   "capacity": 69,
-   "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
+   "capacity": 90,
+   "capacity_note": "разных условий на 2000 попыток",
    "fipi_sim_max": 0.109,
    "fidelity": {
     "answer_format": "итоговое число (с округлением, указанным в условии) + шаги: показания приборов и промежуточные величины",
@@ -16953,8 +16953,8 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_oge.py:g_17fr"
    },
-   "capacity": 53,
-   "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
+   "capacity": 54,
+   "capacity_note": "разных условий на 2000 попыток",
    "fipi_sim_max": 0.029,
    "fidelity": {
     "answer_format": "итоговое число (с округлением, указанным в условии) + шаги: показания приборов и промежуточные величины",
@@ -17008,7 +17008,7 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_oge.py:g_17lens"
    },
-   "capacity": 154,
+   "capacity": 399,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
    "fipi_sim_max": 0.024,
    "fidelity": {
@@ -17063,8 +17063,8 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_oge.py:g_17lev"
    },
-   "capacity": 57,
-   "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
+   "capacity": 66,
+   "capacity_note": "разных условий на 2000 попыток",
    "fipi_sim_max": 0.045,
    "fidelity": {
     "answer_format": "итоговое число (с округлением, указанным в условии) + шаги: показания приборов и промежуточные величины",
@@ -17164,7 +17164,7 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_oge.py:g_17k"
    },
-   "capacity": 188,
+   "capacity": 1017,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
    "fipi_sim_max": 0.071,
    "fidelity": {
@@ -17219,7 +17219,7 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_oge.py:g_18"
    },
-   "capacity": 195,
+   "capacity": 1409,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
    "fipi_sim_max": 0.051,
    "fidelity": {
@@ -17325,7 +17325,7 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_oge.py:g_19ep"
    },
-   "capacity": 159,
+   "capacity": 1609,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
    "fipi_sim_max": 0.053,
    "fidelity": {
@@ -17440,7 +17440,7 @@
     "kind": "dict",
     "fn": "tools/research/proto_phys_oge.py:g_19q"
    },
-   "capacity": 179,
+   "capacity": 852,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
    "fipi_sim_max": 0.017,
    "fidelity": {
@@ -17508,7 +17508,7 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_oge.py:g_20v"
    },
-   "capacity": 144,
+   "capacity": 602,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
    "fipi_sim_max": 0.16,
    "fidelity": {
@@ -17564,7 +17564,7 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_oge.py:g_20c"
    },
-   "capacity": 191,
+   "capacity": 1443,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
    "fipi_sim_max": 0.031,
    "fidelity": {
@@ -17622,15 +17622,15 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_oge.py:g_20mix"
    },
-   "capacity": 195,
+   "capacity": 1665,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
-   "fipi_sim_max": 0.182,
+   "fipi_sim_max": 0.2,
    "fidelity": {
     "answer_format": "в КИМ — полное решение (Дано, формулы, вычисления, ответ); в тренажёре — число (при необходимости округление указано в условии)",
     "style": "как в банке и демоверсии 2027 №20: развёрнутая расчётная задача",
     "level": "П",
     "time_min": 15,
-    "scale": "как в банке: «Смешали 3 кг воды при 80 °С и 1,6 кг воды при 10 °С… 20 % тепла…»",
+    "scale": "как в банке: «[формулировка задания банка]»",
     "trap": "учёт потерь",
     "kes": "2.8–2.9",
     "score": "3 балла по критериям ФИПИ: I) верно записано «Дано» и формулы законов; II) выполнены преобразования и расчёты — промежуточные величины в steps; III) верный ответ с единицами. В тренажёре steps проверяют элементы II (каждый — отдельно), итоговое число — элемент III",
@@ -17677,7 +17677,7 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_oge.py:g_20ice"
    },
-   "capacity": 136,
+   "capacity": 325,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
    "fipi_sim_max": 0.182,
    "fidelity": {
@@ -17732,7 +17732,7 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_oge.py:g_20wire"
    },
-   "capacity": 120,
+   "capacity": 438,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
    "fipi_sim_max": 0.038,
    "fidelity": {
@@ -17782,7 +17782,7 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_oge.py:g_21air"
    },
-   "capacity": 128,
+   "capacity": 920,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
    "fipi_sim_max": 0.032,
    "fidelity": {
@@ -17790,7 +17790,7 @@
     "style": "как в банке и демоверсии 2027 №21: развёрнутая расчётная задача",
     "level": "В",
     "time_min": 20,
-    "scale": "как в банке: «с высоты 100 м мяч массой 2 кг падает…», «тело 2 кг с 20 м, скорость 14 м/с»",
+    "scale": "как в банке: «[формулировка задания банка]», «тело 2 кг с 20 м, скорость 14 м/с»",
     "trap": "механическая энергия не сохраняется",
     "kes": "1.17, 1.19",
     "score": "3 балла по критериям ФИПИ: I) верно записано «Дано» и формулы законов; II) выполнены преобразования и расчёты — промежуточные величины в steps; III) верный ответ с единицами. В тренажёре steps проверяют элементы II (каждый — отдельно), итоговое число — элемент III",
@@ -17836,7 +17836,7 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_oge.py:g_21bul"
    },
-   "capacity": 166,
+   "capacity": 890,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
    "fipi_sim_max": 0.024,
    "fidelity": {
@@ -17892,9 +17892,9 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_oge.py:g_21col"
    },
-   "capacity": 167,
+   "capacity": 1550,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
-   "fipi_sim_max": 0.238,
+   "fipi_sim_max": 0.263,
    "fidelity": {
     "answer_format": "в КИМ — полное решение (Дано, формулы, вычисления, ответ); в тренажёре — число (при необходимости округление указано в условии)",
     "style": "как в банке и демоверсии 2027 №21: развёрнутая расчётная задача",
@@ -17946,7 +17946,7 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_oge.py:g_21fall"
    },
-   "capacity": 144,
+   "capacity": 457,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
    "fipi_sim_max": 0.087,
    "fidelity": {
@@ -17954,7 +17954,7 @@
     "style": "как в банке и демоверсии 2027 №21: развёрнутая расчётная задача",
     "level": "В",
     "time_min": 20,
-    "scale": "как в банке: «стальной молот падает с высоты 10 м… 50 % энергии…», водопады",
+    "scale": "как в банке: «[формулировка задания банка]», водопады",
     "trap": "сокращение массы",
     "kes": "1.19, 2.8",
     "score": "3 балла по критериям ФИПИ: I) верно записано «Дано» и формулы законов; II) выполнены преобразования и расчёты — промежуточные величины в steps; III) верный ответ с единицами. В тренажёре steps проверяют элементы II (каждый — отдельно), итоговое число — элемент III",
@@ -18001,9 +18001,9 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_oge.py:g_21lift"
    },
-   "capacity": 163,
+   "capacity": 1641,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
-   "fipi_sim_max": 0.219,
+   "fipi_sim_max": 0.241,
    "fidelity": {
     "answer_format": "в КИМ — полное решение (Дано, формулы, вычисления, ответ); в тренажёре — число (при необходимости округление указано в условии)",
     "style": "как в банке и демоверсии 2027 №21: развёрнутая расчётная задача",
@@ -18055,7 +18055,7 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_oge.py:g_21aw"
    },
-   "capacity": 145,
+   "capacity": 404,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
    "fipi_sim_max": 0.0,
    "fidelity": {
@@ -18063,7 +18063,7 @@
     "style": "как в банке и демоверсии 2027 №21: развёрнутая расчётная задача",
     "level": "В",
     "time_min": 20,
-    "scale": "как в банке: «какую минимальную работу необходимо совершить для равномерного вертикального перемещения под водой…»",
+    "scale": "как в банке: «[формулировка задания банка]»",
     "trap": "учёт выталкивающей силы",
     "kes": "1.17, 1.23",
     "score": "3 балла по критериям ФИПИ: I) верно записано «Дано» и формулы законов; II) выполнены преобразования и расчёты — промежуточные величины в steps; III) верный ответ с единицами. В тренажёре steps проверяют элементы II (каждый — отдельно), итоговое число — элемент III",
@@ -18109,7 +18109,7 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_oge.py:g_21fuel"
    },
-   "capacity": 195,
+   "capacity": 1466,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
    "fipi_sim_max": 0.083,
    "fidelity": {
@@ -18165,7 +18165,7 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_oge.py:g_22cal"
    },
-   "capacity": 193,
+   "capacity": 1782,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
    "fipi_sim_max": 0.022,
    "fidelity": {
@@ -18220,7 +18220,7 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_oge.py:g_22fb"
    },
-   "capacity": 144,
+   "capacity": 974,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
    "fipi_sim_max": 0.143,
    "fidelity": {
@@ -18228,7 +18228,7 @@
     "style": "как в банке и демоверсии 2027 №22: развёрнутая расчётная задача",
     "level": "В",
     "time_min": 20,
-    "scale": "как в банке: «сжигая 40 г керосина, воду массой 2,5 кг нагревают от 20 °С до 100 °С и частично переводят в пар»",
+    "scale": "как в банке: «[формулировка задания банка]»",
     "trap": "два этапа + КПД",
     "kes": "2.8, 2.10, 2.13",
     "score": "3 балла по критериям ФИПИ: I) верно записано «Дано» и формулы законов; II) выполнены преобразования и расчёты — промежуточные величины в steps; III) верный ответ с единицами. В тренажёре steps проверяют элементы II (каждый — отдельно), итоговое число — элемент III",
@@ -18275,7 +18275,7 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_oge.py:g_22fur"
    },
-   "capacity": 119,
+   "capacity": 854,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
    "fipi_sim_max": 0.167,
    "fidelity": {
@@ -18330,7 +18330,7 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_oge.py:g_22k"
    },
-   "capacity": 186,
+   "capacity": 1696,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
    "fipi_sim_max": 0.048,
    "fidelity": {
@@ -18338,7 +18338,7 @@
     "style": "как в банке и демоверсии 2027 №22: развёрнутая расчётная задача",
     "level": "В",
     "time_min": 20,
-    "scale": "как в банке: «электрочайник с КПД 60 %, 0,6 кг воды при 20 °С, 220 В…»",
+    "scale": "как в банке: «[формулировка задания банка]»",
     "trap": "КПД и перевод времени",
     "kes": "2.8, 3.10",
     "score": "3 балла по критериям ФИПИ: I) верно записано «Дано» и формулы законов; II) выполнены преобразования и расчёты — промежуточные величины в steps; III) верный ответ с единицами. В тренажёре steps проверяют элементы II (каждый — отдельно), итоговое число — элемент III",
@@ -18385,7 +18385,7 @@
     "kind": "param",
     "fn": "tools/research/proto_phys_oge.py:g_22two"
    },
-   "capacity": 185,
+   "capacity": 982,
    "capacity_note": "≥ (на 2000 попыток новые ещё появлялись)",
    "fipi_sim_max": 0.139,
    "fidelity": {

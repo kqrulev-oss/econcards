@@ -4818,8 +4818,8 @@ def cls17(r):
     if k is None:
         return None
     yes, no, dis = _K17[k]
-    out = {x: True for x in yes}
-    out.update({x: False for x in no})
+    out = {x: True for x in sorted(yes)}  # порядок детерминирован (не зависит от хеширования строк)
+    out.update({x: False for x in sorted(no)})
     for x in _PROC:  # названия процессов: только «свой» процесс
         if x not in yes and x not in dis:
             out.setdefault(x, False)
@@ -4973,10 +4973,11 @@ def _gen17_types(pid, rng, n_true):
     # используем близкие по смыслу, чтобы не совпадать с конкретными заданиями
     tail = rng.choice([f'к которым относится {d}', f'которые характеризуют {d}' if not d.startswith('получение')
                        else f'к которым относится {d}'])
+    obj = rng.choice(['типы реакций', 'типы']) if n_true else 'типы'
     if n_true:
-        q = q_many('два', 'типа реакций', tail)
+        q = q_many('два', obj.replace('типы', 'типа'), tail)
     else:
-        q = q_many('все', 'типы реакций', tail)
+        q = q_many('все', obj, tail)
     good = [i for i, x in enumerate(pick) if c[x]]
     e = (f'{rx_eq(r)}. ' + '; '.join(f'{T17[x]} — {"да" if c[x] else "нет"}' for x in pick) + '.')
     return many_card(pid, q, [T17[x] for x in pick], good, e, {'rx': _rx_key(r), 'opts': pick}, eqs=[eqt(r)])
@@ -5137,6 +5138,12 @@ def sign24(f, rk):
     v = row[_R24.index(rk)]
     if v and f in _GAS24 and rk == 'Na':
         return None
+    if rk == 'KMnO4' and v == 'dec':
+        # подкисленный KMnO₄: CO₂ выделяется при окислении концевых =CH₂/≡CH, C1-соединений, многоатомных спиртов
+        if f in _KMNO4_CO2:
+            return 'decg'
+        if f in _KMNO4_NOGAS:
+            return 'dec'
     if v and v != 'none' and rk in _RX24:
         rs = [r for r in RX if r['lhs'][0] == f and any(x in r['lhs'][1:] for x in _RX24[rk])
               and (rk != 'KMnO4' or 'H2SO4' in r['lhs'])]
@@ -5147,6 +5154,12 @@ def sign24(f, rk):
     return v
 
 
+_KMNO4_CO2 = {'CH3OH', 'HCHO', 'HCOOH', 'C2H4(OH)2', 'C3H5(OH)3', 'C2H4', 'CH2CHCH3', 'CH2CHCH2CH3', 'C2H2',
+              'CHCCH3', 'CHCCH2CH3', 'CH2CHCHCH2', 'CH2C(CH3)CHCH2', 'C6H5CHCH2', 'CH2CHCOOH', 'HOOCCOOH'}
+_KMNO4_NOGAS = {'C6H5CH3', 'CH3CHCHCH3', 'CH3CHCHCH2CH3', 'C6H10', 'CH3CCCH3', 'C2H5OH', 'CH3CH2CH2OH',
+                'CH3CH(OH)CH3', 'CH3(CH2)3OH', 'CH3CHO', 'CH3CH2CHO', 'CH3(CH2)2CHO', 'CH3CH(OH)CH(OH)CH3'}
+# вещества, которые с Cu(OH)₂ при нагревании дают Cu₂O: «Cu(OH)₂» без указания условий их тоже различает
+_REDCAP = {'HCHO', 'CH3CHO', 'CH3CH2CHO', 'CH3(CH2)2CHO', 'HCOOH', 'C6H12O6', 'HCOOCH3', 'HCOOC2H5'}
 _RX24 = {'KMnO4': ('KMnO4',), 'Br2': ('Br2',), 'Ag': ('Ag2O', 'Ag(NH3)2OH'), 'Cut': ('Cu(OH)2',)}
 
 
@@ -5186,6 +5199,8 @@ def distinguish24(a, b, rk):
     x, y = sign24(a, rk), sign24(b, rk)
     if x is None or y is None:
         return None
+    if rk == 'Cu' and (a in _REDCAP) != (b in _REDCAP):
+        return True  # «Cu(OH)₂» можно нагреть — альдегид отличается и так
     return _coarse24(x) != _coarse24(y)
 
 
@@ -5287,6 +5302,8 @@ def g24_sign(rng):
         v = sign24(f, rk)
         if v is None or v == 'bluea' or (f, rk) in _BAD24 or any(x[0] == f for x in rows):
             continue
+        if rk == 'Cu' and f in _REDCAP:
+            continue  # «альдегид и Cu(OH)₂» без указания температуры — двусмысленно
         if v == 'none' and sum(sign24(x[0], x[1]) == 'none' for x in rows) >= 1:
             continue  # «признаков нет» — не больше одной позиции, как в банке
         if sum(sign24(x[0], x[1]) == v for x in rows) >= 2:
