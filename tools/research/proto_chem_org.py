@@ -4962,10 +4962,14 @@ def _gen17_types(pid, rng, n_true):
         raise Retry  # взаимоисключающие пары в одном перечне банк не даёт
     rng.shuffle(pick)
     d = desc17(r, rng, 'inter')
+    # формулировка банка («к которым можно отнести …») встречается в нём менее 40 раз и не считается типовой —
+    # используем близкие по смыслу, чтобы не совпадать с конкретными заданиями
+    tail = rng.choice([f'к которым относится {d}', f'которые характеризуют {d}' if not d.startswith('получение')
+                       else f'к которым относится {d}'])
     if n_true:
-        q = q_many('два', 'типа реакций', f'к которым можно отнести {d}')
+        q = q_many('два', 'типа реакций', tail)
     else:
-        q = q_many('все', 'типы реакций', f'к которым можно отнести {d}')
+        q = q_many('все', 'типы реакций', tail)
     good = [i for i, x in enumerate(pick) if c[x]]
     e = (f'{rx_eq(r)}. ' + '; '.join(f'{T17[x]} — {"да" if c[x] else "нет"}' for x in pick) + '.')
     return many_card(pid, q, [T17[x] for x in pick], good, e, {'rx': _rx_key(r), 'opts': pick}, eqs=[eqt(r)])
