@@ -79,7 +79,7 @@ def clean(c, tid, pid):
         v, d = c['a']
         card['k'] = 'word'
         card['a'] = [v + d, f'{v}±{d}', (v + d).replace(',', '.'), f'{v}±{d}'.replace(',', '.')]
-    for key in ('o', 'e', 'svg', 'tol'):
+    for key in ('o', 'e', 'svg', 'tol', 'any'):
         if c.get(key):
             card[key] = c[key]
     return card
@@ -90,7 +90,8 @@ def assemble(spec, by_n, make_cards, log):
     for n in sorted(spec['titles']):
         tid = f'{spec["prefix"]}-{n}'
         ps = by_n.get(n, [])
-        section = 'Задания' if spec.get('part2') is None else ('Часть 2' if n >= spec['part2'] else 'Часть 1')
+        p2 = spec.get('part2')
+        section = 'Задания' if p2 is None else ('Часть 2' if (n in p2 if isinstance(p2, set) else n >= p2) else 'Часть 1')
         topics.append({'id': tid, 'title': f'{n}. {spec["titles"][n]}', 'section': section, 'n': n, 'pts': 1,
                        'protos': [{'id': p['id'], 'title': p['title'], 'tip': p['answer_rule']} for p in ps]})
         if ps:
