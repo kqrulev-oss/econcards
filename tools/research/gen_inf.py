@@ -5,6 +5,9 @@
   python3 tools/research/gen_inf.py            # самопроверка: по 200 вариантов на тип
   python3 tools/research/gen_inf.py --show 2   # показать по 2 примера карточек каждого типа
   python3 tools/research/gen_inf.py --dump out.json  # все карточки в файл (не в packs/!)
+  python3 tools/research/gen_inf.py --protos [--n 50 --cap 300] [--export] [--fidelity]  # каталог прототипов
+        (proto_inf.py: 75 прототипов ЕГЭ 1–27 в нумерации 2027 и ОГЭ 1–16; --export пишет
+        data/source/inf-prototypes.json, --samples 3 --out FILE — аналоги для экспертизы)
 
 Каждый генератор: gen_<тип>(rng) -> (card, params). card — карточка в формате
 tools/build_packs.py: {id, t, k, q, a, e, o?}. Условия задач придуманы здесь,
@@ -29,6 +32,7 @@ import ipaddress
 import itertools
 import json
 import math
+import os
 import random
 import re
 import sys
@@ -69,6 +73,11 @@ def to_base(n, b):
         s = digits[n % b] + s
         n //= b
     return s
+
+
+def coef(a):
+    """Коэффициент в формуле: 1 не пишем (F(n − 1), а не 1·F(n − 1))."""
+    return '' if a == 1 else f'{a}·'
 
 
 def bits_for(n):
@@ -437,7 +446,7 @@ def check_ege8(p, c):
 
 def gen_ege11(rng):
     alpha = rng.choice([10, 12, 26, 33, 36, 52, 62, 1000, 2000])
-    length = rng.randint(6, 300) if alpha >= 1000 else rng.randint(5, 25)
+    length = rng.randint(6, 40) if alpha >= 1000 else rng.randint(5, 25)
     users = rng.choice([20, 50, 64, 100, 128, 256, 500, 1000, 1024, 2048, 4096])
     bits = bits_for(alpha)
     per = math.ceil(length * bits / 8)
@@ -765,8 +774,8 @@ def gen_ege16(rng):
     if ans > 10 ** 12:
         return gen_ege16(rng)
     rule = {
-        'lin': f'F(n) = {a}·F(n − 1) + {b}·n при n > {t}',
-        'parity': f'F(n) = F(n − 1) + {b}·n при чётном n > {t}; F(n) = {a}·F(n − 2) + {d} при нечётном n > {t}',
+        'lin': f'F(n) = {coef(a)}F(n − 1) + {coef(b)}n при n > {t}',
+        'parity': f'F(n) = F(n − 1) + {coef(b)}n при чётном n > {t}; F(n) = {coef(a)}F(n − 2) + {d} при нечётном n > {t}',
         'two': f'F({t + 1}) = {c0 + d}; F(n) = F(n − 1) + F(n − 2) + {d} при n > {t + 1}',
     }[form]
     q = f'Функция F(n), n — натуральное, задана так: F(n) = {c0} при n ≤ {t}; {rule}. Чему равно F({N})?'
@@ -1380,7 +1389,7 @@ def gen_oge8(rng):
     show = [k for k in ('or', 'and', 'a', 'b') if k != ask][:3]
     if ask == 'a':
         show = ['or', 'and', 'b']
-    tbl = '; '.join(f'«{known[k][0]}» — {known[k][1]} тыс.' for k in show)
+    tbl = '; '.join(f'«{known[k][0]}» — {known[k][1]} тыс' for k in show)
     q = (f'В языке запросов «|» означает «ИЛИ», «&» — «И». Известно количество найденных страниц: {tbl}. '
          f'Какое количество страниц (в тысячах) будет найдено по запросу «{known[ask][0]}»?')
     ex = 'Формула включений-исключений: |A ИЛИ B| = |A| + |B| − |A И B|. Удобно нарисовать круги Эйлера.'
@@ -2132,7 +2141,35 @@ def main():
     ap.add_argument('--n', type=int, default=200)
     ap.add_argument('--show', type=int, default=0)
     ap.add_argument('--dump')
+    ap.add_argument('--protos', action='store_true', help='самопроверка каталога прототипов (proto_inf.py)')
+    ap.add_argument('--cap', type=int, default=300, help='попыток для оценки ёмкости прототипа (--protos)')
+    ap.add_argument('--proto', help='только прототипы с этим префиксом id, например inf-ege-13')
+    ap.add_argument('--export', action='store_true', help='записать data/source/inf-prototypes.json (--protos)')
+    ap.add_argument('--samples', type=int, default=0, help='k случайных аналогов на прототип в --out (--protos)')
+    ap.add_argument('--seed', type=int, default=2026)
+    ap.add_argument('--out')
+    ap.add_argument('--fidelity', action='store_true', help='записать вердикты data/research/inf-fidelity.json в каталог (--protos)')
     args = ap.parse_args()
+    if args.protos:
+        sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+        import proto_inf
+        if args.samples:
+            k = proto_inf.samples(args.samples, args.seed, args.out)
+            print(f'{k} аналогов записано в {args.out}')
+            return
+        if args.fidelity:
+            print('fidelity:', proto_inf.apply_fidelity())
+            return
+        n = args.n if args.n != 200 else 50
+        rows, cards, dup = proto_inf.selftest(n, args.cap, args.seed, args.proto)
+        proto_inf.print_table(rows, dup)
+        if args.dump:
+            with open(args.dump, 'w', encoding='utf-8') as f:
+                json.dump(cards, f, ensure_ascii=False, indent=1)
+        if args.export:
+            path, _ = proto_inf.export(rows, cards)
+            print('записано', path)
+        sys.exit(1 if dup or any(r['bad'] for r in rows) else 0)
     report, cards = selftest(args.n)
     print(f'{"тип":10} {"карт.":>5} {"попыт.":>6} {"повт.q":>6} {"повт.id":>7} {"ошибок":>6} {"разн.отв":>8}  типы')
     for r in report:

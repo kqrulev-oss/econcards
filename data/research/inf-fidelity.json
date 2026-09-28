@@ -1,0 +1,531 @@
+{
+ "about": "Экзаменационная проверка прототипов по информатике: по 3 случайных аналога на прототип (seed 7), чек-лист: форма как в КИМ, уровень, однозначность ответа, запись ответа как в бланке, отличимость от банка ФИПИ. Один раунд; fixed — что исправлено после проверки.",
+ "date": "2026-09-28",
+ "verdicts": [
+  {
+   "id": "inf-ege-01-graph-table",
+   "status": "pass",
+   "checked": 3,
+   "notes": "форма и уровень КИМ; схема задана списком рёбер вместо рисунка (мини-форма)",
+   "fixed": ""
+  },
+  {
+   "id": "inf-ege-02-truth-fragment",
+   "status": "partial",
+   "checked": 3,
+   "notes": "форма КИМ (все наборы одного значения F, ответ — буквы по столбцам); в одном аналоге подвыражение (x ∨ x)",
+   "fixed": "отбрасываются выражения с одинаковыми операндами и ¬¬"
+  },
+  {
+   "id": "inf-ege-03-district",
+   "status": "pass",
+   "checked": 3,
+   "notes": "мини-БД в условии; ответ однозначен",
+   "fixed": ""
+  },
+  {
+   "id": "inf-ege-03-dept",
+   "status": "pass",
+   "checked": 3,
+   "notes": "мини-БД в условии; ответ однозначен",
+   "fixed": ""
+  },
+  {
+   "id": "inf-ege-03-balance",
+   "status": "partial",
+   "checked": 3,
+   "notes": "в двух из трёх аналогов ответ отрицательный, в КИМ такого нет",
+   "fixed": "отрицательные ответы отбрасываются"
+  },
+  {
+   "id": "inf-ege-04-fano-min",
+   "status": "pass",
+   "checked": 3,
+   "notes": "формулировка и ответ как в КИМ",
+   "fixed": ""
+  },
+  {
+   "id": "inf-ege-04-fano-sum",
+   "status": "pass",
+   "checked": 3,
+   "notes": "формулировка и ответ как в КИМ",
+   "fixed": ""
+  },
+  {
+   "id": "inf-ege-05-min-n",
+   "status": "pass",
+   "checked": 3,
+   "notes": "три правила автомата, вопрос как в КИМ",
+   "fixed": ""
+  },
+  {
+   "id": "inf-ege-05-min-r",
+   "status": "pass",
+   "checked": 3,
+   "notes": "",
+   "fixed": ""
+  },
+  {
+   "id": "inf-ege-05-max-n",
+   "status": "pass",
+   "checked": 3,
+   "notes": "",
+   "fixed": ""
+  },
+  {
+   "id": "inf-ege-06-turtle-inter",
+   "status": "pass",
+   "checked": 3,
+   "notes": "алгоритм Черепахи и вопрос как в КИМ",
+   "fixed": ""
+  },
+  {
+   "id": "inf-ege-06-turtle-union",
+   "status": "pass",
+   "checked": 3,
+   "notes": "",
+   "fixed": ""
+  },
+  {
+   "id": "inf-ege-07-image-volume",
+   "status": "pass",
+   "checked": 3,
+   "notes": "числовой ответ; масштаб как в банке",
+   "fixed": ""
+  },
+  {
+   "id": "inf-ege-07-image-colors",
+   "status": "pass",
+   "checked": 3,
+   "notes": "",
+   "fixed": ""
+  },
+  {
+   "id": "inf-ege-07-sound",
+   "status": "pass",
+   "checked": 3,
+   "notes": "падеж «32 секунд» — мелочь в тексте",
+   "fixed": ""
+  },
+  {
+   "id": "inf-ege-08-count-cond",
+   "status": "pass",
+   "checked": 3,
+   "notes": "«ровно 2 раз(а)» — шаблонная форма числа",
+   "fixed": ""
+  },
+  {
+   "id": "inf-ege-08-no-adj-vowels",
+   "status": "pass",
+   "checked": 3,
+   "notes": "",
+   "fixed": ""
+  },
+  {
+   "id": "inf-ege-08-distinct-first",
+   "status": "pass",
+   "checked": 3,
+   "notes": "уровень ниже типичного КИМ (одно ограничение)",
+   "fixed": ""
+  },
+  {
+   "id": "inf-ege-08-perm-no-adj",
+   "status": "pass",
+   "checked": 3,
+   "notes": "",
+   "fixed": ""
+  },
+  {
+   "id": "inf-ege-09-rows-conditions",
+   "status": "pass",
+   "checked": 3,
+   "notes": "мини-таблица в условии; условия как в КИМ",
+   "fixed": ""
+  },
+  {
+   "id": "inf-ege-10-net-address",
+   "status": "pass",
+   "checked": 3,
+   "notes": "",
+   "fixed": ""
+  },
+  {
+   "id": "inf-ege-10-mask-byte",
+   "status": "pass",
+   "checked": 3,
+   "notes": "",
+   "fixed": ""
+  },
+  {
+   "id": "inf-ege-10-count-addr",
+   "status": "pass",
+   "checked": 3,
+   "notes": "",
+   "fixed": ""
+  },
+  {
+   "id": "inf-ege-10-max-ones",
+   "status": "pass",
+   "checked": 3,
+   "notes": "",
+   "fixed": ""
+  },
+  {
+   "id": "inf-ege-11-total-volume",
+   "status": "partial",
+   "checked": 3,
+   "notes": "длина пароля 119–213 символов нереалистична для КИМ",
+   "fixed": "длина ограничена 6–40 символами"
+  },
+  {
+   "id": "inf-ege-11-per-record",
+   "status": "pass",
+   "checked": 3,
+   "notes": "",
+   "fixed": ""
+  },
+  {
+   "id": "inf-ege-12-editor-digit-sum",
+   "status": "pass",
+   "checked": 3,
+   "notes": "программа Редактора и вопрос как в КИМ",
+   "fixed": ""
+  },
+  {
+   "id": "inf-ege-13-digits-ab",
+   "status": "pass",
+   "checked": 3,
+   "notes": "листинг и вопрос «наибольшее x» как в КИМ (анализ алгоритма)",
+   "fixed": ""
+  },
+  {
+   "id": "inf-ege-13-loop-count",
+   "status": "pass",
+   "checked": 3,
+   "notes": "один аналог тривиален (одна итерация), остальное в норме",
+   "fixed": ""
+  },
+  {
+   "id": "inf-ege-13-exec-programs",
+   "status": "pass",
+   "checked": 3,
+   "notes": "форма задания об исполнителе (в 2026 — № 23)",
+   "fixed": ""
+  },
+  {
+   "id": "inf-ege-14-count-digit",
+   "status": "partial",
+   "checked": 3,
+   "notes": "в двух из трёх аналогов ответ 0 — вырожденный",
+   "fixed": "нулевые ответы отбрасываются"
+  },
+  {
+   "id": "inf-ege-14-unknown-digit",
+   "status": "pass",
+   "checked": 3,
+   "notes": "",
+   "fixed": ""
+  },
+  {
+   "id": "inf-ege-15-bitwise",
+   "status": "pass",
+   "checked": 3,
+   "notes": "",
+   "fixed": ""
+  },
+  {
+   "id": "inf-ege-15-segments",
+   "status": "pass",
+   "checked": 3,
+   "notes": "",
+   "fixed": ""
+  },
+  {
+   "id": "inf-ege-15-del",
+   "status": "pass",
+   "checked": 3,
+   "notes": "обе формы (наименьшее/наибольшее A) как в банке",
+   "fixed": ""
+  },
+  {
+   "id": "inf-ege-16-recurrent-value",
+   "status": "partial",
+   "checked": 3,
+   "notes": "коэффициент 1 писался явно («1·F(n − 1)», «1·n»)",
+   "fixed": "единичный коэффициент не пишется"
+  },
+  {
+   "id": "inf-ege-17-pairs-div",
+   "status": "pass",
+   "checked": 3,
+   "notes": "мини-последовательность; ответ «два числа через пробел» как в КИМ",
+   "fixed": ""
+  },
+  {
+   "id": "inf-ege-17-pairs-last",
+   "status": "pass",
+   "checked": 3,
+   "notes": "",
+   "fixed": ""
+  },
+  {
+   "id": "inf-ege-18-robot-coins",
+   "status": "pass",
+   "checked": 3,
+   "notes": "мини-поле; ответ как в КИМ",
+   "fixed": ""
+  },
+  {
+   "id": "inf-ege-19-game-vanya-first",
+   "status": "pass",
+   "checked": 3,
+   "notes": "",
+   "fixed": ""
+  },
+  {
+   "id": "inf-ege-20-game-petya-second",
+   "status": "pass",
+   "checked": 3,
+   "notes": "",
+   "fixed": ""
+  },
+  {
+   "id": "inf-ege-21-game-vanya-second",
+   "status": "pass",
+   "checked": 3,
+   "notes": "",
+   "fixed": ""
+  },
+  {
+   "id": "inf-ege-22-processes-total",
+   "status": "pass",
+   "checked": 3,
+   "notes": "мини-таблица процессов",
+   "fixed": ""
+  },
+  {
+   "id": "inf-ege-22-processes-one",
+   "status": "pass",
+   "checked": 3,
+   "notes": "",
+   "fixed": ""
+  },
+  {
+   "id": "inf-ege-23-paths-via",
+   "status": "partial",
+   "checked": 3,
+   "notes": "текст ссылался на рисунок, которого нет",
+   "fixed": "формулировка: схема задана списком дорог"
+  },
+  {
+   "id": "inf-ege-23-shortest-path",
+   "status": "pass",
+   "checked": 3,
+   "notes": "один аналог с очень коротким ответом (4), уровень В не везде выдержан",
+   "fixed": ""
+  },
+  {
+   "id": "inf-ege-24-longest-run",
+   "status": "pass",
+   "checked": 3,
+   "notes": "мини-строка; вопрос как в КИМ",
+   "fixed": ""
+  },
+  {
+   "id": "inf-ege-24-no-adjacent",
+   "status": "pass",
+   "checked": 3,
+   "notes": "",
+   "fixed": ""
+  },
+  {
+   "id": "inf-ege-24-without-char",
+   "status": "pass",
+   "checked": 3,
+   "notes": "",
+   "fixed": ""
+  },
+  {
+   "id": "inf-ege-24-pair-chain",
+   "status": "pass",
+   "checked": 3,
+   "notes": "ответы часто малы (2) — мало разнообразия",
+   "fixed": ""
+  },
+  {
+   "id": "inf-ege-25-mask-count",
+   "status": "pass",
+   "checked": 3,
+   "notes": "форма КИМ; решается программой (pc)",
+   "fixed": ""
+  },
+  {
+   "id": "inf-ege-25-mask-extreme",
+   "status": "pass",
+   "checked": 3,
+   "notes": "",
+   "fixed": ""
+  },
+  {
+   "id": "inf-ege-25-divisors",
+   "status": "pass",
+   "checked": 3,
+   "notes": "форма КИМ; pc",
+   "fixed": ""
+  },
+  {
+   "id": "inf-ege-26-disk-files",
+   "status": "pass",
+   "checked": 3,
+   "notes": "мини-версия; ответ из двух чисел как в КИМ",
+   "fixed": ""
+  },
+  {
+   "id": "inf-ege-27-clusters-center",
+   "status": "pass",
+   "checked": 3,
+   "notes": "мини-версия; координаты центра",
+   "fixed": ""
+  },
+  {
+   "id": "inf-oge-01-removed-word",
+   "status": "pass",
+   "checked": 3,
+   "notes": "",
+   "fixed": ""
+  },
+  {
+   "id": "inf-oge-02-decode",
+   "status": "partial",
+   "checked": 3,
+   "notes": "один аналог — сообщение из одной буквы (ИИИИ)",
+   "fixed": "требуется не меньше двух разных букв"
+  },
+  {
+   "id": "inf-oge-03-min-not-lt-odd",
+   "status": "pass",
+   "checked": 3,
+   "notes": "",
+   "fixed": ""
+  },
+  {
+   "id": "inf-oge-03-max-lt-not-odd",
+   "status": "pass",
+   "checked": 3,
+   "notes": "",
+   "fixed": ""
+  },
+  {
+   "id": "inf-oge-03-min-and-div",
+   "status": "pass",
+   "checked": 3,
+   "notes": "",
+   "fixed": ""
+  },
+  {
+   "id": "inf-oge-04-shortest-table",
+   "status": "pass",
+   "checked": 3,
+   "notes": "таблица дана списком",
+   "fixed": ""
+  },
+  {
+   "id": "inf-oge-05-executor-two-cmds",
+   "status": "pass",
+   "checked": 3,
+   "notes": "",
+   "fixed": ""
+  },
+  {
+   "id": "inf-oge-06-program-yes",
+   "status": "pass",
+   "checked": 3,
+   "notes": "листинг Python как в КИМ",
+   "fixed": ""
+  },
+  {
+   "id": "inf-oge-07-url",
+   "status": "pass",
+   "checked": 3,
+   "notes": "",
+   "fixed": ""
+  },
+  {
+   "id": "inf-oge-08-search-euler",
+   "status": "partial",
+   "checked": 3,
+   "notes": "двойная точка после «тыс.»",
+   "fixed": "убрана точка в перечислении"
+  },
+  {
+   "id": "inf-oge-09-paths-count",
+   "status": "pass",
+   "checked": 3,
+   "notes": "",
+   "fixed": ""
+  },
+  {
+   "id": "inf-oge-10-compare-bases",
+   "status": "pass",
+   "checked": 3,
+   "notes": "",
+   "fixed": ""
+  },
+  {
+   "id": "inf-oge-11-file-search",
+   "status": "fail",
+   "checked": 0,
+   "notes": "генератора нет — рецепт llm",
+   "fixed": ""
+  },
+  {
+   "id": "inf-oge-12-mask-count",
+   "status": "pass",
+   "checked": 3,
+   "notes": "мини-каталог в условии; в КИМ поиск на компьютере",
+   "fixed": ""
+  },
+  {
+   "id": "inf-oge-13-doc",
+   "status": "fail",
+   "checked": 0,
+   "notes": "ответ — файл; рецепт llm",
+   "fixed": ""
+  },
+  {
+   "id": "inf-oge-14-table-count",
+   "status": "pass",
+   "checked": 3,
+   "notes": "мини-таблица; вопрос как в КИМ 14",
+   "fixed": ""
+  },
+  {
+   "id": "inf-oge-14-table-avg",
+   "status": "pass",
+   "checked": 3,
+   "notes": "мини-таблица; ответ с двумя знаками",
+   "fixed": ""
+  },
+  {
+   "id": "inf-oge-15-robot",
+   "status": "fail",
+   "checked": 0,
+   "notes": "нужен рисунок поля; рецепт llm",
+   "fixed": ""
+  },
+  {
+   "id": "inf-oge-16-sequence-program",
+   "status": "partial",
+   "checked": 3,
+   "notes": "в КИМ ученик пишет программу; у нас — вывод верной программы на данных (мини-форма)",
+   "fixed": ""
+  },
+  {
+   "id": "inf-oge-16-trace-loop",
+   "status": "partial",
+   "checked": 3,
+   "notes": "форма «что напечатает» — тренировочная, в КИМ 16 такой нет",
+   "fixed": ""
+  }
+ ]
+}
