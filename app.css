@@ -511,9 +511,11 @@ input:focus, select:focus, textarea:focus { outline: 3px solid var(--accent); ou
 .ld-nav-tg { display: grid; place-items: center; flex: none; width: 46px; height: 46px; border-radius: 14px; background: var(--surface); color: var(--text); border: var(--bw) solid var(--ink); box-shadow: 0 4px 0 var(--ink); }
 .ld-nav-tg svg { font-size: 20px; }
 .ld-nav-cta { display: flex; align-items: center; height: 46px; padding: 0 18px; border-radius: 14px; background: var(--surface); color: var(--text); border: var(--bw) solid var(--ink); box-shadow: 0 4px 0 var(--ink); font-weight: 800; white-space: nowrap; }
-@media (max-width: 760px) { .ld-nav nav { display: none; } .ld-nav-tg { margin-left: auto; } }
-@media (max-width: 480px) { .ld-nav-tg { display: none; } .ld-nav-cta { margin-left: auto; } }
-@media (max-width: 420px) { .ld-nav { gap: 10px; } .ld-logo { font-size: 15px; } .ld-mark { width: 36px; height: 36px; } .ld-nav-cta { padding: 0 12px; font-size: 14px; } }
+.ld-nav-trainer { display: flex; align-items: center; height: 46px; padding: 0 18px; border-radius: 14px; background: var(--accent); color: #fff; border: var(--bw) solid var(--ink); box-shadow: 0 4px 0 var(--ink); font-weight: 800; white-space: nowrap; margin-left: auto; }
+.ld-nav nav + .ld-nav-trainer { margin-left: 0; }
+@media (max-width: 760px) { .ld-nav nav { display: none; } .ld-nav-tg { margin-left: 0; } }
+@media (max-width: 480px) { .ld-nav-tg { display: none; } }
+@media (max-width: 420px) { .ld-nav { gap: 10px; } .ld-wordmark { display: none; } .ld-mark { width: 36px; height: 36px; } .ld-nav-cta, .ld-nav-trainer { padding: 0 12px; font-size: 14px; } }
 
 .ld-hero { display: grid; grid-template-columns: 1.1fr .9fr; gap: 40px; align-items: center; padding-top: 36px; padding-bottom: 80px; }
 @media (max-width: 900px) { .ld-hero { grid-template-columns: 1fr; gap: 28px; padding-top: 12px; padding-bottom: 48px; } }
@@ -1206,3 +1208,6 @@ input:focus, select:focus, textarea:focus { outline: 3px solid var(--accent); ou
 .preview-bar { margin: 12px 0 0; padding: 8px 8px 8px 14px; font-size: 14px; line-height: 1.35; box-shadow: 0 3px 0 var(--ink); flex-wrap: nowrap; }
 .preview-bar > span { flex: 1 1 auto; min-width: 0; }
 .preview-bar .btn { flex: none; min-height: 44px; margin: 0; }
+
+/* Библиотека: предметы и экзамены */
+.lib-exam { display: inline-block; min-width: 44px; margin-right: 8px; padding: 2px 8px; border-radius: 8px; font-size: 12px; font-weight: 900; color: #fff; text-align: center; }
