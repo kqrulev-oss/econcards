@@ -946,6 +946,21 @@ def _mutations(prod, rng, lhs=()):
     return out
 
 
+_RED_FAM = [{'S', 'SO2', 'H2S'}, {'NO2', 'NO', 'N2O', 'N2', 'NH4NO3'}]
+
+
+def _alt_reduction(m, prod, lhs):
+    """m — тот же набор продуктов, но с другим допустимым продуктом восстановления кислоты-окислителя
+    (S/SO₂/H₂S; NO₂/NO/N₂O/N₂/NH₄NO₃): такой дистрактор делает ответ неоднозначным (банк: 6C29A3, F9A60C)."""
+    if not ({'HNO3', 'H2SO4'} & set(lhs)):
+        return False
+    for fam in _RED_FAM:
+        if set(m) & fam and set(prod) & fam and \
+                (set(m) - fam - {'H2O'}) == (set(prod) - fam - {'H2O'}):
+            return True
+    return False
+
+
 def _solve_8(p):
     ans = {}
     for i, (lhs, cond, form) in enumerate(p['items']):
@@ -1026,6 +1041,8 @@ def gen8(rng, pid, theme):
     for m in shuffled(rng, pool_mut):
         key = tuple(sorted(m))
         if key in true_sets or key in {tuple(sorted(x)) for x in dis}:
+            continue
+        if any(_alt_reduction(m, pr, USE8[d]['lhs']) for pr, d in zip(prods, items)):
             continue
         dis.append(m)
         if len(dis) == 2:
