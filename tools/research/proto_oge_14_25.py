@@ -4236,7 +4236,7 @@ def gen_og22_abs_shift(r):
     xh = f'x − {h}' if h > 0 else (f'x + {-h}' if h < 0 else 'x')
     first = f'{"−" if a < 0 else ""}{abs(a) if abs(a) != 1 else ""}|{xh}|'
     rest = (' + ' + poly(tri)) if tri[0] > 0 else (' − ' + poly(tri)[1:])     # poly(tri) начинается с «−»
-    ftxt_ = f'y = {first}{rest}'
+    ftxt_ = pick(r, f'y = {first}{rest}', f'y = {poly(tri)} {"−" if a < 0 else "+"} {abs(a) if abs(a) != 1 else ""}|{xh}|')
     return _p22_card(r, pieces, [], ftxt_, ns=(3, 2, 1))
 
 
@@ -4256,7 +4256,7 @@ def gen_og22_hole_m(r):
         neg = [-float(k), 0, 0]
         pieces = [(pos, (0, INF, True, False)), (neg, (-INF, 0, False, False))]
         holes = [-a]
-        ftxt_ = f'y = ({poly([k, k * a, 0])})·|x| / ({lin(1, a)})'
+        ftxt_ = pick(r, f'y = |x|·({poly([k, k * a, 0])}) / ({lin(1, a)})', f'y = ({poly([k, k * a, 0])})·|x| / ({lin(1, a)})')
         ns = (0, 1)
     else:
         c = r.choice([x for x in range(-5, 6) if x])
@@ -4366,7 +4366,8 @@ def gen_og22_abs_frac(r):
         at = tnum(a)
         ctxt = '' if c == 1 else (f'{tnum(c)}·' if F(c).denominator == 1 else '')
         half = f'{tnum(F(c, 2))}' if F(c, 2) != 1 else ''
-        ftxt_ = f'y = {half}(|x/{at} − {at}/x| + x/{at} + {at}/x)'
+        # слагаемые в скобках переставлены относительно записи банка (равносильная запись)
+        ftxt_ = pick(r, f'y = {half}(x/{at} + {at}/x + |x/{at} − {at}/x|)', f'y = {half}(|{at}/x − x/{at}| + x/{at} + {at}/x)')
         ask = r.choice(['наибольшее из таких значений m', 'сумму квадратов всех таких значений m'])
         val = F(c) if ask.startswith('наиб') else 2 * F(c) ** 2
         q = f'Постройте график функции {ftxt_}. Определите, при каких значениях m прямая y = m имеет с графиком ровно одну общую точку. В ответ запишите {ask}.'
