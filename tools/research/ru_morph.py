@@ -62,9 +62,16 @@ def inflect(phrase, case, number=None):
     if head is None:                   # аббревиатура («ЭПС») — главное слово последнее перед скобкой/предлогом
         ws = [i for i, w in enumerate(words) if w.strip() and not re.match(r'^[«(\[]', w)]
         adj = [i for i in ws if any(x.tag.POS in ('ADJF', 'PRTF') for x in _M.parse(re.sub(r'[^\w-]', '', words[i]).lower())[:2])]
-        if not adj or len(ws) < 2:
+        if not adj:
             return phrase
-        head = adj[-1] + 1
+        head = adj[-1] + 1 if len(ws) >= 2 and adj[-1] + 1 < len(words) else None
+        if head is None:                   # субстантивированное прилагательное («земноводные») — склоняем как прилагательное
+            p = next(x for x in _M.parse(re.sub(r'[^\w-]', '', words[adj[0]]).lower()) if x.tag.POS in ('ADJF', 'PRTF'))
+            feats = {case} | ({'plur'} if p.tag.number == 'plur' else {p.tag.gender or 'masc'})
+            if case == 'accs':
+                feats.add('anim')
+            r = p.inflect(feats)
+            return phrase.replace(words[adj[0]].strip(), r.word) if r else phrase
         p = next(x for x in _M.parse(re.sub(r'[^\w-]', '', words[adj[0]]).lower()) if x.tag.POS in ('ADJF', 'PRTF'))
         gender, num, anim = p.tag.gender, p.tag.number, 'inan'
     out = []
@@ -77,6 +84,9 @@ def inflect(phrase, case, number=None):
             out.append(w)
             continue
         core, tail = m.groups()
+        if len(core) > 1 and core.isupper():   # аббревиатура (США, ЭПС) — не склоняется
+            out.append(w)
+            continue
         if core.lower() in IRREG:
             out.append(IRREG[core.lower()].get(case, core) + tail)
             continue
@@ -161,3 +171,20 @@ def short_adj(subject, adj):
         return adj
     r = p.inflect({'ADJS', 'plur'} if num == 'plur' else {'ADJS', gender, 'sing'})
     return r.word if r else adj
+
+
+def ob(word_loct):
+    """Предлог «о/об» перед словом в предложном падеже: «об общей», «о клетке»."""
+    return ('об ' if word_loct[:1].lower() in 'аоуэиы' else 'о ') + word_loct
+
+
+def which(noun):
+    """«Какой/Какая/Какое/Какие» по роду и числу существительного."""
+    if _M is None:
+        return 'Какой'
+    p = _best(noun.split()[-1].lower(), ('NOUN',))
+    if p is None:
+        return 'Какой'
+    if p.tag.number == 'plur':
+        return 'Какие'
+    return {'femn': 'Какая', 'neut': 'Какое'}.get(p.tag.gender, 'Какой')

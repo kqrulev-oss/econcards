@@ -37,7 +37,7 @@ from functools import reduce
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from ru_morph import agree, inflect, plural_of, predicate, short_adj  # noqa: E402
+from ru_morph import agree, inflect, ob, plural_of, predicate, short_adj, which  # noqa: E402
 
 # ---------------------------------------------------------------- общее
 
@@ -1997,7 +1997,7 @@ def gen_d_one(rng, args, topic='dict'):
             x = yes[0]
             o, a = one(rng, x, similarity_order(x, no, props)[:3])
             noun = S.get('q_one', 'из перечисленных структур')
-            q = f'Какой {noun} {t}?' if S.get('q_one') else f'Какая из перечисленных структур характеризуется так: {t}?'
+            q = f'{which(noun)} {noun} {t}?' if S.get('q_one') else f'Какая из перечисленных структур характеризуется так: {t}?'
             return card('one', topic, q, a, f'{cap(t)} — {x}.', {'eng': 'd_one', 'ref': ref, 'mode': 'obj', 't': t,
                         'opts': [z['t'] for z in o]}, o=o)
         x = rng.choice(pool)
@@ -2008,7 +2008,7 @@ def gen_d_one(rng, args, topic='dict'):
             continue
         t = rng.choice(good)
         o, a = one(rng, t, rng.sample(bad, 3))
-        q = f'Какое утверждение о {inflect(x, "loct")} верно?'
+        q = f'Какое утверждение {ob(inflect(x, "loct"))} верно?'
         return card('one', topic, q, a, f'{cap(x)}: {t}.', {'eng': 'd_one', 'ref': ref, 'mode': 'prop', 'x': x,
                     'opts': [z['t'] for z in o]}, o=o)
     raise Skip(ref)
@@ -2049,7 +2049,7 @@ def gen_d_judge(rng, args, topic='dict'):
         ans = {(1, 0): 0, (0, 1): 1, (1, 1): 2, (0, 0): 3}[want]
         o = [{'id': str(i + 1), 't': t} for i, t in enumerate(JUDGE)]
         about = inflect(x, 'loct')
-        q = (f'Верны ли следующие суждения о {about}? А. {predicate(x, sts[0][1])}. Б. {predicate(x, sts[1][1])}.')
+        q = (f'Верны ли следующие суждения {ob(about)}? А. {predicate(x, sts[0][1])}. Б. {predicate(x, sts[1][1])}.')
         e = f'А — {"верно" if sts[0][2] else "неверно"}, Б — {"верно" if sts[1][2] else "неверно"}.'
         return card('one', topic, q, str(ans + 1), e, {'eng': 'd_judge', 'ref': ref, 'st': [[x_, t] for x_, t, _ in sts]}, o=o)
     raise Skip(ref)
