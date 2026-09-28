@@ -3916,7 +3916,8 @@ def gen_og05_map_shop(r):
     rows = [['Товар'] + [f'п. {j + 1}' for j in range(4)]]
     for i, it in enumerate(items):
         rows.append([it[0]] + [str(prices[j][i]) for j in range(4)])
-    parts = [f'{k} {plural(k, *items[i][3])} {items[i][4]}' for i, k in enumerate(qty) if k]
+    acc = {'пачка': 'пачку', 'банка': 'банку'}  # винительный падеж: «купить 1 пачку печенья»
+    parts = [f'{k} {acc.get(plural(k, *items[i][3]), plural(k, *items[i][3]))} {items[i][4]}' for i, k in enumerate(qty) if k]
     buy = ', '.join(parts[:-1]) + ' и ' + parts[-1]
     q = (f'В каждом из четырёх пунктов маршрута ({", ".join("«" + n + "»" for n in b["names"])} — в таблице п. 1–4 в этом порядке) есть магазин. '
          f'Цены (в рублях) приведены в таблице. {b["ctx"]["who"]} хотят купить {buy}. В каком магазине такой набор обойдётся дешевле всего? '

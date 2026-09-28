@@ -7752,6 +7752,10 @@ def gen_eb16_trig_identity(r):
     quad = r.choice([(0, 90, 1, 1), (90, 180, 1, -1), (180, 270, -1, -1), (270, 360, -1, 1)])
     lo, hi, ssin, scos = quad
     st = r.randrange(3)
+
+    def kim_q(want, given):
+        # формулировка КИМ: «Найдите cos α, если sin α = … и 90° < α < 180°»
+        return f'Найдите {want} α, если {given} и {lo}° < α < {hi}°.'
     # sin α = ssin·a/c (с корнем или без), cos α = scos·√b2/c
     if st == 0:
         given = f'sin α = {"−" if ssin < 0 else ""}{sq(a * a)}/{c}' if math.isqrt(a * a) == a else None
@@ -7759,13 +7763,13 @@ def gen_eb16_trig_identity(r):
         if math.isqrt(b2) ** 2 != b2:
             return None
         ans = F(scos * math.isqrt(b2), c)
-        q = f'Известно, что sin α = {fx(F(ssin * a, c))}, причём угол α лежит в {QUARTER[(lo, hi)]} четверти ({lo}° < α < {hi}°). Чему равен cos α?'
+        q, key = kim_q('cos', f'sin α = {fx(F(ssin * a, c))}'), (0, a, c, lo)
         s_ = (ssin * sp.Rational(a, c), scos)
     elif st == 1:
         if math.isqrt(b2) ** 2 == b2:
             return None
         ans = F(ssin * a, c)
-        q = f'Известно, что cos α = {"−" if scos < 0 else ""}{sq(b2)}/{c}, причём угол α лежит в {QUARTER[(lo, hi)]} четверти ({lo}° < α < {hi}°). Чему равен sin α?'
+        q, key = kim_q('sin', f'cos α = {"−" if scos < 0 else ""}{sq(b2)}/{c}'), (1, a, c, lo)
         s_ = (scos * sp.sqrt(b2) / c, ssin)
     else:
         if math.isqrt(b2) ** 2 != b2:
@@ -7777,13 +7781,13 @@ def gen_eb16_trig_identity(r):
             if tg * tg != n_ - 1:
                 return None
             ans = F(ssin * scos * tg)
-            q = f'Известно, что cos α = {"−" if scos < 0 else ""}1/√{n_}, причём угол α лежит в {QUARTER[(lo, hi)]} четверти ({lo}° < α < {hi}°). Чему равен tg α?'
+            q, key = kim_q('tg', f'cos α = {"−" if scos < 0 else ""}1/√{n_}'), (3, n_, 0, lo)
             s_ = ('tg', scos / sp.sqrt(n_), ssin)
         else:
             ans = F(ssin * scos * a, math.isqrt(b2))
-            q = f'Известно, что sin α = {fx(F(ssin * a, c))}, причём угол α лежит в {QUARTER[(lo, hi)]} четверти ({lo}° < α < {hi}°). Чему равен tg α?'
+            q, key = kim_q('tg', f'sin α = {fx(F(ssin * a, c))}'), (2, a, c, lo)
             s_ = ('tg2', ssin * sp.Rational(a, c), scos)
-    if not nice(ans, 2):
+    if not nice(ans, 2) or bank_copy('eb16-trig-identity', *key):
         return None
 
     def chk():
