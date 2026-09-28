@@ -3586,13 +3586,19 @@ POOL30 = [x for x in S6 + ['NH3·H2O', 'CH3COOH', 'H3PO4', 'H2S', 'NaHCO3', 'KHS
 POOL30 = list(dict.fromkeys(POOL30))
 
 
+_EXCH_IDX = {}
+for _r in RX:
+    if _r.get('aq') and not is_redox(_r) and len(set(_r['lhs']) - {'H2O'}) == 2:
+        _EXCH_IDX.setdefault(frozenset(set(_r['lhs']) - {'H2O'}), []).append(_r)
+
+
 def _pairs30(items):
     """Для каждой пары: (реагирует?, все реакции обмена в растворе при любых соотношениях)."""
     res = {}
     for i, a in enumerate(items):
         for b in items[i + 1:]:
             v = reacts(a, _lab24(a), b, _lab24(b))
-            rs = [r for r in RX if set(r['lhs']) - {'H2O'} == {a, b} and r.get('aq') and not is_redox(r)]
+            rs = _EXCH_IDX.get(frozenset([a, b]), [])
             res[(a, b)] = (v, rs)
     return res
 

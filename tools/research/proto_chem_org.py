@@ -2460,6 +2460,7 @@ _ACID = ('предельные одноосновные карбоновые к�
          'непредельные карбоновые кислоты')
 _OX_KET = {('CuO', '', ''), ('KMnO4', 'кисл.', ''), ('KMnO4', 'нейтр.', ''), ('K2Cr2O7', '', ''), ('O2cat', '', '')}
 _OX_ALD = {('CuO', '', ''), ('K2Cr2O7', '', ''), ('O2cat', '', '')}
+_STRONG_ACIDS = {('HCl', '', ''), ('HBr', '', ''), ('H2SO4', '', ''), ('H2SO4t', '', ''), ('HNO3', '', '')}
 _OX_ACID = {('KMnO4', 'кисл.', ''), ('K2Cr2O7', '', ''), ('O2cat', '', '')}
 
 
@@ -2473,6 +2474,10 @@ def _ox_equiv(sub, prod):
         return _OX_ALD
     if hs in _ALD and hp in _ACID:
         return _OX_ACID
+    # соль → кислота (фенол, спирт): подходит любая сильная кислота, в т. ч. H₂SO₄ (конц.)
+    if (SUB[sub].get('cls'), SUB[prod].get('cls')) in (('фенолят', 'фенол'), ('соль карбоновой кислоты', 'карбоновая кислота'),
+                                                        ('алкоголят', 'спирт')):
+        return _STRONG_ACIDS
     return set()
 
 
@@ -3135,7 +3140,8 @@ def _walk_n(rng, n, allow):
 
 def _gen32(pid, rng, theme):
     name, ok = THEMES32[theme]
-    allow = lambda r: ok(r['rhs'][0]) and ok(r['lhs'][0]) and 'Ag2O' not in r['lhs']
+    allow = lambda r: ok(r['rhs'][0]) and ok(r['lhs'][0]) and 'Ag2O' not in r['lhs'] \
+        and not ('NH3' in r['lhs'] and 'Al2O3' in r.get('cond', ''))
     path = _walk_n(rng, 5, allow) if theme == 'n' else _walk(rng, 5, allow=allow)
     chain = [path[0]['lhs'][0]] + [r['rhs'][0] for r in path]
     if theme == 'n' and sum('N' in parse_formula(f) for f in chain[:5]) < 2:
@@ -3156,7 +3162,7 @@ def _gen32(pid, rng, theme):
     # реагент третьей стадии (X₂ → вещество 3) и отвлекающий реагент, который этого превращения не даёт
     l3 = labels[2]
     other = [L for L in {sig_label(r) for r in OUT.get(x2, []) + OUT.get(s3, []) + rng.sample(EDGE_RX, 12)}
-             if L and L != l3 and not _fits(x2, s3, L)]
+             if L and L != l3 and not _fits(x2, s3, L) and not ('NH₃' in L and 'Al₂O₃' in L)]
     other = _distinct_labels([l3] + sorted(other))[1:]
     if not other:
         raise Retry
@@ -3967,15 +3973,15 @@ T_CHON = [
                       'скелет', ('NaHCO3',), TK_NAHCO3, dict(cls=AC_, branched=True), ('O', 2)),
     T('C2H5NH2', 'в молекуле вещества А атом азота связан только с одним атомом углерода', ('HCl',), TK_HCL, dict(cls=AM_, deg=1), ('N', 1)),
     T('(CH3)2NH', 'в молекуле вещества А атом азота связан с двумя атомами углерода', ('HCl',), TK_HCL, dict(cls=AM_, deg=2), ('N', 1)),
-    T('CH3CH2CH2NH2', 'в молекуле вещества А атом азота связан только с одним атомом углерода, углеродный скелет неразветвлённый', ('HCl',), TK_HCL,
+    T('CH3CH2CH2NH2', 'в молекуле вещества А атом азота связан только с одним атомом углерода, а этот атом углерода связан только с одним атомом углерода', ('HCl',), TK_HCL,
       dict(cls=AM_, deg=1, nsec=False), ('N', 1)),
     T('(CH3)2CHNH2', 'в молекуле вещества А атом азота связан только с одним атомом углерода, а этот атом углерода связан ещё с двумя атомами углерода',
       ('HCl',), TK_HCL, dict(cls=AM_, deg=1, nsec=True), ('N', 1)),
     T('CH3NHC2H5', 'в молекуле вещества А атом азота связан с двумя атомами углерода', ('HCl',), TK_HCL, dict(cls=AM_, deg=2), ('N', 1)),
     T('(CH3)3N', 'в молекуле вещества А атом азота связан с тремя атомами углерода', ('HCl',), TK_HCL, dict(cls=AM_, deg=3), ('N', 1)),
-    T('(C2H5)2NH', 'в молекуле вещества А атом азота связан с двумя одинаковыми углеводородными радикалами', ('HCl',), TK_HCL,
+    T('(C2H5)2NH', 'вещество А — вторичный амин, оба радикала которого одинаковы', ('HCl',), TK_HCL,
       dict(cls=AM_, deg=2, sym=True), ('N', 1)),
-    T('(C2H5)3N', 'в молекуле вещества А атом азота связан с тремя одинаковыми углеводородными радикалами', ('HCl',), TK_HCL,
+    T('(C2H5)3N', 'вещество А — третичный амин, все три радикала которого одинаковы', ('HCl',), TK_HCL,
       dict(cls=AM_, deg=3, sym=True), ('N', 1)),
     T('H2NCH2COOH', 'вещество А проявляет амфотерные свойства: образует соли и с кислотами, и со щелочами', ('NaOH',),
       TK_NAOH, dict(cls=AA_), ('N', 1)),
@@ -4472,7 +4478,7 @@ def _solve_hal(p):
 
 def _steps_hal(p):
     mo = _hal_moles(p)
-    return [fmt(mo[e]) for e in ('C', 'H', p['X'])]
+    return [fmt(mo[e]) for e in ('C', 'H', p['X']) + (('N',) if p.get('V_N2') else ())]
 
 
 @proto('ch-ege-33-combustion-halogen', 'ЕГЭ', 33, 'Формула галогенпроизводного (соли амина) по продуктам сгорания с HCl/HBr',
@@ -4524,7 +4530,7 @@ def g33_hal(rng):
             f'{fmt(mo["H"])} моль' + (f'; n(N) = {fmt(mo["N"])} моль' if a.get('N') else ''))
     return pcard('ch-ege-33-combustion-halogen', q, str(opts_raw.index(hill(a)) + 1), _explain(f, t, nums), k='one',
                  o=opts(opts_txt), p=p, eq=eqt(_t_reaction(t)),
-                 steps=list(zip(['n(C), моль', 'n(H), моль', f'n({X}), моль'], _steps_hal(p))))
+                 steps=list(zip(['n(C), моль', 'n(H), моль', f'n({X}), моль', 'n(N), моль'], _steps_hal(p))))
 
 
 # -------- 33.6: многошаговая — сгорание порции + реакция такой же порции
