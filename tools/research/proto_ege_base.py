@@ -62,7 +62,7 @@ def P(pid, title, invariant, varies, answer_rule, fipi, mistakes, style, kes=Non
 # числах/символах формулы должно быть хоть одно «редкое» число.
 KIM_STOCK = re.compile(r'найдите (?:корень|корни) уравнения|решите уравнение|найдите значение выражения|если уравнение имеет более '
                        r'одного корня,? в ответе запишите (?:меньший|больший) из (?:них|корней)', re.I)
-COMMON_TOK = {str(i) for i in range(0, 7)} | {'10', 'x', 'log', 'sin', 'cos', 'tg', 'ctg', 'lg', 'ln'}
+COMMON_TOK = {str(i) for i in range(0, 5)} | {'x', 'log', 'sin', 'cos', 'tg', 'ctg', 'lg', 'ln'}
 
 
 def too_generic(c):
@@ -1171,9 +1171,7 @@ def qparse(txt):
     raise ValueError(txt)
 
 
-MATCH_Q = ['Установите соответствие между величинами и их возможными значениями: к каждому элементу первого столбца подберите '
-           'соответствующий элемент из второго столбца. В таблице под каждой буквой, соответствующей величине, укажите номер её '
-           'возможного значения.']
+MATCH_Q = ['Установите соответствие между величинами и их возможными значениями.']
 LET = 'АБВГ'
 
 
@@ -1185,8 +1183,6 @@ def match_card(r, lefts, rights, pairs, q, e=''):
     o = {'left': [{'id': LET[i], 't': t} for i, t in enumerate(lefts)],
          'right': [{'id': str(k + 1), 't': rights[j]} for k, j in enumerate(order)]}
     a = {LET[i]: str(pos[pairs[i]] + 1) for i in range(len(lefts))}
-    if 'под каждой буквой' not in q:
-        q += ' В таблице под каждой буквой укажите соответствующий номер.'
     return pcard(q, a, e=e, k='match', o=o)
 
 
@@ -4306,14 +4302,14 @@ def gen_eb07_linear(r):
             lines.append((k, b))
         txt = {(1, 1): 'k > 0, b > 0', (1, -1): 'k > 0, b < 0', (-1, 1): 'k < 0, b > 0', (-1, -1): 'k < 0, b < 0'}
         rights = [txt[s_] for s_ in signs]
-        q = 'На рисунках изображены графики функций вида y = kx + b. Установите соответствие между графиками функций и знаками коэффициентов k и b.'
+        q = 'На рисунке изображены графики функций вида y = kx + b. Установите соответствие между графиками и знаками коэффициентов k и b.'
         e = 'Прямая возрастает — k > 0; пересекает ось Oy выше нуля — b > 0.'
         kind = 'sign'
     else:
         ks = r.sample([k for k in SLOPES if abs(k) <= 3], 4)
         lines = [(k, r.randint(-2, 2)) for k in ks]
         rights = [slope_txt(k) for k in ks]
-        q = ('На рисунках изображены графики функций вида y = kx + b. Установите соответствие между графиками функций и значениями '
+        q = ('На рисунке изображены графики функций вида y = kx + b. Установите соответствие между графиками функций и значениями '
              'производной этих функций в точке x = 1.')
         e = 'Производная линейной функции равна k — отношению Δy / Δx по двум узлам сетки.'
         kind = 'deriv'
@@ -7084,7 +7080,7 @@ EXPR_Q = ['Найдите значение выражения {}.']
 
 
 def ask_expr(r, d):
-    return r.choice(EXPR_Q).format(d)
+    return r.choice(EXPR_Q).format(f'⟦{d}⟧')
 
 SUP = str.maketrans('0123456789−', '⁰¹²³⁴⁵⁶⁷⁸⁹⁻')
 SUBS = str.maketrans('0123456789', '₀₁₂₃₄₅₆₇₈₉')
@@ -7701,9 +7697,9 @@ EQ_HEAD = ['Найдите корень уравнения {}.', 'Найдите
 
 def eq_card(r, lhs_d, rhs_d, lhs_s, rhs_s, ans, head=None, pick=None, tail=None):
     if head and tail:
-        q = f'{head} {lhs_d} = {rhs_d}{tail}'
+        q = f'{head} ⟦{lhs_d} = {rhs_d}⟧{tail}'
     else:
-        q = f'{head} {lhs_d} = {rhs_d}.' if head else r.choice(EQ_HEAD).format(f'{lhs_d} = {rhs_d}')
+        q = f'{head} ⟦{lhs_d} = {rhs_d}⟧.' if head else r.choice(EQ_HEAD).format(f'⟦{lhs_d} = {rhs_d}⟧')
     if not nice(ans, 2):
         return None
 
@@ -8439,7 +8435,7 @@ def gen_eb18_number_line(r):
     svg = numline_svg(pts, lo, hi)
     lefts = list(labels)
     rights = [chosen[i][0][0].format(chosen[i][0][1]) for i in order]
-    q = 'На координатной прямой отмечены точки A, B, C и D. Каждой точке соответствует одно из чисел в правом столбце. Установите соответствие между указанными точками и числами.'
+    q = 'Установите соответствие между отмеченными на прямой точками и числами.'
     c = match_card(r, lefts, rights, [0, 1, 2, 3], q, e='Оцениваем каждое число и располагаем по возрастанию.')
     c['svg'] = svg
     ans = match_answer(c)
@@ -8492,8 +8488,7 @@ def gen_eb18_m_segments(r):
             return None
         lefts = [t for t, _, _ in pick]
         rights = [f'[{tnum(a)}; {tnum(b)}]' for _, _, (a, b) in pick]
-        q = (f'Известно, что m = {name}. Каждому из четырёх чисел в левом столбце соответствует отрезок, которому оно принадлежит. '
-             f'Установите соответствие между числами и отрезками из правого столбца.')
+        q = f'Известно, что m = {name}. Установите соответствие между числами и отрезками из правого столбца.'
         c = match_card(r, lefts, rights, [0, 1, 2, 3], q, e=f'm ≈ {ap(mf, 2)}; оцениваем каждое выражение.')
         ans = match_answer(c)
         vals = {t: v for t, v, _ in pick}
@@ -8522,8 +8517,7 @@ def gen_eb18_m_segments(r):
     labels = 'ABCD'
     svg = numline_svg([(float(sp.N(pick[i][1])), labels[k]) for k, i in enumerate(order)], -4, 4)
     rights = [pick[i][0] for i in order]
-    q = (f'Известно, что m = {name}. На координатной прямой отмечены точки A, B, C и D. Каждой точке соответствует одно из чисел в '
-         f'правом столбце. Установите соответствие между указанными точками и числами.')
+    q = f'Известно, что m = {name}. Установите соответствие между отмеченными на прямой точками и числами.'
     c = match_card(r, list(labels), rights, [0, 1, 2, 3], q, e=f'm ≈ {ap(mf, 2)}; вычисляем значения и сравниваем с положением точек.')
     c['svg'] = svg
     ans = match_answer(c)
