@@ -681,7 +681,7 @@ def fipi_content(exam, key, section):
     topics = []
     for code in sorted(used, key=lambda c: [int(x) for x in c.split('.') if x.isdigit()]):
         sec = sections.get(code.split('.')[0], {'name': 'Другие задания', 'themes': []})
-        title = sec['name'] if code in sections else names.get(code, code)
+        title = sec['name'] if code in sections else names.get(code) or 'Другие задания'
         protos = [{'id': f'fk-{c}', 'title': f'{c} {short_title(names[c])}', 'tip': ''}
                   for c in sorted((c for c in used[code] if c in names), key=lambda c: [int(x) for x in c.split('.')])]
         # Подразделы глубокого раздела собираются под его названием

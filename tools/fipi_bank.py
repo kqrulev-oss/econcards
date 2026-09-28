@@ -485,16 +485,20 @@ def serialize(kids):
     return ''.join(out)
 
 
-def tidy(kids):
-    """Убирает пустые абзацы и лишние пробелы по краям блоков."""
+def tidy(kids, edge=True):
+    """Убирает пустые абзацы и лишние пробелы по краям блоков. Внутри строчных тегов
+    (b, i…) края не трогаем: «<b>два </b>верных» — пробел между словами нужен."""
     blocks = {'p', 'div', 'td', 'th', 'li', 'tr', 'table', 'ul', 'ol'}
+    inline = {'b', 'i', 'u', 'sub', 'sup'}
     out = []
     for k in kids:
         if isinstance(k, Node):
             if k.tag not in MATH_TAGS:
-                k.kids = tidy(k.kids)
-            if k.tag in ('p', 'div', 'li', 'b', 'i', 'u', 'sub', 'sup') and not any(
+                k.kids = tidy(k.kids, edge=k.tag not in inline)
+            if k.tag in {'p', 'div', 'li'} | inline and not any(
                     isinstance(x, Node) or x.strip(' \xa0') for x in k.kids):
+                if k.tag in inline and any(isinstance(x, str) and x for x in k.kids):
+                    out.append(' ')  # выделенный пробел между словами — просто пробел
                 continue
             # Картинка-формула в <sub> (так выравнивал Word) — индексом её делать не нужно
             if k.tag in ('sub', 'sup') and all(isinstance(x, Node) and x.tag == 'img' or isinstance(x, str) and not x.strip()
@@ -502,15 +506,15 @@ def tidy(kids):
                 out.extend(x for x in k.kids if isinstance(x, Node))
                 continue
         out.append(k)
-    # пробелы в начале и конце блока
-    while out and isinstance(out[0], str) and not out[0].strip():
-        out.pop(0)
-    while out and isinstance(out[-1], str) and not out[-1].strip():
-        out.pop()
-    if out and isinstance(out[0], str):
-        out[0] = out[0].lstrip()
-    if out and isinstance(out[-1], str):
-        out[-1] = out[-1].rstrip()
+    if edge:  # пробелы в начале и конце блока
+        while out and isinstance(out[0], str) and not out[0].strip():
+            out.pop(0)
+        while out and isinstance(out[-1], str) and not out[-1].strip():
+            out.pop()
+        if out and isinstance(out[0], str):
+            out[0] = out[0].lstrip()
+        if out and isinstance(out[-1], str):
+            out[-1] = out[-1].rstrip()
     # пробельные строки между блоками не нужны
     return [k for i, k in enumerate(out) if not (isinstance(k, str) and not k.strip() and (
         (i and isinstance(out[i - 1], Node) and out[i - 1].tag in blocks) or
