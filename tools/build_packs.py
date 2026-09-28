@@ -116,7 +116,37 @@ def blocks_to_html(blocks):
     return ''.join(out)
 
 
+AUDIT = ROOT / 'data' / 'audit'
+
+
+def apply_audit(pack):
+    """Правки экспертного аудита (data/audit/<id>.jsonl, см. docs/audit-packs.md): у карточки с fix
+    заменяются поля, карточки с вердиктом wrong/unsolvable без fix выбрасываются."""
+    path = AUDIT / f'{pack["id"]}.jsonl'
+    if not path.exists():
+        return pack
+    rows = {}
+    for line in path.read_text('utf-8').splitlines():
+        if line.strip():
+            r = json.loads(line)
+            rows[r['id']] = r
+    fixed = dropped = 0
+    cards = []
+    for c in pack['cards']:
+        r = rows.get(c['id'])
+        if r and r.get('fix'):
+            c = {**c, **r['fix']}
+            fixed += 1
+        elif r and r['verdict'] in ('wrong', 'unsolvable'):
+            dropped += 1
+            continue
+        cards.append(c)
+    print(f'packs/{pack["id"]}.json: аудит — исправлено {fixed}, убрано {dropped}')
+    return {**pack, 'cards': cards}
+
+
 def write(pack):
+    pack = apply_audit(pack)
     OUT.mkdir(exist_ok=True)
     used = Counter(c['t'] for c in pack['cards'])
     pack['topics'] = [t for t in pack['topics'] if used[t['id']] or any(x['topic'] == t['id'] for x in pack['theory'])]
@@ -677,6 +707,10 @@ def derived(packs=None):
 
 
 if __name__ == '__main__':
+    # Генераторы перебирают множества строк: без фиксированного PYTHONHASHSEED сборка недетерминирована
+    import os
+    if os.environ.get('PYTHONHASHSEED') != '0':
+        os.execve(sys.executable, [sys.executable, *sys.argv], {**os.environ, 'PYTHONHASHSEED': '0'})
     if '--derived' in sys.argv:
         derived()
         sys.exit()
