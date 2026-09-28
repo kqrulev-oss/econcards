@@ -14,7 +14,11 @@
    /tg, /tg/setup, /gh            Telegram-бот для задач Claude и Codex (worker/bot.js)
 
    Переменные (см. worker/README.md):
-     GEMINI_KEY  — секрет, ключ Google AI Studio (обязательно для ИИ)
+     AI          — привязка Workers AI (wrangler.jsonc). Бесплатно 10 000 нейронов
+                   в день, ключ не нужен. Если есть — ИИ работает на ней
+     AI_MODEL    — модель Workers AI (по умолч. @cf/meta/llama-3.3-70b-instruct-fp8-fast)
+     GEMINI_KEY  — секрет, ключ Google AI Studio: запасной ИИ, если Workers AI
+                   не отвечает или не подключён
      MODEL       — модель Gemini (по умолч. gemini-flash-latest, запасная —
                    gemini-flash-lite-latest)
      DAILY_LIMIT — лимит ИИ-запросов на IP в сутки (по умолч. 60)
@@ -30,6 +34,10 @@ import { handleNotify, withHw, progressFlags, alertTutorFull, meNotify, runNotif
 // закрывают для новых ключей (так случилось с gemini-2.5-flash)
 const MODEL_DEFAULT = 'gemini-flash-latest';
 const MODEL_FALLBACK = 'gemini-flash-lite-latest';
+// Workers AI: основная — Llama 3.3 70B (лучше всех бесплатных по-русски), запасная — Qwen 3
+const AI_DEFAULT = '@cf/meta/llama-3.3-70b-instruct-fp8-fast';
+const AI_FALLBACK = '@cf/qwen/qwen3-30b-a3b-fp8';
+const MAX_ATTACH_TEXT = 60000; // символов текста из PDF и фото после распознавания
 const PLAIN = ' Пиши простым текстом: без Markdown (никаких **, #, списков со звёздочками) и без LaTeX ($…$) — формулы вроде Qd = 100 − 2P.';
 const MAX = 4000;           // обрезаем входы проверок, чтобы не жечь токены
 const MAX_MATERIAL = 30000; // материалы репетитора для генерации
@@ -91,6 +99,61 @@ const PROMPT = {
   generate: d => `Предмет: ${cut(d.subject, 100) || 'не указан'}\nУровень учеников: ${cut(d.level, 100) || 'не указан'}\nСколько карточек: около ${Math.max(5, Math.min(40, Number(d.count) || 15))}\n\nМатериалы:\n${cut(d.material, MAX_MATERIAL) || '(только во вложениях)'}${attachments(d).length ? `\n\nЕщё ${attachments(d).length} вложени(я) — PDF или фото страниц: прочитай их полностью, включая рукописный текст, таблицы и формулы.` : ''}`,
 };
 
+// Провайдер ИИ: Workers AI (бесплатно, без ключа), при сбое — Gemini, если задан ключ.
+// Ошибки клиента (нет ключа, оба провайдера отвалились) — HttpError 502 с понятным текстом.
+async function ask(env, task, body) {
+  if (!env.AI) return gemini(env, task, body);
+  try {
+    return await workersAi(env, task, body);
+  } catch (e) {
+    if (!env.GEMINI_KEY) throw e;
+    return gemini(env, task, body);
+  }
+}
+
+// PDF и фото Workers AI читает через toMarkdown (распознавание текста, таблиц, формул) —
+// модель получает уже текст, поэтому вложения работают и на текстовой модели
+async function attachText(env, body) {
+  const files = attachments(body);
+  if (!files.length || typeof env.AI.toMarkdown !== 'function') return '';
+  const b64 = s => Uint8Array.from(atob(s), c => c.charCodeAt(0));
+  const docs = files.map((f, i) => ({ name: `f${i}.${f.mime === 'application/pdf' ? 'pdf' : f.mime.split('/')[1]}`, blob: new Blob([b64(f.data)], { type: f.mime }) }));
+  const out = await env.AI.toMarkdown(docs).catch(() => []);
+  return (Array.isArray(out) ? out : []).map(r => r?.data || '').filter(Boolean).join('\n\n').slice(0, MAX_ATTACH_TEXT);
+}
+
+async function workersAi(env, task, body) {
+  const json = task === 'generate';
+  let user = PROMPT[task](body);
+  if (json) {
+    const extra = await attachText(env, body);
+    if (extra) user += `\n\nТекст вложений (распознан автоматически):\n${extra}`;
+  }
+  const input = {
+    messages: [{ role: 'system', content: SYSTEM[task] + (json ? ' Верни только JSON без пояснений.' : '') }, { role: 'user', content: user }],
+    temperature: task === 'similar' ? 0.7 : 0.3,
+    max_tokens: json ? 8192 : 2048,
+    ...(json ? { response_format: { type: 'json_object' } } : {}),
+  };
+  const models = [...new Set([env.AI_MODEL || AI_DEFAULT, AI_FALLBACK])];
+  let err;
+  for (const model of models) {
+    for (const wait of [0, 1500]) {
+      if (wait) await new Promise(ok => setTimeout(ok, wait));
+      try {
+        const r = await env.AI.run(model, input);
+        const text = typeof r === 'string' ? r : typeof r?.response === 'string' ? r.response : r?.response ? JSON.stringify(r.response) : '';
+        if (text.trim()) return text.trim();
+        err = new Error('пустой ответ');
+      } catch (e) { err = e; }
+    }
+  }
+  const msg = String(err?.message || '');
+  // 3040 — Workers AI: дневная квота бесплатного тарифа исчерпана
+  if (/quota|limit|3040|429/i.test(msg)) throw new HttpError(502, 'ИИ на сегодня исчерпал бесплатную квоту. Попробуйте завтра.');
+  throw new HttpError(502, 'ИИ временно недоступен. Попробуйте позже.');
+}
+
 async function gemini(env, task, body) {
   if (!env.GEMINI_KEY) throw new HttpError(500, 'На сервере не задан GEMINI_KEY.');
   const json = task === 'generate';
@@ -142,7 +205,9 @@ async function gemini(env, task, body) {
 // Приводим ответ модели к формату карточек и выкидываем битые
 function cleanGenerated(raw) {
   let data;
-  try { data = JSON.parse(raw.replace(/^```(?:json)?|```$/g, '')); }
+  // Модель может обернуть JSON в ``` или добавить фразу до и после — берём от первой { до последней }
+  const a = raw.indexOf('{'), z = raw.lastIndexOf('}');
+  try { data = JSON.parse(a >= 0 && z > a ? raw.slice(a, z + 1) : raw); }
   catch { throw new HttpError(502, 'ИИ вернул неразборчивый ответ. Попробуйте ещё раз или сократите материал.'); }
   const topics = (Array.isArray(data.topics) ? data.topics : [])
     .filter(t => t && t.id && t.title).map(t => ({ id: String(t.id), title: String(t.title) }));
@@ -284,7 +349,7 @@ async function handle(req, env, ctx) {
     const body = await readJson(req, MAX_REQUEST_AI);
     if (!SYSTEM[body.task]) throw new HttpError(400, 'Неизвестное действие.');
     await limitAi(env, req);
-    const out = await gemini(env, body.task, body);
+    const out = await ask(env, body.task, body);
     return body.task === 'generate' ? cleanGenerated(out) : { text: out || 'Пустой ответ модели.' };
   }
 

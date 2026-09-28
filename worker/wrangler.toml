@@ -1,12 +1,16 @@
 # Сервер Задачника. Разворачивается кнопкой Deploy to Cloudflare (см. README.md)
-# или вручную: npx wrangler deploy && npx wrangler secret put GEMINI_KEY
-# Хранилище DB создаётся автоматически при первом развёртывании.
+# или вручную: npx wrangler deploy (GEMINI_KEY — необязательный запасной ИИ: npx wrangler secret put GEMINI_KEY)
+# Хранилище DB и привязка Workers AI создаются автоматически при первом развёртывании.
 name = "zadachnik"
 main = "worker.js"
 compatibility_date = "2026-09-01"
 
 [[kv_namespaces]]
 binding = "DB"
+
+# ИИ: Workers AI, бесплатный тариф, без ключа
+[ai]
+binding = "AI"
 
 [vars]
 DAILY_LIMIT = "60"
