@@ -40,7 +40,22 @@ export async function loadPack(ref, root = './') {
   if (ref.startsWith('t:')) return api('/packs/' + encodeURIComponent(ref.slice(2)));
   const r = await fetch(`${root}packs/${encodeURIComponent(ref)}.json`);
   if (!r.ok) throw new Error('Набор не найден');
-  return r.json();
+  return withTexts(await r.json());
+}
+
+// Общий текст группы заданий (банк ФИПИ) лежит в наборе один раз, а в карточку попадает
+// при загрузке — дальше карточки самодостаточны и в приложении, и в студии
+function withTexts(pack) {
+  const texts = pack.texts || {};
+  for (const c of pack.cards) {
+    const t = texts[c.tx];
+    if (!t) continue;
+    c.h = t.h + (c.h || '');
+    c.q += t.q;
+    delete c.tx;
+  }
+  delete pack.texts;
+  return pack;
 }
 
 export async function loadLibrary(root = './') {
@@ -176,8 +191,12 @@ export function renderCard(card, root, onDone, { imgRoot = './', aiEnabled = !!a
   // Файлы к заданию (архивы, таблицы) — ссылками на сайт ФИПИ, других адресов не пускаем
   const files = (card.files || []).filter(u => /^https:\/\/(ege|oge)\.fipi\.ru\/[^\s"'<>]+$/.test(u))
     .map(u => `<a class="btn small ghost" href="${esc(u)}" target="_blank" rel="noopener noreferrer">📎 Файл к заданию · ${esc(u.split('.').pop())}</a>`).join('');
+  // Аудирование: запись с сайта ФИПИ
+  const audio = (card.audio || []).filter(u => /^https:\/\/(ege|oge)\.fipi\.ru\/[^\s"'<>]+\.(mp3|ogg|wav)$/i.test(u))
+    .map(u => `<audio controls preload="none" src="${esc(u)}"></audio>`).join('');
   root.innerHTML = `
     ${card.src ? `<div class="card-src">${esc(card.src)}</div>` : ''}
+    ${audio ? `<div class="card-audio">${audio}</div>` : ''}
     <div class="card-q${card.h ? ' rich' : ''}">${card.h ? '' : text(card.q)}</div>
     ${imgs ? `<div class="card-img">${imgs}</div>` : ''}
     ${files ? `<div class="card-files">${files}</div>` : ''}

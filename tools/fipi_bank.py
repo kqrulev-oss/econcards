@@ -276,6 +276,7 @@ ATTRS = {
 PICTURE = re.compile(r"""(ShowPicture\w*)\s*\(\s*(['"])([^'"]+)\2(?:\s*,\s*(['"])([^'"]*)\4)?""")
 IMAGE_EXT = re.compile(r'\.(png|gif|jpe?g|svg|webp|bmp)$', re.I)
 DOC_EXT = re.compile(r'\.(zip|rar|7z|xlsx?|ods|docx?|odt|txt|csv|pdf)$', re.I)
+AUDIO_EXT = re.compile(r'\.(mp3|ogg|wav)$', re.I)
 INVISIBLE = dict.fromkeys(map(ord, '⁡⁢⁣⁤​﻿'), None)
 
 
@@ -299,6 +300,7 @@ class Cleaner:
         self.base = base  # files_location: папка картинок ShowPicture(...) в общих текстах
         self.images = []
         self.files = []  # файлы к заданию (архивы, таблицы) — ссылками на сайт ФИПИ
+        self.audio = []  # записи для аудирования — тоже с сайта ФИПИ
         self.media = False
 
     def image(self, src, script=False):
@@ -333,7 +335,11 @@ class Cleaner:
             for fn, src, _ in pictures(n.text()):
                 q = fn.startswith('ShowPictureQ')
                 path = src if q else self.base + src
-                if IMAGE_EXT.search(path) or any(x in path.lower() for x in MEDIA):
+                if AUDIO_EXT.search(path):
+                    url = getattr(self.resolve_img, 'url', lambda s, script: s)(path, q)
+                    if url not in self.audio:
+                        self.audio.append(url)
+                elif IMAGE_EXT.search(path) or any(x in path.lower() for x in MEDIA):
                     imgs.append(self.image(path, script=q))
                 else:  # файл к заданию: в репозиторий не кладём, даём ссылку на ФИПИ
                     url = getattr(self.resolve_img, 'url', lambda s, script: s)(path, q)
@@ -675,6 +681,8 @@ def text_block(root, resolve_img, files):
         out['img'] = cleaner.images
     if cleaner.files:
         out['files'] = cleaner.files
+    if cleaner.audio:
+        out['audio'] = cleaner.audio
     if cleaner.media:
         out['media'] = True
     return out
@@ -721,6 +729,8 @@ def parse_questions(html, resolve_img, pending=None):
             task['img'] = cleaner.images
         if cleaner.files:
             task['files'] = cleaner.files
+        if cleaner.audio:
+            task['audio'] = cleaner.audio
         if cleaner.media:
             task['media'] = True
         if mask and opts:
@@ -859,6 +869,11 @@ def crawl(exam, key, client, offline=False, pagesize=100):
         if first['gn'] == 1:
             groups[g] = {k: first[k] for k in ('text', 'html', 'img', 'files') if k in first}
             groups[g]['from'] = first['id']
+    # Запись для аудирования прикреплена к первому заданию группы, а слушать её нужно во всех
+    for t in by_id.values():
+        if t.get('audio') and t.get('group') in groups:
+            g = groups[t['group']]
+            g['audio'] = list(dict.fromkeys(g.get('audio', []) + t['audio']))
     lost = sorted({t['group'] for t in by_id.values() if t.get('group') and t['group'] not in groups})
     # Картинки, на которые больше ничего не ссылается (старый разбор, переименования), — удаляем
     folder = IMG / f'{exam}-{key}'

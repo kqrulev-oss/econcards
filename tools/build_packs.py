@@ -7,7 +7,9 @@
   id, title, subject, desc, color
   topics:  [{id, title, section, n?, pts?, protos?: [{id, title, tip}], pt?}]
   theory:  [{id, topic, title, min, html}]
-  cards:   [{id, t, p?, k, q, h?, o?, a, e?, img?, svg?, src?, any?, ai?}]
+  cards:   [{id, t, p?, k, q, h?, o?, a, e?, img?, svg?, src?, any?, ai?, tx?, files?, audio?}]
+  texts?:  {id: {h, q}} — общие тексты групп заданий (банк ФИПИ): loadPack() в lib.js
+           приклеивает их к карточкам с tx, поэтому в файле каждый текст один раз
 
 Карточка: t — тема, p — прототип, k — тип:
   one    — один верный вариант, a = id варианта
@@ -593,23 +595,32 @@ def fipi_choice(t, a):
     return a.split(',') if ',' in a else list(a)
 
 
+def fipi_passage(passage):
+    """Общий текст группы → запись в texts набора: свёрнутый блок для h и текст для q.
+    В карточку его подставляет loadPack() в lib.js — в файле набора текст один раз."""
+    text = passage.get('html') or ''.join(f'<p>{esc(x)}</p>' for x in passage['text'].split('\n') if x.strip())
+    head = 'Условие первого задания группы' if passage.get('from') else 'Текст к заданию'
+    return {'h': f'<details><summary>{head}</summary>{text}</details>', 'q': f'\n\n{head}:\n' + passage['text']}
+
+
 def fipi_card(t, rec, passage=None):
     """Задание банка → карточка или None, если ключа к нему пока нет.
-    passage — общий текст группы заданий: он идёт в карточку свёрнутым блоком."""
+    passage — общий текст группы заданий: карточка ссылается на него полем tx."""
     if t.get('media') or (passage or {}).get('media'):
-        return None  # аудирование и видео приложение не проигрывает
+        return None  # видео и флеш приложение не проигрывает (аудио — плеером с сайта ФИПИ)
     card = {'q': t['text'], 'src': f'Банк ФИПИ · {t["id"]}'}
     if t.get('html'):
         card['h'] = t['html']
     files = t.get('files', []) + (passage or {}).get('files', [])
     if files:
         card['files'] = files
+    audio = list(dict.fromkeys(t.get('audio', []) + (passage or {}).get('audio', [])))
+    if audio:
+        card['audio'] = audio
     if passage:
-        card['q'] += ('\n\nУсловие первого задания группы:\n' if passage.get('from') else '\n\nТекст к заданию:\n') + passage['text']
-        body = t.get('html') or ''.join(f'<p>{esc(x)}</p>' for x in re.sub(r'⟦(.+?)⟧', r'\1', t['text']).split('\n') if x.strip())
-        text = passage.get('html') or ''.join(f'<p>{esc(x)}</p>' for x in passage['text'].split('\n') if x.strip())
-        head = 'Условие первого задания группы' if passage.get('from') else 'Текст к заданию'
-        card['h'] = f'<details><summary>{head}</summary>{text}</details>{body}'
+        card['tx'] = t['group']
+        # Условие с разметкой нужно всегда: к нему приклеится блок с общим текстом
+        card['h'] = t.get('html') or ''.join(f'<p>{esc(x)}</p>' for x in re.sub(r'⟦(.+?)⟧', r'\1', t['text']).split('\n') if x.strip())
     opts = [{'id': o['id'], 't': o['text'], **({'h': o['html']} if o.get('html') else {})} for o in t.get('opts', [])]
     if t['kind'] == 'select' and opts and rec.get('a'):
         card.update(k='one', a=rec['a'], o=opts)
@@ -641,8 +652,9 @@ def fipi_content(exam, key, section):
     sections = {s['code']: s for s in data['kes']}
     names = {th['code']: th['name'] for s in data['kes'] for th in s['themes']}
     deep = {s['code'] for s in data['kes'] if any(th['code'].count('.') >= 2 for th in s['themes'])}
-    cards, used, skipped = [], {}, Counter()
-    for t in data['tasks']:
+    cards, used, skipped, texts = [], {}, Counter(), {}
+    # Задания одной группы — подряд: так их и решают, и файл набора лучше сжимается
+    for t in sorted(data['tasks'], key=lambda t: (t.get('group') or t['id'], t.get('gn', 0), t['id'])):
         if t.get('group') and t['group'] not in groups:
             skipped[t['kind'] + ' (нет общего текста)'] += 1
             continue
@@ -650,6 +662,8 @@ def fipi_content(exam, key, section):
         if passage and passage.get('from') == t['id']:
             passage = None  # это задание само и есть условие группы
         body = fipi_card(t, answers.get(t['id'], {}), passage)
+        if body and passage:
+            texts[t['group']] = fipi_passage(passage)
         if not body:
             skipped[t['kind'] + (' (медиа)' if t.get('media') else '')] += 1
             continue
@@ -669,7 +683,7 @@ def fipi_content(exam, key, section):
         sec = sections.get(code.split('.')[0], {'name': 'Другие задания', 'themes': []})
         title = sec['name'] if code in sections else names.get(code, code)
         protos = [{'id': f'fk-{c}', 'title': f'{c} {short_title(names[c])}', 'tip': ''}
-                  for c in sorted(used[code], key=lambda c: [int(x) for x in c.split('.')]) if c in names]
+                  for c in sorted((c for c in used[code] if c in names), key=lambda c: [int(x) for x in c.split('.')])]
         # Подразделы глубокого раздела собираются под его названием
         head = f'{section} · {sec["name"]}' if code not in sections and code.split('.')[0] in deep else section
         topic = {'id': f'fk-{code}', 'title': title or f'Раздел {code}', 'section': head}
@@ -679,7 +693,7 @@ def fipi_content(exam, key, section):
     kinds = Counter(c['k'] for c in cards)
     print(f'  ФИПИ {exam}-{key}: заданий {len(data["tasks"])}, в набор {len(cards)} {dict(kinds)}'
           + (f', без ключа {dict(skipped)}' if skipped else ''))
-    return topics, cards, data
+    return topics, cards, data, texts
 
 
 def fipi_packs(packs):
@@ -696,12 +710,13 @@ def fipi_packs(packs):
         exam, key = m.groups()
         pid = f'{exam}-{FIPI_IDS[key]}'
         base = by_id.get(pid)
-        topics, cards, data = fipi_content(exam, key, 'Банк ФИПИ' if base else 'Темы кодификатора')
+        topics, cards, data, texts = fipi_content(exam, key, 'Банк ФИПИ' if base else 'Темы кодификатора')
         if not cards:
             continue
         if base:
             base['topics'] += topics
             base['cards'] += cards
+            base.setdefault('texts', {}).update(texts)
             base['desc'] = base['desc'].rstrip('.') + ' + открытый банк ФИПИ'
             continue
         ex = 'ЕГЭ' if exam == 'ege' else 'ОГЭ'
@@ -709,7 +724,7 @@ def fipi_packs(packs):
         pack = {
             'id': pid, 'title': f'{ex}: {name}', 'subject': data['title'].split('.')[0],
             'desc': f'Открытый банк заданий ФИПИ по темам кодификатора; ответы проверены на сайте ФИПИ',
-            'color': FIPI_COLORS.get(key, '#495057'), 'topics': topics, 'theory': [], 'cards': cards,
+            'color': FIPI_COLORS.get(key, '#495057'), 'topics': topics, 'theory': [], 'cards': cards, 'texts': texts,
         }
         by_id[pid] = pack
         new.append(pack)
