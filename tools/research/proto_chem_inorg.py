@@ -1030,6 +1030,11 @@ def _alt_reduction(m, prod, lhs):
     (S/SO₂/H₂S; NO₂/NO/N₂O/N₂/NH₄NO₃): такой дистрактор делает ответ неоднозначным (банк: 6C29A3, F9A60C)."""
     if not ({'HNO3', 'H2SO4'} & set(lhs)):
         return False
+    for f2, f3 in (('Fe(NO3)2', 'Fe(NO3)3'), ('FeSO4', 'Fe2(SO4)3')):
+        # Fe + HNO₃ (разб.): Fe(NO₃)₃ или Fe(NO₃)₂ (при избытке Fe) — не ставим рядом
+        sw = {f2: f3, f3: f2}
+        if 'Fe' in lhs and set(prod) & {f2, f3} and sorted(sw.get(x, x) for x in m) == sorted(prod):
+            return True
     for fam in _RED_FAM:
         if set(m) & fam and set(prod) & fam and \
                 (set(m) - fam - {'H2O'}) == (set(prod) - fam - {'H2O'}):
@@ -3396,7 +3401,8 @@ def g_6u(rng):
     pid = 'ch-ege-06-unknown'
     R1 = rng.choice(['BaCl2', 'KOH', 'NaOH', 'HCl', 'AgNO3', 'H2SO4', 'Ba(OH)2', 'Na2CO3', 'NH3·H2O', 'K3PO4'])
     for _ in range(30):
-        items = rng.sample([x for x in S6 if x != R1], 5)
+        # Y (и весь перечень) — другого класса, чем названный реагент (не KOH после NaOH)
+        items = rng.sample([x for x in S6 if x != R1 and SUBS[x]['cls'] != SUBS[R1]['cls']], 5)
         c1s = {x: cat6(x, _lab24(x), R1, _lab24(R1)) for x in items}
         if None in c1s.values():
             continue
@@ -3621,6 +3627,14 @@ def _solve_30c(p):
     return sorted([str(items.index(a) + 1), str(items.index(b) + 1)])
 
 
+def _ru_list(f):
+    """Название для перечня «Вещества можно брать в виде водных растворов»: нерастворимые помечаем «(тв.)»."""
+    s_ = SUBS.get(f, {})
+    solid = f not in I.GASES and (s_.get('sol') == 'н' or s_.get('cls') == 'оксид' and f not in _WATER_OX
+                                  or s_.get('cls') == 'простое вещество' and f not in ('Br2', 'I2'))
+    return ru(f) + (' (тв.)' if solid else '')
+
+
 LIST_HEAD = 'Дан перечень веществ: {}. Вещества можно брать в виде водных растворов.'
 
 
@@ -3672,7 +3686,7 @@ def _g_30c_once(rng):
     alt = [x for x in EXCH30 if set(x['lhs']) - {'H2O'} == {a, b} and want in cond30(x)]
     alt.sort(key=lambda x: bool(x.get('cond')))
     r = alt[0] if alt else r
-    names = [ru(x) for x in items]
+    names = [_ru_list(x) for x in items]
     q = (LIST_HEAD.format(', '.join(names)) + f' Из предложенного перечня выберите два вещества, реакция ионного '
          f'обмена между которыми протекает с {_C30[want]}. Запишите номера выбранных веществ.')
     full, net = ionic(r)
@@ -3978,7 +3992,7 @@ def g_29c(rng):
         raise Retry
     rng.shuffle(items)
     ans = {'А': str(items.index(o) + 1), 'Б': str(items.index(rd) + 1)}
-    names = [ru(x) for x in items]
+    names = [_ru_list(x) for x in items]
     q = (LIST_HEAD.format(', '.join(names)) + ' Выберите из перечня окислитель и восстановитель, '
          f'окислительно-восстановительная реакция между которыми (среду создаёт вода или ещё одно вещество перечня) '
          f'протекает {_c29_text(c)}. Под буквой А запишите номер окислителя, под буквой Б — номер восстановителя.')
@@ -4154,6 +4168,13 @@ def _acc_name(f):
 _GAS_R = {'CO2', 'SO2', 'Cl2', 'H2S', 'NH3', 'O2', 'H2', 'CO', 'NO2'}
 
 
+def _sol31(f):
+    """Можно ли говорить «раствор f»: растворимые соли/кислоты/щёлочи (Ca(OH)₂ — известковая вода)."""
+    s_ = SUBS.get(f, {})
+    return s_.get('sol') in ('р', 'м') and s_.get('cls') in ('соль', 'кислота', 'основание') and \
+        f not in ('H2SiO3', 'H2CO3', 'H2SO3')
+
+
 def _step_text(r, subj_f, kind, rng, first=False):
     """Фраза для одной стадии. subj_f — «носитель» (вещество, над которым действуют)."""
     others = [x for x in dict.fromkeys(r['lhs']) if x != subj_f and x != 'H2O']
@@ -4200,7 +4221,7 @@ def _step_text(r, subj_f, kind, rng, first=False):
     if kind == 'газ' and not first:
         if SUBS[R]['cls'] == 'кислота' and fr == 'конц.':
             return f'{subj} пропустили через концентрированную {_acc_name(R)}.'
-        if SUBS[R].get('sol') == 'р' or SUBS[R]['cls'] in ('кислота', 'основание'):
+        if _sol31(R):
             return f'{subj} пропустили через {"избыток раствора" if exc else "раствор"} {gen(R)}.'
         if 't' in cond:
             return f'{subj} пропустили над нагретым {ins(R)}.'
@@ -4208,7 +4229,7 @@ def _step_text(r, subj_f, kind, rng, first=False):
     if R in _GAS_R:
         if r.get('aq'):
             where = f'раствор {gen(subj_f)}' if first else ('полученный раствор' if kind == 'раствор' else None)
-            if where is None:
+            if where is None or first and not _sol31(subj_f):
                 return None
             return f'Через {where} пропустили {"избыток " + gen(R) if exc else GAS_NOM[R]}.'
         if 't' in cond:
@@ -4225,15 +4246,20 @@ def _step_text(r, subj_f, kind, rng, first=False):
             return f'{subj} обработали {"избытком " if exc else ""}{_ADJ.get(fr, "")}{ins(R)}{heat}.'
         if not r.get('aq') and fr != 'конц.':
             return f'{subj} нагрели с {ins(R)}.' if 't' in cond else None
-        if R in I.ALKALIS or SUBS[R].get('sol') == 'р':
+        if _sol31(R):
             return f'{subj} обработали {"избытком раствора" if exc else "раствором"} {gen(R)}{heat}.'
         if 't' in cond:
             return f'{subj} нагрели с {ins(R)}.'
         return None
     # раствор + металл / кислота / раствор
+    if first and not _sol31(subj_f) or not is_metal and not _sol31(R):
+        return None      # «раствор» нерастворимого вещества недопустим
     target = f'раствор {gen(subj_f)}' if first else 'полученный раствор'
     if is_metal:
-        return f'В {target} поместили {ru(R)}{heat}.'
+        return rng.choice([f'В {target} поместили {ru(R)}{heat}.',
+                           f'{target[0].upper() + target[1:]} обработали {ins(R)}{heat}.',
+                           f'К {"раствору " + gen(subj_f) if first else "полученному раствору"} добавили '
+                           f'{_acc_name(R)}{heat}.'])
     if SUBS[R]['cls'] == 'кислота':
         adj = {'конц.': 'концентрированную ', 'разб.': 'разбавленную '}.get(fr, '')
         return f'К {"раствору " + gen(subj_f) if first else "полученному раствору"} прилили ' \

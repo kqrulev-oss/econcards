@@ -4651,3 +4651,640 @@ recipe('ch-ege-33-full-answer', 'ЕГЭ', 33, 'Установление форм
                                     'вторичный спирт C₃ — изопропиловый эфир муравьиной кислоты.'},
        why='структурная формула и уравнение — развёрнутый ответ; автоматически проверяются формула, шаги и выбор структуры',
        kes=KES33, fidelity=FID33('как у ch-ege-33-*', 'структура должна однозначно следовать из признаков'))
+
+
+# ================================================================= задание 17 (органическая часть): классификация реакций
+KES17 = ['1.5', '1.6']
+# типы: код → как в перечне КИМ
+T17 = {'зам': 'замещения', 'прис': 'присоединения', 'отщ': 'отщепления', 'изом': 'изомеризации', 'обм': 'обмена',
+       'разл': 'разложения', 'гидрир': 'гидрирования', 'гидрат': 'гидратации', 'гидрол': 'гидролиза',
+       'дегидрир': 'дегидрирования', 'дегидрат': 'дегидратации', 'этериф': 'этерификации', 'нейтр': 'нейтрализации',
+       'галоген': 'галогенирования', 'гидрогал': 'гидрогалогенирования', 'дегидрогал': 'дегидрогалогенирования',
+       'окисл': 'окисления', 'овр': 'окислительно-восстановительная', 'кат': 'каталитическая',
+       'некат': 'некаталитическая', 'обр': 'обратимая', 'необр': 'необратимая', 'гомо': 'гомогенная',
+       'гетеро': 'гетерогенная', 'экзо': 'экзотермическая', 'эндо': 'эндотермическая'}
+# «выберите две реакции, которые …»
+Q17 = {'прис': 'которые являются реакциями присоединения', 'зам': 'которые являются реакциями замещения',
+       'отщ': 'которые являются реакциями отщепления', 'обм': 'которые являются реакциями обмена',
+       'овр': 'которые являются окислительно-восстановительными', 'неовр': 'которые не являются окислительно-'
+       'восстановительными', 'кат': 'которые являются каталитическими', 'гетеро': 'которые являются гетерогенными',
+       'гомо': 'которые являются гомогенными', 'экзо': 'которые являются экзотермическими',
+       'эндо': 'которые являются эндотермическими', 'обр': 'которые являются обратимыми',
+       'необр': 'которые являются необратимыми'}
+_PROC = ('гидрир', 'гидрат', 'гидрол', 'дегидрир', 'дегидрат', 'этериф', 'нейтр', 'галоген', 'гидрогал', 'дегидрогал')
+# вид реакции → (типы «да», типы «нет», типы «спорно» — не спрашиваются); ОВР — отдельно, пересчётом степеней окисления
+_K17 = {
+    'HYD': ({'прис', 'гидрир', 'экзо'}, {'зам', 'отщ', 'изом', 'обм', 'разл', 'окисл'}, set()),
+    'HALADD': ({'прис', 'галоген', 'экзо'}, {'зам', 'отщ', 'изом', 'обм', 'разл', 'обр'}, {'окисл'}),
+    'HX': ({'прис', 'гидрогал', 'экзо'}, {'зам', 'отщ', 'изом', 'обм', 'разл', 'окисл'}, set()),
+    'HYDRAT': ({'прис', 'гидрат', 'экзо'}, {'зам', 'отщ', 'изом', 'обм', 'разл', 'окисл', 'гидрол'}, {'обр'}),
+    'HALSUB': ({'зам', 'галоген', 'экзо'}, {'прис', 'отщ', 'изом', 'обм', 'разл', 'обр'}, {'окисл'}),
+    'DEHYD': ({'отщ', 'дегидрир', 'эндо'}, {'зам', 'прис', 'изом', 'обм', 'окисл'}, {'разл', 'обр'}),
+    'DEHYDRAT': ({'отщ', 'дегидрат', 'эндо'}, {'зам', 'прис', 'изом', 'обм', 'окисл'}, {'разл', 'обр'}),
+    'DEHX': ({'отщ', 'дегидрогал'}, {'зам', 'прис', 'изом', 'обм', 'окисл', 'обр'}, {'разл'}),
+    'DEHAL': ({'отщ'}, {'зам', 'прис', 'изом', 'обм', 'обр'}, {'разл', 'окисл'}),
+    'ISO': ({'изом'}, {'зам', 'прис', 'отщ', 'обм', 'разл', 'окисл'}, {'обр'}),
+    'ESTER': ({'этериф', 'обр'}, {'прис', 'отщ', 'изом', 'разл', 'окисл', 'нейтр'}, {'зам', 'обм'}),
+    'EHYD_A': ({'гидрол', 'обр'}, {'прис', 'отщ', 'изом', 'разл', 'окисл', 'гидрат'}, {'зам', 'обм'}),
+    'EHYD_B': ({'гидрол'}, {'прис', 'отщ', 'изом', 'разл', 'окисл', 'гидрат', 'обр'}, {'зам', 'обм', 'нейтр'}),
+    'NEUT': ({'обм', 'нейтр', 'экзо'}, {'зам', 'прис', 'отщ', 'изом', 'разл', 'окисл', 'обр'}, set()),
+    'BICARB': ({'обм'}, {'зам', 'прис', 'отщ', 'изом', 'разл', 'окисл', 'обр'}, {'нейтр'}),
+    'NA': ({'зам', 'экзо'}, {'прис', 'отщ', 'изом', 'обм', 'разл', 'обр'}, {'окисл'}),
+    'COMB': ({'окисл', 'экзо'}, {'зам', 'прис', 'отщ', 'изом', 'обм', 'разл', 'обр'}, set()),
+    'OX': ({'окисл'}, {'прис', 'отщ', 'изом', 'разл', 'обр'}, {'зам', 'обм'}),
+    'DECOMP': ({'разл', 'эндо'}, {'зам', 'прис', 'изом', 'обм'}, {'отщ', 'дегидрир', 'окисл', 'обр'}),
+}
+_OVR17 = {'HYD': True, 'HALADD': True, 'HX': False, 'HYDRAT': False, 'HALSUB': True, 'DEHYD': True,
+          'DEHYDRAT': False, 'DEHX': False, 'DEHAL': True, 'ISO': False, 'ESTER': False, 'EHYD_A': False,
+          'EHYD_B': False, 'NEUT': False, 'BICARB': False, 'NA': True, 'COMB': True, 'OX': True, 'DECOMP': True}
+_GAS17 = {'CH4', 'C2H6', 'C3H8', 'CH3CH2CH2CH3', 'CH3CH(CH3)CH3', 'C2H4', 'CH2CHCH3', 'CH2CHCH2CH3', 'CH3CHCHCH3',
+          'CH2C(CH3)2', 'C2H2', 'CHCCH3', 'CH2CHCHCH2', 'H2', 'O2', 'Cl2', 'HCl', 'HBr', 'CH3Cl', 'HCHO'}
+_SOLID17 = {'Na', 'K', 'Zn', 'Mg', 'CuO', 'Cu(OH)2'}
+_SOLID_CAT = ('Ni', 'Pt', 'Pd', 'Al2O3', 'Cr2O3', 'ZnO', 'C (акт')
+_CAT_MARK = ('кат', 'Ni', 'Pt', 'Pd', 'Hg', 'H+', 'AlCl3', 'FeBr3', 'FeCl3', 'Al2O3', 'Cr2O3', 'ZnO', 'H3PO4',
+             'фермент', 'дрожж', 'C (акт')
+_INSTR = {'H2': 'водородом', 'Cl2': 'хлором', 'Br2': 'бромом', 'HCl': 'хлороводородом', 'HBr': 'бромоводородом',
+          'H2O': 'водой', 'Na': 'натрием', 'K': 'калием', 'NaOH': 'раствором гидроксида натрия',
+          'KOH': 'раствором гидроксида калия', 'O2': 'кислородом', 'CuO': 'оксидом меди(II)',
+          'Cu(OH)2': 'гидроксидом меди(II)', 'Ag2O': 'аммиачным раствором оксида серебра',
+          'Ag(NH3)2OH': 'аммиачным раствором оксида серебра', 'NaHCO3': 'гидрокарбонатом натрия',
+          'KHCO3': 'гидрокарбонатом калия', 'Zn': 'цинком', 'Mg': 'магнием'}
+
+
+def _kind17(r):
+    t, l, c = r['type'], r['lhs'], r.get('cond', '') or ''
+    s = l[0]
+    if s not in SUB or not SUB[s].get('org') or any(x not in SUB for x in l + r['rhs']):
+        return None
+    cls = SUB[s]['cls']
+    two = l[1] if len(l) > 1 else None
+    if len(l) > 2 and not (len(l) == 3 and l[2] == 'H2O' and two == 'Br2'):
+        return None
+    if 'горения' in t:
+        return 'COMB' if two == 'O2' and len(r['rhs']) == 2 else None
+    if 'гидрирования' in t and two == 'H2':
+        return 'HYD'
+    if 'гидрогалогенирования' in t:
+        return 'HX'
+    if 'галогенирования' in t and two in ('Br2', 'Cl2'):
+        if 'присоединения' in t:
+            return 'HALADD'
+        if 'замещения' in t:
+            return 'HALSUB'
+    if 'гидратации' in t and two == 'H2O':
+        return 'HYDRAT'
+    if t == ['изомеризации']:
+        return 'ISO'
+    if 'дегидрирования' in t and two is None and len(r['rhs']) == 2 and 'разложения' not in t and \
+            SUB[s]['hom'] == 'алканы' and SUB[r['rhs'][0]]['hom'] in ('алкены', 'алкадиены'):
+        return 'DEHYD'
+    if 'дегидратации' in t and two is None and SUB[r['rhs'][0]]['cls'] == 'углеводород' and len(r['rhs']) == 2:
+        return 'DEHYDRAT'
+    if 'дегидрогалогенирования' in t and two in ('KOH', 'NaOH'):
+        return 'DEHX'
+    if 'дегалогенирования' in t and two in ('Zn', 'Mg'):
+        return 'DEHAL'
+    if 'этерификации' in t and two in SUB and SUB[two]['cls'] == 'карбоновая кислота' and cls == 'спирт':
+        return 'ESTER'
+    if 'этерификации' in t and cls == 'карбоновая кислота' and two in SUB and SUB[two]['cls'] == 'спирт':
+        return 'ESTER'
+    if 'гидролиза' in t and cls == 'сложный эфир' and SUB[s]['hom'] == 'сложные эфиры':
+        if two == 'H2O' and 'H+' in c:
+            return 'EHYD_A'
+        if two in ('NaOH', 'KOH'):
+            return 'EHYD_B'
+    if 'нейтрализации' in t and two in ('NaOH', 'KOH') and cls == 'карбоновая кислота':
+        return 'NEUT'
+    if two in ('NaHCO3', 'KHCO3') and cls == 'карбоновая кислота':
+        return 'BICARB'
+    if two in ('Na', 'K') and cls in ('спирт', 'карбоновая кислота') and 'замещения' in t:
+        return 'NA'
+    if two in ('Ag2O', 'Ag(NH3)2OH', 'Cu(OH)2') and cls == 'альдегид' and 'окисления' in t:
+        return 'OX'
+    if two == 'CuO' and cls == 'спирт' and 'окисления' in t:
+        return 'OX'
+    if s == 'CH4' and 'разложения' in t and two is None:
+        return 'DECOMP'
+    return None
+
+
+_FIX_OX = {'H': 1, 'O': -2, 'F': -1, 'Cl': -1, 'Br': -1, 'I': -1, 'Na': 1, 'K': 1, 'Li': 1, 'Ca': 2, 'Mg': 2,
+           'Ba': 2, 'Zn': 2, 'Al': 3}
+
+
+def _ox_tot(f):
+    """Суммарные степени окисления элементов в частице (средние для углерода, как в школьном курсе)."""
+    a = parse_formula(f)
+    if len(a) == 1:
+        return {e: 0 for e in a}
+    out = {e: _FIX_OX[e] * n for e, n in a.items() if e in _FIX_OX}
+    var = [e for e in a if e not in _FIX_OX]
+    if 'N' in var and 'C' in var:
+        hom = SUB.get(f, {}).get('hom', '')
+        out['N'] = a['N'] * (3 if hom.startswith('нитро') else 5 if 'азотной' in hom or 'целлюлозы' in hom else -3)
+        var.remove('N')
+    if not var:
+        return out if sum(out.values()) == 0 else None
+    if len(var) != 1:
+        return None
+    out[var[0]] = -sum(out.values())
+    return out
+
+
+def ovr_calc(r):
+    """ОВР ли реакция: меняется ли сумма степеней окисления какого-либо элемента (по уравнению с коэффициентами)."""
+    try:
+        kl, kr = r.get('k') or balance(r['lhs'], r['rhs'])
+    except Exception:
+        return None
+    tot = defaultdict(int)
+    for side, fs, ks in ((1, r['lhs'], kl), (-1, r['rhs'], kr)):
+        for f, k in zip(fs, ks):
+            o = _ox_tot(f)
+            if o is None:
+                return None
+            for e, v in o.items():
+                tot[e] += side * k * v
+    return any(v != 0 for v in tot.values())
+
+
+def cls17(r):
+    """Признаки реакции: код → True/False; спорные признаки отсутствуют."""
+    k = _kind17(r)
+    if k is None:
+        return None
+    yes, no, dis = _K17[k]
+    out = {x: True for x in yes}
+    out.update({x: False for x in no})
+    for x in _PROC:  # названия процессов: только «свой» процесс
+        if x not in yes and x not in dis:
+            out.setdefault(x, False)
+    for x in ('зам', 'прис', 'отщ', 'изом', 'обм', 'разл', 'окисл'):
+        if x not in yes and x not in dis:
+            out.setdefault(x, False)
+    o = ovr_calc(r)
+    if o is None or o != _OVR17[k]:
+        return None  # школьная классификация не подтверждена пересчётом — реакцию не используем
+    out['овр'] = o
+    c = r.get('cond', '') or ''
+    lhs = r['lhs']
+    if any(m in c for m in _CAT_MARK):
+        out['кат'] = True
+    elif 'H2SO4' in c and 'H2SO4' not in lhs:
+        pass  # конц. H₂SO₄ — катализатор или водоотнимающее средство: спорно
+    elif k in ('NA', 'NEUT', 'BICARB', 'HALADD', 'HALSUB', 'COMB', 'DEHX', 'DEHAL', 'OX', 'EHYD_B', 'HX', 'DECOMP'):
+        out['кат'] = False
+    if 'кат' in out:
+        out['некат'] = not out['кат']
+    if 'обр' in yes:
+        out['необр'] = False
+    elif 'обр' in no:
+        out['необр'] = True
+    if 'экзо' in yes:
+        out['эндо'] = False
+    elif 'эндо' in yes:
+        out['экзо'] = False
+    solid = any(x in _SOLID17 for x in lhs) or any(m in c for m in _SOLID_CAT)
+    if solid:
+        out['гетеро'], out['гомо'] = True, False
+    elif all(x in _GAS17 for x in lhs) and ('hν' in c or 'свет' in c or k == 'COMB'):
+        out['гетеро'], out['гомо'] = False, True
+    elif k == 'ESTER':
+        out['гетеро'], out['гомо'] = False, True
+    if k == 'HALSUB' and not ('hν' in c or 'свет' in c):
+        out.pop('экзо', None)  # ароматическое замещение: тепловой эффект в курсе не обсуждается
+        out.pop('эндо', None)
+    return out
+
+
+def _acid_instr(name):
+    m = re.match(r'^(\S+)ая кислота$', name)
+    return f'{m.group(1)}ой кислотой' if m else None
+
+
+def desc17(r, rng, style):
+    """Словесное описание реакции, как в перечнях КИМ. style: 'inter' — «взаимодействие A с B», 'proc' — название
+    процесса («гидрирование …»)."""
+    k = _kind17(r)
+    s, l, c = r['lhs'][0], r['lhs'], r.get('cond', '') or ''
+    g = gen(nm(s, rng))
+    two = l[1] if len(l) > 1 else None
+    light = ' на свету' if ('hν' in c or 'свет' in c) else ''
+    if k == 'HALSUB' and not light:
+        cat = 'бромида железа(III)' if 'FeBr3' in c else 'хлорида железа(III)' if 'FeCl3' in c else \
+            'хлорида алюминия' if 'AlCl3' in c else None
+        light = f' в присутствии {cat}' if cat else ''
+        if not cat and 'водн' not in c and 'бромная' not in c:
+            return None
+    proc = {'HYD': f'гидрирование {g}', 'HX': ('гидробромирование ' if two == 'HBr' else 'гидрохлорирование ') + g,
+            'HYDRAT': f'гидратация {g}', 'DEHYD': f'дегидрирование {g}', 'DEHYDRAT': f'внутримолекулярная '
+            f'дегидратация {g}', 'ISO': f'изомеризация {g}', 'COMB': f'горение {g}',
+            'EHYD_A': f'кислотный гидролиз {g}', 'EHYD_B': f'щелочной гидролиз {g}',
+            'HALSUB': ('бромирование ' if two == 'Br2' else 'хлорирование ') + g + light,
+            'DECOMP': 'разложение метана до простых веществ' if r['rhs'][0] == 'C' else 'разложение метана при 1500 °C'}
+    if k == 'DECOMP':
+        return proc[k]
+    if k == 'HALSUB' and ('водн' in c or 'бромная' in c):
+        return f'взаимодействие {g} с бромной водой'
+    if k == 'ESTER':
+        acid, alc = (two, s) if SUB[s]['cls'] == 'спирт' else (s, two)
+        ai = _acid_instr(SUB[acid]['name'])
+        return f'взаимодействие {gen(nm(alc, rng))} с {ai}' if ai else None
+    if k == 'DEHX':
+        return f'взаимодействие {g} со спиртовым раствором {"гидроксида калия" if two == "KOH" else "гидроксида натрия"}'
+    if k in ('ISO', 'DEHYD', 'DEHYDRAT') and style == 'inter':
+        return f'получение {gen(nm(r["rhs"][0], rng))} из {g}'
+    if (style == 'proc' or k == 'COMB') and k in proc:
+        return proc[k]
+    if k == 'EHYD_A':
+        return f'взаимодействие {g} с водой в кислой среде'
+    if two == 'Br2' and ('водн' in c or 'бромная' in c or 'H2O' in l):
+        return f'взаимодействие {g} с бромной водой'
+    if two in _INSTR:
+        return f'взаимодействие {g} с {_INSTR[two]}{light}'
+    return proc.get(k)
+
+
+def _rx_key(r):
+    return [list(r['lhs']), list(r['rhs']), r.get('cond', '') or '']
+
+
+def _rx_by_key(key):
+    lhs, rhs, cond = key
+    return next(r for r in RX if r['lhs'] == lhs and r['rhs'] == rhs and (r.get('cond', '') or '') == cond)
+
+
+RX17 = []
+_seen17 = set()
+for _r in RX:
+    _c = cls17(_r)
+    if _c and (parse_formula(_r['lhs'][0]).get('C', 0) <= 6 or _r['lhs'][0] == 'C6H5CH3') \
+            and all('(' not in SUB[x]['name'] for x in _r['lhs'] if SUB[x].get('org')) \
+            and SUB[_r['lhs'][0]]['hom'] not in ('жиры', 'полисахариды', 'двухосновные карбоновые кислоты'):
+        _d = desc17(_r, None, 'inter')
+        if _d and _d not in _seen17:
+            _seen17.add(_d)
+            RX17.append(_r)
+FID17 = lambda scale, trap, fmt_: fid(fmt_, 'Б', 2, scale, trap, KES17, SC1)
+MANY17 = 'пять вариантов, ответ — все верные цифры (две–три), порядок не важен'
+
+
+def _solve17_types(p):
+    c = cls17(_rx_by_key(p['rx']))
+    return [str(i + 1) for i, x in enumerate(p['opts']) if c[x]]
+
+
+def _by_kind(rng, rs, n):
+    """n реакций разных видов (сначала вид, потом реакция — чтобы гидрирование и горение не вытесняли остальное)."""
+    g = defaultdict(list)
+    for r in rs:
+        g[_kind17(r)].append(r)
+    if len(g) < n:
+        raise Retry
+    return [rng.choice(g[k]) for k in rng.sample(sorted(g), n)]
+
+
+def _gen17_types(pid, rng, n_true):
+    r = _by_kind(rng, RX17, 1)[0]
+    c = cls17(r)
+    kinds = [x for x in c if x in T17]
+    yes = [x for x in kinds if c[x]]
+    no = [x for x in kinds if not c[x]]
+    k_yes = n_true if n_true else rng.choice([2, 2, 3])
+    if len(yes) < k_yes or len(no) < 5 - k_yes:
+        raise Retry
+    # отвлекающие — сначала «соседние» типы (как в банке: гидратации ↔ гидролиза, замещения ↔ присоединения)
+    pick = rng.sample(yes, k_yes) + rng.sample(no, 5 - k_yes)
+    if len({T17[x] for x in pick}) < 5:
+        raise Retry
+    if ('кат' in pick and 'некат' in pick) or ('экзо' in pick and 'эндо' in pick) or \
+            ('обр' in pick and 'необр' in pick) or ('гомо' in pick and 'гетеро' in pick):
+        raise Retry  # взаимоисключающие пары в одном перечне банк не даёт
+    rng.shuffle(pick)
+    d = desc17(r, rng, 'inter')
+    if n_true:
+        q = q_many('два', 'типа реакций', f'к которым можно отнести {d}')
+    else:
+        q = q_many('все', 'типы реакций', f'к которым можно отнести {d}')
+    good = [i for i, x in enumerate(pick) if c[x]]
+    e = (f'{rx_eq(r)}. ' + '; '.join(f'{T17[x]} — {"да" if c[x] else "нет"}' for x in pick) + '.')
+    return many_card(pid, q, [T17[x] for x in pick], good, e, {'rx': _rx_key(r), 'opts': pick}, eqs=[eqt(r)])
+
+
+@proto('ch-ege-17-org-types-all', 'ЕГЭ', 17, 'Органическая реакция → все типы, к которым её можно отнести',
+       invariant='одна реакция органического вещества; классифицировать по механизму (замещение, присоединение, '
+                 'отщепление, изомеризация, обмен), по названию процесса, по ОВР, катализатору, обратимости, фазам, '
+                 'тепловому эффекту',
+       varies='реакция из базы (гидрирование, галогенирование, гидратация, дегидратация, этерификация, гидролиз эфиров, '
+              'реакции с натрием, горение …), пять типов в перечне',
+       answer_rule='записать уравнение, определить тип по составу реагентов и продуктов; ОВР — по изменению степеней '
+                   'окисления',
+       mistakes=['гидратация спутана с гидролизом', 'реакция спирта с натрием — замещение и ОВР, а не обмен',
+                 'гидрирование на никеле — гетерогенная каталитическая реакция'],
+       solve=_solve17_types, kind='dict', kes=KES17,
+       fidelity=FID17('банк №17: «выберите все типы реакций, к которым можно отнести взаимодействие этилена с водородом '
+                      '(ацетилена с водой, пропана с хлором на свету)»', 'ОВР и гомо/гетерогенность вместе с '
+                      'механизмом', MANY17))
+def g17_types_all(rng):
+    return _gen17_types('ch-ege-17-org-types-all', rng, 0)
+
+
+@proto('ch-ege-17-org-types-two', 'ЕГЭ', 17, 'Органическая реакция → два типа, к которым её можно отнести',
+       invariant='одна реакция органического вещества; ровно два верных типа из пяти',
+       varies='реакция из базы, пять типов (механизм, название процесса, обратимость, катализ, тепловой эффект)',
+       answer_rule='определить механизм и частный тип процесса',
+       mistakes=['этерификация — обратимая реакция, а не нейтрализация', 'дегидрирование — эндотермическая реакция'],
+       solve=_solve17_types, kind='dict', kes=KES17,
+       fidelity=FID17('банк №17: «выберите два типа реакций, к которым можно отнести взаимодействие этанола с '
+                      'пропионовой кислотой (бензола с водородом, получение метилпропана из н-бутана)»',
+                      'соседние названия процессов (гидрирования/гидратации/гидролиза)', MANY2))
+def g17_types_two(rng):
+    return _gen17_types('ch-ege-17-org-types-two', rng, 2)
+
+
+def _solve17_rx(p):
+    out = []
+    for i, key in enumerate(p['rxs']):
+        c = cls17(_rx_by_key(key))
+        v = (not c['овр']) if p['feat'] == 'неовр' else c[p['feat']]
+        if v:
+            out.append(str(i + 1))
+    return out
+
+
+@proto('ch-ege-17-org-two-reactions', 'ЕГЭ', 17, 'Пять органических реакций → две, обладающие признаком',
+       invariant='по словесному описанию реакции определить её тип (механизм, ОВР, катализ, фазы, тепловой эффект, '
+                 'обратимость)',
+       varies='признак (присоединение, замещение, отщепление, обмен, ОВР / не ОВР, каталитические, гетерогенные, '
+              'гомогенные, экзо-/эндотермические, обратимые); пять реакций из базы',
+       answer_rule='для каждой реакции записать схему и определить признак',
+       mistakes=['хлорирование метана — замещение, а не присоединение', 'гидратация пропина — не ОВР',
+                 'нейтрализация — не гетерогенная, если кислота и щёлочь в растворе'],
+       solve=_solve17_rx, kind='dict', kes=KES17,
+       fidelity=FID17('банк №17: «выберите две реакции, которые являются реакциями присоединения» (окисление метанола, '
+                      'гидрирование ацетальдегида, гидратация пропина …), «две гетерогенные», «две эндотермические»',
+                      'реакции одного вещества с разными реагентами', MANY2))
+def g17_two_rx(rng):
+    feat = rng.choice(sorted(Q17))
+    key = 'овр' if feat == 'неовр' else feat
+
+    def val(c):
+        if key not in c:
+            return None
+        return (not c[key]) if feat == 'неовр' else c[key]
+    cand = [(r, cls17(r)) for r in RX17]
+    cand = [(r, c) for r, c in cand if val(c) is not None]
+    yes = [r for r, c in cand if val(c)]
+    no = [r for r, c in cand if not val(c)]
+    if len(yes) < 2 or len(no) < 3:
+        raise Retry
+    rs = _by_kind(rng, yes, 2) + _by_kind(rng, no, 3)
+    style = rng.choice(['proc', 'inter', 'mix'])
+    texts = [desc17(r, rng, style if style != 'mix' else rng.choice(['proc', 'inter'])) for r in rs]
+    if None in texts or len(set(texts)) < 5 or len({r['lhs'][0] for r in rs}) < 4:
+        raise Retry
+    order = list(range(5))
+    rng.shuffle(order)
+    rs, texts = [rs[i] for i in order], [texts[i] for i in order]
+    q = q_many('две', 'реакции', Q17[feat])
+    good = [i for i, r in enumerate(rs) if val(cls17(r))]
+    e = '; '.join(f'{t} ({rx_eq(r)}) — {"да" if val(cls17(r)) else "нет"}' for t, r in zip(texts, rs)) + '.'
+    return many_card('ch-ege-17-org-two-reactions', q, texts, good, e,
+                     {'feat': feat, 'rxs': [_rx_key(r) for r in rs]}, eqs=[eqt(r) for r in rs])
+
+
+# ================================================================= задание 24 (органическая часть): качественные реакции
+KES24 = ['2.5', '3.19']
+# признаки (коды → текст для столбца «признак реакции»)
+SIGN24 = {'dec': 'обесцвечивание раствора', 'decw': 'обесцвечивание раствора и образование белого осадка',
+          'mir': 'образование «серебряного зеркала»', 'agp': 'образование серовато-белого осадка',
+          'red': 'образование кирпично-красного осадка',
+          'blue': 'растворение осадка и образование ярко-синего раствора', 'viol': 'появление фиолетовой окраски',
+          'gas': 'выделение газа', 'none': 'видимые признаки реакции отсутствуют', 'iod': 'появление синей окраски',
+          'bluea': 'растворение осадка'}
+# реактивы (коды → подписи, как в банке)
+REAG24 = {'Br2': ['Br₂ (водн.)', 'бромная вода'], 'KMnO4': ['KMnO₄ (H⁺)'],
+          'Ag': ['[Ag(NH₃)₂]OH', 'Ag₂O (NH₃ р-р)'], 'Cu': ['Cu(OH)₂'], 'Cut': ['Cu(OH)₂ (t°)'],
+          'Fe': ['FeCl₃', 'FeCl₃ (р-р)'], 'HCO3': ['NaHCO₃', 'KHCO₃'], 'Na': ['Na', 'K'], 'NaOH': ['NaOH', 'KOH'],
+          'I2': ['I₂ (р-р)'], 'Na2SO4': ['Na₂SO₄'], 'KBr': ['KBr'], 'KF': ['KF'], 'BaNO3': ['Ba(NO₃)₂']}
+_INERT24 = ('Na2SO4', 'KBr', 'KF', 'BaNO3')  # соли, не дающие признаков ни с одним веществом перечня
+_N = None  # «неизвестно / спорно» — такое сочетание в задание не попадает
+# признаки по гомологическому ряду: Br2, KMnO4, Ag, Cu, Cut, Fe, HCO3, Na, NaOH, I2
+_R24 = ('Br2', 'KMnO4', 'Ag', 'Cu', 'Cut', 'Fe', 'HCO3', 'Na', 'NaOH', 'I2')
+_HOM24 = {
+    'алканы': ('none', 'none', 'none', 'none', 'none', 'none', 'none', 'none', 'none', 'none'),
+    'циклоалканы': ('none', 'none', 'none', 'none', 'none', 'none', 'none', 'none', 'none', 'none'),
+    'алкены': ('dec', 'dec', 'none', 'none', 'none', 'none', 'none', 'none', 'none', _N),
+    'циклоалкены': ('dec', 'dec', 'none', 'none', 'none', 'none', 'none', 'none', 'none', _N),
+    'алкадиены': ('dec', 'dec', 'none', 'none', 'none', 'none', 'none', 'none', 'none', _N),
+    'предельные одноатомные спирты': ('none', 'dec', 'none', 'none', _N, 'none', 'none', 'gas', 'none', _N),
+    'многоатомные спирты': ('none', 'dec', 'none', 'blue', _N, 'none', 'none', 'gas', 'none', _N),
+    'предельные альдегиды': ('dec', 'dec', 'mir', 'none', 'red', 'none', 'none', _N, _N, _N),
+    'кетоны': ('none', 'none', 'none', 'none', 'none', 'none', 'none', _N, _N, _N),
+    'предельные одноосновные карбоновые кислоты': ('none', 'none', 'none', 'bluea', _N, _N, 'gas', 'gas', 'none', _N),
+    'сложные эфиры': ('none', 'none', 'none', 'none', 'none', 'none', 'none', _N, _N, _N),
+    'простые эфиры': ('none', _N, 'none', 'none', 'none', 'none', 'none', 'none', 'none', _N),
+}
+_SUB24 = {  # отдельные вещества (переопределяют ряд); подпись в перечне
+    'C6H6': (('none', 'none', 'none', 'none', 'none', 'none', 'none', 'none', 'none', _N), None),
+    'C6H5CH3': (('none', 'dec', 'none', 'none', 'none', 'none', 'none', 'none', 'none', _N), None),
+    'C6H5CHCH2': (('dec', 'dec', 'none', 'none', 'none', 'none', 'none', 'none', 'none', _N), None),
+    'C2H2': (('dec', 'dec', 'agp', 'none', _N, 'none', 'none', _N, 'none', _N), None),
+    'CHCCH3': (('dec', 'dec', 'agp', 'none', _N, 'none', 'none', _N, 'none', _N), None),
+    'CHCCH2CH3': (('dec', 'dec', 'agp', 'none', _N, 'none', 'none', _N, 'none', _N), None),
+    'CH3CCCH3': (('dec', 'dec', 'none', 'none', _N, 'none', 'none', _N, 'none', _N), None),
+    'C6H5OH': (('decw', 'dec', _N, 'none', _N, 'viol', 'none', _N, 'none', _N), 'фенол (р-р)'),
+    'C6H5NH2': (('decw', _N, _N, _N, _N, _N, 'none', _N, 'none', _N), None),
+    'HCHO': (('dec', 'dec', 'mir', 'none', 'red', 'none', 'none', _N, _N, _N), 'формальдегид (р-р)'),
+    'HCOOH': (('dec', 'dec', 'mir', 'bluea', 'red', _N, 'gas', 'gas', 'none', _N), None),
+    'CH2CHCOOH': (('dec', 'dec', _N, 'bluea', _N, _N, 'gas', 'gas', 'none', _N), None),
+    'C6H5COOH': (('none', 'none', 'none', _N, _N, _N, 'gas', _N, _N, _N), None),
+    'HCOOCH3': ((_N, _N, 'mir', 'none', _N, 'none', 'none', _N, _N, _N), None),
+    'HCOOC2H5': ((_N, _N, 'mir', 'none', _N, 'none', 'none', _N, _N, _N), None),
+    'C6H12O6': (('dec', 'dec', 'mir', 'blue', 'red', 'none', 'none', _N, 'none', 'none'), 'глюкоза (р-р)'),
+    'HOCH2(CHOH)3COCH2OH': (('none', _N, _N, 'blue', _N, 'none', 'none', _N, _N, 'none'), 'фруктоза (р-р)'),
+    'C12H22O11': (('none', _N, 'none', 'blue', _N, 'none', 'none', _N, 'none', 'none'), 'сахароза (р-р)'),
+    'C6H10O5': (('none', _N, 'none', 'none', _N, 'none', 'none', _N, 'none', 'iod'), 'крахмал'),
+}
+_POOL24_F = ['CH3(CH2)4CH3', 'CH3(CH2)3CH3', '(CH2)6', 'C6H6', 'C6H5CH3', 'C6H5CHCH2', 'C2H4', 'CH2CHCH3',
+             'CH2CHCH2CH3', 'CH3CHCHCH3', 'CH3CHCHCH2CH3', 'C6H10', 'CH2CHCHCH2', 'CH2C(CH3)CHCH2', 'C2H2', 'CHCCH3',
+             'CHCCH2CH3', 'CH3CCCH3', 'CH3OH', 'C2H5OH', 'CH3CH2CH2OH', 'CH3CH(OH)CH3', 'CH3(CH2)3OH',
+             'C2H4(OH)2', 'C3H5(OH)3', 'CH3CH(OH)CH(OH)CH3', 'C6H5OH', 'C6H5NH2', 'HCHO', 'CH3CHO', 'CH3CH2CHO',
+             'CH3(CH2)2CHO', 'CH3COCH3', 'CH3COCH2CH3', 'HCOOH', 'CH3COOH', 'CH3CH2COOH', 'CH2CHCOOH', 'C6H5COOH',
+             'CH3COOC2H5', 'CH3COOCH3', 'HCOOCH3', 'HCOOC2H5', 'C2H5OC2H5', 'C6H12O6', 'HOCH2(CHOH)3COCH2OH',
+             'C12H22O11', 'C6H10O5']
+_GAS24 = {'C2H4', 'CH2CHCH3', 'CH2CHCH2CH3', 'CH3CHCHCH3', 'C2H2', 'CHCCH3', 'CHCCH2CH3', 'CH2CHCHCH2', 'HCHO'}
+
+
+def sign24(f, rk):
+    """Признак реакции вещества f с реактивом rk (код из SIGN24) или None (спорно / не используется)."""
+    if rk in _INERT24:
+        return 'none'
+    row = _SUB24[f][0] if f in _SUB24 else _HOM24.get(SUB[f]['hom'])
+    if row is None:
+        return None
+    v = row[_R24.index(rk)]
+    if v and f in _GAS24 and rk == 'Na':
+        return None
+    return v
+
+
+def _coarse24(v):
+    return 'blue' if v == 'bluea' else v
+
+
+def label24(f, rng):
+    lab = _SUB24.get(f, (None, None))[1]
+    return lab or nm(f, rng)
+
+
+POOL24 = [f for f in _POOL24_F if f in SUB]
+
+
+def _check24():
+    """Сверка таблицы с базой реакций: где таблица говорит «реагирует с признаком», в базе должна быть реакция с этим
+    реактивом (для Br₂, Ag, Cu(OH)₂ (t°), NaHCO₃, Na)."""
+    need = {'Br2': ('Br2',), 'Ag': ('Ag2O', 'Ag(NH3)2OH'), 'Cut': ('Cu(OH)2',), 'HCO3': ('NaHCO3', 'KHCO3'),
+            'Na': ('Na', 'K')}
+    bad = []
+    for f in POOL24:
+        for rk, xs in need.items():
+            v = sign24(f, rk)
+            if v and v != 'none' and not any(r['lhs'][0] == f and any(x in r['lhs'][1:] for x in xs) for r in RX):
+                bad.append((f, rk))
+    return bad
+
+
+_BAD24 = set(_check24())
+
+
+def distinguish24(a, b, rk):
+    """Реактив различает вещества: оба признака известны и различны."""
+    if (a, rk) in _BAD24 or (b, rk) in _BAD24:
+        return None
+    x, y = sign24(a, rk), sign24(b, rk)
+    if x is None or y is None:
+        return None
+    return _coarse24(x) != _coarse24(y)
+
+
+def _solve24_pairs(p):
+    out = {}
+    for i, (a, b) in enumerate(p['left']):
+        good = [n for n, rk in enumerate(p['right']) if distinguish24(a, b, rk)]
+        out[LET[i]] = str(good[0] + 1)
+    return out
+
+
+FID24 = lambda scale, trap: fid(MATCH45, 'П', 4, scale, trap, KES24, SC2)
+MATCH45 = 'четыре позиции (А–Г), пять вариантов (1–5); ответ — четыре цифры, цифры могут повторяться'
+
+
+@proto('ch-ege-24-org-pair-reagent', 'ЕГЭ', 24, 'Два органических вещества → реактив, с помощью которого их можно '
+                                               'различить',
+       invariant='реактив различает вещества, если с одним из них даёт видимый признак, а с другим — другой признак '
+                 'или никакого',
+       varies='четыре пары (углеводороды, спирты, фенол, альдегиды, кетоны, кислоты, эфиры, углеводы), пять реактивов '
+              '(бромная вода, KMnO₄, аммиачный раствор Ag₂O, Cu(OH)₂, FeCl₃, NaHCO₃, Na, соли-«пустышки»)',
+       answer_rule='для каждой пары перебрать реактивы: подходит тот, что даёт с веществами разные признаки',
+       mistakes=['алкен и альдегид оба обесцвечивают бромную воду', 'кислота и многоатомный спирт оба растворяют '
+                                                                   'Cu(OH)₂', 'бензол и гексан KMnO₄ не различает'],
+       solve=_solve24_pairs, kind='dict', kes=KES24,
+       fidelity=FID24('банк №24: «соответствие между двумя веществами и реактивом, с помощью которого можно различить '
+                      'эти вещества» (пропаналь и метилбензол, фенол и гексан, этанол и глицерин …)',
+                      'реактив, дающий одинаковый признак с обоими веществами'))
+def g24_pairs(rng):
+    reags = [r for r in REAG24 if r not in _INERT24]
+    n_real = rng.choice([3, 4, 4, 5])
+    right = rng.sample(reags, n_real) + rng.sample(list(_INERT24), 5 - n_real)
+    rng.shuffle(right)
+    # кандидаты: пары, для которых все пять реактивов определены и различает ровно один
+    cand = defaultdict(list)
+    for x in range(len(POOL24)):
+        for y in range(x + 1, len(POOL24)):
+            a, b = POOL24[x], POOL24[y]
+            ds = [distinguish24(a, b, rk) for rk in right]
+            if None in ds or sum(ds) != 1:
+                continue
+            cand[right[ds.index(True)]].append((a, b))
+    keys = sorted(cand)
+    if len(keys) < 3:
+        raise Retry
+    pairs, used = [], set()
+    ks = rng.sample(keys, min(4, len(keys)))
+    while len(ks) < 4:
+        ks.append(rng.choice(keys))
+    for k in ks:
+        opts_ = [pr for pr in cand[k] if not set(pr) & used]
+        if not opts_:
+            raise Retry
+        pr = rng.choice(opts_)
+        if rng.random() < 0.5:
+            pr = pr[::-1]
+        pairs.append(pr)
+        used |= set(pr)
+    rng.shuffle(pairs)
+    lt = [f'{label24(a, rng)} и {label24(b, rng)}' for a, b in pairs]
+    rt = [rng.choice(REAG24[rk]) for rk in right]
+    if len(set(rt)) < 5 or len(set(lt)) < 4:
+        raise Retry
+    head = rng.choice(['двумя веществами и реактивом, с помощью которого можно различить эти вещества',
+                       'двумя веществами и реагентом, с помощью которого можно различить эти вещества'])
+    q = mq(head, 'ВЕЩЕСТВА', 'РЕАКТИВ')
+    ans = [next(n for n, rk in enumerate(right) if distinguish24(a, b, rk)) for a, b in pairs]
+    e = '; '.join(f'{lt[i]}: {rt[ans[i]]} — {SIGN24[sign24(a, right[ans[i]])]} / {SIGN24[sign24(b, right[ans[i]])]}'
+                  for i, (a, b) in enumerate(pairs)) + '.'
+    return match_card('ch-ege-24-org-pair-reagent', rng, q, lt, rt, ans, e,
+                      {'left': [list(x) for x in pairs], 'right': right})
+
+
+def _solve24_sign(p):
+    out = {}
+    for i, (f, rk) in enumerate(p['left']):
+        v = sign24(f, rk)
+        out[LET[i]] = str(p['right'].index(v) + 1)
+    return out
+
+
+@proto('ch-ege-24-org-sign', 'ЕГЭ', 24, 'Органическое вещество + реактив → признак реакции',
+       invariant='качественные реакции: обесцвечивание бромной воды и KMnO₄, «серебряное зеркало», кирпично-красный '
+                 'Cu₂O, ярко-синий раствор с Cu(OH)₂, фиолетовая окраска с FeCl₃, газ с Na и NaHCO₃',
+       varies='четыре пары «вещество — реактив», пять признаков (в т. ч. «признаки отсутствуют»)',
+       answer_rule='определить, идёт ли реакция и что наблюдается',
+       mistakes=['фенол с бромной водой — не только обесцвечивание, но и белый осадок',
+                 'альдегид с Cu(OH)₂ без нагревания признаков не даёт', 'бензол не обесцвечивает KMnO₄'],
+       solve=_solve24_sign, kind='dict', kes=KES24,
+       fidelity=FID24('банк №24: «соответствие между реагирующими веществами и признаком протекающей между ними '
+                      'реакции» (фенол и FeCl₃, пентен-2 и Br₂ (водн.), этаналь и Cu(OH)₂ (t°) …)',
+                      'признаки-«соседи»: обесцвечивание / обесцвечивание и осадок; растворение осадка'))
+def g24_sign(rng):
+    rows = []
+    reags = [r for r in REAG24 if r not in _INERT24]
+    for _ in range(80):
+        f = rng.choice(POOL24)
+        rk = rng.choice(reags)
+        v = sign24(f, rk)
+        if v is None or v == 'bluea' or (f, rk) in _BAD24 or any(x[0] == f for x in rows):
+            continue
+        if v == 'none' and sum(sign24(x[0], x[1]) == 'none' for x in rows) >= 1:
+            continue  # «признаков нет» — не больше одной позиции, как в банке
+        rows.append((f, rk))
+        if len(rows) == 4:
+            break
+    else:
+        raise Retry
+    need = list(dict.fromkeys(sign24(f, rk) for f, rk in rows))
+    others = [s_ for s_ in SIGN24 if s_ not in need and s_ != 'bluea']
+    rng.shuffle(others)
+    right = need + others[:5 - len(need)]
+    if len(right) != 5 or ('dec' in right and 'decw' in right):
+        raise Retry  # «обесцвечивание» и «обесцвечивание и осадок» в одном столбце — двусмысленно
+    rng.shuffle(right)
+    lt = [f'{label24(f, rng)} и {rng.choice(REAG24[rk])}' for f, rk in rows]
+    rt = [SIGN24[s_] for s_ in right]
+    q = mq(rng.choice(['реагирующими веществами и признаком протекающей между ними реакции',
+                       'реагирующими веществами и признаком реакции, протекающей между ними']),
+           'РЕАГИРУЮЩИЕ ВЕЩЕСТВА', 'ПРИЗНАК РЕАКЦИИ')
+    ans = [right.index(sign24(f, rk)) for f, rk in rows]
+    e = '; '.join(f'{lt[i]} — {rt[ans[i]]}' for i in range(4)) + '.'
+    return match_card('ch-ege-24-org-sign', rng, q, lt, rt, ans, e, {'left': [list(x) for x in rows], 'right': right})
