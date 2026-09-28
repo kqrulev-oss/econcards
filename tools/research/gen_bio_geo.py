@@ -2009,7 +2009,8 @@ def gen_d_one(rng, args, topic='dict'):
             x = yes[0]
             o, a = one(rng, x, similarity_order(x, no, props)[:3])
             noun = S.get('q_one', 'из перечисленных структур')
-            q = f'{which(noun)} {noun} {t}?' if S.get('q_one') else f'Какая из перечисленных структур характеризуется так: {t}?'
+            body = predicate(noun, t)                   # «Какая структура уха воспринимает звук?» — сказуемое по числу
+            q = f'{which(noun)} {body[:1].lower() + body[1:]}?' if S.get('q_one') else f'Какая из перечисленных структур характеризуется так: {t}?'
             return card('one', topic, q, a, f'{cap(t)} — {x}.', {'eng': 'd_one', 'ref': ref, 'mode': 'obj', 't': t,
                         'opts': [z['t'] for z in o]}, o=o)
         x = rng.choice(pool)

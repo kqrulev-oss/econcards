@@ -182,7 +182,9 @@ def which(noun):
     """«Какой/Какая/Какое/Какие» по роду и числу существительного."""
     if _M is None:
         return 'Какой'
-    p = _best(noun.split()[-1].lower(), ('NOUN',))
+    w = noun.split()[0].lower()
+    ps = [x for x in _M.parse(w) if x.tag.POS == 'NOUN' and x.tag.case == 'nomn']
+    p = ps[0] if ps else _best(w, ('NOUN',))
     if p is None:
         return 'Какой'
     if p.tag.number == 'plur':
