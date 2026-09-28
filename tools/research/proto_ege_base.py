@@ -7405,13 +7405,19 @@ def gen_eb16_conjugate(r):
     if r.random() < 0.6:
         a, b, c = r.randint(1, 6), r.choice([2, 3, 5, 6, 7, 10, 11, 13, 14, 15, 17, 19, 21, 22, 23, 26, 29]), r.randint(1, 12)
         A = f'{a if a > 1 else ""}√{b}'
-        d = f'({A} − {c})({A} + {c})' if r.random() < 0.5 else f'({A} + {c})({A} − {c})'
-        s_ = f'({a}*sqrt({b})-{c})*({a}*sqrt({b})+{c})'
-        ans = F(a * a * b - c * c)
+        st = r.randrange(3)
+        d = [f'({A} − {c})({c} + {A})', f'({c} + {A})({A} − {c})', f'({c} − {A})({c} + {A})'][st]
+        s_ = [f'({a}*sqrt({b})-{c})*({c}+{a}*sqrt({b}))', f'({c}+{a}*sqrt({b}))*({a}*sqrt({b})-{c})',
+              f'({c}-{a}*sqrt({b}))*({c}+{a}*sqrt({b}))'][st]
+        ans = F(a * a * b - c * c) if st < 2 else F(c * c - a * a * b)
     else:
         a, b = r.sample([2, 3, 5, 6, 7, 10, 11, 13, 14, 15, 17, 19, 21, 22, 23, 26, 29, 31, 33, 35], 2)
         k = r.randint(1, 5)
-        d = f'({k if k > 1 else ""}√{a} − √{b})({k if k > 1 else ""}√{a} + √{b})'
+        K = f'{k if k > 1 else ""}√{a}'
+        if r.random() < 0.5:
+            d = f'({K} − √{b})(√{b} + {K})'
+        else:
+            d = f'(√{b} + {K})({K} − √{b})'
         s_ = f'({k}*sqrt({a})-sqrt({b}))*({k}*sqrt({a})+sqrt({b}))'
         ans = F(k * k * a - b)
     q = ask_expr(r, d)

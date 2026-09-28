@@ -1468,12 +1468,19 @@ def load_protos():
     return mathlib.PROTO
 
 
+SCRIPT_DIGITS = str.maketrans('⁰¹²³⁴⁵⁶⁷⁸⁹₀₁₂₃₄₅₆₇₈₉ⁿˣ', '01234567890123456789nx')
+
+
 def tokens(text, mask=True):
     """Слова и числа в нижнем регистре. mask=True: числа заменены на «0» — сходство меряем
     по словам, а не по числам (так ловится «тот же текст с другими числами»)."""
-    t = text.lower().replace('ё', 'е')
+    t = text.lower().replace('ё', 'е').translate(SCRIPT_DIGITS)
     t = re.sub(r'<[^>]+>', ' ', t)
-    return ['0' if mask and w[0].isdigit() else w for w in re.findall(r'[а-яa-z]+|\d+(?:[.,]\d+)?', t)]
+    if mask:
+        return ['0' if w[0].isdigit() else w for w in re.findall(r'[а-яa-z]+|\d+(?:[.,]\d+)?', t)]
+    # буквально: с числами и знаками + − = < > (скобки, дроби и степени в текстах банка теряются)
+    t = t.replace('−', '-').replace('–', '-').replace('≤', '<').replace('≥', '>')
+    return re.findall(r'[а-яa-z]+|\d+(?:[.,]\d+)?|[-+=<>]', t)
 
 
 def shingles(text, k=5, mask=True):
@@ -1522,23 +1529,34 @@ class Fipi:
             # демоверсии и открытые варианты: режем на куски по «Ответ:», чтобы сравнивать по заданиям
             parts = re.split(r'Ответ:\s*_+', open(path, encoding='utf-8').read())
             self.docs += [p for p in parts if len(p) > 40]
-        self.index = {True: {}, False: {}}
+        self.index = {}
+        self.lit, self.head = [], {}
         for i, t in enumerate(self.docs):
-            for mask in (True, False):
-                for s in shingles(t, mask=mask):
-                    self.index[mask].setdefault(s, set()).add(i)
+            for s in shingles(t, mask=True):
+                self.index.setdefault(s, set()).add(i)
+            w = tokens(t, mask=False)
+            self.lit.append(' ' + ' '.join(w) + ' ')
+            for j in range(len(w) - 2):
+                self.head.setdefault(' '.join(w[j:j + 3]), set()).add(i)
 
     def sim(self, text):
-        """Наибольшая доля шинглов нашего текста, найденных в одном тексте ФИПИ."""
+        """Сходство с самым похожим текстом ФИПИ.
+        Сюжетное условие: доля наших 5-словных шинглов (числа замаскированы), найденных в одном тексте ФИПИ.
+        Формульное условие (после вырезания инструкций КИМ < 8 слов): 1.0, если вся наша запись
+        с числами целиком встречается в тексте ФИПИ (то есть задание скопировано), иначе 0."""
         text = strip_stock(text)
-        mask = wordy(text)
-        sh = shingles(text, mask=mask)
+        if not wordy(text):
+            w = tokens(text, mask=False)
+            if len(w) < 4:
+                return 0.0
+            s = ' ' + ' '.join(w) + ' '
+            return 1.0 if any(s in self.lit[i] for i in self.head.get(' '.join(w[:3]), ())) else 0.0
+        sh = shingles(text, mask=True)
         if not sh:
             return 0.0
         cnt = Counter()
-        idx = self.index[mask]
         for s in sh:
-            for i in idx.get(s, ()):
+            for i in self.index.get(s, ()):
                 cnt[i] += 1
         return max(cnt.values(), default=0) / len(sh)
 
