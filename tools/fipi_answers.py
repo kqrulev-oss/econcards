@@ -256,7 +256,18 @@ def solve_subject(exam, key, args, gem_key):
                     if t['kind'] == 'multi' and t.get('opts') and 'a' in answers.get(t['id'], {}))
 
     def save():
+        """Пишем с учётом того, что уже на диске: если параллельно работал другой запуск,
+        его подтверждённые ответы и решения не теряются."""
         with lock:
+            disk = json.loads(out.read_text('utf-8')) if out.exists() else {}
+            for qid, rec in disk.items():
+                mine = answers.setdefault(qid, {})
+                if 'a' in rec and 'a' not in mine:
+                    mine.clear()
+                    mine.update(rec)
+                for k in ('e', 'sol', 'any'):
+                    if k in rec and k not in mine and mine.get('a') == rec.get('a'):
+                        mine[k] = rec[k]
             out.write_text(json.dumps(answers, ensure_ascii=False, indent=0, sort_keys=True) + '\n', 'utf-8')
 
     def verify(t, tries, extra=None):
