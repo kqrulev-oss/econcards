@@ -404,7 +404,7 @@ export async function handleAuth(req, env, parts) {
       const url = new URL(req.url);
       const q = Object.fromEntries(url.searchParams);
       const saved = /^[a-z0-9]{32}$/.test(q.state || '') && await env.DB.get(`oauth:${q.state}`, 'json');
-      if (!saved || saved.p !== b) return Response.redirect(`${url.origin}/login.html#login_error=expired`, 302);
+      if (!saved || saved.p !== b) return Response.redirect(`${url.origin}/login#login_error=expired`, 302);
       await env.DB.delete(`oauth:${q.state}`);
       if (!q.code) return Response.redirect(`${saved.back}#login_error=cancelled`, 302);
       try {

@@ -315,7 +315,7 @@ async function viewStudent() {
     try {
       const { code } = await api('/me/parent-code', { method: 'POST' });
       box.querySelector('#pcode-box').innerHTML = `<div class="code-big">${esc(code)}</div>
-        <p class="muted small-note">Родитель входит на ${esc(new URL('../login.html', location.href).host)} как «Родитель» и вводит код. Действует сутки, подходит один раз.</p>`;
+        <p class="muted small-note">Родитель входит на ${esc(new URL('../login', location.href).host)} как «Родитель» и вводит код. Действует сутки, подходит один раз.</p>`;
     } catch (err) { toast(err.message); }
   };
 }
@@ -381,7 +381,7 @@ async function leave(e) {
   const btn = e.currentTarget;
   btn.disabled = true;
   const r = await signOut();
-  if (r.out) location.href = '../login.html';
+  if (r.out) location.href = '../login';
   else btn.disabled = false;
 }
 
@@ -410,7 +410,7 @@ const toLogin = () => {
   if (toLoginOnce) return;
   toLoginOnce = true;
   const want = location.hash.slice(1);
-  location.replace(`../login.html?${ROLES[want] ? `role=${want}&` : ''}next=${encodeURIComponent('cabinet/' + location.hash)}`);
+  location.replace(`../login?${ROLES[want] ? `role=${want}&` : ''}next=${encodeURIComponent('cabinet/' + location.hash)}`);
 };
 window.addEventListener('zd-session-expired', toLogin);
 

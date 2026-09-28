@@ -10,7 +10,7 @@
      с Authorization в кэш не попадают никогда.
    Изменили любой файл сайта — подними версию CACHE: новая версия заново скачает
    файлы из списка ниже, а старый кэш удалится. */
-const CACHE = 'zadachnik-v34';
+const CACHE = 'zadachnik-v35';
 const WAIT = 2500; // мс: столько ждём страницу из сети, если есть сохранённая копия
 const PAGES = ['./', './studio/', './cabinet/', './login.html', './parent/', './offline.html'];
 const FILES = [

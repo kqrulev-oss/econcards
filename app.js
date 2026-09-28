@@ -1032,7 +1032,7 @@ function viewMe() {
   $app.querySelector('#pcode')?.addEventListener('click', async () => {
     try {
       const { code } = await api('/me/parent-code', { method: 'POST' });
-      const where = new URL('login.html?role=parent', location.href.split('#')[0].split('?')[0]).href;
+      const where = new URL('login?role=parent', location.href.split('#')[0].split('?')[0]).href;
       modal(`<h3>Код для родителя</h3><div class="code-big">${esc(code)}</div>
         <p>Родитель открывает <b>${esc(where)}</b>, входит и вводит этот код. Код действует сутки и подходит один раз.</p>
         <p class="muted">Родитель будет видеть дни занятий, точность и темы, которые стоит подтянуть.</p>`);

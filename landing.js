@@ -72,7 +72,7 @@ export function renderLanding(root, library) {
     <a class="ld-logo" href="./"><img class="ld-mark" src="icons/icon-192.png" alt="" width="40" height="40">Между уроками</a>
     <nav><a href="#how">Как это работает</a><a href="#prices">Тарифы</a><a href="#faq">Вопросы</a></nav>
     <a class="ld-nav-tg" href="${TG}" target="_blank" rel="noopener" aria-label="Написать в Telegram"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 4L3 11l6 2 2 6 3-4 5 4z"/><path d="M9 13l8-6"/></svg></a>
-    ${signedIn() ? '<a class="ld-nav-cta" href="cabinet/">Кабинет</a>' : '<a class="ld-nav-cta" href="login.html">Войти</a>'}
+    ${signedIn() ? '<a class="ld-nav-cta" href="cabinet/">Кабинет</a>' : '<a class="ld-nav-cta" href="login">Войти</a>'}
   </header>
 
   <section class="ld-hero">
@@ -181,7 +181,7 @@ export function renderLanding(root, library) {
         <a class="ld-btn" href="?p=ege-rus">Начать заниматься</a>
       </article>
     </div>
-    <p class="ld-price-note">Оплата картой или через СБП, без автосписаний. <a href="offer.html">Оферта</a> · <a href="privacy.html">Персональные данные</a></p>
+    <p class="ld-price-note">Оплата картой или через СБП, без автосписаний. <a href="offer">Оферта</a> · <a href="privacy">Персональные данные</a></p>
     <p class="ld-price-note"><b>Как получить доступ:</b> всё работает онлайн, доставки нет. После оплаты доступ открывается сразу в вашем аккаунте на сайте — на оплаченный срок (1 или 3 месяца). Чек из «Мой налог» пришлём на почту. Если доступ не открылся — вернём деньги.</p>
   </section>
 
@@ -191,8 +191,8 @@ export function renderLanding(root, library) {
     <details><summary>А&nbsp;если ИИ ошибётся в&nbsp;карточке?</summary><p>Каждую карточку вы видите до&nbsp;того, как она попадёт к&nbsp;ученикам, и&nbsp;можете исправить или убрать. Без вашего подтверждения ничего не&nbsp;публикуется.</p></details>
     <details><summary>Сколько времени это займёт у&nbsp;ученика?</summary><p>10&nbsp;минут в&nbsp;день. Новые карточки приходят понемногу, старые — на&nbsp;повторение по&nbsp;графику, который подстраивается под ученика.</p></details>
     <details><summary>Что видят родители?</summary><p>В&nbsp;кабинете родителя — дни занятий, точность по&nbsp;неделям и&nbsp;темы, которые стоит подтянуть. Ответы и&nbsp;ошибки ребёнка родитель не&nbsp;видит. Репетитор может и&nbsp;сам отправить короткий отчёт.</p></details>
-    <details><summary>Какие данные хранятся?</summary><p>Имя и&nbsp;статистика занятий. Если вы входите в&nbsp;аккаунт — ещё то, что нужно для входа: Telegram или адрес почты. Телефоны не&nbsp;собираем. Подробнее — в&nbsp;<a href="privacy.html">политике обработки данных</a>.</p></details>
-    <details><summary>Как вернуть деньги?</summary><p>В&nbsp;течение 7&nbsp;дней после оплаты напишите на&nbsp;kqrulev@yandex.ru или в&nbsp;Telegram — вернём за&nbsp;неиспользованные дни. Если доступ не&nbsp;открылся по&nbsp;нашей вине — вернём всё. Условия — в&nbsp;<a href="offer.html">оферте</a>.</p></details>
+    <details><summary>Какие данные хранятся?</summary><p>Имя и&nbsp;статистика занятий. Если вы входите в&nbsp;аккаунт — ещё то, что нужно для входа: Telegram или адрес почты. Телефоны не&nbsp;собираем. Подробнее — в&nbsp;<a href="privacy">политике обработки данных</a>.</p></details>
+    <details><summary>Как вернуть деньги?</summary><p>В&nbsp;течение 7&nbsp;дней после оплаты напишите на&nbsp;kqrulev@yandex.ru или в&nbsp;Telegram — вернём за&nbsp;неиспользованные дни. Если доступ не&nbsp;открылся по&nbsp;нашей вине — вернём всё. Условия — в&nbsp;<a href="offer">оферте</a>.</p></details>
   </section>
 
   <section class="ld-final"><span class="ld-final-card" aria-hidden="true"><span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 2 3 7 7 3-7 3-3 7-3-7-7-3 7-3z"/></svg></span> Ваша следующая карточка</span>
@@ -209,11 +209,11 @@ export function renderLanding(root, library) {
       <b>Вы ученик?</b>
       <span class="row"><input id="code" placeholder="Код от репетитора" autocapitalize="off"><button class="ld-btn primary small" id="join">Открыть</button></span>
       <a href="#/library">Открытые наборы для самостоятельной подготовки</a>
-      <a href="login.html?role=parent">Я родитель — посмотреть прогресс ребёнка</a>
+      <a href="login?role=parent">Я родитель — посмотреть прогресс ребёнка</a>
     </div>
     <p class="ld-copy">Между уроками · тренажёр для учеников репетитора · <a href="${TG}" target="_blank" rel="noopener">Telegram @trwqxp</a></p>
     <p class="ld-copy ld-legal">Исполнитель: Курулев Кирилл Дмитриевич, самозанятый (налог на профессиональный доход), ИНН&nbsp;631220042532 ·
-      <a href="mailto:kqrulev@yandex.ru">kqrulev@yandex.ru</a> · <a href="offer.html">Оферта</a> · <a href="privacy.html">Персональные данные</a></p>
+      <a href="mailto:kqrulev@yandex.ru">kqrulev@yandex.ru</a> · <a href="offer">Оферта</a> · <a href="privacy">Персональные данные</a></p>
   </footer>`;
 
   const join = () => { openCode(root.querySelector('#code').value); };
