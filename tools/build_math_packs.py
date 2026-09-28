@@ -27,6 +27,8 @@ import math_meta  # noqa: E402
 SEED = 'pack-2026-09'
 PER_PROTO = 8          # карточек на прототип без рисунка
 PER_PROTO_SVG = 5      # с рисунком: SVG тяжелее
+# Прототипы вне кодификатора (аудит 28.09.2026, docs/audit-packs.md): показательное распределение с λ
+EXCLUDE = {'ep06-expo'}
 
 # ЕГЭ профиль: номер 2026 → номер 2027 (новые №6, 13, 17; прежние №12 и №16 ушли)
 OLD2NEW = {1: 1, 2: 2, 3: 3, 4: 4, 5: 5, 6: 7, 7: 8, 8: 9, 9: 10, 10: 11, 11: 12, 13: 14, 14: 15, 15: 16, 17: 18, 18: 19, 19: 20}
@@ -83,6 +85,8 @@ def build(exam, protos, old=None, log=print):
     spec = PACKS[exam]
     by_n = {}
     for p in sorted(protos.values(), key=lambda p: (p['n'], p['id'])):
+        if p['id'] in EXCLUDE:
+            continue
         if p['exam'] == exam and p['kind'] == 'param':
             by_n.setdefault(p['n'], []).append(p)
     topics, theory, cards = [], [], []

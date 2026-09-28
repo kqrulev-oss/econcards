@@ -1,0 +1,319 @@
+{"id": "ep01-area-heights-1", "verdict": "ok", "reason": "Ответ и разбор согласованы и пересчитаны; рисунок (svg) визуально не проверялся.", "fix": null}
+{"id": "ep01-bisector-1", "verdict": "ok", "reason": "Ответ и разбор согласованы и пересчитаны; рисунок (svg) визуально не проверялся.", "fix": null}
+{"id": "ep01-central-diff-1", "verdict": "ok", "reason": "Ответ и разбор согласованы и пересчитаны; рисунок (svg) визуально не проверялся.", "fix": null}
+{"id": "ep01-circle-regular-1", "verdict": "ok", "reason": "Ответ и разбор согласованы и пересчитаны; рисунок (svg) визуально не проверялся.", "fix": null}
+{"id": "ep01-circle-right-1", "verdict": "ok", "reason": "Ответ и разбор согласованы и пересчитаны; рисунок (svg) визуально не проверялся.", "fix": null}
+{"id": "ep01-circum-sine-1", "verdict": "ok", "reason": "Ответ и разбор согласованы и пересчитаны; рисунок (svg) визуально не проверялся.", "fix": null}
+{"id": "ep01-cyclic-opp-1", "verdict": "ok", "reason": "Ответ и разбор согласованы и пересчитаны; рисунок (svg) визуально не проверялся.", "fix": null}
+{"id": "ep01-cyclic-quad-1", "verdict": "ok", "reason": "Ответ и разбор согласованы и пересчитаны; рисунок (svg) визуально не проверялся.", "fix": null}
+{"id": "ep01-diam-angles-1", "verdict": "ok", "reason": "Ответ и разбор согласованы и пересчитаны; рисунок (svg) визуально не проверялся.", "fix": null}
+{"id": "ep01-inscribed-arc-1", "verdict": "ok", "reason": "Ответ и разбор согласованы и пересчитаны; рисунок (svg) визуально не проверялся.", "fix": null}
+{"id": "ep01-iso-ext-1", "verdict": "ok", "reason": "Ответ и разбор согласованы и пересчитаны; рисунок (svg) визуально не проверялся.", "fix": null}
+{"id": "ep01-iso-trig-1", "verdict": "ok", "reason": "Ответ и разбор согласованы и пересчитаны; рисунок (svg) визуально не проверялся.", "fix": null}
+{"id": "ep01-midline-area-1", "verdict": "ok", "reason": "Ответ и разбор согласованы и пересчитаны; рисунок (svg) визуально не проверялся.", "fix": null}
+{"id": "ep01-par-angles-1", "verdict": "ok", "reason": "Ответ и разбор согласованы и пересчитаны; рисунок (svg) визуально не проверялся.", "fix": null}
+{"id": "ep01-par-area-1", "verdict": "ok", "reason": "Ответ и разбор согласованы и пересчитаны; рисунок (svg) визуально не проверялся.", "fix": null}
+{"id": "ep01-rhombus-1", "verdict": "ok", "reason": "Ответ и разбор согласованы и пересчитаны; рисунок (svg) визуально не проверялся.", "fix": null}
+{"id": "ep01-right-cevian-1", "verdict": "ok", "reason": "Ответ и разбор согласованы и пересчитаны; рисунок (svg) визуально не проверялся.", "fix": null}
+{"id": "ep01-right-ratio-1", "verdict": "ok", "reason": "Ответ и разбор согласованы и пересчитаны; рисунок (svg) визуально не проверялся.", "fix": null}
+{"id": "ep01-right-side-1", "verdict": "ok", "reason": "Ответ и разбор согласованы и пересчитаны; рисунок (svg) визуально не проверялся.", "fix": null}
+{"id": "ep01-tangent-arc-1", "verdict": "ok", "reason": "Ответ и разбор согласованы и пересчитаны; рисунок (svg) визуально не проверялся.", "fix": null}
+{"id": "ep01-tangent-quad-1", "verdict": "ok", "reason": "Ответ и разбор согласованы и пересчитаны; рисунок (svg) визуально не проверялся.", "fix": null}
+{"id": "ep01-tangents-two-1", "verdict": "ok", "reason": "Ответ и разбор согласованы и пересчитаны; рисунок (svg) визуально не проверялся.", "fix": null}
+{"id": "ep01-trap-iso-1", "verdict": "ok", "reason": "Ответ и разбор согласованы и пересчитаны; рисунок (svg) визуально не проверялся.", "fix": null}
+{"id": "ep01-trap-midline-1", "verdict": "ok", "reason": "Ответ и разбор согласованы и пересчитаны; рисунок (svg) визуально не проверялся.", "fix": null}
+{"id": "ep01-tri-ext-1", "verdict": "ok", "reason": "Ответ и разбор согласованы и пересчитаны; рисунок (svg) визуально не проверялся.", "fix": null}
+{"id": "ep02-coord-1", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep02-cos-1", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep02-dot-1", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep02-dot-angle-1", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep02-dot-comb-1", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep02-grid-dot-1", "verdict": "ok", "reason": "Ответ и разбор согласованы и пересчитаны; рисунок (svg) визуально не проверялся.", "fix": null}
+{"id": "ep02-grid-len-1", "verdict": "ok", "reason": "Ответ и разбор согласованы и пересчитаны; рисунок (svg) визуально не проверялся.", "fix": null}
+{"id": "ep02-len-comb-1", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep02-norm-1", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep02-param-1", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep03-ball-cyl-1", "verdict": "ok", "reason": "Ответ и разбор согласованы и пересчитаны; рисунок (svg) визуально не проверялся.", "fix": null}
+{"id": "ep03-ball-section-1", "verdict": "ok", "reason": "Ответ и разбор согласованы и пересчитаны; рисунок (svg) визуально не проверялся.", "fix": null}
+{"id": "ep03-box-diag-1", "verdict": "ok", "reason": "Ответ и разбор согласованы и пересчитаны; рисунок (svg) визуально не проверялся.", "fix": null}
+{"id": "ep03-box-prism-1", "verdict": "ok", "reason": "Ответ и разбор согласованы и пересчитаны; рисунок (svg) визуально не проверялся.", "fix": null}
+{"id": "ep03-box-pyr-1", "verdict": "ok", "reason": "Ответ и разбор согласованы и пересчитаны; рисунок (svg) визуально не проверялся.", "fix": null}
+{"id": "ep03-cone-ball-1", "verdict": "ok", "reason": "Ответ и разбор согласованы и пересчитаны; рисунок (svg) визуально не проверялся.", "fix": null}
+{"id": "ep03-cone-level-1", "verdict": "ok", "reason": "Ответ и разбор согласованы и пересчитаны; рисунок (svg) визуально не проверялся.", "fix": null}
+{"id": "ep03-cube-cut-1", "verdict": "ok", "reason": "Ответ и разбор согласованы и пересчитаны; рисунок (svg) визуально не проверялся.", "fix": null}
+{"id": "ep03-cyl-box-1", "verdict": "ok", "reason": "Ответ и разбор согласованы и пересчитаны; рисунок (svg) визуально не проверялся.", "fix": null}
+{"id": "ep03-cyl-cone-1", "verdict": "ok", "reason": "Ответ и разбор согласованы и пересчитаны; рисунок (svg) визуально не проверялся.", "fix": null}
+{"id": "ep03-cyl-cone-side-1", "verdict": "ok", "reason": "Ответ и разбор согласованы и пересчитаны; рисунок (svg) визуально не проверялся.", "fix": null}
+{"id": "ep03-cyl-immerse-1", "verdict": "ok", "reason": "Ответ и разбор согласованы и пересчитаны; рисунок (svg) визуально не проверялся.", "fix": null}
+{"id": "ep03-cyl-pour-1", "verdict": "ok", "reason": "Ответ и разбор согласованы и пересчитаны; рисунок (svg) визуально не проверялся.", "fix": null}
+{"id": "ep03-mid-side-1", "verdict": "ok", "reason": "Ответ и разбор согласованы и пересчитаны; рисунок (svg) визуально не проверялся.", "fix": null}
+{"id": "ep03-mid-vol-1", "verdict": "ok", "reason": "Ответ и разбор согласованы и пересчитаны; рисунок (svg) визуально не проверялся.", "fix": null}
+{"id": "ep03-prism-part-1", "verdict": "ok", "reason": "Ответ и разбор согласованы и пересчитаны; рисунок (svg) визуально не проверялся.", "fix": null}
+{"id": "ep03-scale-1", "verdict": "ok", "reason": "Ответ и разбор согласованы и пересчитаны; рисунок (svg) визуально не проверялся.", "fix": null}
+{"id": "ep03-similar-1", "verdict": "ok", "reason": "Ответ и разбор согласованы и пересчитаны; рисунок (svg) визуально не проверялся.", "fix": null}
+{"id": "ep03-sphere-cone-1", "verdict": "ok", "reason": "Ответ и разбор согласованы и пересчитаны; рисунок (svg) визуально не проверялся.", "fix": null}
+{"id": "ep04-coin-1", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep04-complement-1", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep04-dice-1", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep04-disjoint-1", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep04-groups-1", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep04-names-1", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep04-order-1", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep04-range-1", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep04-ratio-sum-1", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep04-select-k-1", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep04-share-1", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep05-atleast-1", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep05-bayes-1", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep05-bernoulli-1", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep05-cond-dice-1", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep05-indep-two-1", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep05-interval-1", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep05-same-group-1", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep05-seq-1", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep05-total-1", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep05-two-draw-1", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep05-union-1", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep05-until-1", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep06-binom-1", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep06-expo-1", "verdict": "weak", "reason": "Показательное распределение и параметр λ (E = 1/λ) не входят в школьную программу и кодификатор ЕГЭ; для задания 6 (случайная величина) уместны дискретные СВ, биномиальное и геометрическое распределения, нормальное — на уровне симметрии. Прототип стоит убрать или заменить.", "fix": null}
+{"id": "ep06-geom-1", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep06-indicator-1", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep06-linear-1", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep06-lottery-1", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep06-normal-1", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep06-sum-1", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep06-table-d-1", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep06-table-e-1", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep06-table-miss-1", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep06-table-sd-1", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep06-table-solve-1", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep06-uniform-1", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep07-cbrt-1", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep07-cube-1", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep07-exp-base-1", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep07-exp-recip-1", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep07-exp-two-1", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep07-log-base-1", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep07-log-log-1", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep07-log-num-1", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep07-quad-1", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep07-recip-1", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep07-sqrt-1", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep07-sqrt-x-1", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep07-trig-1", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep08-alg-ratio-1", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep08-alg-simplify-1", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep08-log-base-ratio-1", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep08-log-power-1", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep08-log-ratio-1", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep08-log-root-1", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep08-log-sum-1", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep08-pow-frac-1", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep08-pow-irr-1", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep08-pow-split-1", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep08-pow-tower-1", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep08-root-distrib-1", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep08-root-idx-1", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep08-root-same-1", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep08-root-square-1", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep08-trig-compl-1", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep08-trig-cos2a-1", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep08-trig-dbl-1", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep08-trig-find-1", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep08-trig-rad-cos2-1", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep08-trig-rad-sc-1", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep08-trig-table-1", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep09-dg-count-1", "verdict": "ok", "reason": "Ответ и разбор согласованы и пересчитаны; рисунок (svg) визуально не проверялся.", "fix": null}
+{"id": "ep09-dg-longest-1", "verdict": "ok", "reason": "Ответ и разбор согласованы и пересчитаны; рисунок (svg) визуально не проверялся.", "fix": null}
+{"id": "ep09-dg-marked-1", "verdict": "ok", "reason": "Ответ и разбор согласованы и пересчитаны; рисунок (svg) визуально не проверялся.", "fix": null}
+{"id": "ep09-dg-parallel-1", "verdict": "ok", "reason": "Ответ и разбор согласованы и пересчитаны; рисунок (svg) визуально не проверялся.", "fix": null}
+{"id": "ep09-dg-point-1", "verdict": "ok", "reason": "Ответ и разбор согласованы и пересчитаны; рисунок (svg) визуально не проверялся.", "fix": null}
+{"id": "ep09-dg-segmax-1", "verdict": "ok", "reason": "Ответ и разбор согласованы и пересчитаны; рисунок (svg) визуально не проверялся.", "fix": null}
+{"id": "ep09-ext-cubic-1", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep09-ext-exp-1", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep09-ext-ln-1", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep09-ext-lnquad-1", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep09-ext-rational-1", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep09-ext-sqrt-1", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep09-fg-sign-1", "verdict": "ok", "reason": "Ответ и разбор согласованы и пересчитаны; рисунок (svg) визуально не проверялся.", "fix": null}
+{"id": "ep09-fg-which-1", "verdict": "ok", "reason": "Ответ и разбор согласованы и пересчитаны; рисунок (svg) визуально не проверялся.", "fix": null}
+{"id": "ep09-fg-zeros-1", "verdict": "ok", "reason": "Ответ и разбор согласованы и пересчитаны; рисунок (svg) визуально не проверялся.", "fix": null}
+{"id": "ep09-motion-1", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep09-parallel-1", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep09-prim-area-1", "verdict": "ok", "reason": "Ответ и разбор согласованы и пересчитаны; рисунок (svg) визуально не проверялся.", "fix": null}
+{"id": "ep09-prim-formula-1", "verdict": "ok", "reason": "Ответ и разбор согласованы и пересчитаны; рисунок (svg) визуально не проверялся.", "fix": null}
+{"id": "ep09-seg-cubic-1", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep09-seg-ln-1", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep09-seg-sqrt-1", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep09-seg-trig-1", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep09-tangent-1", "verdict": "ok", "reason": "Ответ и разбор согласованы и пересчитаны; рисунок (svg) визуально не проверялся.", "fix": null}
+{"id": "ep09-tangent-line-1", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep10-econ-1", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep10-exp2-1", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep10-fraclin-1", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep10-inverse-1", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep10-lens-1", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep10-log-1", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep10-parallel-1", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep10-power-1", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep10-quad-first-1", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep10-quad-interval-1", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep10-quad-time-1", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep10-sqrt-1", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep10-trig-1", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep11-alloy-diff-1", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep11-avg-dist-1", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep11-avg-time-1", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep11-circle-1", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep11-drying-1", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep11-mix-water-1", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep11-move-delayed-1", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep11-move-meet-1", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep11-move-race-1", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep11-move-return-stop-1", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep11-percent-twice-1", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep11-percent-whole-1", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep11-prog-arith-1", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep11-prog-geom-1", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep11-raft-1", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep11-river-current-1", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep11-river-dist-1", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep11-river-own-1", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep11-river-updown-1", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep11-trains-1", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep11-vessels-1", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep11-work-joint-1", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep11-work-rate-diff-1", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep11-work-three-1", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep12-exp-shift-1", "verdict": "ok", "reason": "Ответ и разбор согласованы и пересчитаны; рисунок (svg) визуально не проверялся.", "fix": null}
+{"id": "ep12-exp-value-1", "verdict": "ok", "reason": "Ответ и разбор согласованы и пересчитаны; рисунок (svg) визуально не проверялся.", "fix": null}
+{"id": "ep12-hyp-line-cross-1", "verdict": "ok", "reason": "Ответ и разбор согласованы и пересчитаны; рисунок (svg) визуально не проверялся.", "fix": null}
+{"id": "ep12-hyp-shift-1", "verdict": "ok", "reason": "Ответ и разбор согласованы и пересчитаны; рисунок (svg) визуально не проверялся.", "fix": null}
+{"id": "ep12-hyp-value-1", "verdict": "ok", "reason": "Ответ и разбор согласованы и пересчитаны; рисунок (svg) визуально не проверялся.", "fix": null}
+{"id": "ep12-lin-cross-1", "verdict": "ok", "reason": "Ответ и разбор согласованы и пересчитаны; рисунок (svg) визуально не проверялся.", "fix": null}
+{"id": "ep12-lin-value-1", "verdict": "ok", "reason": "Ответ и разбор согласованы и пересчитаны; рисунок (svg) визуально не проверялся.", "fix": null}
+{"id": "ep12-log-shift-1", "verdict": "ok", "reason": "Ответ и разбор согласованы и пересчитаны; рисунок (svg) визуально не проверялся.", "fix": null}
+{"id": "ep12-log-value-1", "verdict": "ok", "reason": "Ответ и разбор согласованы и пересчитаны; рисунок (svg) визуально не проверялся.", "fix": null}
+{"id": "ep12-parab-line-cross-1", "verdict": "ok", "reason": "Ответ и разбор согласованы и пересчитаны; рисунок (svg) визуально не проверялся.", "fix": null}
+{"id": "ep12-parab-value-1", "verdict": "ok", "reason": "Ответ и разбор согласованы и пересчитаны; рисунок (svg) визуально не проверялся.", "fix": null}
+{"id": "ep12-root-line-cross-1", "verdict": "ok", "reason": "Ответ и разбор согласованы и пересчитаны; рисунок (svg) визуально не проверялся.", "fix": null}
+{"id": "ep12-root-value-1", "verdict": "ok", "reason": "Ответ и разбор согласованы и пересчитаны; рисунок (svg) визуально не проверялся.", "fix": null}
+{"id": "ep12-trig-1", "verdict": "ok", "reason": "Ответ и разбор согласованы и пересчитаны; рисунок (svg) визуально не проверялся.", "fix": null}
+{"id": "ep13-annuity-loan-1", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep13-annuity-overpay-1", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep13-annuity-total-1", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep13-annuity-two-plans-1", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep13-cashback-1", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep13-deposit-compare-1", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep13-deposit-topup-1", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep13-diff-annual-1", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep13-diff-balloon-1", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep13-diff-bound-r-1", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep13-diff-monthly-year-1", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep13-diff-two-phase-1", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep13-equal-first-two-1", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep13-geom-decrease-1", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep13-grace-1", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep13-income-tax-1", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep13-plant-payback-1", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep13-sell-time-1", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep13-table-debt-1", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep13-tariff-1", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep13-tax-deduction-1", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep13-two-payments-r-1", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep13-two-plants-1", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep14-exp-roots-1", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep14-exptrig-equal-1", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep14-exptrig-quad-1", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep14-log-trig-1", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep14-trig-cubic-1", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep14-trig-domain-1", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep14-trig-expand-1", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep14-trig-expand-lin-1", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep14-trig-factor-1", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep14-trig-group-1", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep14-trig-homog1-1", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep14-trig-quad-1", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep14-trig-tanquad-1", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep15-angle-ll-1", "verdict": "ok", "reason": "Ответ и разбор согласованы и пересчитаны; рисунок (svg) визуально не проверялся.", "fix": null}
+{"id": "ep15-angle-lp-1", "verdict": "ok", "reason": "Ответ и разбор согласованы и пересчитаны; рисунок (svg) визуально не проверялся.", "fix": null}
+{"id": "ep15-angle-pp-1", "verdict": "ok", "reason": "Ответ и разбор согласованы и пересчитаны; рисунок (svg) визуально не проверялся.", "fix": null}
+{"id": "ep15-cylinder-1", "verdict": "ok", "reason": "Ответ и разбор согласованы и пересчитаны; рисунок (svg) визуально не проверялся.", "fix": null}
+{"id": "ep15-dist-line-1", "verdict": "ok", "reason": "Ответ и разбор согласованы и пересчитаны; рисунок (svg) визуально не проверялся.", "fix": null}
+{"id": "ep15-dist-plane-1", "verdict": "ok", "reason": "Ответ и разбор согласованы и пересчитаны; рисунок (svg) визуально не проверялся.", "fix": null}
+{"id": "ep15-inverse-1", "verdict": "ok", "reason": "Ответ и разбор согласованы и пересчитаны; рисунок (svg) визуально не проверялся.", "fix": null}
+{"id": "ep15-section-1", "verdict": "ok", "reason": "Ответ и разбор согласованы и пересчитаны; рисунок (svg) визуально не проверялся.", "fix": null}
+{"id": "ep15-volume-1", "verdict": "ok", "reason": "Ответ и разбор согласованы и пересчитаны; рисунок (svg) визуально не проверялся.", "fix": null}
+{"id": "ep16-exp-frac-1", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep16-exp-grouping-1", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep16-exp-poly-1", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep16-exp-quad-1", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep16-exp-square-1", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep16-log-frac-1", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep16-log-identity-1", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep16-log-product-1", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep16-log-square-1", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep16-log-sum-1", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep16-log-varbase-1", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep16-radical-1", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep16-rational-1", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep17-box-1", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep17-concentration-1", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep17-fence-1", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep17-motion-1", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep17-power-load-1", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep17-profit-price-1", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep17-resonance-1", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep17-route-1", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep17-tank-1", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep17-trip-cost-1", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep18-aho-1", "verdict": "ok", "reason": "Ответ и разбор согласованы и пересчитаны; рисунок (svg) визуально не проверялся.", "fix": null}
+{"id": "ep18-angle-circle-1", "verdict": "ok", "reason": "Ответ и разбор согласованы и пересчитаны; рисунок (svg) визуально не проверялся.", "fix": null}
+{"id": "ep18-chords-1", "verdict": "ok", "reason": "Ответ и разбор согласованы и пересчитаны; рисунок (svg) визуально не проверялся.", "fix": null}
+{"id": "ep18-iso-trap-1", "verdict": "ok", "reason": "Ответ и разбор согласованы и пересчитаны; рисунок (svg) визуально не проверялся.", "fix": null}
+{"id": "ep18-ninepoint-1", "verdict": "ok", "reason": "Ответ и разбор согласованы и пересчитаны; рисунок (svg) визуально не проверялся.", "fix": null}
+{"id": "ep18-orthic-1", "verdict": "ok", "reason": "Ответ и разбор согласованы и пересчитаны; рисунок (svg) визуально не проверялся.", "fix": null}
+{"id": "ep18-rhombus-1", "verdict": "ok", "reason": "Ответ и разбор согласованы и пересчитаны; рисунок (svg) визуально не проверялся.", "fix": null}
+{"id": "ep18-similar-circle-1", "verdict": "ok", "reason": "Ответ и разбор согласованы и пересчитаны; рисунок (svg) визуально не проверялся.", "fix": null}
+{"id": "ep18-tangent-seg-1", "verdict": "ok", "reason": "Ответ и разбор согласованы и пересчитаны; рисунок (svg) визуально не проверялся.", "fix": null}
+{"id": "ep18-trap-isosc-1", "verdict": "ok", "reason": "Ответ и разбор согласованы и пересчитаны; рисунок (svg) визуально не проверялся.", "fix": null}
+{"id": "ep18-trap-perp-1", "verdict": "ok", "reason": "Ответ и разбор согласованы и пересчитаны; рисунок (svg) визуально не проверялся.", "fix": null}
+{"id": "ep19-abs-quad-1", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep19-circle-lines-1", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep19-exp-abs-1", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep19-frac-roots-1", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep19-ineq-segment-1", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep19-line-abs-1", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep19-log-segment-1", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep19-quad-in-a-1", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep19-quad-subst-1", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep19-sqrt-eq-1", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep19-sqrt-system-1", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep19-uv-zero-1", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep20-boxes-1", "verdict": "weak", "reason": "Ответ пункта в) верен (проверено перебором состояний), но разбор не даёт явных ответов на а) и б).", "fix": {"e": "Инвариант: разности количеств меняются на 0 или ±3, поэтому их остатки по модулю 3 сохраняются; сумма 96 постоянна. а) Нет: 70 − 26 ≡ 2 (mod 3), а 15 − 23 ≡ 1. б) Нет: для (0; 0; 96) разность 0 ≡ 0 ≠ 2. в) При 1 книге на первой полке на второй не меньше 2 (по модулю 3), значит на третьей не больше 93; пример строится последовательными ходами. Ответ: 93."}}
+{"id": "ep20-circle-diffs-1", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep20-coins-1", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep20-consecutive-1", "verdict": "weak", "reason": "Ответ в) = 28 верен (проверено перебором), но разбор не содержит ответов на а) и б).", "fix": {"e": "Блок с ровно 6 кратными 25 имеет длину от 126 до 174. а) Да: например, числа 26–189 содержат 7 кратных 27. б) Нет: любой такой блок длиной не меньше 126 содержит не меньше 9 кратных 13. в) Чтобы кратных k было хотя бы 7, нужно 6k + 1 ≤ 174, то есть k ≤ 28; пример для 28 — числа 26–196. Ответ: 28."}}
+{"id": "ep20-containers-1", "verdict": "weak", "reason": "Ответ в) верен, но разбор не даёт ответов на а) и б).", "fix": {"e": "Пусть контейнеров n, с кофе c = 0,2n, среди них h тяжёлых; среди остальных H тяжёлых. а) Нет: из равенства доли 5 % получается H = n + 19h > 0,8n. б) Да: например, 5 контейнеров по 12 т, один из них с кофе. в) Доля по массе наибольшая, когда все контейнеры с кофе — по 48 т, а остальные — по 12 т: 0,2·48/(0,2·48 + 0,8·12) = 50 %. Ответ: 50."}}
+{"id": "ep20-digit-op-1", "verdict": "weak", "reason": "Ответ в) верен, но разбор не даёт ответов на а) и б).", "fix": {"e": "Для N = 100a + 10b + c результат равен (99a + 9b)/3 = 33a + 3b — от c не зависит. а) Да: N = 240 даёт 78. б) Нет: 272 не делится на 3. в) Различных пар (a, b): a = 1, b = 6–9 (4 значения), a = 2, 3, 4 (по 10), a = 5, b = 0 (1) — всего 35, значения не повторяются. Ответ: 35."}}
+{"id": "ep20-digits-sum-1", "verdict": "weak", "reason": "Ответ в) верен (перебор: 33 + 633 + 636 + 663 + 666), но разбор не даёт ответов на а) и б).", "fix": {"e": "Все такие числа делятся на 3. а) Нет: 181 не делится на 3. б) Нет: трёхзначные числа не меньше 333 > 276, а сумма всех различных одно- и двузначных чисел из цифр 3 и 6 равна 3 + 6 + 33 + 36 + 63 + 66 = 207 < 276. в) Четырёх чисел не хватает (666 + 663 + 636 + 633 = 2598 < 2631), пять есть: 33 + 633 + 636 + 663 + 666 = 2631. Ответ: 5."}}
+{"id": "ep20-endings-1", "verdict": "weak", "reason": "Ответ в) верен, но разбор не даёт ответов на а) и б).", "fix": {"e": "а) Нет: 17 — нечётное число. б) Нет: тогда сумма оканчивалась бы на 8 (16·2 + 6 = 38), а не на 6. в) Если чисел с последней цифрой 6 — k, то 2(17 − k) + 6k ≡ 6 (mod 10), откуда k ≡ 3 (mod 5); при k = 3 наименьшая сумма 2 + 12 + … + 132 + 6 + 16 + 26 = 986 ≤ 1486, разницу 500 добираем увеличением чисел на десятки. Ответ: 3."}}
+{"id": "ep20-ones-1", "verdict": "weak", "reason": "Ответ в) верен (перебор даёт 38 значений n), но разбор не даёт ответов на а) и б).", "fix": {"e": "Слагаемые: x₁ единиц, x₂ чисел 11, x₃ чисел 111 (1111 > 347): 347 = x₁ + 11x₂ + 111x₃, n = x₁ + 2x₂ + 3x₃. а) Нет: перебор x₂, x₃ показывает, что n = 84 не получается. б) Да: 347 = 11 + 336·1, тогда n = 2 + 336 = 338. в) Перебор x₃ ∈ {0; 1; 2; 3}, x₂ ∈ [0; 31] даёт 38 различных n. Ответ: 38."}}
+{"id": "ep20-pair-moves-1", "verdict": "weak", "reason": "Ответ в) верен (проверено поиском по состояниям), но разбор не даёт ответов на а) и б).", "fix": {"e": "За ход сумма растёт на 1, разность a − b меняется на ±3. а) Нет: через 29 ходов сумма равна 49 < 69. б) Через 75 − 20 = 55 ходов. в) Разность 14 − 6 = 8 ≡ 2 (mod 3); при числах не больше 46 наибольшая сумма с такой разностью — 46 + 45 = 91, значит ходов не больше 91 − 20 = 71; пример строится чередованием ходов. Ответ: 71."}}
+{"id": "ep20-products-1", "verdict": "weak", "reason": "Ответ в) верен, но разбор не даёт ответов на а) и б).", "fix": {"e": "а) Да: 5, 6, 7, 8, 9 (наименьшее произведение 30 > 24, наибольшее 72 < 110). б) Да: 5, 6, 7, 8, 9, 10 (30 и 90). в) Для четырёх чисел a < b < c < d нужно ab > 24 и cd < 110; наименьшая сумма у набора 5, 6, 7, 8. Ответ: 26."}}
+{"id": "ep20-stones-1", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep13-diff-monthly-year-2", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep13-diff-monthly-year-3", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep13-diff-monthly-year-4", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep13-diff-monthly-year-5", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep13-diff-monthly-year-6", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep13-diff-monthly-year-7", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep13-diff-monthly-year-8", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep13-diff-two-phase-2", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep13-diff-two-phase-3", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep13-diff-two-phase-4", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep13-diff-two-phase-5", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep13-diff-two-phase-6", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep13-diff-two-phase-7", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
+{"id": "ep13-diff-two-phase-8", "verdict": "ok", "reason": "Решено независимо, ответ совпадает.", "fix": null}
