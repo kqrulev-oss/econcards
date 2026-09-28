@@ -13,11 +13,13 @@
 выражения», вступления к заданиям по графику) — дословно, как в КИМ. Формулы в условиях
 помечены ⟦ ⟧ (степени ^{…} показываются надстрочно, см. lib.js).
 """
+import hashlib
 import math
+import re
 
 import sympy.stats as sps
 
-from mathlib import (F, R, X, SUB, finite, ftxt, lin, nice, num, par, pcard, pick, plural, poly, proto, same, signed,
+from mathlib import (PROTO, F, R, X, SUB, finite, ftxt, lin, nice, num, par, pcard, pick, plural, poly, proto, same, signed,
                      sp, svg_plot, tnum, _svg, BLUE, RED, INK, GRID)
 
 # ================================================================ помощники
@@ -585,7 +587,8 @@ def gen_ep08_root_square(r):
     top = k ** n * m
     d = r.choice([v for v in range(2, 101) if top % v == 0 or F(top, v).denominator in (2, 4, 5)])
     ans = F(top, d)
-    if not nice(ans, 2) or d == top or ans < 1:
+    # (5√6)²/10, (3√8)²/6, (4√3)²/8 — дословно задания банка (формула короче 6 токенов, отпечатком не ловится)
+    if not nice(ans, 2) or d == top or ans < 1 or (n, k, m, d) in ((2, 5, 6, 10), (2, 3, 8, 6), (2, 4, 3, 8)):
         return None
     f = f'({k}{root(n, str(m))})^{{{n}}} / {d}'
     q = val_q(r, f)
@@ -4098,3 +4101,109 @@ def gen_ep10_econ(r):
     ex = f'p({a} − {"" if b == 1 else b}p) ≥ {Rv} ⇔ {p1} ≤ p ≤ {p2}; наибольшая цена {p2}.'
     pv = sp.Symbol('p', positive=True)
     return pcard(q, num(p2), ex), lambda: sp.solve_univariate_inequality(pv * (a - b * pv) >= Rv, pv, relational=False).sup == p2
+
+
+# ================================================================ дословные совпадения с банком ФИПИ
+#
+# Короткая формула с «удачными» числами может дословно совпасть с формулой задания открытого банка
+# (x² − 7x = 0, ∛(5x − 6) = 1, y = 7x − 5 …). Такие наборы чисел отбрасываем. Тексты банка в репозиторий
+# не кладём: здесь только отпечатки (sha1, 10 знаков) формул, записанных токенами так же, как в сверке
+# gen_math.py (числа и знаки + − = < >). Список получен перебором генераторов №6–9 и сверкой с выгрузкой банка.
+_TOKS = str.maketrans('⁰¹²³⁴⁵⁶⁷⁸⁹₀₁₂₃₄₅₆₇₈₉ⁿˣ', '01234567890123456789nx')
+BANK_FP = frozenset([
+    '015579d63e', '0189ea5f1f', '023b84d64d', '024972b8dd', '02c94ee1b6', '02e192ba26', '032bc7e1c8', '03d9caa5c0',
+    '03fb8ddd6c', '03fc782c4f', '04ba387edd', '04ee0aa339', '060ae3c79a', '0612a2ab11', '068f5e766e', '06b1aefdc6',
+    '06e48782ff', '073950796e', '0739c71d15', '075b0f6cdc', '0810bd8aa7', '08455174fa', '0851a928df', '086474f9aa',
+    '093e8e4faa', '09cc9e31ed', '0a2c27f1ff', '0a5651b48e', '0a6bddcb69', '0a71a35879', '0a8fcb0fc0', '0ac936a402',
+    '0b893493c1', '0b9a2cd455', '0bae6bb4be', '0d11a58a20', '0dd4ca90fb', '0e5a0881f0', '104e7193e2', '106d91a7df',
+    '114c0b51cc', '11d587fe8a', '11dcf902e6', '12121fa98c', '12dc5a5a8b', '12f3d289eb', '12f86f95e0', '1339afb2ab',
+    '13b7e4e5a7', '1466cdd284', '146c75882b', '15f684d5ee', '1649829760', '1661dbdf85', '168b31fd17', '174d7c7b18',
+    '1756f5c266', '17adc78dc5', '17bd149173', '17c5e1d79e', '17f1d50b2d', '19057fe639', '19a50b50bc', '19db9ceeaf',
+    '1a44b100d7', '1b047585e4', '1b07204ae2', '1b1a67588b', '1bca2986bc', '1c4b43bd98', '1cff65cefa', '1d0ecd8301',
+    '1d2924b4bb', '1e33f80c6d', '1ee712f1c8', '1f3e748ebd', '209293f073', '20f64becf6', '216aea2a5a', '21a36d5d16',
+    '21dff0af04', '234f4000d2', '2419e1b79a', '2427af26f8', '2441d6c93a', '24db0dc5f0', '2500dcd06d', '25697bb6ac',
+    '26e6f17c97', '274fb44290', '27a6e7f48e', '27c8d8d65a', '289c8cfd4f', '28b90f0d17', '28ff17c42c', '2959e5366d',
+    '297c918a82', '29b9ebe213', '29f3028210', '2a64278ca8', '2ad201aa0e', '2adf9b8f01', '2ae85e35a7', '2b2e383b1b',
+    '2bbf5d471e', '2c040b4462', '2c15d42957', '2c5f78d68f', '2cbb92ef18', '2cd4e9ea2c', '2d89a42cc6', '2dadd9a033',
+    '2e7d0feb72', '2e98b2bcec', '2fa9fb69a8', '2fe580e4ef', '2ffc15ca9c', '30844edaf5', '3092354009', '30b0ba6c50',
+    '318b3e341a', '31bf4b4ffb', '31cae4a6cd', '3301c4e390', '34456d5c08', '3480934caa', '34850ac3d4', '348fdd3e78',
+    '34a57d0286', '34fdc6456b', '3572920839', '362cf128ab', '3642b620f3', '36fa7d76cb', '3700bbdb17', '37b63e595c',
+    '3849798f8b', '386f724189', '38acbafeab', '38d4b86798', '39fd323108', '3a22f45eaf', '3a6968e307', '3a7c766e87',
+    '3b602c16a4', '3ba3a0e2d6', '3baa8df64f', '3d29ba81d4', '3e05258ce1', '3e9cc19dd1', '3f525288a0', '3f6a7c5fde',
+    '3f87434bde', '40a268eb33', '40f9507851', '4160bbb0b2', '419174acfc', '4279a4ac7c', '43bd3a55eb', '43cff3e9d4',
+    '44a70c4424', '44ed7cac67', '4518c7bd13', '460007cf34', '465ec6deb8', '46d0e177cc', '47bc1a47ab', '4876507d59',
+    '4879427662', '4991b9fed3', '49aa153a38', '49db5f55d7', '4a51de8ff1', '4a6458eb22', '4bfe934b5a', '4c219e36ed',
+    '4c39dce2a4', '4ceb2fe095', '4cf4329a1f', '4d0b5f3f84', '4d29183f3c', '4dbe870066', '4dedcfea75', '4f11c7f49d',
+    '4f2ae18fc0', '4f2d6bfd3a', '4f7c35b026', '5023db9215', '511139abf6', '5161f2d371', '51d14573d2', '51ef2c30f7',
+    '521c671afa', '52478443cc', '52df1e3320', '52f65622ce', '5304002d8b', '5403ec6d5b', '5417711268', '5480799ae2',
+    '549e2a8891', '54ee2afc15', '554f77c979', '55a1405845', '55f1b15571', '5616031440', '56aa296cb0', '575a09d60c',
+    '576541796f', '57ee16134e', '5834fc36cd', '5880705596', '596d897823', '5a42bbb46e', '5a5a41c7cb', '5ab949ab66',
+    '5b83c4c44e', '5bf555e4a2', '5c42585d7f', '5c443a9cc8', '5d46db5649', '5d7cf7a236', '5de0d7a116', '5e36b9d245',
+    '5f4551e335', '5fa53c54c7', '5fc9bc1a85', '6067d8a387', '613d9e1607', '61b999df6d', '6291f742ad', '6332fb022d',
+    '6353e2e252', '63a3bda68e', '645c2204f5', '64f753a5fc', '6526716227', '659bf0479e', '6642f9e398', '666df04289',
+    '66bfc24631', '670148c4fa', '678c9c9c07', '67b124e24e', '6855bb8d69', '68a1c67a6a', '68a29447ab', '68c2a8806d',
+    '691d9002c9', '69252f0ba5', '6953c59196', '6a410e4952', '6a4a41606d', '6a50f6ab42', '6c82f4c5ee', '6d3460c6c0',
+    '6d7b0b3fc2', '6e80b1632a', '6fb8581a6b', '6ff5225b25', '7044ad08f6', '70e60f54c7', '71ec4e54ed', '7244ee0e49',
+    '7262bcd22e', '733d2f373a', '7379911139', '73a6a7c873', '73ff86ec98', '7496996e87', '7575d50cd3', '761c296772',
+    '77a19a7768', '78129db903', '784e61080f', '78b5b260fd', '78eda45bf8', '794a1794e7', '7975397c82', '79f905c2e2',
+    '7ba38a59f0', '7c0849ac2e', '7c71b1f781', '7cb7e1a5c7', '7e66b8b809', '7ef3c49a47', '7f82a5bd9e', '811d4eac37',
+    '82091fc899', '827455b719', '82e0a24094', '82e377adfa', '83a2ef5c14', '844b769d1b', '84a7db3ffa', '84bdcd83cf',
+    '84c7b9e786', '854604d26b', '854943834c', '85aab03e46', '8634ae441f', '865a592f96', '86ae5bbe5a', '871748d014',
+    '8829bb5533', '88488dff5b', '8873156f53', '8888025bfe', '890b3b6dcd', '891c07a2c3', '898b90f4bd', '899b985aad',
+    '8b35ecae82', '8ba51c38c7', '8e627c3ef7', '8e67e46d74', '8f24646c8e', '9007ea2067', '92009fa0b6', '9289ed7601',
+    '9390fa3782', '950d3795a0', '953c1cd6ef', '95a106ad3a', '96d7f22226', '97073e5806', '973d89f620', '97cf9a244b',
+    '988601fd50', '99a504e97c', '99d2201e83', '9a4d46d791', '9a7864807f', '9b1fe2efa2', '9b8f098ca8', '9c06883a90',
+    '9d1a282619', '9dfdf63f4b', '9ee34e1d2c', '9f7b897a16', '9f8604714f', '9f904ddad5', '9fe199a878', 'a0407359eb',
+    'a0d4c4c6f8', 'a12c125568', 'a199985017', 'a29f3a63aa', 'a2b38b4fe0', 'a2ba0e0766', 'a2f6cbc149', 'a3d3913a62',
+    'a40084eb70', 'a47f845aa5', 'a54d6421ab', 'a5749b1307', 'a5ad5e4f54', 'a5d8fdc88c', 'a5e5dd5059', 'a60ba05ae0',
+    'a6513b7172', 'a680d7388e', 'a6f4a807d0', 'a73fb4f39f', 'a8321046ea', 'a8a05b815e', 'a9f05903d7', 'a9f89666f7',
+    'aa992e9234', 'ab7c665018', 'abaf20a832', 'ac10c2c8d8', 'ac1bea6ea9', 'ac1ea987df', 'ac49ec4e3f', 'ac9f993338',
+    'ad26ee501f', 'ad311f6864', 'adfa2300af', 'ae998eca53', 'af1a9f3200', 'af338adbb0', 'afe088e389', 'b13c82d69e',
+    'b191252eb8', 'b1d44557bb', 'b201cc728e', 'b2275ed5b3', 'b23201794f', 'b3109a9c83', 'b38e1b7288', 'b42fb25b0f',
+    'b4960baf08', 'b4e02b620c', 'b4f681ad37', 'b57967b984', 'b5baff8ffd', 'b646848c80', 'b6a8533300', 'b6b78999af',
+    'b721cc512b', 'b7e0721f58', 'b827fe2548', 'b86b9a505c', 'b8fa8ea7fc', 'b9beff99f5', 'ba46e455e9', 'bac3795694',
+    'bb26191282', 'bb56f22214', 'bbb05e53cf', 'bbfcb533c2', 'bc71865a22', 'bcc3744a94', 'be116d3ed8', 'be1d70a7f7',
+    'bec9be9d2d', 'becf1b5d99', 'bf0a508273', 'bf10dec398', 'bf15314f48', 'bf1b1d3317', 'bf3347dde1', 'bfa3f11c0b',
+    'bfab3edc99', 'bfc2b08a6f', 'bfdf8435c8', 'c0f70e8c65', 'c17b04cc8a', 'c18edac3c6', 'c1a7690e94', 'c1e1311501',
+    'c29a7f388d', 'c2b5f85487', 'c2ed746d7b', 'c36b76848d', 'c374ec36c3', 'c3b1cae3b2', 'c3d77994a6', 'c4844603b6',
+    'c51a2f3fda', 'c55b4a8180', 'c58ddce4c9', 'c5a5a8b1c8', 'c66b998220', 'c797daf57c', 'c7a7b2c760', 'c7a8e79df8',
+    'c811e5b115', 'c8309f7d79', 'c832a7e616', 'c838ee3d3e', 'c9629b511a', 'ca97c669f3', 'cad5053f63', 'cb5318ec82',
+    'cb6056d1df', 'cb7c85356f', 'cc262119cc', 'cc696e05ae', 'cc80572e5f', 'cd49de6b10', 'ce18d6eca3', 'cee11dbf81',
+    'cef6deeb5b', 'cf8aa7392b', 'cfbf89cdfd', 'd020d6f63b', 'd024331acd', 'd107cbe33a', 'd1854d6afc', 'd1d1957894',
+    'd202c9991c', 'd2830df8e2', 'd32f372d38', 'd36504ff78', 'd37e853268', 'd6126d9abc', 'd6ea411461', 'd8a8ed12d2',
+    'd925545b51', 'da1f14d770', 'da78a4d034', 'da86d99074', 'dc85c8cd5e', 'de1edcea26', 'de3edc4839', 'deb6a5511f',
+    'defd3f55fb', 'dfbfc90595', 'e0444556ac', 'e0df890a6b', 'e1139a3493', 'e1c491fbb3', 'e1d151ce4c', 'e21fb1dee0',
+    'e27d188fc8', 'e2c1a05108', 'e30147953c', 'e3154f7852', 'e3dc0ab46d', 'e3e41e6cab', 'e4453cbb03', 'e484c5f50f',
+    'e49a8b53b9', 'e49d29ea14', 'e4e62c14a1', 'e598bb10ba', 'e5b050020d', 'e615422e3b', 'e67cfa8b0e', 'e6807da5bf',
+    'e6c279f01a', 'e71b2fa7dc', 'e7be340919', 'e82dd6b876', 'e983dd4a23', 'ea1e89351c', 'ea3f53c310', 'ea76d25118',
+    'eaa49428e7', 'ed26b46b16', 'edb29042d8', 'edc63d6bce', 'eeab91884d', 'eefabb62c4', 'ef8570440c', 'efa26c7c73',
+    'f010b918c8', 'f03b3fc55a', 'f089d7595a', 'f09f735885', 'f108c027cf', 'f16bfd259b', 'f1e56d148a', 'f2084e4ff1',
+    'f30048d223', 'f32b7df576', 'f3aa68d30c', 'f3c5e4020e', 'f58a3155e6', 'f5d256b118', 'f61227fe92', 'f640a44a8b',
+    'f698c92ab3', 'f6d4efb561', 'f786e95a2f', 'f7b9c4b70e', 'f8e9213888', 'f93970b8bd', 'f9a8eb6bc2', 'f9c8af98f7',
+    'fa30942752', 'fac3f4648c', 'fb1726b2af', 'fb3dc43045', 'fbc81200cc', 'fbe9fd47c0', 'fbfa175a8f', 'fca8301e44',
+    'fd0a57d82f', 'fd4d6afd07', 'fda549929a', 'fdf66bc89a', 'fe1d44e631', 'fe52b6fa8f', 'fe8910852b', 'ff1f233eec',
+    'ff78ceae58', 'ffa14cda2f',
+])
+
+
+def _fp(formula):
+    t = formula.lower().replace('ё', 'е').translate(_TOKS)
+    t = re.sub(r'<[^>]+>', ' ', t).replace('−', '-').replace('–', '-').replace('≤', '<').replace('≥', '>')
+    w = re.findall(r'[а-яa-z]+|\d+(?:[.,]\d+)?|[-+=<>]', t)
+    return hashlib.sha1(' '.join(w).encode()).hexdigest()[:10]
+
+
+def _no_bank_copy(fn):
+    def g(r):
+        res = fn(r)
+        if res and any(_fp(f) in BANK_FP for f in re.findall(r'⟦(.+?)⟧', res[0]['q'])):
+            return None
+        return res
+    g.__name__ = fn.__name__
+    g.__wrapped_orig__ = fn
+    return g
+
+
+for _p in PROTO.values():
+    if _p['id'].startswith(('ep06', 'ep07', 'ep08', 'ep09')) and 'fn' in _p:
+        _p['fn'] = _no_bank_copy(_p['fn'])

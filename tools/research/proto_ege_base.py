@@ -1171,7 +1171,9 @@ def qparse(txt):
     raise ValueError(txt)
 
 
-MATCH_Q = ['Установите соответствие между величинами и их возможными значениями.']
+MATCH_Q = ['Установите соответствие между величинами и их возможными значениями: к каждому элементу первого столбца подберите '
+           'соответствующий элемент из второго столбца. В таблице под каждой буквой, соответствующей величине, укажите номер '
+           'её возможного значения.']
 LET = 'АБВГ'
 
 
@@ -3896,7 +3898,8 @@ def gen_eb07_periods(r):
     lefts = [nm for nm, _, _ in seasons]
     rights = [pool[k].replace('шт.', unit) for k in choice]
     q = (f'На рисунке жирными точками показано, сколько {item} продавалось {shop} в каждом месяце года; точки соединены отрезками. '
-         f'Пользуясь рисунком, поставьте в соответствие каждому из указанных периодов времени характеристику продаж в этот период.')
+         f'Пользуясь рисунком, поставьте в соответствие каждому из указанных периодов времени характеристику продаж {item.split(" (")[0]}. '
+         f'В таблице под каждой буквой укажите соответствующий номер характеристики.')
     c = match_card(r, lefts, rights, [0, 1, 2, 3], q, e='Проверьте каждую характеристику для каждого сезона.')
     c['svg'] = svg
     ans = match_answer(c)
@@ -3990,7 +3993,8 @@ def gen_eb07_process(r):
     lefts = [f'{a} – {b} мин' for a, b in ivs]
     rights = [pool[k] for k in choice]
     q = (f'График показывает, как менялась {spec["what"]}. По горизонтали отложено {spec["x"]}, по вертикали — {spec["y"]}. Пользуясь '
-         f'графиком, поставьте в соответствие каждому интервалу времени характеристику процесса на этом интервале.')
+         f'графиком, поставьте в соответствие каждому интервалу времени характеристику процесса на этом интервале. '
+         f'В таблице под каждой буквой укажите соответствующий номер характеристики.')
     c = match_card(r, lefts, rights, [0, 1, 2, 3], q, e='Для каждого интервала проверяем характеристики по узлам сетки.')
     c['svg'] = svg
     ans = match_answer(c)
@@ -4077,8 +4081,10 @@ def gen_eb07_tangents(r):
     svg = svg_plot(f, -7, 7, -7, 7, extra=extra, points=list(zip(xs, ys)))
     lefts = list(labels)
     rights = [slope_txt(k) for k in ks]
-    q = ('К графику функции y = f(x) проведены касательные; абсциссы точек касания отмечены на оси Ox буквами A, B, C, D. По рисунку '
-         'определите, какое из чисел правого столбца равно значению производной f′(x) в каждой из этих точек.')
+    q = ('К графику функции y = f(x) проведены касательные; абсциссы точек касания отмечены на оси Ox буквами A, B, C, D. '
+         'В правом столбце указаны значения производной функции в точках A, B, C и D. Пользуясь графиком, поставьте в '
+         'соответствие каждой точке значение производной функции в ней. В таблице для каждой точки укажите номер '
+         'соответствующего значения производной.')
     c = match_card(r, lefts, rights, [0, 1, 2, 3], q, e='Производная в точке — угловой коэффициент касательной: Δy / Δx по клеткам.')
     c['svg'] = svg
     ans = match_answer(c)
@@ -4195,7 +4201,8 @@ def gen_eb07_intervals(r):
     lefts = [f'({names[i]}; {names[i + 1]})' for i in range(4)]
     rights = [pool[k] for k in choice]
     q = ('На рисунке изображён график функции y = f(x); точки a, b, c, d, e на оси Ox разбивают её на интервалы. Пользуясь графиком, '
-         'поставьте в соответствие каждому интервалу характеристику функции или её производной.')
+         'поставьте в соответствие каждому интервалу характеристику функции или её производной. '
+         'В таблице под каждой буквой укажите соответствующий номер.')
     c = match_card(r, lefts, rights, [0, 1, 2, 3], q, e='Знак функции — выше или ниже оси Ox график; знак производной — растёт или убывает функция.')
     c['svg'] = svg
     ans = match_answer(c)
@@ -4250,8 +4257,9 @@ def gen_eb07_points(r):
                        f'<text x="{sx(x) - 4:.1f}" y="{sy(0) + (15 if f(x) > 0 else -7):.1f}" font-style="italic" font-size="13">{lb}</text>'
                        for x, lb in zip(xs, labels))
     svg = svg_plot(f, -7.5, 7.5, -7, 7, extra=extra)
-    q = ('На рисунке изображён график функции y = f(x), на оси абсцисс отмечены точки A, B, C и D. Установите соответствие '
-         'между точками и характеристиками функции и её производной.')
+    q = ('На рисунке изображён график функции y = f(x), на оси абсцисс отмечены точки A, B, C и D. Пользуясь графиком, '
+         'поставьте в соответствие каждой точке характеристики функции и её производной. В таблице для каждой точки '
+         'укажите соответствующий номер характеристики.')
     c = match_card(r, list(labels), [txt[k] for k in order], [0, 1, 2, 3], q, e='Выше оси — f > 0; функция растёт — f′ > 0.')
     c['svg'] = svg
     ans = match_answer(c)
@@ -4302,14 +4310,16 @@ def gen_eb07_linear(r):
             lines.append((k, b))
         txt = {(1, 1): 'k > 0, b > 0', (1, -1): 'k > 0, b < 0', (-1, 1): 'k < 0, b > 0', (-1, -1): 'k < 0, b < 0'}
         rights = [txt[s_] for s_ in signs]
-        q = 'На рисунке изображены графики функций вида y = kx + b. Установите соответствие между графиками и знаками коэффициентов k и b.'
+        q = ('На рисунке изображены графики функций вида y = kx + b. Установите соответствие между графиками функций и знаками '
+             'коэффициентов k и b. В таблице под каждой буквой укажите соответствующий номер.')
         e = 'Прямая возрастает — k > 0; пересекает ось Oy выше нуля — b > 0.'
         kind = 'sign'
     else:
         ks = r.sample([k for k in SLOPES if abs(k) <= 3], 4)
         lines = [(k, r.randint(-2, 2)) for k in ks]
         rights = [slope_txt(k) for k in ks]
-        q = 'На рисунке изображены графики функций вида y = kx + b. Установите соответствие между графиками и значениями производной в точке x = 1.'
+        q = ('На рисунке изображены графики функций вида y = kx + b. Установите соответствие между графиками функций и значениями '
+             'производной этих функций в точке x = 1. В таблице под каждой буквой укажите соответствующий номер значения производной.')
         e = 'Производная линейной функции равна k — отношению Δy / Δx по двум узлам сетки.'
         kind = 'deriv'
     svgs = []
@@ -4384,7 +4394,8 @@ def gen_eb07_formulas(r):
     lefts = [f'y = {poly([A, B, C]) if A else poly([B, C])}' for A, B, C in fs_]
     if len(set(lefts)) < 4:
         return None
-    c = match_card(r, lefts, rights, [0, 1, 2, 3], 'Установите соответствие между функциями и характеристиками этих функций.',
+    c = match_card(r, lefts, rights, [0, 1, 2, 3], 'Установите соответствие между функциями и характеристиками этих функций. '
+                   'В таблице под каждой буквой укажите соответствующий номер.',
                    e='Линейная функция возрастает при k > 0; у параболы с положительным старшим коэффициентом есть точка минимума.')
     ans = match_answer(c)
 
@@ -4443,7 +4454,8 @@ def gen_eb07_table(r):
     lefts = [m.lower() for m in months[1:]]
     rights = [pool[k] for k in choice]
     q = ('В таблице приведены доходы и расходы небольшой пекарни за пять месяцев. Пользуясь таблицей, поставьте в '
-         'соответствие каждому из месяцев (с марта по июнь) характеристику доходов и расходов в этом месяце.')
+         'соответствие каждому из указанных месяцев характеристику доходов и расходов в этом месяце. '
+         'В таблице под каждой буквой укажите соответствующий номер.')
     c = match_card(r, lefts, rights, [0, 1, 2, 3], q, e='Проверяем каждую характеристику по строкам таблицы.')
     c['svg'] = svg
     ans = match_answer(c)
@@ -7347,6 +7359,17 @@ def gen_eb14_nested(r):
 
 # ================================================================ 16. Преобразования: корни, степени, логарифмы, тригонометрия
 
+# Короткие формулы №16–17 из немногих чисел изредка совпадают с формулой открытого банка дословно. Такие наборы
+# параметров генератора перечислены в BANK_KEYS (числовые кортежи в том порядке, в каком их передаёт генератор);
+# генератор их отбрасывает. Таблица заполняется ниже, после генераторов.
+BANK_KEYS = {}
+
+
+def bank_copy(pid, *key):
+    """True, если параметры key прототипа pid дают формулу, дословно встречающуюся в банке."""
+    return key in BANK_KEYS.get(pid, ())
+
+
 def rt(n):
     return f'√{n}'
 
@@ -7440,7 +7463,7 @@ def gen_eb16_powers(r):
         m, n = r.randint(-12, 12), r.randint(-12, 12)
         k = m + n - r.choice([-2, -1, 0, 1, 2, 3])
         tot = m + n - k
-        if a ** abs(tot) > 2000:
+        if a ** abs(tot) > 2000 or bank_copy('eb16-powers', 0, a, m, n, k):
             return None
         d = f'{pw(a, m)} · {pw(a, n)} / {pw(a, k)}'
         s_ = f'{a}**({m})*{a}**({n})/{a}**({k})'
@@ -7448,13 +7471,15 @@ def gen_eb16_powers(r):
         a, b = r.sample([2, 3, 4, 5, 6, 7], 2)
         m = r.randint(3, 20)
         k = m - r.randint(1, 3)
+        if bank_copy('eb16-powers', 1, a, b, m, k):
+            return None
         d = f'{pw(a, m)} · {pw(b, m)} / {pw(a * b, k)}'
         s_ = f'{a}**{m}*{b}**{m}/({a * b})**{k}'
     else:
         bs = r.choice([-10, -2, -3, -5, -4])
         e1, e2, e3 = sorted(r.sample(range(0, 6 if bs != -10 else 5), 3), reverse=True)
         c1, c2 = r.choice(['+', '−']), r.choice(['+', '−'])
-        if bs == -10 and c1 == c2 == '+':
+        if bs == -10 and c1 == c2 == '+' or bank_copy('eb16-powers', 2, bs, e1, e2, e3, int(c1 == '+'), int(c2 == '+')):
             return None
         d = f'{pw(bs, e1)} {c1} {pw(bs, e2)} {c2} {pw(bs, e3)}'
         s_ = f'({bs})**{e1}{"+" if c1 == "+" else "-"}({bs})**{e2}{"+" if c2 == "+" else "-"}({bs})**{e3}'
@@ -7520,7 +7545,7 @@ def gen_eb16_logs(r):
         k = r.randint(1, 4)
         x = F(r.choice([2, 3, 4, 5, 6, 8, 9, 12, 16, 18, 24, 27, 32, 36, 48, 54, 64, 72, 81]), r.choice([1, 1, 2, 4, 5, 10]))
         y = F(a ** k) / x
-        if not finite(x) or not finite(y) or x == 1 or y == 1 or y <= 0:
+        if not finite(x) or not finite(y) or x == 1 or y == 1 or y <= 0 or bank_copy('eb16-logs', 0, a, k, x.numerator, x.denominator):
             return None
         d = f'{lg(a, tnum(x))} + {lg(a, tnum(y))}'
         ans = F(k)
@@ -7529,7 +7554,7 @@ def gen_eb16_logs(r):
         k = r.randint(1, 4)
         y, z = r.sample([3, 6, 7, 9, 11, 12, 13, 14, 15, 17, 19, 21, 23], 2)
         x = F(y * a ** k, z)
-        if y % a == 0 or x > 3000 or not finite(x) or x == 1:
+        if y % a == 0 or x > 3000 or not finite(x) or x == 1 or bank_copy('eb16-logs', 1, a, k, y, z):
             return None
         d = f'{lg(a, tnum(x))} − {lg(a, y)} + {lg(a, z)}'
         ans = F(k)
@@ -7538,7 +7563,7 @@ def gen_eb16_logs(r):
         b = r.choice([3, 5, 6, 7, 11, 13, 15])
         k = r.randint(2, 7)
         a2 = r.choice([2, 3, 5, 7])
-        if a2 == b:
+        if a2 == b or bank_copy('eb16-logs', 2, a2, b, k):
             return None
         d = f'{lg(a2, f"{b}{str(k).translate(SUP)}")} / {lg(a2, b)}'
         ans = F(k)
@@ -7547,7 +7572,7 @@ def gen_eb16_logs(r):
         inner_b = r.choice([2, 3, 5])
         n_ = r.choice([2, 4, 8, 16]) if inner_b != 5 else r.choice([2, 4])
         v = inner_b ** n_
-        if v > 100000:
+        if v > 100000 or bank_copy('eb16-logs', 3, inner_b, n_):
             return None
         outer = 2 if n_ in (2, 4, 8, 16) else None
         k = {2: 1, 4: 2, 8: 3, 16: 4}[n_]
@@ -7741,7 +7766,7 @@ def gen_eb17_linear(r):
         if b * d == e_ or d == 0:
             return None
         f = a + b * (c + d * x0) - e_ * x0
-        if f.denominator != 1:
+        if f.denominator != 1 or bank_copy('eb17-linear', 0, a, b, c, d, e_, int(f)):
             return None
         lhs_d = f'{tnum(a)} {"+" if b > 0 else "−"} {abs(b)}({lin(d, c)})' if a else f'{b}({lin(d, c)})'
         rhs_d = lin(e_, f) if e_ else tnum(f)
@@ -7752,7 +7777,7 @@ def gen_eb17_linear(r):
             return None
         m1 = r.randint(-15, 15)
         m2 = (k1 - k2) * x0 + m1
-        if m2.denominator != 1:
+        if m2.denominator != 1 or bank_copy('eb17-linear', 1, k1, m1, k2, int(m2)):
             return None
         return eq_card(r, lin(k1, m1), lin(k2, m2), f'{k1}*x+{m1}', f'{k2}*x+{m2}', x0)
 
@@ -7789,7 +7814,7 @@ def gen_eb17_quadratic(r):
     else:
         lhs, rhs = poly([1, p_, q_]), '0'
         ls, rs = f'x**2+{p_}*x+{q_}', '0'
-    if rhs == '0' and st != 3:
+    if rhs == '0' and st != 3 or bank_copy('eb17-quadratic', st, p_, q_):
         return None
     word = 'больший' if big else 'меньший'
     head, tail = r.choice([('Найдите корень уравнения', f'. Если уравнение имеет более одного корня, в ответе запишите {word} из корней.'),
@@ -7815,13 +7840,19 @@ def gen_eb17_incomplete(r):
         if not finite(k):
             return None
         roots = [0, k]
-        lhs, rhs, ls, rs = r.choice([(poly([a, 0, 0]), lin(bb, 0), f'{a}*x**2', f'{bb}*x'),
-                                     (poly([a, -bb, 0]), '0', f'{a}*x**2-({bb})*x', '0')])
+        j = r.randrange(2)
+        key = (j, a, bb)
+        lhs, rhs, ls, rs = [(poly([a, 0, 0]), lin(bb, 0), f'{a}*x**2', f'{bb}*x'),
+                            (poly([a, -bb, 0]), '0', f'{a}*x**2-({bb})*x', '0')][j]
     else:
         m = r.randint(2, 15)
         roots = [m, -m]
-        lhs, rhs, ls, rs = r.choice([(poly([a, 0, 0]), str(a * m * m), f'{a}*x**2', f'{a * m * m}'),
-                                     (poly([a, 0, -a * m * m]), '0', f'{a}*x**2-{a * m * m}', '0')])
+        j = r.randrange(2)
+        key = (2 + j, a, m)
+        lhs, rhs, ls, rs = [(poly([a, 0, 0]), str(a * m * m), f'{a}*x**2', f'{a * m * m}'),
+                            (poly([a, 0, -a * m * m]), '0', f'{a}*x**2-{a * m * m}', '0')][j]
+    if bank_copy('eb17-incomplete', *key):
+        return None
     if a == 1 and abs(roots[1]) < 13 or not nice(roots[1], 2):
         return None
     ans = F(max(roots) if big else min(roots))
@@ -7844,7 +7875,7 @@ def gen_eb17_sqrt(r):
     if abs(a) <= 3 and c <= 4 and abs(b) < 15:
         return None
     x0 = F(c * c - b, a)
-    if not nice(x0, 2):
+    if not nice(x0, 2) or bank_copy('eb17-sqrt', a, b, c):
         return None
     return eq_card(r, f'√({lin(a, b)})', str(c), f'sqrt({a}*x+{b})', f'{c}', x0)
 
@@ -7868,7 +7899,8 @@ def gen_eb17_exp(r):
     if st == 0:
         m = r.randint(-9, 9)
         e_val = k * x0 + m
-        if e_val.denominator != 1 or abs(e_val) > (4 if a < 6 else 3) or e_val in (0, 1) or abs(m) < 2:
+        if e_val.denominator != 1 or abs(e_val) > (4 if a < 6 else 3) or e_val in (0, 1) or abs(m) < 2 \
+                or bank_copy('eb17-exp', 0, a, k, m, int(e_val)):
             return None
         rhs = F(a) ** int(e_val)
         rd = tnum(rhs) if rhs.denominator == 1 else f'1/{rhs.denominator}'
@@ -7876,7 +7908,7 @@ def gen_eb17_exp(r):
     if st == 1:
         m = r.randint(-9, 9)
         e_val = k * x0 + m
-        if e_val.denominator != 1 or abs(e_val) > 3 or e_val in (0, 1) or abs(m) < 2:
+        if e_val.denominator != 1 or abs(e_val) > 3 or e_val in (0, 1) or abs(m) < 2 or bank_copy('eb17-exp', 1, a, k, m, int(e_val)):
             return None
         rhs = F(1, a) ** int(e_val)
         rd = tnum(rhs) if rhs.denominator == 1 else f'1/{rhs.denominator}'
@@ -7885,7 +7917,7 @@ def gen_eb17_exp(r):
         k2 = r.choice([-3, -2, -1, 1, 2, 3])
         m1, m2 = r.randint(-9, 9), r.randint(-9, 9)
         tot = (k + k2) * x0 + m1 + m2
-        if tot.denominator != 1 or abs(tot) > 3 or k + k2 == 0:
+        if tot.denominator != 1 or abs(tot) > 3 or k + k2 == 0 or bank_copy('eb17-exp', 2, a, k, m1, k2, m2, int(tot)):
             return None
         rhs = F(a) ** int(tot)
         rd = tnum(rhs) if rhs.denominator == 1 else f'1/{rhs.denominator}'
@@ -7899,7 +7931,7 @@ def gen_eb17_exp(r):
     k2 = r.choice([-2, -1, 1, 2])
     m2 = r.randint(-6, 6)
     m = t * (k2 * x0 + m2) - k * x0
-    if m.denominator != 1 or k == t * k2:
+    if m.denominator != 1 or k == t * k2 or bank_copy('eb17-exp', 3, a, k, int(m), t, k2, m2):
         return None
     return eq_card(r, bexp(a, lin(k, m)), bexp(base2, lin(k2, m2)), f'{a}**({k}*x+{m})', f'{base2}**({k2}*x+{m2})', x0)
 
@@ -7923,7 +7955,7 @@ def gen_eb17_log(r):
     if st == 0:
         d = r.randint(0, 3 if a < 7 else 2)
         c = F(a) ** d - b * x0
-        if c.denominator != 1:
+        if c.denominator != 1 or bank_copy('eb17-log', 0, a, b, int(c), d):
             return None
         return eq_card(r, f'{lgd(a)}({lin(b, int(c))})', str(d), f'log({b}*x+{int(c)},{a})', f'{d}', x0)
     arg = r.randint(1, 60)
@@ -7931,9 +7963,13 @@ def gen_eb17_log(r):
     if c.denominator != 1 or arg <= 0:
         return None
     if st == 1:
+        if bank_copy('eb17-log', 1, a, b, int(c), arg):
+            return None
         return eq_card(r, f'{lgd(a)}({lin(b, int(c))})', f'{lgd(a)} {arg}', f'log({b}*x+{int(c)},{a})', f'log({arg},{a})', x0)
     m = r.choice([2, 3, 4, 5, 7])
     n_ = arg * m
+    if bank_copy('eb17-log', 2, a, b, int(c), m, n_):
+        return None
     return eq_card(r, f'{lgd(a)}({lin(b, int(c))}) + {lgd(a)} {m}', f'{lgd(a)} {n_}', f'log({b}*x+{int(c)},{a})+log({m},{a})',
                    f'log({n_},{a})', x0)
 
@@ -7947,7 +7983,7 @@ def gen_eb17_log(r):
    '«Найдите корень уравнения (x − 3)² = (x + 7)²».', kes=['2.1'])
 def gen_eb17_squares(r):
     a, b = r.sample(range(-15, 16), 2)
-    if max(abs(a), abs(b)) < 9 or a + b == 0:
+    if max(abs(a), abs(b)) < 9 or a + b == 0 or bank_copy('eb17-squares', a, b):
         return None
     x0 = F(a + b, 2)
     L = f'({lin(1, -a)})²'
@@ -7970,7 +8006,7 @@ def gen_eb17_rational(r):
         return None
     c = r.choice([F(1, 2), 3, 4, 5, 6, -2, -3, -4, F(3, 2), F(5, 2), F(-1, 2)])
     a = c * den
-    if a.denominator != 1 or a == 0:
+    if a.denominator != 1 or a == 0 or bank_copy('eb17-rational', int(a), b, c.numerator, c.denominator):
         return None
     return eq_card(r, f'{tnum(a)}/({lin(1, b)})', tnum(c), f'{a}/(x+{b})', f'{c.numerator}/{c.denominator}', x0)
 
