@@ -4711,6 +4711,10 @@ _INSTR = {'H2': 'водородом', 'Cl2': 'хлором', 'Br2': 'бромо�
           'KHCO3': 'гидрокарбонатом калия', 'Zn': 'цинком', 'Mg': 'магнием'}
 
 
+def _light(c):
+    return any(x in c for x in ('hν', 'hv', 'свет'))
+
+
 def _kind17(r):
     t, l, c = r['type'], r['lhs'], r.get('cond', '') or ''
     s = l[0]
@@ -4844,14 +4848,17 @@ def cls17(r):
         out['эндо'] = False
     elif 'эндо' in yes:
         out['экзо'] = False
-    solid = any(x in _SOLID17 for x in lhs) or any(m in c for m in _SOLID_CAT)
-    if solid:
+    # фазы — по реагентам (как в банке); реакции на твёрдом катализаторе в вопросы о фазах не берём
+    solid = any(x in _SOLID17 for x in lhs)
+    if any(m in c for m in _SOLID_CAT):
+        pass
+    elif solid:
         out['гетеро'], out['гомо'] = True, False
-    elif all(x in _GAS17 for x in lhs) and ('hν' in c or 'свет' in c or k == 'COMB'):
+    elif all(x in _GAS17 for x in lhs) and (_light(c) or k == 'COMB') and not any(m in c for m in _SOLID_CAT):
         out['гетеро'], out['гомо'] = False, True
     elif k == 'ESTER':
         out['гетеро'], out['гомо'] = False, True
-    if k == 'HALSUB' and not ('hν' in c or 'свет' in c):
+    if k == 'HALSUB' and not _light(c):
         out.pop('экзо', None)  # ароматическое замещение: тепловой эффект в курсе не обсуждается
         out.pop('эндо', None)
     return out
@@ -4869,7 +4876,7 @@ def desc17(r, rng, style):
     s, l, c = r['lhs'][0], r['lhs'], r.get('cond', '') or ''
     g = gen(nm(s, rng))
     two = l[1] if len(l) > 1 else None
-    light = ' на свету' if ('hν' in c or 'свет' in c) else ''
+    light = ' на свету' if _light(c) else ''
     if k == 'HALSUB' and not light:
         cat = 'бромида железа(III)' if 'FeBr3' in c else 'хлорида железа(III)' if 'FeCl3' in c else \
             'хлорида алюминия' if 'AlCl3' in c else None
@@ -5065,13 +5072,13 @@ SIGN24 = {'dec': 'обесцвечивание раствора', 'decw': 'об�
           'red': 'образование кирпично-красного осадка',
           'blue': 'растворение осадка и образование ярко-синего раствора', 'viol': 'появление фиолетовой окраски',
           'gas': 'выделение газа', 'none': 'видимые признаки реакции отсутствуют', 'iod': 'появление синей окраски',
-          'bluea': 'растворение осадка'}
+          'bluea': 'растворение осадка', 'decg': 'обесцвечивание раствора и выделение газа'}
 # реактивы (коды → подписи, как в банке)
 REAG24 = {'Br2': ['Br₂ (водн.)', 'бромная вода'], 'KMnO4': ['KMnO₄ (H⁺)'],
           'Ag': ['[Ag(NH₃)₂]OH', 'Ag₂O (NH₃ р-р)'], 'Cu': ['Cu(OH)₂'], 'Cut': ['Cu(OH)₂ (t°)'],
           'Fe': ['FeCl₃', 'FeCl₃ (р-р)'], 'HCO3': ['NaHCO₃', 'KHCO₃'], 'Na': ['Na', 'K'], 'NaOH': ['NaOH', 'KOH'],
-          'I2': ['I₂ (р-р)'], 'Na2SO4': ['Na₂SO₄'], 'KBr': ['KBr'], 'KF': ['KF'], 'BaNO3': ['Ba(NO₃)₂']}
-_INERT24 = ('Na2SO4', 'KBr', 'KF', 'BaNO3')  # соли, не дающие признаков ни с одним веществом перечня
+          'I2': ['I₂ (р-р)'], 'HCl': ['HCl (р-р)'], 'Cu0': ['Cu'], 'AcK': ['CH₃COOK'], 'KCl': ['KCl']}
+_INERT24 = ('HCl', 'Cu0', 'AcK', 'KCl')  # реактивы, не дающие видимых признаков с веществами перечня
 _N = None  # «неизвестно / спорно» — такое сочетание в задание не попадает
 # признаки по гомологическому ряду: Br2, KMnO4, Ag, Cu, Cut, Fe, HCO3, Na, NaOH, I2
 _R24 = ('Br2', 'KMnO4', 'Ag', 'Cu', 'Cut', 'Fe', 'HCO3', 'Na', 'NaOH', 'I2')
@@ -5123,18 +5130,28 @@ _GAS24 = {'C2H4', 'CH2CHCH3', 'CH2CHCH2CH3', 'CH3CHCHCH3', 'C2H2', 'CHCCH3', 'CH
 def sign24(f, rk):
     """Признак реакции вещества f с реактивом rk (код из SIGN24) или None (спорно / не используется)."""
     if rk in _INERT24:
-        return 'none'
+        return None if (rk == 'HCl' and f == 'C6H5NH2') else 'none'
     row = _SUB24[f][0] if f in _SUB24 else _HOM24.get(SUB[f]['hom'])
     if row is None:
         return None
     v = row[_R24.index(rk)]
     if v and f in _GAS24 and rk == 'Na':
         return None
+    if v and v != 'none' and rk in _RX24:
+        rs = [r for r in RX if r['lhs'][0] == f and any(x in r['lhs'][1:] for x in _RX24[rk])
+              and (rk != 'KMnO4' or 'H2SO4' in r['lhs'])]
+        if rk == 'KMnO4' and not rs:
+            return None  # подкисленный KMnO₄: без реакции в базе не знаем, выделяется ли CO₂
+        if any('CO2' in r['rhs'] for r in rs):  # признак «газ» вместе с основным
+            return 'decg' if v == 'dec' else None
     return v
 
 
+_RX24 = {'KMnO4': ('KMnO4',), 'Br2': ('Br2',), 'Ag': ('Ag2O', 'Ag(NH3)2OH'), 'Cut': ('Cu(OH)2',)}
+
+
 def _coarse24(v):
-    return 'blue' if v == 'bluea' else v
+    return {'bluea': 'blue', 'decg': 'dec'}.get(v, v)
 
 
 def label24(f, rng):
@@ -5283,8 +5300,11 @@ def g24_sign(rng):
     others = [s_ for s_ in SIGN24 if s_ not in need and s_ != 'bluea']
     rng.shuffle(others)
     right = need + others[:5 - len(need)]
-    if len(right) != 5 or ('dec' in right and 'decw' in right):
-        raise Retry  # «обесцвечивание» и «обесцвечивание и осадок» в одном столбце — двусмысленно
+    if len(right) != 5:
+        raise Retry
+    # составной признак не должен «покрываться» простым из того же столбца
+    if ('decw' in need and 'dec' in right) or ('decg' in need and ('dec' in right or 'gas' in right)):
+        raise Retry
     rng.shuffle(right)
     lt = [f'{label24(f, rng)} и {rng.choice(REAG24[rk])}' for f, rk in rows]
     rt = [SIGN24[s_] for s_ in right]
