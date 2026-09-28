@@ -288,7 +288,7 @@ def rus_pack():
         added += 1
     print(f'  ЕГЭ: из EconCards добавлено {added} карточек, которых не было в Сотке')
 
-    topics = [{'id': f'task-{e["n"]}', 'title': f'{e["n"]}. {e["title"]}', 'section': 'Задания ЕГЭ',
+    topics = [{'id': f'task-{e["n"]}', 'title': f'{e["n"]}. {e["title"]}', 'section': 'Часть 2' if e['n'] >= 27 else 'Часть 1',
                'n': e['n'], 'pts': e['pts']} for e in exam]
     # Прототипы внутри заданий (tools/classify_prototypes.py): подтипы и привязка карточек
     proto_file = SRC / 'ege-rus-prototypes.json'
