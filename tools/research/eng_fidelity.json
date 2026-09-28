@@ -1,0 +1,636 @@
+{
+ "eng-ege-19-be": {
+  "status": "pass",
+  "checked": 3,
+  "passed": 3,
+  "note": "проходит; замечание: в КИМ 19–24 — связный текст, а не одиночные предложения (см. отчёт)",
+  "history": {
+   "1": "3/3"
+  }
+ },
+ "eng-oge-20-be": {
+  "status": "pass",
+  "checked": 3,
+  "passed": 3,
+  "note": "",
+  "history": {
+   "1": "3/3"
+  }
+ },
+ "eng-oge-20-there-be": {
+  "status": "pass",
+  "checked": 3,
+  "passed": 3,
+  "note": "",
+  "history": {
+   "1": "3/3"
+  }
+ },
+ "eng-ege-19-past-simple": {
+  "status": "pass",
+  "checked": 3,
+  "passed": 3,
+  "note": "",
+  "history": {
+   "1": "3/3"
+  }
+ },
+ "eng-oge-21-past-simple": {
+  "status": "pass",
+  "checked": 3,
+  "passed": 3,
+  "note": "",
+  "history": {
+   "1": "3/3"
+  }
+ },
+ "eng-ege-19-past-neg": {
+  "status": "pass",
+  "checked": 3,
+  "passed": 3,
+  "note": "раунд 1: маркер внутри предложения терял заглавную (on monday); исправлено",
+  "history": {
+   "1": "2/3",
+   "2": "3/3"
+  }
+ },
+ "eng-oge-21-past-neg": {
+  "status": "pass",
+  "checked": 3,
+  "passed": 3,
+  "note": "",
+  "history": {
+   "1": "3/3"
+  }
+ },
+ "eng-ege-20-present-simple": {
+  "status": "pass",
+  "checked": 3,
+  "passed": 3,
+  "note": "раунд 1: одноразовые действия при маркере регулярности (they paint the fence green every Sunday); заведён пул привычных действий",
+  "history": {
+   "1": "1/3",
+   "2": "3/3"
+  }
+ },
+ "eng-oge-22-present-simple": {
+  "status": "pass",
+  "checked": 3,
+  "passed": 3,
+  "note": "раунд 1: одноразовые действия при маркере регулярности (they paint the fence green every Sunday); заведён пул привычных действий",
+  "history": {
+   "1": "1/3",
+   "2": "3/3"
+  }
+ },
+ "eng-ege-20-present-cont": {
+  "status": "pass",
+  "checked": 3,
+  "passed": 3,
+  "note": "раунд 1: Listen! We are visiting the museum — глагол не процесс; раунд 2: заглавная после двоеточия; пул процессов и правило заглавной",
+  "history": {
+   "1": "2/3",
+   "2": "2/3",
+   "3": "3/3"
+  }
+ },
+ "eng-oge-22-present-cont": {
+  "status": "pass",
+  "checked": 3,
+  "passed": 3,
+  "note": "раунд 1: Listen! We are visiting the museum — глагол не процесс; раунд 2: заглавная после двоеточия; пул процессов и правило заглавной",
+  "history": {
+   "1": "2/3",
+   "2": "2/3",
+   "3": "3/3"
+  }
+ },
+ "eng-ege-20-past-cont": {
+  "status": "pass",
+  "checked": 3,
+  "passed": 3,
+  "note": "",
+  "history": {
+   "1": "3/3"
+  }
+ },
+ "eng-oge-23-past-cont": {
+  "status": "pass",
+  "checked": 3,
+  "passed": 3,
+  "note": "раунд 1: painting the fence green in the kitchen — рамка задавала место; место убрано из рамки",
+  "history": {
+   "1": "2/3",
+   "2": "3/3"
+  }
+ },
+ "eng-ege-21-present-perfect": {
+  "status": "pass",
+  "checked": 3,
+  "passed": 3,
+  "note": "раунды 1–2: already после длинного дополнения, странные дела (washed the dishes without complaining already); пул дел с результатом, к since/for добавлен вариант Perfect Continuous",
+  "history": {
+   "1": "2/3",
+   "2": "2/3",
+   "3": "3/3"
+  }
+ },
+ "eng-oge-23-present-perfect": {
+  "status": "pass",
+  "checked": 3,
+  "passed": 3,
+  "note": "раунды 1–2: already после длинного дополнения, странные дела (washed the dishes without complaining already); пул дел с результатом, к since/for добавлен вариант Perfect Continuous",
+  "history": {
+   "1": "2/3",
+   "2": "2/3",
+   "3": "3/3"
+  }
+ },
+ "eng-ege-21-past-perfect": {
+  "status": "pass",
+  "checked": 3,
+  "passed": 3,
+  "note": "раунд 1: ever перед пропуском давал неверный порядок (he ever had tasted) и бессмысленные пары; рамка убрана, глаголы — дела с результатом",
+  "history": {
+   "1": "1/3",
+   "2": "2/3",
+   "3": "3/3"
+  }
+ },
+ "eng-ege-21-perfect-cont": {
+  "status": "pass",
+  "checked": 3,
+  "passed": 3,
+  "note": "",
+  "history": {
+   "1": "3/3"
+  }
+ },
+ "eng-ege-22-future": {
+  "status": "pass",
+  "checked": 3,
+  "passed": 3,
+  "note": "раунд 1: маркер внутри предложения терял заглавную (on monday); исправлено",
+  "history": {
+   "1": "2/3",
+   "2": "3/3"
+  }
+ },
+ "eng-oge-24-future": {
+  "status": "pass",
+  "checked": 3,
+  "passed": 3,
+  "note": "",
+  "history": {
+   "1": "3/3"
+  }
+ },
+ "eng-ege-22-passive-past": {
+  "status": "pass",
+  "checked": 3,
+  "passed": 3,
+  "note": "",
+  "history": {
+   "1": "3/3"
+  }
+ },
+ "eng-oge-25-passive-past": {
+  "status": "pass",
+  "checked": 3,
+  "passed": 3,
+  "note": "",
+  "history": {
+   "1": "3/3"
+  }
+ },
+ "eng-ege-22-passive-present": {
+  "status": "pass",
+  "checked": 3,
+  "passed": 3,
+  "note": "",
+  "history": {
+   "1": "3/3"
+  }
+ },
+ "eng-oge-25-passive-present": {
+  "status": "pass",
+  "checked": 3,
+  "passed": 3,
+  "note": "",
+  "history": {
+   "1": "3/3"
+  }
+ },
+ "eng-ege-22-passive-perfect-modal": {
+  "status": "pass",
+  "checked": 3,
+  "passed": 3,
+  "note": "",
+  "history": {
+   "1": "3/3"
+  }
+ },
+ "eng-ege-23-conditional-1": {
+  "status": "pass",
+  "checked": 3,
+  "passed": 3,
+  "note": "",
+  "history": {
+   "1": "3/3"
+  }
+ },
+ "eng-oge-26-conditional-1": {
+  "status": "pass",
+  "checked": 3,
+  "passed": 3,
+  "note": "",
+  "history": {
+   "1": "3/3"
+  }
+ },
+ "eng-ege-23-conditional-2": {
+  "status": "pass",
+  "checked": 3,
+  "passed": 3,
+  "note": "",
+  "history": {
+   "1": "3/3"
+  }
+ },
+ "eng-oge-26-conditional-2": {
+  "status": "pass",
+  "checked": 3,
+  "passed": 3,
+  "note": "",
+  "history": {
+   "1": "3/3"
+  }
+ },
+ "eng-ege-23-reported": {
+  "status": "pass",
+  "checked": 3,
+  "passed": 3,
+  "note": "",
+  "history": {
+   "1": "3/3"
+  }
+ },
+ "eng-oge-27-reported": {
+  "status": "pass",
+  "checked": 3,
+  "passed": 3,
+  "note": "",
+  "history": {
+   "1": "3/3"
+  }
+ },
+ "eng-ege-23-gerund-infinitive": {
+  "status": "pass",
+  "checked": 3,
+  "passed": 3,
+  "note": "",
+  "history": {
+   "1": "3/3"
+  }
+ },
+ "eng-oge-27-gerund-infinitive": {
+  "status": "pass",
+  "checked": 3,
+  "passed": 3,
+  "note": "",
+  "history": {
+   "1": "3/3"
+  }
+ },
+ "eng-ege-23-modal": {
+  "status": "pass",
+  "checked": 3,
+  "passed": 3,
+  "note": "",
+  "history": {
+   "1": "3/3"
+  }
+ },
+ "eng-oge-28-modal": {
+  "status": "pass",
+  "checked": 3,
+  "passed": 3,
+  "note": "",
+  "history": {
+   "1": "3/3"
+  }
+ },
+ "eng-ege-24-plural": {
+  "status": "pass",
+  "checked": 3,
+  "passed": 3,
+  "note": "",
+  "history": {
+   "1": "3/3"
+  }
+ },
+ "eng-oge-28-plural": {
+  "status": "pass",
+  "checked": 3,
+  "passed": 3,
+  "note": "",
+  "history": {
+   "1": "3/3"
+  }
+ },
+ "eng-ege-24-comparison": {
+  "status": "pass",
+  "checked": 3,
+  "passed": 3,
+  "note": "раунд 1: прилагательное не по смыслу рамки (the wettest exam); у каждой рамки — свой список прилагательных",
+  "history": {
+   "1": "1/3",
+   "2": "3/3"
+  }
+ },
+ "eng-oge-28-comparison": {
+  "status": "pass",
+  "checked": 3,
+  "passed": 3,
+  "note": "раунд 1: прилагательное не по смыслу рамки (the wettest exam); у каждой рамки — свой список прилагательных",
+  "history": {
+   "1": "1/3",
+   "2": "3/3"
+  }
+ },
+ "eng-ege-24-ordinal": {
+  "status": "pass",
+  "checked": 3,
+  "passed": 3,
+  "note": "раунд 1: the thirty-third time I have read this book; у рамок — пределы числа",
+  "history": {
+   "1": "2/3",
+   "2": "3/3"
+  }
+ },
+ "eng-oge-28-ordinal": {
+  "status": "pass",
+  "checked": 3,
+  "passed": 3,
+  "note": "",
+  "history": {
+   "1": "3/3"
+  }
+ },
+ "eng-ege-24-pronoun": {
+  "status": "pass",
+  "checked": 3,
+  "passed": 3,
+  "note": "",
+  "history": {
+   "1": "3/3"
+  }
+ },
+ "eng-oge-28-pronoun": {
+  "status": "pass",
+  "checked": 3,
+  "passed": 3,
+  "note": "",
+  "history": {
+   "1": "3/3"
+  }
+ },
+ "eng-ege-25-wf-noun": {
+  "status": "pass",
+  "checked": 3,
+  "passed": 3,
+  "note": "",
+  "history": {
+   "1": "3/3"
+  }
+ },
+ "eng-ege-25-wf-agent": {
+  "status": "pass",
+  "checked": 3,
+  "passed": 3,
+  "note": "",
+  "history": {
+   "1": "3/3"
+  }
+ },
+ "eng-ege-26-wf-adj": {
+  "status": "pass",
+  "checked": 3,
+  "passed": 3,
+  "note": "",
+  "history": {
+   "1": "3/3"
+  }
+ },
+ "eng-ege-26-wf-nationality": {
+  "status": "pass",
+  "checked": 3,
+  "passed": 3,
+  "note": "",
+  "history": {
+   "1": "3/3"
+  }
+ },
+ "eng-ege-27-wf-participle": {
+  "status": "pass",
+  "checked": 3,
+  "passed": 3,
+  "note": "",
+  "history": {
+   "1": "3/3"
+  }
+ },
+ "eng-ege-27-wf-negative": {
+  "status": "pass",
+  "checked": 3,
+  "passed": 3,
+  "note": "раунд 1: seemed ____ at first — friendly подходит; 14 предложений гнезда дополнены контекстом",
+  "history": {
+   "1": "2/3",
+   "2": "3/3"
+  }
+ },
+ "eng-ege-28-wf-adverb": {
+  "status": "pass",
+  "checked": 3,
+  "passed": 3,
+  "note": "",
+  "history": {
+   "1": "3/3"
+  }
+ },
+ "eng-ege-28-wf-verb-prefix": {
+  "status": "pass",
+  "checked": 3,
+  "passed": 3,
+  "note": "раунд 1: I ____ getting up early — like и dislike оба верны; контекст дополнен",
+  "history": {
+   "1": "2/3",
+   "2": "3/3"
+  }
+ },
+ "eng-ege-29-wf-verb-suffix": {
+  "status": "pass",
+  "checked": 3,
+  "passed": 3,
+  "note": "",
+  "history": {
+   "1": "3/3"
+  }
+ },
+ "eng-ege-29-wf-numeral": {
+  "status": "pass",
+  "checked": 3,
+  "passed": 3,
+  "note": "",
+  "history": {
+   "1": "3/3"
+  }
+ },
+ "eng-ege-27-wf-inter-pre-post": {
+  "status": "pass",
+  "checked": 3,
+  "passed": 3,
+  "note": "",
+  "history": {
+   "1": "3/3"
+  }
+ },
+ "eng-oge-29-wf-noun": {
+  "status": "pass",
+  "checked": 3,
+  "passed": 3,
+  "note": "",
+  "history": {
+   "1": "3/3"
+  }
+ },
+ "eng-oge-29-wf-agent": {
+  "status": "pass",
+  "checked": 3,
+  "passed": 3,
+  "note": "",
+  "history": {
+   "1": "3/3"
+  }
+ },
+ "eng-oge-30-wf-adj": {
+  "status": "pass",
+  "checked": 3,
+  "passed": 3,
+  "note": "",
+  "history": {
+   "1": "3/3"
+  }
+ },
+ "eng-oge-31-wf-participle": {
+  "status": "pass",
+  "checked": 3,
+  "passed": 3,
+  "note": "",
+  "history": {
+   "1": "3/3"
+  }
+ },
+ "eng-oge-31-wf-negative": {
+  "status": "pass",
+  "checked": 3,
+  "passed": 3,
+  "note": "",
+  "history": {
+   "1": "3/3"
+  }
+ },
+ "eng-oge-32-wf-adverb": {
+  "status": "pass",
+  "checked": 3,
+  "passed": 3,
+  "note": "",
+  "history": {
+   "1": "3/3"
+  }
+ },
+ "eng-oge-33-wf-verb-prefix": {
+  "status": "pass",
+  "checked": 3,
+  "passed": 3,
+  "note": "раунд 1: исходное слово тоже подходило (My parents agree…, People often eat…); контекст переписан так, чтобы подходила только производная",
+  "history": {
+   "1": "1/3",
+   "2": "3/3"
+  }
+ },
+ "eng-oge-34-wf-numeral": {
+  "status": "pass",
+  "checked": 3,
+  "passed": 3,
+  "note": "",
+  "history": {
+   "1": "3/3"
+  }
+ },
+ "eng-ege-30-make-do": {
+  "status": "pass",
+  "checked": 3,
+  "passed": 3,
+  "note": "",
+  "history": {
+   "1": "3/3"
+  }
+ },
+ "eng-ege-31-say-tell-speak-talk": {
+  "status": "pass",
+  "checked": 3,
+  "passed": 3,
+  "note": "",
+  "history": {
+   "1": "3/3"
+  }
+ },
+ "eng-ege-32-preposition": {
+  "status": "pass",
+  "checked": 3,
+  "passed": 3,
+  "note": "раунд 1: одно предложение дважды с перестановкой вариантов; уникальность теперь по предложению",
+  "history": {
+   "1": "2/3",
+   "2": "3/3"
+  }
+ },
+ "eng-ege-33-ed-ing": {
+  "status": "pass",
+  "checked": 3,
+  "passed": 3,
+  "note": "",
+  "history": {
+   "1": "3/3"
+  }
+ },
+ "eng-ege-34-phrasal": {
+  "status": "pass",
+  "checked": 3,
+  "passed": 3,
+  "note": "",
+  "history": {
+   "1": "3/3"
+  }
+ },
+ "eng-ege-35-linkers": {
+  "status": "pass",
+  "checked": 3,
+  "passed": 3,
+  "note": "",
+  "history": {
+   "1": "3/3"
+  }
+ },
+ "eng-ege-36-confusables": {
+  "status": "pass",
+  "checked": 3,
+  "passed": 3,
+  "note": "",
+  "history": {
+   "1": "3/3"
+  }
+ }
+}
