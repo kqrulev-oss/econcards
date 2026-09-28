@@ -689,7 +689,7 @@ def parse_options(block, cleaner):
         if row.tag == 'tr':  # текст варианта — в соседних ячейках строки, кроме номера «1)»
             for cell in row.kids:
                 if isinstance(cell, Node) and not cell.find(lambda x: x is inp) \
-                        and not re.fullmatch(r'[\s\xa0]*\d+\)?[\s\xa0]*', cell.text()):
+                        and not re.fullmatch(r'[\s\xa0]*\d+\)[\s\xa0]*', cell.text()):  # «3000» — вариант, а не номер
                     holder.kids += cell.kids if cell.tag in ('td', 'th') else [cell]
         else:
             holder.kids = [k for k in row.kids if k is not inp]
