@@ -10,6 +10,7 @@
 import functools
 import itertools
 import math
+import re
 from fractions import Fraction as F
 
 import sympy as sp
@@ -41,7 +42,37 @@ def P(pid, title, invariant, varies, answer_rule, fipi, mistakes, style, kes=Non
     kim = {'level': 'Б', 'points': 1, 'minutes': mins, 'kes': kes or kes0, 'kt': kt,
            'answer': answer or ANSWER.get(n, 'число'), 'style': style}
     kw.setdefault('lim', 10 ** 6)  # деньги, площади в см², население
-    return proto(pid, EB, n, title, invariant, varies, answer_rule, fipi=fipi, mistakes=mistakes, kim=kim, **kw)
+    deco = proto(pid, EB, n, title, invariant, varies, answer_rule, fipi=fipi, mistakes=mistakes, kim=kim, **kw)
+
+    def wrap(fn):
+        def gen(r):
+            res = fn(r)
+            if res is not None and too_generic(res[0]):
+                return None
+            return res
+        gen.__name__, gen.__doc__, gen.__module__ = fn.__name__, fn.__doc__, fn.__module__
+        gen.__wrapped__ = fn
+        return deco(gen)
+    return wrap
+
+
+# Короткие «формульные» условия (после инструкции КИМ остаётся одна формула) состоят из немногих чисел. Цепочки
+# из одних мелких чисел и x («5 2 x 3 5», «1 2 1 3 1») встречаются в банке повсюду, а у своей формулы должна быть
+# собственная числовая «подпись», поэтому такие наборы параметров отбрасываем: в каждых пяти подряд идущих
+# числах/символах формулы должно быть хоть одно «редкое» число.
+KIM_STOCK = re.compile(r'найдите (?:корень|корни) уравнения|решите уравнение|найдите значение выражения|если уравнение имеет более '
+                       r'одного корня,? в ответе запишите (?:меньший|больший) из (?:них|корней)', re.I)
+COMMON_TOK = {str(i) for i in range(0, 7)} | {'10', 'x', 'log', 'sin', 'cos', 'tg', 'ctg', 'lg', 'ln'}
+
+
+def too_generic(c):
+    if not isinstance(c, dict) or c.get('k', 'num') != 'num':
+        return False
+    t = KIM_STOCK.sub(' ', c['q'].lower().replace('ё', 'е'))
+    if len(re.findall(r'[а-я]{3,}', t)) >= 8:
+        return False
+    toks = [w for w in re.findall(r'[а-яa-z]+|\d+(?:[.,]\d+)?', t) if not re.match('[а-я]', w)]
+    return any(all(w in COMMON_TOK for w in toks[i:i + 5]) for i in range(len(toks) - 4))
 
 
 # ---------------------------------------------------------------- текст

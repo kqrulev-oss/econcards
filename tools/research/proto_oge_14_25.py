@@ -767,7 +767,7 @@ def gen_og15_isosceles_angle(r):
     # построим именно равнобедренный: вершина nm[1] сверху
     b = math.radians(base)
     pts = {nm[0]: (0.0, 0.0), nm[2]: (10.0, 0.0), nm[1]: (5.0, 5.0 * math.tan(b))}
-    return pcard(q, num(ans), e=f'Углы при основании равны: (180{DEG} − {apex}{DEG})/2 = {base}{DEG}.', svg=_geo(pts, nm)), chk
+    return pcard(q, num(ans), e=(f'Углы при основании равны: (180{DEG} − {apex}{DEG})/2 = {base}{DEG}.' if ans == base else f'Углы при основании равны {base}{DEG}; угол при вершине 180{DEG} − 2·{base}{DEG} = {apex}{DEG}.'), svg=_geo(pts, nm)), chk
 
 
 @proto('og15-bisector-angle', 'oge', 15, 'Биссектриса и углы треугольника',

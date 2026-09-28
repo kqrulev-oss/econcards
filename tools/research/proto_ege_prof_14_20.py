@@ -2839,6 +2839,8 @@ def gen_ep19_quad_subst(r):
     rt = 2 * math.isqrt(m)
     s = r.choice([v for v in range(rt + 1, rt + 5)])
     b = r.choice([1, 2, 3, 4, 5, 6, -2, -3])
+    if (m, s, b) == (4, 5, 2):
+        return None                     # ровно задание открытого банка — не повторяем
     tt = f'x + {m}/x' if m != 1 else 'x + 1/x'
     # a(t² − s²) + b(t + s) = 0 → a·t² + b·t − s²a + bs = 0
     eq = f'a({tt})² + {b}({tt}) − {s * s}a + {b * s} = 0' if b > 0 else f'a({tt})² − {-b}({tt}) − {s * s}a − {-b * s} = 0'

@@ -1542,6 +1542,8 @@ def gen_ep09_dg_count(r):
         if any(z in (c, d) for z in zeros + touches):
             return None
     ans = sum(1 for z, k in kinds if c < z < d and (what == 'ext' or k == what))
+    if ans == 0:          # в банке ответ не бывает нулевым
+        return None
     svg = _fsvg(fn, a, b, -4, 4, name=DG, ticks=(a, b))
     where = '' if whole else f', принадлежащих отрезку {fm(f"[{tnum(c)}; {tnum(d)}]")}'
     q = dq_intro(a, b, r) + f' Найдите количество {EXT_W[what][1]} функции {fm("f(x)")}{where}.'
@@ -1925,6 +1927,8 @@ def gen_ep09_fg_zeros(r):
         if c in ext or d in ext:
             return None
         ans = sum(1 for e in ext if c < e < d)
+        if ans == 0:
+            return None
     seg = '' if (c, d) == (a, b) else f', принадлежащих отрезку {fm(f"[{tnum(c)}; {tnum(d)}]")}'
     seg1 = '' if (c, d) == (a, b) else f', принадлежащий отрезку {fm(f"[{tnum(c)}; {tnum(d)}]")}'
     iv = fm(f'({tnum(a)}; {tnum(b)})')
@@ -1936,8 +1940,6 @@ def gen_ep09_fg_zeros(r):
     if kind == 'one':
         q = f'{intro} Найдите корень уравнения {fm(eq)}{seg1}.'
     elif kind == 'horiz' and not prim:
-        if ans == 0:
-            return None
         q = (f'{intro} Найдите количество точек{seg}, в которых касательная к графику функции {fm("f(x)")} '
              f'параллельна оси абсцисс или совпадает с ней.')
     elif prim:
@@ -2944,7 +2946,9 @@ def gen_ep06_linear(r):
     ans = a * E + bb if ask == 'E' else a * a * D if ask == 'D' else abs(a) * math.isqrt(D.numerator)
     if not nice(ans, 2):
         return None
-    txt = story.format(E=tnum(E), D=tnum(D), a=tnum(a) if a != 1 else '', b=b).replace('+ −', '− ').replace('Y = −', 'Y = −')
+    if 'кафе' in story and a * E - b <= 0:      # прибыль в среднем положительна
+        return None
+    txt = story.format(E=tnum(E), D=tnum(D), a=tnum(a) if a not in (1, -1) else '' if a == 1 else '−', b=b).replace('+ −', '− ').replace('Y = −', 'Y = −')
     txt = txt.replace(f'{tnum(a)}X + {b}', f'{tnum(a)}X + {bb}') if Y != 'Z' else txt.replace('{a}', '')
     if Y == 'Z':
         txt = txt.replace(f'Z = {tnum(a)}X + {b}', 'Z = 1,8X + 32')
@@ -3455,7 +3459,7 @@ def gen_ep10_quad_interval(r):
         return None
     story, sym = r.choice(INTERVAL)
     if 'батуте' in story or 'Дельфин' in story:
-        if H > 8:
+        if H > 3 or v > 12:
             return None
     elif ('Стрела' in story or 'ракеты' in story) and v < 15:
         return None

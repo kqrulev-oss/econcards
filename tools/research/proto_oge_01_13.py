@@ -1228,7 +1228,7 @@ def gen_og09_lin(r):
     # целиком, поэтому одно из свободных чисел берём двузначным (до 20) — уровень тот же, но это не копия
     a, c = r.randint(-12, 12), r.randint(-12, 12)
     b, d = r.randint(-20, 20), r.randint(-20, 20)
-    if a == c or a == 0 or max(abs(b), abs(d)) < 11:
+    if a == c or a == 0 or max(abs(b), abs(d)) < 11 or abs(a) < 2 or c in (1, -1):
         return None
     form = r.randrange(3)
     if form == 1:
