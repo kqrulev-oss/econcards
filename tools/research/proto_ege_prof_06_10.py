@@ -1856,8 +1856,9 @@ def gen_ep09_fg_which(r):
         return 0
     ints = [x for x in range(a + 1, b) if x != 0]
     need = 1 if want == 'max' else -1
-    good = [x for x in ints if piece(x) == need]
-    other = [x for x in ints if x in ext or piece(x) == -need]
+    # запас по производной: у «правильной» точки |f′| заметно больше нуля, у остальных знак f′ противоположный или f′ = 0
+    good = [x for x in ints if piece(x) == need and need * _deriv(fn, float(x)) > 0.15]
+    other = [x for x in ints if x in ext or (piece(x) == -need and need * _deriv(fn, float(x)) < -0.05)]
     if not good or len(other) < 3:
         return None
     ans = r.choice(good)

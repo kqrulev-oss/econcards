@@ -1692,13 +1692,6 @@ def gen_og16_diameters(r):
     return pcard(q, num(ans), e='∠AOB = 180° − ∠AOD; вписанный ∠ACB = ½∠AOB.', svg=_cgeo(P, segs=[a_ + c_, b_ + d_, c_ + b_])), chk
 
 
-@proto('og16-area-pr', 'oge', 16, 'Площадь треугольника через полупериметр и радиус вписанной окружности',
-       invariant='S = p·r, где p — полупериметр; данные о длине отдельной стороны лишние.',
-       varies='Периметр, радиус, лишняя сторона; вопрос может быть и о радиусе по площади и периметру.',
-       answer_rule='S = (P/2)·r; r = 2S/P.',
-       fipi=r'периметр треугольника.{0,120}радиус вписанной',
-       mistakes=['умножают весь периметр на радиус', 'используют лишнюю сторону'],
-       kim=kim(16, K16))
 def _heron_max(a, P_):
     """Наибольшая площадь треугольника со стороной a и периметром P_ (он равнобедренный: b = c)."""
     b = (P_ - a) / 2
@@ -1717,6 +1710,13 @@ def _tri_exists(a, P_, S):
     return False
 
 
+@proto('og16-area-pr', 'oge', 16, 'Площадь треугольника через полупериметр и радиус вписанной окружности',
+       invariant='S = p·r, где p — полупериметр; данные о длине отдельной стороны лишние.',
+       varies='Периметр, радиус, лишняя сторона; вопрос может быть и о радиусе по площади и периметру.',
+       answer_rule='S = (P/2)·r; r = 2S/P.',
+       fipi=r'периметр треугольника.{0,120}радиус вписанной',
+       mistakes=['умножают весь периметр на радиус', 'используют лишнюю сторону'],
+       kim=kim(16, K16))
 def gen_og16_area_pr(r):
     P_ = 2 * r.randint(6, 60)
     rr = r.randint(1, 12)
@@ -4467,7 +4467,9 @@ def gen_og23_parallel_cross(r):
         M_ = sp.Line(A_, C_).intersection(sp.Line(B_, D_))[0]
         k = sp.Rational(ac) / A_.distance(C_)
         return same(num(ans), (M_.distance(C_) if ask_mc else M_.distance(A_)) * k)
-    return pcard(q, num(ans), e=f'AM : MC = AB : DC = {ab} : {dc}; MC = {ac}·{dc}/{ab + dc} = {tnum(mc)}.'), chk
+    e = (f'Треугольники {A}{M}{B} и {C}{M}{D} подобны: {A}{M} : {M}{C} = {A}{B} : {D}{C} = {ab} : {dc}; '
+         f'{M}{C} = {ac}·{dc}/{ab + dc} = {tnum(mc)}, {A}{M} = {tnum(ac - mc)}.')
+    return pcard(q, num(ans), e=e), chk
 
 
 @proto('og23-altitude-circle', 'oge', 23, 'Окружность на высоте как на диаметре: отрезок PK',
@@ -4533,6 +4535,8 @@ def gen_og23_trap_bisectors(r):
        kim=kim(23, K23))
 def gen_og23_trap_parallel(r):
     nm = _nm4(r)
+    if set(nm) & {'E', 'F'}:            # E и F — точки на боковых сторонах
+        return None
     A, B, C, D = nm
     ad, bc = r.randint(8, 60), r.randint(2, 30)
     if bc >= ad:
@@ -4585,7 +4589,8 @@ def gen_og23_par_bisector(r):
 
 def _trap_ang_list():
     out = []
-    for b_, c_ in [(30, 120), (45, 150), (60, 150), (45, 120), (30, 135), (60, 135), (30, 150), (45, 135)]:
+    # пары с ∠B + ∠C = 180° не берём: тогда AB ∥ CD и фигура — параллелограмм, а не трапеция
+    for b_, c_ in [(30, 120), (45, 150), (60, 150), (45, 120), (30, 135), (60, 135)]:
         ratio = sp.nsimplify(sp.sin(sp.pi * (180 - c_) / 180) / sp.sin(sp.pi * (180 - b_) / 180))
         for m_ in (1, 2, 3, 6):
             v = sp.nsimplify(ratio * sp.sqrt(m_))
@@ -5558,7 +5563,8 @@ def gen_og25_trap_circle_radius(r):
     bc = r.randint(2, ad - 2)
     ab = r.randint(3, 30)
     Rr = F(ab * (ad + bc), 2 * (ad - bc))
-    if not nice(Rr, 2):
+    # трапеция существует, только если боковая сторона короче гипотенузы AD − BC «разностного» прямоугольного треугольника
+    if not nice(Rr, 2) or ab >= ad - bc:
         return None
     Q4 = _nm4(r)
     a_, b_, c_, d_ = Q4
@@ -5572,7 +5578,8 @@ def gen_og25_trap_circle_radius(r):
         x0 = (PA + PB) / 2
         t_ = sp.sqrt(R(PA) * R(PB))
         Rv = sp.sqrt((R(PA) - R(x0)) ** 2 + t_ ** 2)       # расстояние от центра до A
-        return same(num(Rr), Rv) and same(num(Rr), R(x0))
+        PD2 = R(ad) ** 2 - R(PA) ** 2                        # второй катет треугольника PAD: должен быть > 0
+        return PD2 > 0 and same(num(Rr), Rv) and same(num(Rr), R(x0))
     return pcard(q, num(Rr), e=f'R = AB(AD + BC)/(2(AD − BC)) = {tnum(Rr)}.'), chk
 
 

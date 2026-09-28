@@ -3034,8 +3034,9 @@ def gen_ep19_line_abs(r):
     else:
         g = join_terms([(QS(-1), 'x²'), (QS(p), 'x')])        # −x² + p x ≥ 0
         curve = f'{c}|y| = {g}' if c > 1 else f'|y| = {g}'
-    line = pick(r, f'y = {join_terms([(QS(kslope), "x"), (QS(1), "a")])}',
-                f'{join_terms([(QS(kslope), "x"), (QS(-1), "y"), (QS(1), "a")])} = 0')
+    alt = (f'{join_terms([(QS(-kslope), "x"), (QS(1), "y")])} = a' if kslope < 0      # x + y = a, 2x + y = a
+           else f'{join_terms([(QS(1), "y"), (QS(-kslope), "x")])} = a')           # y − 2x = a
+    line = pick(r, f'y = {join_terms([(QS(kslope), "x"), (QS(1), "a")])}', alt)
     k = r.choice([2, 2, 3, 4, 1])
 
     def cnt(a):

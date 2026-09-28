@@ -1233,6 +1233,8 @@ def gen_og09_lin(r):
     form = r.randrange(3)
     if form == 1:
         d = 0  # «−4x − 9 = 6x»
+        if abs(b) < 11:
+            return None
     x0 = F(d - b, a - c)
     if not nice(x0, 2) or (b == 0 and d == 0):
         return None
@@ -1243,11 +1245,11 @@ def gen_og09_lin(r):
 
 
 @proto('og09-lin-brackets', 'oge', 9, 'Линейное уравнение со скобками',
-       invariant='a(x − b) − c(x + d) = e или a(x + b) = c(x + d) + e: раскрываем скобки, получаем линейное уравнение.',
-       varies='Коэффициенты перед скобками, числа внутри, знак между скобками.',
+       invariant='k(x ± b) = e (как в банке: 4(x − 6) = 5): раскрываем скобку или делим обе части на k.',
+       varies='Множитель перед скобкой (2–10), число в скобке, правая часть; корень — целый или десятичная дробь.',
        answer_rule='Раскрываем скобки (с учётом минуса), приводим подобные и решаем.',
        fipi=r'\d\s*\(\s*x\s*[+−-]\s*\d+\s*\)\s*[+−=-]\s*\d*\s*\(?\s*x?|^Решите уравнение\s*$',
-       mistakes=['минус перед скобкой меняет знак только первого слагаемого', 'не умножают второе слагаемое в скобке'], kim=K9)
+       mistakes=['не умножают второе слагаемое в скобке', 'ошибаются со знаком при переносе'], kim=K9)
 def gen_og09_lin_brackets(r):
     # масштаб банка: 4(x − 6) = 5, 10(x + 2) = −7, 4(x + 10) = −1
     a, c = r.randint(2, 10), r.randint(2, 9)
@@ -1255,7 +1257,7 @@ def gen_og09_lin_brackets(r):
     sg = r.choice([1, -1])
     e_ = r.randint(-10, 10)
     ins = lambda k: f'x {"+" if k > 0 else "−"} {abs(k)}'
-    kind = r.choice([0, 0, 0, 0, 1, 2])
+    kind = 0  # в банке только одна скобка: 4(x − 6) = 5; две скобки — уже уровень выше
     if kind == 0:
         e_ = r.choice([1, -1]) * r.randint(1, 10)
         lhs, rhs = f'{a}({ins(b)})', tnum(e_)
@@ -1392,7 +1394,7 @@ TICKETS = [
     ('На олимпиаде по информатике случайным образом выдаётся одна из {N} {n1}; {name} умеет решать все, кроме {k}.', ('задача', 'задачи', 'задач'),
      'Найдите вероятность того, что {name2} попадётся задача, которую он умеет решать.'),
     ('Для устного экзамена по истории составлено {N} {n1}. {name} плохо знает материал {k} из них.', ('карточка', 'карточки', 'карточек'),
-     'Какова вероятность того, что {name2} выпадет карточка с хорошо знакомым материалом?'),
+     'Найдите вероятность того, что {name2} выпадет карточка с хорошо знакомым материалом.'),
 ]
 BOYS = [('Тимур', 'Тимуру'), ('Глеб', 'Глебу'), ('Арсений', 'Арсению'), ('Родион', 'Родиону'), ('Ярослав', 'Ярославу'), ('Мирон', 'Мирону')]
 GIFTS = [
@@ -1698,14 +1700,14 @@ def svg_euler(counts, labels=('A', 'B'), width=320, height=190, seed=0):
     return _svg(width, height, out)
 
 
-EVENTS = {
-    'AB': ('A ∩ B', lambda a, b: a and b, 'одновременно и A, и B'),
-    'A|B': ('A ∪ B', lambda a, b: a or b, 'A или B (хотя бы одно из них)'),
-    'A': ('A', lambda a, b: a, 'A'),
-    'B': ('B', lambda a, b: b, 'B'),
-    'notA': ('Ā (не A)', lambda a, b: not a, 'противоположного событию A'),
-    'A-B': ('A, но не B', lambda a, b: a and not b, 'A и при этом не наступает B'),
-    'none': ('ни A, ни B', lambda a, b: not a and not b, 'не наступает ни A, ни B'),
+EVENTS = {  # как событие названо в вопросе «Найдите вероятность события …»
+    'AB': ('A ∩ B', lambda a, b: a and b, ''),
+    'A|B': ('A ∪ B', lambda a, b: a or b, ''),
+    'A': ('A', lambda a, b: a, ''),
+    'B': ('B', lambda a, b: b, ''),
+    'notA': (', противоположного событию A', lambda a, b: not a, ''),
+    'A-B': ('«наступило A, но не наступило B»', lambda a, b: a and not b, ''),
+    'none': ('«не наступило ни A, ни B»', lambda a, b: not a and not b, ''),
 }
 
 
@@ -1733,8 +1735,8 @@ def gen_og10_euler(r):
     svg = svg_euler(counts, seed=r.randint(0, 10 ** 6))
     if not svg:
         return None
-    q = pick(r, f'В случайном эксперименте все элементарные исходы равновозможны; они показаны точками на диаграмме Эйлера, круги изображают события A и B. Найдите вероятность события {name}.',
-             f'На диаграмме Эйлера изображены события A и B некоторого случайного опыта, а точками — все его равновозможные элементарные исходы. Найдите вероятность того, что наступит событие: {words}.')
+    q = pick(r, f'В случайном эксперименте все элементарные исходы равновозможны; они показаны точками на диаграмме Эйлера, круги изображают события A и B. Найдите вероятность события{"" if name.startswith(",") else " "}{name}.',
+             f'На диаграмме Эйлера изображены события A и B некоторого случайного опыта, а точками — все его равновозможные элементарные исходы. Найдите вероятность события{"" if name.startswith(",") else " "}{name}.')
     e = f'Всего точек {N}; событию благоприятствуют {fav}. P = {fav}/{N} = {tnum(p)}.'
     pts = [reg for reg, n in zip(region, counts) for _ in range(n)]
     return pcard(q, num(p), e=e, svg=svg), lambda: same(num(p), sp.Rational(sum(1 for a_, b_ in pts if f(a_, b_)), len(pts)))
@@ -1815,7 +1817,7 @@ def gen_og10_coin_count(r):
     ordw = ['первый', 'второй', 'третий', 'четвёртый', 'пятый', 'шестой', 'седьмой', 'восьмой', 'девятый', 'десятый']
     mw = ordw[m - 1] if m <= 10 else f'{m}-й'
     si = 'орлом' if side == 'орёл' else 'решкой'
-    q = pick(r, f'Монету подбросили {n} {plural(n, "раз", "раза", "раз")}; орёл при этом выпал {k} {plural(k, "раз", "раза", "раз")}. Какова вероятность того, что {mw} бросок закончился {si}?',
+    q = pick(r, f'Монету подбросили {n} {plural(n, "раз", "раза", "раз")}; орёл при этом выпал {k} {plural(k, "раз", "раза", "раз")}. Найдите вероятность того, что {mw} бросок закончился {si}.',
              f'Известно, что в серии из {n} подбрасываний монеты орёл выпал ровно {k} {plural(k, "раз", "раза", "раз")}. Найдите вероятность того, что {mw} по порядку бросок дал {"орла" if side == "орёл" else "решку"}.')
     e = f'Все расположения {k} орлов среди {n} бросков равновозможны, поэтому P = {fav}/{n} = {tnum(p)}.'
     comb = math.comb
@@ -1868,8 +1870,9 @@ def gen_og10_formula(r):
     if not nice(p, 3):
         return None
     ev = 'события, противоположного событию A' if comp else 'события A'
-    q = pick(r, f'Некоторый опыт имеет {n} равновозможных элементарных исходов, и {k} из них благоприятствуют событию A. Найдите вероятность {ev}.',
-             f'В случайном эксперименте всего {n} равновозможных исходов; событию A благоприятствует {k} из них. Чему равна вероятность {ev}?')
+    vb = plural(k, 'благоприятствует', 'благоприятствуют', 'благоприятствуют')
+    q = pick(r, f'Некоторый опыт имеет {n} равновозможных элементарных исходов, и {k} из них {vb} событию A. Найдите вероятность {ev}.',
+             f'В случайном эксперименте всего {n} равновозможных исходов; событию A {vb} {k} из них. Найдите вероятность {ev}.')
     e = f'P = {(n - k) if comp else k}/{n} = {tnum(p)}.'
     return pcard(q, num(p), e=e), lambda: same(num(p), (1 - sp.Rational(k, n)) if comp else sp.Rational(k, n))
 
@@ -1877,8 +1880,9 @@ def gen_og10_formula(r):
 # ================================================================ №11 — графики функций: соответствие
 
 K11 = K(minutes=3, kes=['5.1', '6.2'], kt=[6], answer='соответствие',
-        style='Установление соответствия А–В ↔ 1–3, ответ — последовательность цифр под буквами (как в КИМ ОГЭ №11)')
-TAIL11 = ('Под каждой буквой запишите номер соответствующего графика.', 'Для каждой буквы выберите номер.', '')
+        style='«Установите соответствие между …» (инструкция КИМ ОГЭ №11), А–В ↔ 1–3, ответ — цифры под буквами; '
+              'дробный коэффициент записан как x/2, 2x/3')
+TAIL11 = ('',)
 
 
 def _match(r, left_txt, right_txt, perm, e):
@@ -1897,7 +1901,11 @@ def _lin_txt(k, b):
     k = F(k)
     if k == 0:
         return f'y = {tnum(b)}'
-    kt = '' if k == 1 else ('−' if k == -1 else (ufr(k.numerator, k.denominator) if k.denominator > 1 else tnum(k)))
+    if k.denominator > 1:  # y = x/2, y = −2x/3: без двусмысленного «1/2x»
+        num_ = abs(k.numerator)
+        s_ = f'y = {"−" if k < 0 else ""}{"" if num_ == 1 else num_}x/{k.denominator}'
+        return s_ + (signed(b) if b else '')
+    kt = '' if k == 1 else ('−' if k == -1 else tnum(k))
     s_ = f'y = {kt}x'
     if b:
         s_ += signed(b)
@@ -1928,8 +1936,7 @@ def gen_og11_lin_signs(r):
     sg = lambda v: '> 0' if v > 0 else '< 0'
     left_txt = [f'k {sg(sk)}, b {sg(sb)}' for sk, sb in three]
     left, right, a = _match(r, left_txt, ['график 1', 'график 2', 'график 3'], perm, '')
-    q = pick(r, 'На рисунках построены графики трёх функций вида y = kx + b. Сопоставьте знаки коэффициентов k и b с номерами графиков.',
-             'Каждый из трёх рисунков — график линейной функции y = kx + b. Для каждой пары знаков коэффициентов укажите номер подходящего графика.') + ' ' + pick(r, *TAIL11)
+    q = 'Даны графики трёх функций вида y = kx + b. Установите соответствие между знаками коэффициентов k, b и номерами графиков.'
     e = 'Возрастающая прямая — k > 0, убывающая — k < 0; b — точка пересечения с осью y. ' + '; '.join(f'{LET[i]} → {perm[i] + 1}' for i in range(3)) + '.'
 
     def chk():
@@ -1974,8 +1981,7 @@ def gen_og11_parab_signs(r):
     sg = lambda t: '> 0' if t > 0 else '< 0'
     left_txt = [f'a {sg(sa)}, c {sg(sc)}' for sa, sc in three]
     left, right, a = _match(r, left_txt, ['график 1', 'график 2', 'график 3'], perm, '')
-    q = pick(r, 'На рисунках изображены графики трёх функций вида y = ax² + bx + c. Сопоставьте знаки коэффициентов a и c с номерами графиков.',
-             'Три параболы — графики функций y = ax² + bx + c. Для каждой пары знаков коэффициентов a и c найдите подходящий график.') + ' ' + pick(r, *TAIL11)
+    q = 'Даны графики трёх функций вида y = ax² + bx + c. Установите соответствие между знаками коэффициентов a, c и номерами графиков.'
     e = 'Ветви вверх — a > 0, вниз — a < 0; c — ордината точки пересечения с осью y. ' + '; '.join(f'{LET[i]} → {perm[i] + 1}' for i in range(3)) + '.'
 
     def chk():
@@ -2020,7 +2026,7 @@ def gen_og11_lin_formulas(r):
         svg = svg_panels([_lin_f(k, b) for k, b in graphs], ['1', '2', '3'])
         left_txt = [_lin_txt(k, b) for k, b in three]
         right_txt = ['график 1', 'график 2', 'график 3']
-        q = pick(r, 'Для каждой из линейных функций А–В укажите номер её графика.', 'Сопоставьте функции, заданные формулами А–В, с их графиками 1–3.')
+        q = 'Установите соответствие между функциями, заданными формулами, и их графиками.'
         pairs = lambda a: [(left_txt[i], graphs[int(a[LET[i]]) - 1]) for i in range(3)]
     else:  # графики А–В → формулы 1–3
         formulas = [None] * 3
@@ -2029,8 +2035,7 @@ def gen_og11_lin_formulas(r):
         svg = svg_panels([_lin_f(k, b) for k, b in three], ['А', 'Б', 'В'])
         left_txt = ['график А', 'график Б', 'график В']
         right_txt = [_lin_txt(k, b) for k, b in formulas]
-        q = pick(r, 'Сопоставьте каждому из графиков А–В формулу, которой он задаётся.',
-                 'На рисунке изображены графики А, Б, В трёх линейных функций. Для каждого графика выберите номер его формулы.')
+        q = 'Установите соответствие между графиками и формулами функций.'
         pairs = lambda a: [(right_txt[int(a[LET[i]]) - 1], three[i]) for i in range(3)]
     left, right, a = _match(r, left_txt, right_txt, perm, '')
     e = '; '.join(f'{LET[i]} → {perm[i] + 1}' for i in range(3)) + '.'
@@ -2083,7 +2088,7 @@ def gen_og11_mixed(r):
         svg = svg_panels([g[1] for g in graphs], ['1', '2', '3'])
         left_txt = [it[0] for it in items]
         right_txt = ['график 1', 'график 2', 'график 3']
-        q = pick(r, 'Для каждой из функций А–В укажите номер её графика.', 'Сопоставьте функции, заданные формулами, с их графиками на рисунках 1–3.')
+        q = 'Установите соответствие между функциями, заданными формулами, и их графиками.'
         want = [graphs[perm[i]] for i in range(3)]
         got = lambda a: [graphs[int(a[LET[i]]) - 1] for i in range(3)]
     else:  # графики А–В → формулы 1–3
@@ -2093,7 +2098,7 @@ def gen_og11_mixed(r):
         svg = svg_panels([it[1] for it in items], ['А', 'Б', 'В'])
         left_txt = ['график А', 'график Б', 'график В']
         right_txt = [f[0] for f in formulas]
-        q = pick(r, 'Каждому графику А–В поставьте в соответствие формулу, которой задана функция.', 'Определите, какой формулой задаётся каждый из графиков А, Б, В.')
+        q = 'Установите соответствие между графиками и формулами функций.'
         want = items
         got = lambda a: [formulas[int(a[LET[i]]) - 1] for i in range(3)]
     left, right, a = _match(r, left_txt, right_txt, perm, '')
@@ -2113,12 +2118,12 @@ def gen_og11_mixed(r):
 
 # ================================================================ №12 — расчёты по формулам
 
-K12 = K(minutes=3, kes=['2.1', '2.2'], kt=[4], style='Формула из физики/жизни с пояснением величин; «… найдите …»; «Ответ дайте в …»')
-FIND = ('По этой формуле найдите', 'С помощью этой формулы найдите', 'Воспользуйтесь этой формулой и найдите')
+K12 = K(minutes=3, kes=['2.1', '2.2'], kt=[4], style='Формула с пояснением величин; инструкции КИМ «Пользуясь этой формулой, найдите …», «Ответ дайте в …»')
+FIND = ('Пользуясь этой формулой, найдите',)
 
 
 def _f12(r, head, ask, ans, e, chk, unit=''):
-    q = f'{head} {pick(r, *FIND)} {ask}' + (f' Ответ выразите {unit}.' if unit and r.random() < 0.5 else (f' Ответ дайте {unit}.' if unit else ''))
+    q = f'{head} {pick(r, *FIND)} {ask}' + (f' Ответ дайте {unit}.' if unit else '')
     return pcard(q, num(ans), e=e), chk
 
 
@@ -2230,8 +2235,7 @@ def gen_og12_solve_factor(r):
     if kind == 0:
         I, Rr, t = r.randint(2, 9), r.randint(2, 40), r.choice([5, 10, 20, 30, 60, 120])
         Q = I * I * Rr * t
-        head = ('Количество теплоты (в джоулях), выделяемое проводником с током, вычисляется по формуле Q = I²Rt, где I — сила тока (в амперах), '
-                'R — сопротивление (в омах), t — время (в секундах).')
+        head = ('Количество теплоты Q (в джоулях), которое выделяет проводник с током, находят по закону Джоуля — Ленца: Q = I²Rt, где I — сила тока (в амперах), t — время (в секундах), R — сопротивление проводника (в омах).')
         ask, ans, unit = f'сопротивление проводника, если за {t} с выделилось {Q} Дж теплоты при силе тока {I} А.', Rr, 'в омах'
         chk = lambda: same(num(ans), sp.solve(sp.Eq(I ** 2 * sp.Symbol('R') * t, Q), sp.Symbol('R'))[0])
         e = f'R = Q/(I²t) = {Q}/({I * I}·{t}) = {ans}.'
@@ -2265,7 +2269,7 @@ def gen_og12_solve_factor(r):
         Pw = F(U * U, Rr)
         if not nice(Pw, 2):
             return None
-        head = 'Мощность (в ваттах) электроприбора можно найти по формуле P = U²/R, где U — напряжение (в вольтах), R — сопротивление (в омах).'
+        head = 'Мощность P (в ваттах), которую потребляет электроприбор, находят по формуле P = U²/R, где R — сопротивление прибора (в омах), U — напряжение сети (в вольтах).'
         ask, ans, unit = f'сопротивление прибора, если при напряжении {U} В его мощность равна {tnum(Pw)} Вт.', Rr, 'в омах'
         chk = lambda: same(num(ans), sp.solve(sp.Eq(U ** 2 / sp.Symbol('R'), R(Pw)), sp.Symbol('R'))[0])
         e = f'R = U²/P = {U * U}/{tnum(Pw)} = {ans}.'
@@ -2308,7 +2312,7 @@ def gen_og12_solve_square(r):
         Q = I * I * Rr * t
         if not nice(Q, 1):
             return None
-        head = ('Количество теплоты (в джоулях), выделяемое в проводнике с током, находят по формуле Q = I²Rt, где I — сила тока (в амперах), R — сопротивление (в омах), t — время (в секундах).')
+        head = ('Количество теплоты Q (в джоулях), которое выделяет проводник с током, находят по закону Джоуля — Ленца: Q = I²Rt, где I — сила тока (в амперах), t — время (в секундах), R — сопротивление проводника (в омах).')
         ask, ans, unit = f'силу тока, если за {t} с в проводнике сопротивлением {Rr} Ом выделилось {tnum(Q)} Дж.', I, 'в амперах'
         e = f'I² = Q/(Rt) = {tnum(Q)}/({Rr}·{t}) = {tnum(I * I)}, I = {tnum(I)}.'
         chk = lambda: same(num(ans), [s_ for s_ in sp.solve(sp.Eq(sp.Symbol('I') ** 2 * Rr * t, R(Q)), sp.Symbol('I')) if s_ > 0][0])
@@ -2328,7 +2332,7 @@ def gen_og12_solve_square(r):
         Pw = F(U * U, Rr)
         if not nice(Pw, 2):
             return None
-        head = 'Мощность (в ваттах) электрической цепи вычисляется по формуле P = U²/R, где U — напряжение (в вольтах), R — сопротивление (в омах).'
+        head = 'Мощность P (в ваттах), которую потребляет электроприбор, находят по формуле P = U²/R, где R — сопротивление прибора (в омах), U — напряжение сети (в вольтах).'
         ask, ans, unit = f'напряжение, если мощность равна {tnum(Pw)} Вт, а сопротивление {Rr} Ом.', U, 'в вольтах'
         e = f'U² = PR = {tnum(Pw)}·{Rr} = {U * U}, U = {U}.'
         chk = lambda: same(num(ans), [s_ for s_ in sp.solve(sp.Eq(sp.Symbol('U') ** 2 / Rr, R(Pw)), sp.Symbol('U')) if s_ > 0][0])
@@ -2395,13 +2399,14 @@ def gen_og12_sine(r):
 # ================================================================ №13 — неравенства: выбор ответа
 
 K13 = K(minutes=3, kes=['3.2', '6.1'], kt=[5], answer='цифра варианта',
-        style='«Укажите решение неравенства (системы)…» с вариантами-промежутками или рисунками 1)–4); в ответ — номер (КИМ ОГЭ №13)')
+        style='Инструкции КИМ ОГЭ №13: «Укажите решение неравенства …», «Укажите решение системы неравенств …», '
+              '«Укажите неравенство, решение которого изображено на рисунке»; варианты 1)–4) — промежутки или рисунки, в ответ — номер')
 FLIP = {'<': '>', '>': '<', '≤': '≥', '≥': '≤'}
 REL = {'<': sp.Lt, '>': sp.Gt, '≤': sp.Le, '≥': sp.Ge}
-ASK13 = ('Какое из множеств является решением неравенства {x}?', 'Какое из множеств является решением неравенства {x}?', 'Выберите множество решений неравенства {x}.')
-ASK13S = ('Какое из множеств является решением системы {x}?', 'Какое из множеств является решением системы {x}?', 'Выберите множество решений системы неравенств {x}.')
+ASK13 = ('Укажите решение неравенства {x}.',)
+ASK13S = ('Укажите решение системы неравенств {x}.',)
 REALS = ((None, None, False, False),)
-PIC13 = ' Каждый из вариантов ответа 1–4 показан на своей координатной прямой.'
+PIC13 = ''  # варианты-рисунки подписаны 1)–4), как в КИМ
 
 # Множество на прямой — кортеж интервалов (a, b, a_closed, b_closed); a/b = None — бесконечность.
 
@@ -2546,7 +2551,6 @@ def _ineq_card(r, q, sol, wrong, pictures, e, sym_sol):
         o = [{'id': str(i + 1), 't': s_txt(S)} for i, S in enumerate(sets)]
         if len({x['t'] for x in o}) < 4:
             return None
-        q += ' Запишите номер верного варианта.'
 
     def chk():
         got = sym_sol()
@@ -2571,39 +2575,47 @@ def gen_og13_lin(r):
     rhs = lin(c, d).replace('−1x', '−x') if lin(c, d) != '0' else '0'
     k, m = b - c, d - a
     bound = F(m, k)
-    if not nice(bound, 2):
+    if not nice(bound, 2) or bound == 0:
         return None
     sol = lin_sol(k, m, rel)
     wrong = [s_not(sol), s_flip(sol), s_flip(s_not(sol)), ray(FLIP[rel] if k < 0 else rel, -bound) if bound else ray(rel, 1)]
     wrong += [lin_sol(-k, m, rel)] if k != 0 else []
     pictures = r.random() < 0.5
-    q = (pick(r, *ASK13[1:]) if pictures else pick(r, *ASK13)).format(x=f'{lhs} {rel} {rhs}') + (PIC13 if pictures else '')
+    q = pick(r, *ASK13).format(x=f'⟦{lhs} {rel} {rhs}⟧')
     e = f'{lin(k, 0)} {rel} {tnum(m)}' + ('' if k == 1 else ('; делим на ' + tnum(k) + (' и меняем знак' if k < 0 else '') + f': x {FLIP[rel] if k < 0 else rel} {_nb(bound)}')) + '.'
     return _ineq_card(r, q, sol, wrong, pictures, e, lambda: _sym_solve(lhs, rel, rhs))
 
 
 @proto('og13-system', 'oge', 13, 'Система линейных неравенств: выбор решения',
        invariant='Система двух линейных неравенств; решение — пересечение лучей (отрезок, луч или пустое множество).',
-       varies='Коэффициенты, знаки, десятичные границы, форма вариантов (рисунки или промежутки).',
+       varies='Форма как в банке ({x + c ≷ r} с десятичными c или {−kt + kx ≷ 0; e − kx ≷ f}), знаки, форма вариантов (рисунки или промежутки).',
        answer_rule='Решаем каждое неравенство, пересекаем решения на прямой.',
        fipi=r'Укажите решение системы неравенств',
        mistakes=['берут объединение вместо пересечения', 'не меняют знак при делении на отрицательное'],
        card_kind='one', kim=K13)
 def gen_og13_system(r):
+    # две формы банка: {x + 3 ≥ −2; x + 1,1 ≥ 0} (коэффициент 1, десятичные) и {−35 + 5x < 0; 6 − 3x > −18}
     parts, sets = [], []
-    for _ in range(2):
-        k = r.choice([1, 1, 1, 2, 3, 4, 5, -1, -2, -3, -4, -5])
-        bound = F(r.randint(-12, 12)) if r.random() < 0.6 else F(r.randint(-99, 99), 10)
-        m = k * bound
+    form = r.choice('AB')
+    for i in range(2):
         rel = r.choice(list(FLIP))
-        c = F(r.randint(-9, 9)) if r.random() < 0.7 else F(r.randint(-49, 49), 10)
-        if not nice(m + c, 1) or abs(m + c) > 40:
-            return None
-        if c and r.random() < 0.4:
-            lhs = f'{tnum(c)}{signed(k)}x'.replace(' 1x', ' x')
-        else:
-            lhs = (lin(k, c) if c else lin(k, 0)).replace('−1x', '−x')
-        rhs = tnum(m + c)
+        if form == 'A':
+            c = F(r.randint(-9, 9)) if r.random() < 0.5 else F(r.choice([x for x in range(-99, 100) if x % 10]), 10)
+            rr = F(r.randint(-6, 6))
+            if c == 0:
+                return None
+            lhs, rhs = lin(1, c), tnum(rr)
+            k, m = 1, rr - c
+        elif i == 0:  # −k·t + kx ≷ 0
+            k, t = r.randint(2, 9), r.choice([x for x in range(-9, 10) if x])
+            lhs, rhs = f'{tnum(-k * t)}{signed(k)}x', '0'
+            m = F(k * t)
+        else:  # e − kx ≷ f
+            k, t = r.randint(2, 9), r.choice([x for x in range(-9, 10) if x])
+            e0 = r.randint(1, 12)
+            f0 = e0 - k * t
+            lhs, rhs = f'{e0} − {k}x', tnum(f0)
+            k, m = -k, F(f0 - e0)
         parts.append((lhs, rel, rhs))
         sets.append(lin_sol(k, m, rel))
     sol = s_and(*sets)
@@ -2615,7 +2627,7 @@ def gen_og13_system(r):
         wrong += [((None, a_, False, not ca), (b_, None, not cb, False))]
     pictures = r.random() < 0.6
     txt = f'{{ {parts[0][0]} {parts[0][1]} {parts[0][2]};  {parts[1][0]} {parts[1][1]} {parts[1][2]} }}'
-    q = (pick(r, *ASK13S[1:]) if pictures else pick(r, *ASK13S)).format(x=txt) + (PIC13 if pictures else '')
+    q = pick(r, *ASK13S).format(x=f'⟦{txt}⟧')
     e = f'Первое: x ∈ {s_txt(sets[0])}; второе: x ∈ {s_txt(sets[1])}; общая часть: {s_txt(sol)}.'
     return _ineq_card(r, q, sol, wrong, pictures, e, lambda: _sym_solve(*parts[0]).intersect(_sym_solve(*parts[1])))
 
@@ -2631,7 +2643,7 @@ def gen_og13_quad(r):
     kind = r.randrange(3)
     rel = r.choice(list(FLIP))
     if kind == 0:
-        a = r.randint(2, 15)
+        a = r.randint(3, 15)
         lhs, rhs = f'x² − {a * a}', '0'
         if r.random() < 0.4:
             lhs, rhs = 'x²', str(a * a)
@@ -2657,7 +2669,7 @@ def gen_og13_quad(r):
         a_, b_, ca, cb = sol[0]
         wrong += [((None, b_, False, cb),), ((a_, None, ca, False),)]
     pictures = r.random() < 0.5
-    q = (pick(r, *ASK13[1:]) if pictures else pick(r, *ASK13)).format(x=f'{lhs} {rel} {rhs}') + (PIC13 if pictures else '')
+    q = pick(r, *ASK13).format(x=f'⟦{lhs} {rel} {rhs}⟧')
     e = f'Корни и направление ветвей параболы дают: x ∈ {s_txt(sol)}.'
     return _ineq_card(r, q, sol, wrong, pictures, e, lambda: _sym_solve(lhs, rel, rhs))
 
@@ -2692,8 +2704,7 @@ def gen_og13_which(r):
         marks = sorted(marks + [(0.0, '0')])
     svg = svg_rays([('', rows[0][1], marks, lo, hi)])
     o = [{'id': str(i + 1), 't': f'{l_} {rel} 0'} for i, (l_, rel, _) in enumerate(four)]
-    q = pick(r, 'Укажите неравенство, множество решений которого показано на рисунке.', 'На рисунке изображено множество решений одного из неравенств. Какого?',
-             'Какое из неравенств имеет решение, изображённое на координатной прямой?')
+    q = 'Укажите неравенство, множество решений которого изображено на рисунке.'
     e = f'На рисунке: {s_txt(S)}. Это решение неравенства {four[right][0]} {four[right][1]} 0.'
     sS = s_sympy(S)
     return pcard(q, str(right + 1), e=e, k='one', o=o, svg=svg), lambda: sum(1 for l_, rel, _ in four if _sym_solve(l_, rel, '0') == sS) == 1 and \
@@ -2950,10 +2961,11 @@ SERIES = ['B', 'C', 'RA', 'SRA']
 
 def _paper_intro(ser):
     s0 = PAPER[ser][0]
-    return (f'Кроме привычной серии A, стандарт ISO 216 описывает форматы бумаги серии {ser} — их используют для {PAPER_USE[ser]}. '
+    iso = 'ISO 216' if ser in 'BC' else 'ISO 217'  # серии RA и SRA описаны в ISO 217
+    return (f'Кроме привычной серии A, стандарт {iso} описывает форматы бумаги серии {ser} — их используют для {PAPER_USE[ser]}. '
             f'Самый большой лист {ser}0 имеет размеры {s0[0]} × {s0[1]} мм. Если лист любого формата разрезать пополам поперёк большей стороны, '
-            f'получатся два листа следующего формата: из {ser}0 — два {ser}1, из {ser}1 — два {ser}2 и так далее. '
-            + ('Отношение большей стороны к меньшей у всех листов серии одинаковое.' if ser in 'BC' else 'Стандарт ISO 217 задаёт такие листы для типографий.'))
+            f'получатся два листа следующего формата: из {ser}0 — два {ser}1, из {ser}1 — два {ser}2 и так далее.'
+            + (' Отношение большей стороны к меньшей у всех листов серии одинаковое.' if ser in 'BC' else ''))
 
 
 @proto('og01-paper-match', 'oge', 1, 'Форматы бумаги: соответствие форматов и размеров листов',
@@ -2972,7 +2984,7 @@ def gen_og01_paper_match(r):
     left = [{'id': LET[j], 't': f'формат {ser}{k}'} for j, k in enumerate(fm)]
     right = [{'id': str(i + 1), 't': t} for i, t in enumerate(right_txt)]
     a = {LET[j]: str(order.index(k) + 1) for j, k in enumerate(fm)}
-    q = _paper_intro(ser) + '\nСопоставьте форматы листов с номерами листов, размеры которых указаны (длина × ширина). Для каждого формата выберите номер листа.'
+    q = _paper_intro(ser) + '\nДаны размеры четырёх листов (длина × ширина). Установите соответствие между форматами и номерами листов.'
     e = '; '.join(f'{ser}{k} — {PAPER[ser][k][1]} × {PAPER[ser][k][0]}' for k in fm) + '.'
 
     def chk():  # площадь каждого следующего формата примерно вдвое меньше: упорядочиваем листы по площади
@@ -3092,7 +3104,7 @@ def gen_og05_paper_font(r):
     ans = math.floor(val + F(1, 2))
     q = (_paper_intro(ser) + f' Размеры листов (мм): {ser}{src} — {PAPER[ser][src][1]} × {PAPER[ser][src][0]}, {ser}{dst} — {PAPER[ser][dst][1]} × {PAPER[ser][dst][0]}. '
          'Высоту шрифта измеряют в пунктах.\n'
-         f'Текст напечатан на листе {ser}{src} шрифтом высотой {f0} пунктов. Каким должен быть шрифт (в пунктах), чтобы тот же текст разместился на листе {ser}{dst} '
+         f'Текст напечатан на листе {ser}{src} шрифтом высотой {f0} {plural(f0, "пункт", "пункта", "пунктов")}. Каким должен быть шрифт (в пунктах), чтобы тот же текст разместился на листе {ser}{dst} '
          'точно так же, то есть все размеры изменились в одно и то же число раз? Размер шрифта округлите до целого.')
     e = f'Коэффициент подобия {PAPER[ser][dst][1]}/{PAPER[ser][src][1]}; {f0}·{approx(ratio, 3)} ≈ {approx(val, 2)} ≈ {ans}.'
     return pcard(q, num(ans), e=e), lambda: ans == round(sp.Rational(f0 * PAPER[ser][dst][1], PAPER[ser][src][1]))
@@ -3129,7 +3141,7 @@ def _dist_rect(a, b):
 
 
 YARDS = [
-    dict(site='турбазы', obj=['главный корпус', 'столовая', 'баня', 'лодочный сарай'], tile='плиткой для дорожек'),
+    dict(site='турбазы', obj=['главный корпус', 'столовая', 'баня', 'лодочный сарай'], tile='бетонной плиткой'),
     dict(site='школьного двора', obj=['школа', 'спортзал', 'теплица', 'мастерская'], tile='тротуарной плиткой'),
     dict(site='фермы', obj=['жилой дом', 'коровник', 'амбар', 'птичник'], tile='бетонной плиткой'),
     dict(site='детского лагеря', obj=['спальный корпус', 'столовая', 'медпункт', 'склад'], tile='резиновой плиткой'),
@@ -3206,7 +3218,7 @@ def gen_og01_yard_match(r):
     right = [{'id': str(d), 't': f'цифра {d} на плане'} for d in range(1, 5)]
     idx = {nm: i for i, nm in b['assign'].items()}
     a = {LET[j]: str(b['digits'][idx[nm]]) for j, nm in enumerate(names)}
-    q = b['desc'] + '\nДля каждого объекта определите, какой цифрой он обозначен на плане.'
+    q = b['desc'] + '\nДля объектов, перечисленных ниже, определите, какими цифрами они обозначены на плане.'
     e = '; '.join(f'{nm} — {b["digits"][idx[nm]]}' for nm in names) + '.'
 
     def chk():  # заново применяем правила к геометрии
@@ -3477,7 +3489,7 @@ def gen_og01_flat_match(r):
     left = [{'id': LET[j], 't': nm} for j, nm in enumerate(names)]
     right = [{'id': str(d), 't': f'цифра {d} на плане'} for d in range(1, 5)]
     a = {LET[j]: str(b['digits'][idx[nm]]) for j, nm in enumerate(names)}
-    q = b['desc'] + '\nСопоставьте каждому помещению цифру, которой оно обозначено на плане.'
+    q = b['desc'] + '\nДля помещений, перечисленных ниже, определите, какими цифрами они обозначены на плане.'
     e = '; '.join(f'{nm} — {b["digits"][idx[nm]]} ({b["areas"][idx[nm]]} {plural(b["areas"][idx[nm]], "клетка", "клетки", "клеток")})' for nm in names) + '.'
 
     def chk():
@@ -3748,7 +3760,7 @@ def gen_og01_map_match(r):
     left = [{'id': LET[j], 't': nm} for j, nm in enumerate(b['names'])]
     right = [{'id': str(d), 't': f'цифра {d} на плане'} for d in range(1, 5)]
     a = {LET[j]: str(b['digits'][j]) for j in range(4)}
-    q = b['desc'] + '\nОпределите, какой цифрой на плане обозначен каждый пункт.'
+    q = b['desc'] + '\nПользуясь описанием, определите, какими цифрами на плане обозначены пункты.'
     e = '; '.join(f'{nm} — {b["digits"][j]}' for j, nm in enumerate(b['names'])) + '.'
     pts = [b['S'], b['V'], b['W'], b['T']]
 
@@ -3960,6 +3972,16 @@ def _sub_block(r):
     return dict(c=c, fee=fee, inc=inc, ex=ex, vals=vals, intro=intro, svg=svg_month_bars(vals, limit=inc))
 
 
+def _qty(c, n, gen=False):
+    """«41 час просмотра», «45 минут аренды»; gen=True — родительный после «до»: «до 41 часа просмотра»."""
+    rest = c['what'].split(' ', 1)[1]
+    if c['one'] == 'минута':
+        w = plural(n, 'минуты', 'минут', 'минут') if gen else plural(n, 'минута', 'минуты', 'минут')
+    else:
+        w = plural(n, 'часа', 'часов', 'часов') if gen else plural(n, 'час', 'часа', 'часов')
+    return f'{n} {w} {rest}'
+
+
 def _sub_cost(b, m):
     return b['fee'] + max(0, b['vals'][m] - b['inc']) * b['ex']
 
@@ -3979,10 +4001,10 @@ def gen_og01_sub_months(r):
     if len(uniq) < 4:
         return None
     ms = r.sample(uniq, 4)
-    left = [{'id': LET[j], 't': f'{b["vals"][m]} {b["c"]["what"]}'} for j, m in enumerate(ms)]
+    left = [{'id': LET[j], 't': _qty(b['c'], b['vals'][m])} for j, m in enumerate(ms)]
     right = [{'id': str(i + 1), 't': MONTHS[i]} for i in range(12)]
     a = {LET[j]: str(m + 1) for j, m in enumerate(ms)}
-    q = b['intro'] + '\nОпределите, в каком месяце было израсходовано каждое из указанных количеств.'
+    q = b['intro'] + f'\nОпределите, какие месяцы соответствуют указанному ниже количеству {b["c"]["what"]}.'
     e = '; '.join(f'{b["vals"][m]} — {MONTHS[m]}' for m in ms) + '.'
     return pcard(q, a, e=e, k='match', o={'left': left, 'right': right}, svg=b['svg']), lambda: all(b['vals'][int(a[LET[j]]) - 1] == b['vals'][m] and b['vals'].count(b['vals'][m]) == 1 for j, m in enumerate(ms))
 
@@ -4037,7 +4059,7 @@ def gen_og03_sub_count(r):
         lo_ = r.choice(sorted(b['vals'])[2:6])
         hi_ = r.choice(sorted(b['vals'])[6:10])
         ans = sum(lo_ <= v <= hi_ for v in b['vals'])
-        ask = f'Сколько было месяцев, в которых израсходовано не меньше {lo_} и не больше {hi_} {b["c"]["what"].split(" ")[0]}?'
+        ask = f'Сколько было месяцев, в которых израсходовано от {lo_} до {_qty(b["c"], hi_, gen=True)} включительно?'
         f = lambda v: lo_ <= v <= hi_
     q = b['intro'] + '\n' + ask
     return pcard(q, num(ans), e=f'Подходящих месяцев: {ans}.', svg=b['svg']), lambda: ans == len([v for v in b['vals'] if f(v)])
