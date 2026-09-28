@@ -2040,9 +2040,10 @@ def gen_ep09_prim_area(r):
     ex = f'F({tnum(d)}) − F({tnum(c)}) равно площади под графиком f на отрезке [{tnum(c)}; {tnum(d)}]: {tnum(area)}.'
 
     def chk():
-        N = 6000
-        h = (d - c) / N
-        return abs(sum((fn(c + i * h) + fn(c + (i + 1) * h)) * h / 2 for i in range(N)) - float(area)) < 1e-6
+        # сетка с шагом 1/100: изломы ломаной (целые абсциссы) попадают в узлы, трапеции точны
+        N = (d - c) * 100
+        xg = [c + F(i, 100) for i in range(N + 1)]
+        return abs(sum((fn(float(u)) + fn(float(w))) * float(w - u) / 2 for u, w in zip(xg, xg[1:])) - float(area)) < 1e-6
     return pcard(q, num(area), ex, svg=svg), chk
 
 
