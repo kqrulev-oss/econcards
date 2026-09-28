@@ -3240,7 +3240,7 @@ def graph_series(rng, shape, n, lo=5, hi=90, dec=0):
     """Ряд заданной формы в реалистичном диапазоне [lo, hi]; монотонные участки строгие после округления."""
     step = Fraction(1, 10 ** dec)
     grid = [Fraction(lo) + i * step for i in range(int((Fraction(str(hi)) - Fraction(str(lo))) / step) + 1)]
-    rnd = lambda v: float(v) if dec else int(v)
+    rnd = lambda v: round(float(v), dec) if dec else int(v)
     if shape == 'grow':
         v = [rng.randint(2, 9)]
         for _ in range(n - 1):
