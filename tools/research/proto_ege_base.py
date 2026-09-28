@@ -6617,7 +6617,15 @@ def gen_eb12_rhombus(r):
         ang = sp.Triangle(A_, B_, O_).angles[A_]
         vals = {0: sp.sin(ang), 1: sp.tan(ang), 2: 2 * x * y, 3: A_.distance(B_)}
         return same(num(ans), sp.nsimplify(vals[st]))
-    return pcard(q, num(ans), e=f'Половины диагоналей {x} и {y}, сторона {z}; ответ {num(ans)}.'), chk
+    if st == 4:
+        e = f'Углы ромба 60° и 120°, меньшая диагональ отсекает от него равносторонний треугольник: сторона {d}, периметр {num(ans)}.'
+    elif st == 5:
+        e = f'Против угла 30° катет вдвое меньше гипотенузы, поэтому сторона ромба {2 * h}; S = {2 * h} · {h} = {num(ans)}.'
+    elif st == 6:
+        e = f'Сторона ромба a, a² = {s2}; S = a² · sin 30° = {num(ans)}.'
+    else:
+        e = f'Половины диагоналей {x} и {y}, сторона {z}; ответ {num(ans)}.'
+    return pcard(q, num(ans), e=e), chk
 
 
 @P('eb12-trapezoid', 'Трапеция: диагональ, площадь, углы, средняя линия, треугольник ABC',
@@ -6799,7 +6807,7 @@ def gen_eb12_area_ratio(r):
         p2, q2 = r.choice([(1, 2), (1, 3), (2, 3), (3, 4), (4, 5), (5, 6), (2, 5)])
         ans = F(q1 * q2, p1 * p2)
         q = (f'Точка M лежит на стороне AB треугольника ABC, точка K — на стороне BC, причём BM : AB = {p1} : {q1}, BK : BC = {p2} : {q2}. '
-             f'Сколько раз площадь треугольника MBK укладывается в площади треугольника ABC?')
+             f'Во сколько раз площадь треугольника ABC больше площади треугольника MBK?')
         chk = lambda: same(num(ans), 1 / (sp.Rational(p1, q1) * sp.Rational(p2, q2)))
     else:
         k = r.choice([2, 3, 4, 5])
