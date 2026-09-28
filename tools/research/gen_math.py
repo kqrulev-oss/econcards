@@ -1550,9 +1550,12 @@ class Fipi:
 
     def copied(self, formula):
         """Формула (≥ 6 знаков и чисел, хотя бы одно число) целиком, с числами, встречается в тексте ФИПИ.
-        Короткие записи вроде «(−8; 3)» или «y = f(x)» копией не считаются."""
+        Короткие записи вроде «(−8; 3)» или «y = f(x)» копией не считаются. Не считаются и общие законы
+        без своих чисел (1/d₁ + 1/d₂ = 1/f, φ = ωt + βt²/2): нужны хотя бы два обычных числа (не индексы
+        и не степени), и хотя бы одно из них не 0, 1 или 2."""
         w = tokens(formula, mask=False)
-        if len(w) < 6 or not any(t[0].isdigit() for t in w):
+        plain = re.findall(r'\d+(?:[.,]\d+)?', formula)  # обычные цифры; ₁ ² и т. п. сюда не попадают
+        if len(w) < 6 or len(plain) < 2 or all(p in ('0', '1', '2') for p in plain):
             return False
         s = ' ' + ' '.join(w) + ' '
         return any(s in self.lit[i] for i in self.head.get(' '.join(w[:3]), ()))

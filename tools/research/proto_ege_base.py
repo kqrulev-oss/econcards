@@ -4363,6 +4363,14 @@ def gen_eb07_linear(r):
     return c, chk
 
 
+BQ = [b for b in range(-8, 9) if b]
+
+
+def cf2(r):
+    """Свободный член формулы в №7: двузначный, ±(10…19)."""
+    return r.choice([-1, 1]) * r.randint(10, 19)
+
+
 @P('eb07-formulas', 'Функции, заданные формулами, и их характеристики',
    'По формуле линейной или квадратичной функции определить: возрастает, убывает, имеет точку максимума или минимума '
    '(или знак на отрезке).',
@@ -4374,9 +4382,8 @@ def gen_eb07_linear(r):
 def gen_eb07_formulas(r):
     if r.random() < 0.5:
         k1, k2 = r.randint(1, 5), -r.randint(1, 5)
-        a1, a2 = r.randint(1, 4), -r.randint(1, 4)
-        fs_ = [(0, k1, r.randint(-9, 9)), (0, k2, r.randint(-9, 9)), (a1, r.randint(-8, 8), r.randint(-9, 9)),
-               (a2, r.randint(-8, 8), r.randint(-9, 9))]
+        a1, a2 = r.randint(2, 3), -r.randint(2, 3)
+        fs_ = [(0, k1, cf2(r)), (0, k2, cf2(r)), (a1, r.choice(BQ), cf2(r)), (a2, r.choice(BQ), cf2(r))]
         keys = ['inc', 'dec', 'min', 'max']
         rights = ['возрастает на всей числовой прямой', 'убывает на всей числовой прямой',
                   'у функции есть точка минимума', 'у функции есть точка максимума']
@@ -4391,8 +4398,8 @@ def gen_eb07_formulas(r):
         fs_ = []
         for kkey in keys:
             for _ in range(200):
-                A, B, C = r.choice([0, 0, r.randint(-3, 3)]), r.randint(-6, 6), r.randint(-12, 12)
-                if A == 0 and B == 0:
+                A, B, C = r.choice([0, 0, r.choice([-3, -2, 2, 3])]), r.randint(-6, 6), cf2(r)
+                if B == 0:
                     continue
                 vals = [A * x * x + B * x + C for x in range(a_, b_ + 1)]
                 inc = all(vals[i] < vals[i + 1] for i in range(len(vals) - 1)) and (A == 0 or -B / (2 * A) <= a_ or -B / (2 * A) >= b_)
@@ -4405,9 +4412,9 @@ def gen_eb07_formulas(r):
                     break
             else:
                 return None
-    # квадратичные формулы размечаем ⟦…⟧ (сверка только на дословную копию); короткие линейные «y = 2x − 5»
-    # встречаются в банке где угодно, их оставляем обычным текстом
-    lefts = [f'⟦y = {poly([A, B, C])}⟧' if A else f'y = {poly([B, C])}' for A, B, C in fs_]
+    # формулы размечены ⟦…⟧ (сверка — только на дословную копию); у каждой свой двузначный свободный член и
+    # |a| ≥ 2 у квадратичных, поэтому это не «y = 2x − 5» или «y = x² − 6x + 10», которые есть в банке
+    lefts = [f'⟦y = {poly([A, B, C]) if A else poly([B, C])}⟧' for A, B, C in fs_]
     if len(set(lefts)) < 4:
         return None
     c = match_card(r, lefts, rights, [0, 1, 2, 3], 'Установите соответствие между функциями и характеристиками этих функций. '
@@ -5345,7 +5352,7 @@ def gen_eb09_lake(r):
     if area.denominator != 1 or area < 12:
         return None
     name = r.choice(['озеро Светлое', 'озеро Круглое', 'Лебединое озеро', 'заказник «Боровой»', 'Чёрное болото'])
-    unit, per = r.choice([('квадратных километрах', 'шаг сетки соответствует 1 км'), ('гектарах', 'площадь одной клетки равна 1 га')])
+    unit, per = r.choice([('квадратных километрах', 'шаг сетки соответствует 1 км'), ('гектарах', 'каждая клетка сетки соответствует 1 га')])
     q = (f'На рисунке схематично изображён фрагмент карты местности, {per}. Оцените приближённо площадь, которую занимает {name}. '
          f'Ответ дайте в {unit} с округлением до целого числа.')
     ans = area
@@ -6137,9 +6144,10 @@ def gen_eb11_cone_print(r):
 # ================================================================ 12. Планиметрия
 
 def fx(x):
-    """Дробь в условии: конечная — десятичной, иначе p/q; корни пишем отдельно."""
+    """Дробь в условии: короткая конечная (≤ 2 знаков после запятой) — десятичной, иначе p/q, как в КИМ (tg A = 39/80,
+    а не 0,4875); корни пишем отдельно."""
     x = F(x)
-    return tnum(x) if finite(x) else ('−' if x < 0 else '') + f'{abs(x.numerator)}/{x.denominator}'
+    return tnum(x) if nice(x, 2, lim=10 ** 12) else ('−' if x < 0 else '') + f'{abs(x.numerator)}/{x.denominator}'
 
 
 def sq(n):
@@ -6890,7 +6898,7 @@ def gen_eb13_cone_section(r):
     else:
         v = r.randint(1, 60)
         ans = v / k ** 3
-        rel = 'середину высоты' if (m, n) == (1, 1) else f'точку, делящую высоту в отношении {m} : {n}, считая от вершины,'
+        rel = 'середину высоты' if (m, n) == (1, 1) else f'точку, делящую высоту в отношении {m} : {n}, считая от вершины'
         q = (f'Плоскость, параллельная основанию конуса и проходящая через {rel}, отсекает от него конус объёмом {v}. Найдите объём '
              f'исходного конуса.')
     if not nice(ans, 2):
@@ -7080,6 +7088,10 @@ def gen_eb13_lateral(r):
     m, half, l = trip(r, 90)
     a = 2 * half
     n = r.choice([3, 4, 6])
+    # пирамида существует, только если апофема больше радиуса вписанной в основание окружности (высота² > 0):
+    # r_впис² = half²/3, half², 3·half² для n = 3, 4, 6
+    if m * m <= {3: F(half * half, 3), 4: half * half, 6: 3 * half * half}[n]:
+        return None
     ans = F(n * a * m, 2)
     nm = {3: 'треугольной', 4: 'четырёхугольной', 6: 'шестиугольной'}[n]
     q = (f'У правильной {nm} пирамиды сторона основания {a}, а каждое боковое ребро {l}. Вычислите площадь боковой поверхности '
@@ -7201,7 +7213,9 @@ def Ediv_line(a, b):
     """Дробная черта: (a) / (b) в записи условия."""
     if b.v == 0:
         return None
-    return E(f'({a.d}) / ({b.d})' if a.p < 9 or b.p < 9 else f'{a.d} / {b.d}', f'({a.s})/({b.s})', a.v / b.v, 2)
+    da = f'({a.d})' if a.p < 9 else a.d
+    db = f'({b.d})' if b.p < 9 else b.d
+    return E(f'{da} / {db}', f'({a.s})/({b.s})', a.v / b.v, 2)
 
 
 def expr_card(r, e, maxdec=2):
@@ -7300,7 +7314,7 @@ def rfrac(r, dens=(2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 14, 15, 18, 20, 24, 25)):
    '«Найдите значение выражения …»; ответ записывается десятичной дробью.', kes=['1.2'])
 def gen_eb14_fractions(r):
     a, b = rfrac(r, (2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 14, 15)), rfrac(r, (2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 14, 15))
-    if a is None or b is None:
+    if a is None or b is None or a.v == b.v:
         return None
     st = r.randrange(4)
     targets = [F(k, 10) for k in range(1, 100)] + [F(k, 4) for k in range(1, 40)] + [F(k) for k in range(1, 30)]
@@ -7560,7 +7574,7 @@ def gen_eb16_powers(r):
 def gen_eb16_standard(r):
     st = r.randrange(3)
     a, b = rdec(r, 11, 99), rdec(r, 11, 99)
-    m, n = r.randint(-4, 4), r.randint(-4, 4)
+    m, n = r.choice([-4, -3, -2, -1, 1, 2, 3, 4]), r.choice([-4, -3, -2, -1, 1, 2, 3, 4])   # 10⁰ в КИМ не пишут
     if st == 0:
         d = f'({tnum(a)} · {pw(10, m)}) · ({tnum(b)} · {pw(10, n)})'
         ans = a * b * F(10) ** (m + n)
@@ -7568,16 +7582,18 @@ def gen_eb16_standard(r):
     elif st == 1:
         k = r.choice([2, 3, 4, 5, 6, 7, 8, 9])
         a = b * k
+        if a >= 10:      # стандартный вид: мантисса от 1 до 10
+            return None
         d = f'({tnum(a)} · {pw(10, m)}) : ({tnum(b)} · {pw(10, n)})'
         ans = a / b * F(10) ** (m - n)
         s_ = f'({a.numerator}/{a.denominator}*10**({m}))/({b.numerator}/{b.denominator}*10**({n}))'
     else:
         c1, c2, c3 = r.randint(1, 9), r.randint(1, 9), r.randint(1, 9)
-        e1, e2, e3 = sorted(r.sample(range(-2, 4), 3), reverse=True)
+        e1, e2, e3 = sorted(r.sample([-2, -1, 1, 2, 3], 3), reverse=True)
         d = f'{c1} · {pw(10, e1)} + {c2} · {pw(10, e2)} + {c3} · {pw(10, e3)}'
         ans = c1 * F(10) ** e1 + c2 * F(10) ** e2 + c3 * F(10) ** e3
         s_ = f'{c1}*10**({e1})+{c2}*10**({e2})+{c3}*10**({e3})'
-    if not nice(ans, 4) or abs(ans) > 100000:
+    if not nice(ans, 2) or abs(ans) > 100000:
         return None
     q = ask_expr(r, d)
     return pcard(q, num(ans), e=f'= {num(ans)}.'), lambda: same(num(ans), sp.sympify(s_))
@@ -7694,11 +7710,14 @@ def gen_eb16_trig(r):
         ans = F(k)
         s_ = f'{k}*tan({ang}*pi/180)*cot({ang}*pi/180)'
     else:
-        fn = r.choice(['sin', 'cos', 'tg'])
-        base = r.choice([0, 30, 45, 60, 90, 180] if fn != 'tg' else [0, 45, 180])
+        fn = r.choice(['sin', 'cos', 'sin', 'cos', 'tg'])
+        # как в банке: табличный угол 30°, 45°, 60° (реже 90°, 180°) плюс целые обороты; нулевой ответ не даём
+        base = r.choice([30, 45, 60, 30, 45, 60, 90, 180, 120, 135, 150] if fn != 'tg' else [45, 135])
         turns = r.choice([1, 2, -1])
         ang = base + 360 * turns + r.choice([0, 180]) * (fn == 'tg')
         val = TRIG[fn](sp.pi * ang / 180)
+        if val == 0:
+            return None
         # множитель, убирающий корень
         if val.has(sp.sqrt(3)):
             mul, mtxt = sp.sqrt(3) * r.randint(1, 8), None
@@ -7710,7 +7729,7 @@ def gen_eb16_trig(r):
         if not tot.is_Rational:
             return None
         mtxt = sp.sstr(mul).replace('sqrt(3)', '√3').replace('sqrt(2)', '√2').replace('*', '')
-        d = f'{mtxt} {fn} {tnum(ang)}°'.replace('°', '°')
+        d = f'{mtxt} {fn} {tnum(ang)}°' if ang > 0 else f'{mtxt} {fn}(−{-ang}°)'
         ans = F(int(tot.p), int(tot.q))
         s_ = f'({sp.sstr(mul)})*{ {"sin": "sin", "cos": "cos", "tg": "tan"}[fn] }({ang}*pi/180)'
     if not nice(ans, 2):
@@ -8127,13 +8146,14 @@ def gen_eb15_change(r):
    ['путают «процент от числа» и «число по проценту»'],
    '«Сколько … ?», ответ — целое число.', kes=['1.2'])
 def gen_eb15_part(r):
-    p_ = r.choice([4, 5, 8, 10, 12, 15, 20, 25, 30, 35, 40, 45, 60, 64, 75, 80])
-    whole = r.choice([x for x in range(20, 5000, 10) if (x * p_) % 100 == 0])
-    part = whole * p_ // 100
     st = r.randrange(5)
+    # масштаб как в жизни: посёлок — тысячи жителей, гимназия и колледж — сотни (до полутора–трёх тысяч) учащихся
+    p_ = r.choice([8, 10, 12, 15, 16, 20] if st == 0 else [4, 5, 8, 10, 12, 15, 20, 25, 30, 35, 40, 45, 60, 64, 75, 80])
+    top = {0: 30000, 1: 5000, 2: 3000, 3: 1500, 4: 3000}[st]
+    step = 100 if st == 0 else 10
+    whole = r.choice([x for x in range(step * 20, top, step) if (x * p_) % 100 == 0])
+    part = whole * p_ // 100
     if st == 0:
-        whole = whole * 1000
-        part = part * 1000
         q, ans = f'В посёлке {T(whole)} жителей, из них {pct(p_)} — школьники. Сколько школьников живёт в посёлке?', part
     elif st == 1:
         q, ans = (f'Годовой бюджет районной библиотеки составляет {T(whole)} тыс. рублей, на покупку новых книг тратится {pct(p_)} бюджета. '
@@ -8160,12 +8180,13 @@ def gen_eb15_part(r):
 def gen_eb15_percent_change(r):
     st = r.randrange(4)
     if st == 0:
-        old = r.choice(range(400, 5000, 100))
+        thing, lo, hi, stp = r.choice([('Беговые кроссовки', 2000, 12000, 100), ('Настольная лампа', 600, 5000, 100),
+                                       ('Электросамокат', 15000, 45000, 500), ('Рюкзак', 900, 6000, 100)])
+        old = r.choice(range(lo, hi, stp))
         p_ = r.choice([-40, -30, -25, -20, -15, -12, -10, -5, 5, 8, 10, 12, 15, 20, 25, 30, 40, 50])
         new = old * (1 + F(p_, 100))
         if new.denominator != 1:
             return None
-        thing = r.choice(['Беговые кроссовки', 'Настольная лампа', 'Электросамокат', 'Рюкзак'])
         q = (f'До {"повышения" if p_ > 0 else "снижения"} цены {thing.lower()} стоил{"а" if thing in ("Настольная лампа",) else "и" if thing == "Беговые кроссовки" else ""} '
              f'{rub(old)}, а теперь — {rub(new)}. На сколько процентов {"выросла" if p_ > 0 else "упала"} цена?')
         ans = F(abs(p_))
@@ -8278,6 +8299,8 @@ def gen_eb15_ratio(r):
     else:
         c = r.randint(1, 4)
         kk = r.randint(2, 20) * 5
+        if (a + b + c + 1) * kk > 600:      # пакет сбора — до полукилограмма с небольшим
+            return None
         q, ans = (f'Травяной сбор составляют из ромашки, чабреца и мяты в отношении {a + b} : {c} : 1 по массе. Сколько граммов весит пакет сбора, '
                   f'в котором {kk} г мяты?'), F((a + b + c + 1) * kk)
         tot = None
@@ -8355,14 +8378,23 @@ def gen_eb15_share_of(r):
         q = f'{word} всех {who}. Сколько процентов составляет эта часть?'
         chk = lambda: same(num(ans), sp.Rational(100, n))
     else:
-        old = r.choice(range(30, 400, 5))
+        item, lo, hi = r.choice([('Батон хлеба', 30, 90), ('Пакет молока', 60, 140), ('Бутылка кефира', 60, 150), ('Десяток яиц', 70, 180),
+                                 ('Пачка творога', 80, 200)])
+        old = r.choice(range(lo, hi + 1, 5))
         p_ = r.choice([2, 3, 4, 5, 6, 8, 10, 12, 15])
         new = old * (1 - F(p_, 100))
         if not nice(new, 2):
             return None
-        item = r.choice(['Батон хлеба', 'Пакет молока', 'Бутылка кефира', 'Десяток яиц'])
-        q = (f'Магазин делает скидку по социальной карте. {item} стоит {rub(old)}, а по карте за него заплатили {rub(new)}. Сколько '
-             f'процентов составила скидка?').replace('за него заплатили', 'за него заплатили' if item.startswith(('Батон', 'Пакет', 'Десяток')) else 'за неё заплатили')
+
+        def rub_full(x):
+            """«140 рублей 65 копеек» — копейки словом, как в КИМ (точка сокращения не сталкивается с концом фразы)."""
+            x = F(x)
+            kop = int(x * 100) % 100
+            s = pl(int(x), 'рубль', 'рубля', 'рублей')
+            return s + (f' {kop} {plural(kop, "копейка", "копейки", "копеек")}' if kop else '')
+        him = 'за неё' if item.startswith(('Бутылка', 'Пачка')) else 'за него'
+        q = (f'Магазин делает скидку по социальной карте. {item} стоит {rub_full(old)}, а по карте {him} заплатили {rub_full(new)}. Сколько '
+             f'процентов составила скидка?')
         ans = F(p_)
         chk = lambda: same(num(ans), (1 - R(new) / old) * 100)
     if not nice(ans, 2):

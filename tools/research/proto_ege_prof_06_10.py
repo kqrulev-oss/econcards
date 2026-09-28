@@ -3722,7 +3722,7 @@ def gen_ep10_log(r):
         return pcard(q, num(p2), ex), lambda: _qsolve(R(al) * nu * T * sp.log(x / R(p1), 2) - R(A), x, lambda z: True) == [R(p2)]
     if st == 2:
         al = r.choice([F(1), F(3, 2), F(2), F(7, 10)])
-        Cm = r.choice([2, 4, 5, 6, 8])       # мкФ·10
+        Cm = r.choice([2, 3, 4, 6])          # мкФ (5 и 8 мкФ — как в банке, «C = 8·10^{−6}» совпадает дословно)
         Rm = r.choice([1, 2, 3, 4, 5, 6])    # ·10⁶ Ом
         tau = al * Rm * Cm                   # R·C = Rm·10⁶ · Cm·10⁻⁶
         t_ = tau * n
