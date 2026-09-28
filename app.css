@@ -439,6 +439,8 @@ input:focus, select:focus, textarea:focus { outline: 3px solid var(--accent); ou
 .variant-row em { font-style: normal; font-weight: 800; }
 .num-row { display: flex; gap: 8px; }
 .num-input { flex: 1; font: 800 22px var(--display); text-align: center; letter-spacing: .02em; min-height: 56px; }
+.num-input.wide { font-size: 18px; letter-spacing: 0; text-align: left; padding: 0 14px; }
+.num-input.mid { border-color: #8a6d00; background: var(--mid-fill); }
 .num-input.ok { border-color: #0F6B3A; background: var(--ok-fill); color: #0B2E1C; }
 .num-input.bad { border-color: var(--bad); background: var(--bad-bg); color: var(--bad); text-decoration: line-through; }
 .num-row .check { margin-top: 0; }

@@ -214,8 +214,9 @@ function cleanGenerated(raw) {
   const known = new Set(topics.map(t => t.id));
   const cards = [];
   for (const c of Array.isArray(data.cards) ? data.cards : []) {
-    if (!c || !c.q || !['one', 'many', 'flip', 'num', 'open'].includes(c.k)) continue;
+    if (!c || !c.q || !['one', 'many', 'flip', 'num', 'word', 'seq', 'open'].includes(c.k)) continue;
     if (c.k === 'num' && !/^-?\d+([.,]\d+)?$/.test(String(c.a).trim())) c.k = 'flip'; // не число — самопроверка
+    if (c.k === 'seq' && !/^\d{2,}$/.test(String(c.a).trim())) c.k = 'flip';         // не цифры — самопроверка
     const card = { t: known.has(String(c.t)) ? String(c.t) : topics[0]?.id || 't1', k: c.k, q: String(c.q) };
     if (c.k === 'one' || c.k === 'many') {
       const o = (Array.isArray(c.o) ? c.o : []).filter(x => x && x.id && x.t).map(x => ({ id: String(x.id), t: String(x.t) }));
