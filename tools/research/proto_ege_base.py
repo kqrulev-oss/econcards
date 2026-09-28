@@ -4250,8 +4250,8 @@ def gen_eb07_points(r):
                        f'<text x="{sx(x) - 4:.1f}" y="{sy(0) + (15 if f(x) > 0 else -7):.1f}" font-style="italic" font-size="13">{lb}</text>'
                        for x, lb in zip(xs, labels))
     svg = svg_plot(f, -7.5, 7.5, -7, 7, extra=extra)
-    q = ('На рисунке изображён график функции y = f(x), на оси абсцисс отмечены точки A, B, C и D. Пользуясь графиком, поставьте в '
-         'соответствие каждой точке характеристики функции и её производной.')
+    q = ('На рисунке изображён график функции y = f(x), на оси абсцисс отмечены точки A, B, C и D. Установите соответствие '
+         'между точками и характеристиками функции и её производной.')
     c = match_card(r, list(labels), [txt[k] for k in order], [0, 1, 2, 3], q, e='Выше оси — f > 0; функция растёт — f′ > 0.')
     c['svg'] = svg
     ans = match_answer(c)
@@ -4309,8 +4309,7 @@ def gen_eb07_linear(r):
         ks = r.sample([k for k in SLOPES if abs(k) <= 3], 4)
         lines = [(k, r.randint(-2, 2)) for k in ks]
         rights = [slope_txt(k) for k in ks]
-        q = ('На рисунке изображены графики функций вида y = kx + b. Установите соответствие между графиками функций и значениями '
-             'производной этих функций в точке x = 1.')
+        q = 'На рисунке изображены графики функций вида y = kx + b. Установите соответствие между графиками и значениями производной в точке x = 1.'
         e = 'Производная линейной функции равна k — отношению Δy / Δx по двум узлам сетки.'
         kind = 'deriv'
     svgs = []
@@ -7080,6 +7079,7 @@ EXPR_Q = ['Найдите значение выражения {}.']
 
 
 def ask_expr(r, d):
+    d = re.sub(r'^\((−?[\d,]+)\) /', r'\1 /', d)
     return r.choice(EXPR_Q).format(f'⟦{d}⟧')
 
 SUP = str.maketrans('0123456789−', '⁰¹²³⁴⁵⁶⁷⁸⁹⁻')
@@ -7402,9 +7402,9 @@ def gen_eb16_conjugate(r):
         a, b, c = r.randint(1, 6), r.choice([2, 3, 5, 6, 7, 10, 11, 13, 14, 15, 17, 19, 21, 22, 23, 26, 29]), r.randint(1, 12)
         A = f'{a if a > 1 else ""}√{b}'
         st = r.randrange(3)
-        d = [f'({A} − {c})({c} + {A})', f'({c} + {A})({A} − {c})', f'({c} − {A})({c} + {A})'][st]
+        d = [f'({A} − {c})({c} + {A})', f'({c} + {A})({A} − {c})', f'({c} − {A})({A} + {c})'][st]
         s_ = [f'({a}*sqrt({b})-{c})*({c}+{a}*sqrt({b}))', f'({c}+{a}*sqrt({b}))*({a}*sqrt({b})-{c})',
-              f'({c}-{a}*sqrt({b}))*({c}+{a}*sqrt({b}))'][st]
+              f'({c}-{a}*sqrt({b}))*({a}*sqrt({b})+{c})'][st]
         ans = F(a * a * b - c * c) if st < 2 else F(c * c - a * a * b)
     else:
         a, b = r.sample([2, 3, 5, 6, 7, 10, 11, 13, 14, 15, 17, 19, 21, 22, 23, 26, 29, 31, 33, 35], 2)
@@ -7451,9 +7451,13 @@ def gen_eb16_powers(r):
         d = f'{pw(a, m)} · {pw(b, m)} / {pw(a * b, k)}'
         s_ = f'{a}**{m}*{b}**{m}/({a * b})**{k}'
     else:
-        e1, e2, e3 = r.randint(1, 4), r.randint(1, 3), r.randint(0, 2)
-        d = f'{pw(-10, e1)} + {pw(-10, e2)} + {pw(-10, e3)}'
-        s_ = f'(-10)**{e1}+(-10)**{e2}+(-10)**{e3}'
+        bs = r.choice([-10, -2, -3, -5, -4])
+        e1, e2, e3 = sorted(r.sample(range(0, 6 if bs != -10 else 5), 3), reverse=True)
+        c1, c2 = r.choice(['+', '−']), r.choice(['+', '−'])
+        if bs == -10 and c1 == c2 == '+':
+            return None
+        d = f'{pw(bs, e1)} {c1} {pw(bs, e2)} {c2} {pw(bs, e3)}'
+        s_ = f'({bs})**{e1}{"+" if c1 == "+" else "-"}({bs})**{e2}{"+" if c2 == "+" else "-"}({bs})**{e3}'
     val = sp.nsimplify(sp.sympify(s_))
     ans = F(int(val.p), int(val.q))
     if not nice(ans, 4) or abs(ans) > 100000:
@@ -7523,11 +7527,13 @@ def gen_eb16_logs(r):
         s_ = f'log({x.numerator}/{x.denominator},{a})+log({y.numerator}/{y.denominator},{a})'
     elif st == 1:
         k = r.randint(1, 4)
-        y = r.choice([2, 3, 4, 5, 6, 7, 8])
-        x = y * a ** k
-        d = f'{lg(a, x)} − {lg(a, y)}'
+        y, z = r.sample([3, 6, 7, 9, 11, 12, 13, 14, 15, 17, 19, 21, 23], 2)
+        x = F(y * a ** k, z)
+        if y % a == 0 or x > 3000 or not finite(x) or x == 1:
+            return None
+        d = f'{lg(a, tnum(x))} − {lg(a, y)} + {lg(a, z)}'
         ans = F(k)
-        s_ = f'log({x},{a})-log({y},{a})'
+        s_ = f'log({x.numerator}/{x.denominator},{a})-log({y},{a})+log({z},{a})'
     elif st == 2:
         b = r.choice([3, 5, 6, 7, 11, 13, 15])
         k = r.randint(2, 7)
@@ -7561,11 +7567,13 @@ def gen_eb16_logs(r):
    '«Найдите значение выражения 2^(3 + log₂ 7)».', kes=['1.6', '1.8'])
 def gen_eb16_log_exp(r):
     a = r.choice([2, 3, 5, 6, 7, 10])
-    b = r.choice([2, 3, 4, 5, 6, 7, 8, 9, 11, 12, 13, 17])
-    if b == a:
+    b = r.choice([2, 3, 4, 5, 6, 7, 8, 9, 11, 12, 13, 14, 15, 17, 19, 21, 23, 26, 29, 31])
+    if b == a or math.gcd(a, b) == a:
         return None
     if r.random() < 0.5:
         k = r.randint(1, 3)
+        if b < 10:
+            return None
         sign = r.choice([1, -1])
         d = f'{a}^({k if sign > 0 else -k} + {lg(a, b)})'.replace('^(-', '^(−')
         ans = F(a) ** (sign * k) * b
@@ -7762,7 +7770,9 @@ def lin(k, m):
    ['выбрали не тот корень', 'ошиблись со знаком при переносе'],
    '«Решите уравнение … Если уравнение имеет больше одного корня, в ответе запишите больший из них.»', kes=['2.1'])
 def gen_eb17_quadratic(r):
-    x1, x2 = r.sample(range(-12, 13), 2)
+    x1, x2 = r.sample(range(-15, 16), 2)
+    if max(abs(x1), abs(x2)) < 8 or x1 * x2 == 0 or abs(x1 * x2) < 20:
+        return None
     p_, q_ = -(x1 + x2), x1 * x2
     big = r.random() < 0.5
     ans = F(max(x1, x2) if big else min(x1, x2))
@@ -7797,14 +7807,23 @@ def gen_eb17_quadratic(r):
 def gen_eb17_incomplete(r):
     big = r.random() < 0.5
     word = 'больший' if big else 'меньший'
+    a = r.choice([1, 2, 3, 4, 5, 6, 7, 8, 9])
     if r.random() < 0.6:
-        k = r.choice([i for i in range(-15, 16) if i])
+        a = r.choice([2, 4, 5, 8])
+        bb = r.choice([i for i in range(-40, 41) if i and i % a])
+        k = F(bb, a)
+        if not finite(k):
+            return None
         roots = [0, k]
-        lhs, rhs, ls, rs = r.choice([('x²', lin(k, 0), 'x**2', f'{k}*x'), (poly([1, -k, 0]), '0', f'x**2-{k}*x', '0')])
+        lhs, rhs, ls, rs = r.choice([(poly([a, 0, 0]), lin(bb, 0), f'{a}*x**2', f'{bb}*x'),
+                                     (poly([a, -bb, 0]), '0', f'{a}*x**2-({bb})*x', '0')])
     else:
-        m = r.randint(1, 15)
+        m = r.randint(2, 15)
         roots = [m, -m]
-        lhs, rhs, ls, rs = r.choice([('x²', str(m * m), 'x**2', f'{m * m}'), (poly([1, 0, -m * m]), '0', f'x**2-{m * m}', '0')])
+        lhs, rhs, ls, rs = r.choice([(poly([a, 0, 0]), str(a * m * m), f'{a}*x**2', f'{a * m * m}'),
+                                     (poly([a, 0, -a * m * m]), '0', f'{a}*x**2-{a * m * m}', '0')])
+    if a == 1 and abs(roots[1]) < 13 or not nice(roots[1], 2):
+        return None
     ans = F(max(roots) if big else min(roots))
     return eq_card(r, lhs, rhs, ls, rs, ans, head='Найдите корень уравнения',
                    tail=f'. Если уравнение имеет более одного корня, в ответе запишите {word} из корней.',
@@ -7822,6 +7841,8 @@ def gen_eb17_sqrt(r):
     a = r.choice([i for i in range(-9, 10) if i])
     b = r.randint(-30, 30)
     c = r.randint(1, 12)
+    if abs(a) <= 3 and c <= 4 and abs(b) < 15:
+        return None
     x0 = F(c * c - b, a)
     if not nice(x0, 2):
         return None
@@ -7847,7 +7868,7 @@ def gen_eb17_exp(r):
     if st == 0:
         m = r.randint(-9, 9)
         e_val = k * x0 + m
-        if e_val.denominator != 1 or abs(e_val) > (4 if a < 6 else 3):
+        if e_val.denominator != 1 or abs(e_val) > (4 if a < 6 else 3) or e_val in (0, 1) or abs(m) < 2:
             return None
         rhs = F(a) ** int(e_val)
         rd = tnum(rhs) if rhs.denominator == 1 else f'1/{rhs.denominator}'
@@ -7855,7 +7876,7 @@ def gen_eb17_exp(r):
     if st == 1:
         m = r.randint(-9, 9)
         e_val = k * x0 + m
-        if e_val.denominator != 1 or abs(e_val) > 3:
+        if e_val.denominator != 1 or abs(e_val) > 3 or e_val in (0, 1) or abs(m) < 2:
             return None
         rhs = F(1, a) ** int(e_val)
         rd = tnum(rhs) if rhs.denominator == 1 else f'1/{rhs.denominator}'
@@ -7926,6 +7947,8 @@ def gen_eb17_log(r):
    '«Найдите корень уравнения (x − 3)² = (x + 7)²».', kes=['2.1'])
 def gen_eb17_squares(r):
     a, b = r.sample(range(-15, 16), 2)
+    if max(abs(a), abs(b)) < 9 or a + b == 0:
+        return None
     x0 = F(a + b, 2)
     L = f'({lin(1, -a)})²'
     Rr = f'({lin(1, -b)})²'
@@ -7945,7 +7968,7 @@ def gen_eb17_rational(r):
     den = x0 + b
     if den == 0:
         return None
-    c = r.choice([F(1, 2), 1, 2, 3, 4, 5, -1, -2, -3, F(3, 2)])
+    c = r.choice([F(1, 2), 3, 4, 5, 6, -2, -3, -4, F(3, 2), F(5, 2), F(-1, 2)])
     a = c * den
     if a.denominator != 1 or a == 0:
         return None
@@ -8488,7 +8511,7 @@ def gen_eb18_m_segments(r):
             return None
         lefts = [t for t, _, _ in pick]
         rights = [f'[{tnum(a)}; {tnum(b)}]' for _, _, (a, b) in pick]
-        q = f'Известно, что m = {name}. Установите соответствие между числами и отрезками из правого столбца.'
+        q = f'Известно, что m = {name}. Установите соответствие между числами и отрезками.'
         c = match_card(r, lefts, rights, [0, 1, 2, 3], q, e=f'm ≈ {ap(mf, 2)}; оцениваем каждое выражение.')
         ans = match_answer(c)
         vals = {t: v for t, v, _ in pick}
