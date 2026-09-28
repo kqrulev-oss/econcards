@@ -10294,9 +10294,16 @@ def gen_eb21_table_rows(r):
              f'Найдите число строк таблицы.')
 
     def chk():
+        # независимо: строим таблицу — делим S на ans строк с суммами строго между a и b (целые суммы), и проверяем,
+        # что при другом числе строк это невозможно
         tot = sum(cols)
-        return [m for m in range(1, tot + 1) if m * a < tot < m * b] == [ans]
-    return a_card(q, ans, f'Сумма всех чисел {S}; {S}/{b} < n < {S}/{a} ⇒ n = {ans}.'), chk
+        # m строк возможны, если tot раскладывается на m целых слагаемых из (a; b): перебор «сколько строк с суммой s»
+        # заменяем проверкой крайних раскладов — все суммы a + 1 или все b − 1 — и равномерного
+        ok = lambda m: m * (a + 1) <= tot <= m * (b - 1)
+        rows = [tot // ans + (1 if i < tot % ans else 0) for i in range(ans)]
+        return all(a < s_ < b for s_ in rows) and min(cols) >= ans and [m for m in range(1, tot + 1) if ok(m)] == [ans]
+    return a_card(q, ans, f'Сумма всех чисел {S}; сумма каждой строки — целое число от {a + 1} до {b - 1}, поэтому '
+                          f'{a + 1}·n ≤ {S} ≤ {b - 1}·n ⇒ n = {ans}.'), chk
 
 
 @P('eb21-house', 'Дом: этажи, квартиры на этаже и подъезды по общему числу квартир',
