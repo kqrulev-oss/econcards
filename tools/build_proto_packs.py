@@ -11,6 +11,7 @@
 """
 import json
 import random
+import re
 import sys
 from pathlib import Path
 
@@ -101,7 +102,11 @@ def assemble(spec, by_n, make_cards, log):
                 cards.append(clean(c, tid, p['id']))
     empty = [t['id'] for t in topics if not t['protos']]
     log(f'{spec["id"]}: {len(topics)} тем, {len(cards)} карточек' + (f', без генератора: {", ".join(empty)}' if empty else ''))
-    return {'id': spec['id'], 'title': spec['title'], 'subject': spec['subject'], 'desc': spec['desc'], 'color': spec['color'],
+    # Честное описание: если часть номеров без генератора (рисунки, карты, llm), «N заданий из M»
+    desc = spec['desc']
+    if empty:
+        desc = re.sub(r'^Все \d+ задани[йяе]( ОГЭ| в нумерации 2027| ОГЭ 2027)?', f'{len(topics) - len(empty)} заданий из {len(topics)}\\1', desc)
+    return {'id': spec['id'], 'title': spec['title'], 'subject': spec['subject'], 'desc': desc, 'color': spec['color'],
             'topics': topics, 'theory': theory, 'cards': cards}
 
 
