@@ -1259,7 +1259,7 @@ def gen_og09_lin_brackets(r):
     ins = lambda k: f'x {"+" if k > 0 else "−"} {abs(k)}'
     kind = 0  # в банке только одна скобка: 4(x − 6) = 5; две скобки — уже уровень выше
     if kind == 0:
-        e_ = r.choice([1, -1]) * r.randint(1, 10)
+        e_ = r.choice([1, -1]) * r.randint(11, 40)  # короткие записи вида 2(x + 1) = 6 встречаются в банках дословно
         lhs, rhs = f'{a}({ins(b)})', tnum(e_)
         A, B = a, a * b - e_
     elif kind == 1:
@@ -1280,18 +1280,20 @@ def gen_og09_lin_brackets(r):
 
 @proto('og09-quad', 'oge', 9, 'Полное квадратное уравнение',
        invariant='ax² + bx + c = 0 с двумя корнями (рациональными); в ответ — больший или меньший корень.',
-       varies='Приведённое уравнение с целыми корнями или неприведённое (a = 2…5) с дробным корнем; «больший/меньший».',
+       varies='Приведённое уравнение с целыми корнями или неприведённое (a = 2, 3, коэффициенты до 25) с дробным корнем; «больший/меньший».',
        answer_rule='Дискриминант или теорема Виета; выбираем нужный корень.',
        fipi=r'x\s*2\s*[+−-]\s*\d*\s*x\s*[+−-]\s*\d+\s*=\s*0',
        mistakes=['ошибка в знаке −b', 'делят только на a, а не на 2a', 'записывают не тот корень'], kim=K9)
 def gen_og09_quad(r):
     # в банке: x² + 4x − 12 = 0, x² − 11x + 30 = 0, 2x² − 3x + 1 = 0 — приведённые с целыми корнями
     # и неприведённые с дробным корнем
-    a = r.choice([1, 1, 1, 2, 2, 3, 4, 5])
-    p1 = F(r.randint(-12, 12), r.choice([1, a]) if a > 1 else 1)
-    p2 = F(r.randint(-12, 12))
-    if a == 1 and abs(p1) + abs(p2) < 9:
-        return None
+    a = r.choice([1, 1, 1, 2, 2, 3])
+    if a == 1:  # приведённые с небольшими корнями банк перебирает почти все — берём один корень двузначным
+        p1, p2 = F(r.choice([x for x in range(-15, 16) if abs(x) > 10])), F(r.randint(-9, 9))
+        if p2 == 0:
+            return None
+    else:  # 2x² − 3x + 1 = 0: небольшие коэффициенты, один корень дробный
+        p1, p2 = F(r.choice([x for x in range(-7, 8) if x % a]), a), F(r.randint(-6, 6))
     if p1 == p2 or p1 == 0 and p2 == 0:
         return None
     co = [a, -a * (p1 + p2), a * p1 * p2]
@@ -1320,11 +1322,13 @@ def gen_og09_quad_incomplete(r):
             return None
         if r.random() < 0.5:
             txt, lhs, rhs = f'{poly([a, b, 0])} = 0', poly([a, b, 0]), '0'
-        else:
+        else:  # в банке ax² = bx только с положительным корнем — берём отрицательный
+            if root > 0:
+                root, b = -root, -b
             txt, lhs, rhs = f'{poly([a, 0, 0])} = {lin(-b, 0)}', poly([a, 0, 0]), lin(-b, 0)
         return _roots_card(r, txt, [F(0), root], f'x({lin(a, b)}) = 0: x = 0 или x = {tnum(root)}.', lhs, rhs)
-    a = r.choice([1, 1, 1, 2, 3, 4, 5])
-    root = F(r.randint(2, 13))
+    a = r.choice([1, 2, 2, 3, 4, 5])  # в банке x² − 16 = 0 … x² − 144 = 0 — чаще берём a > 1
+    root = F(r.randint(13, 15)) if a == 1 else F(r.randint(2, 9))
     c = a * root * root
     if c.denominator != 1:
         return None
@@ -2643,7 +2647,7 @@ def gen_og13_quad(r):
     kind = r.randrange(3)
     rel = r.choice(list(FLIP))
     if kind == 0:
-        a = r.randint(3, 15)
+        a = r.randint(9, 16)
         lhs, rhs = f'x² − {a * a}', '0'
         if r.random() < 0.4:
             lhs, rhs = 'x²', str(a * a)
@@ -2655,7 +2659,7 @@ def gen_og13_quad(r):
         lhs, rhs = f'{p * p}x²', f'{q_ * q_}'
         sol = quad_sol(1, -F(q_, p), F(q_, p), rel)
     else:
-        k = r.randint(1, 12)
+        k = r.randint(7, 15)
         if r.random() < 0.6:
             lhs, rhs = f'{k if k > 1 else ""}x − x²', '0'
             sol = quad_sol(-1, 0, k, rel)
