@@ -1,0 +1,88 @@
+/* C · Приложение. Компактные слои, навигация под большим пальцем. */
+:root {
+  --accent: #174bc7; --bg: #f0f3f8; --surface: #ffffff;
+  --ink: #d9e0eb; --text: #182437; --muted: #536078; --line: #dde4ee;
+  --sun: #e5ecfc; --ok: #176244; --ok-fill: #e2f4eb; --ok-bg: #e2f4eb;
+  --mid: #805008; --mid-fill: #fcf0d5; --mid-bg: #fcf0d5;
+  --bad: #a42c47; --bad-fill: #fce5eb; --bad-bg: #fce5eb;
+  --on-accent: #ffffff; --on-bright: #182437; --focus: #174bc7;
+  --radius: 20px; --bw: 0px; --shadow: none;
+  --body: Nunito, system-ui, sans-serif; --display: Nunito, system-ui, sans-serif;
+  --glass: #ffffffed; --soft-shadow: 0 8px 28px #1b24400a;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --accent: #adc8ff; --bg: #0e131d; --surface: #1b2432;
+    --ink: #374457; --text: #eff5ff; --muted: #b1bfd4; --line: #334154;
+    --sun: #243754; --ok: #9de0bf; --ok-fill: #183e32; --ok-bg: #183e32;
+    --mid: #f9d78d; --mid-fill: #42351b; --mid-bg: #42351b;
+    --bad: #ffb5c4; --bad-fill: #4b2533; --bad-bg: #4b2533;
+    --on-accent: #11244c; --on-bright: #eff5ff; --focus: #c4d8ff;
+    --glass: #1b2432ed; --soft-shadow: 0 8px 28px #00000026;
+    color-scheme: dark;
+  }
+}
+.btn, .back, .icon-btn, .task-tile, .topic, .proto, .match-choice { border: 0; box-shadow: none; transition: background var(--motion), transform var(--motion); }
+.btn, .back, .icon-btn { border-radius: 14px; min-height: 48px; }
+.btn.primary, .btn.cta { background: var(--accent); color: var(--on-accent); }
+.btn.big { min-height: 54px; border-radius: 16px; font: 800 16px var(--body); text-transform: none; letter-spacing: 0; box-shadow: none; }
+.btn:active, .btn.demo-pressed, .task-tile:active, .match-choice:active:not(:disabled) { transform: scale(.97); box-shadow: none; }
+.card, .panel, .goal-card { border: 0; border-radius: var(--radius); box-shadow: none; background: var(--surface); }
+.brand-title { font: 800 21px/1.2 var(--body); letter-spacing: -.03em; }
+.avatar { border: 0; background: var(--accent); color: var(--on-accent); border-radius: 13px; font-family: var(--body); }
+.streak-badge { background: var(--surface); color: var(--muted); border: 0; font-family: var(--body); }
+.home-greeting { padding: 8px 0 0; }
+.home-greeting .eyebrow { display: none; }
+.home-greeting h1, .trainer-intro h1 { font: 800 34px/1.1 var(--body); letter-spacing: -.045em; margin-bottom: 24px; }
+.home-greeting h1 br { display: none; }
+.goal-card { gap: 16px; padding: 16px 20px; margin-bottom: 16px; }
+.goal-card b { font-size: 16px; color: var(--text); }.goal-card span { font-size: 13px; }
+.ring { width: 62px; height: 62px; }.ring-fg,.ring-bg { stroke-width: 5; }.ring text { font: 800 20px var(--body); }
+h2 { font: 800 18px var(--body); letter-spacing: -.02em; }
+.home-actions { gap: 8px; margin-top: 12px; margin-bottom: 28px; }
+.home-actions .btn { background: var(--surface); }
+.task-grid { gap: 8px; }
+.task-tile { border-radius: 16px; min-height: 112px; padding: 14px 8px; gap: 6px; }
+.task-tile b { font: 800 25px/1 var(--body); }
+.task-tile em { font-weight: 700; }
+.task-tile.ok { color: var(--ok); background: var(--ok-bg); }
+.task-tile.mid { color: var(--mid); background: var(--mid-bg); }
+.task-tile.bad { color: var(--bad); background: var(--bad-bg); }
+.task-tile.new { color: var(--muted); background: var(--surface); }
+.student-nav { position: sticky; bottom: 12px; z-index: 4; background: var(--glass); -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px); box-shadow: var(--soft-shadow); border: 1px solid var(--line); border-radius: 20px; }
+.student-nav [aria-pressed="true"] { background: var(--sun); color: var(--accent); }
+.student-nav button { transition: background var(--motion), color var(--motion); }
+.student-nav button:active { transform: scale(.96); }
+.design-gallery .student-nav { position: static; }
+.screen-wrap { touch-action: pan-y; }
+.session-progress { height: 5px; margin-bottom: 20px; }
+.num-badge { border: 0; border-radius: 8px; background: var(--sun); color: var(--accent); font-family: var(--body); }
+.card { padding: 24px; }
+.card-q { font: 600 18px/1.6 var(--body); }
+.f { font-size: 1.3em; }.fblock { border-radius: 14px; }
+input, select, textarea { background: var(--bg); color: var(--text); border: 1px solid var(--line); border-radius: 12px; }
+.num-input { font: 800 26px var(--body); }
+.num-input.ok { color: var(--ok); border-color: var(--ok); background: var(--ok-bg); }
+.num-input.mid { color: var(--mid); border-color: var(--mid); background: var(--mid-bg); }
+.num-input.bad { color: var(--bad); border-color: var(--bad); background: var(--bad-bg); text-decoration: none; }
+.explain:not(:empty) { background: var(--bg); padding: 20px; border: 0; border-radius: 16px; font-size: 15px; }
+.explain > b:first-child { text-transform: none; letter-spacing: 0; color: var(--text); font-size: 15px; }
+.match-right { border-radius: 14px; }
+.match-row { padding: 16px; border: 0; background: var(--bg); border-radius: 14px; }
+.match-choice { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; }
+.match-choice.picked { background: var(--accent); color: var(--on-accent); border-color: var(--accent); }
+.subject-list { gap: 8px; }
+.subject-card { padding: 16px; border: 0; border-radius: 18px; background: var(--surface); }
+.subject-symbol { border-radius: 14px; background: var(--sun); color: var(--accent); }
+.subject-arrow { font-size: 20px; }
+.trainer-intro { margin-top: 16px; }
+.tutor-code { padding: 20px; }
+.opt { background: var(--surface); color: var(--text); box-shadow: none; border: 1px solid var(--line); border-radius: 14px; }
+.opt.picked { background: var(--accent); color: var(--on-accent); }
+.opt.ok { color: var(--ok); background: var(--ok-bg); border-color: var(--ok); box-shadow: none; }
+.opt.bad { color: var(--bad); background: var(--bad-bg); box-shadow: none; }
+.opt .opt-id, .opt.ok .opt-id, .opt.picked .opt-id { color: var(--text); background: var(--surface); border-color: var(--line); }
+.topic-hero { color: var(--text); background: var(--surface); border: 0; border-radius: 20px; box-shadow: none; }
+.acc-badge.ok { color: var(--ok); }.acc-badge.mid { color: var(--mid); }.acc-badge.bad { color: var(--bad); }
+@media (max-width: 600px) { .home-greeting h1, .trainer-intro h1 { font-size: 32px; }.card { padding: 20px; }.task-tile { min-height: 108px; }.home-greeting h1 br { display: block; } }

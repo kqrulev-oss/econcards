@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>Три направления · Между уроками</title>
+  <link rel="icon" href="../icons/favicon-48.png">
+  <link rel="stylesheet" href="../app.css">
+  <link rel="stylesheet" href="shared.css">
+  <link rel="stylesheet" id="design-css" href="app-a.css">
+  <script type="module" src="app.js"></script>
+</head>
+<body class="design-gallery">
+  <header class="design-header">
+    <a class="design-brand" href="../?about"><span class="design-mark" aria-hidden="true">м.</span>Между уроками</a>
+    <span class="design-label">Интерфейс ученика / выбор направления</span>
+  </header>
+  <main class="design-main">
+    <div class="design-intro">
+      <p class="design-eyebrow">Одни задания. Три настроения.</p>
+      <h1>Учиться по-своему.</h1>
+      <p>Выбери ощущение, с которым хочется возвращаться к занятиям.</p>
+    </div>
+    <div class="design-controls" aria-label="Настройки предпросмотра">
+      <div class="design-picker" role="group" aria-label="Визуальное направление">
+        <button type="button" data-design="a" aria-pressed="true"><b>A</b><span>Стикеры</span></button>
+        <button type="button" data-design="b" aria-pressed="false"><b>B</b><span>Тетрадь</span></button>
+        <button type="button" data-design="c" aria-pressed="false"><b>C</b><span>Приложение</span></button>
+      </div>
+      <div class="appearance-control"><label for="appearance">Тема</label><select id="appearance">
+        <option value="auto">Как на устройстве</option><option value="light">Светлая</option><option value="dark">Тёмная</option>
+      </select></div>
+    </div>
+    <div class="direction-note"><p id="direction-description" aria-live="polite"></p><a class="design-open" href="student.html?p=ege-math&design=a">Открыть тренажёр ↗</a></div>
+    <nav class="screen-jumps" aria-label="Экраны"><a href="#home">Набор</a><a href="#number">Карточка</a><a href="#matching">Соответствие</a><a href="#trainer">Предметы</a></nav>
+    <div id="screens"><p class="loading" role="status">Загружаю задания…</p></div>
+    <details class="state-spec" id="states"><summary>Состояния кнопок и полей</summary><div id="state-examples"></div></details>
+    <footer class="design-footer">Карточки — из наборов ЕГЭ. Прогресс на стенде показан для сравнения и не сохраняется.</footer>
+  </main>
+</body>
+</html>
