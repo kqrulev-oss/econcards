@@ -444,6 +444,18 @@ input:focus, select:focus, textarea:focus { outline: 3px solid var(--accent); ou
 .num-input.ok { border-color: #0F6B3A; background: var(--ok-fill); color: #0B2E1C; }
 .num-input.bad { border-color: var(--bad); background: var(--bad-bg); color: var(--bad); text-decoration: line-through; }
 .num-row .check { margin-top: 0; }
+.opts-list { margin: 0 0 14px; padding-left: 0; list-style: none; display: grid; gap: 8px; font-weight: 600; line-height: 1.45; }
+.opts-list li { display: flex; gap: 10px; align-items: flex-start; }
+.opts-list b { flex: none; width: 26px; height: 26px; border-radius: 8px; display: grid; place-items: center; background: var(--bg); border: 2px solid var(--ink); font: 800 12px var(--display); }
+.digit-pad { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+.digit {
+  flex: 1 0 44px; min-width: 44px; min-height: 48px; border-radius: 12px; border: var(--bw) solid var(--ink); background: var(--surface);
+  box-shadow: 0 3px 0 var(--ink); color: var(--text); font: 800 20px var(--display); cursor: pointer; transition: transform .08s, box-shadow .08s;
+}
+.digit:active:not(:disabled) { transform: translateY(2px); box-shadow: 0 1px 0 var(--ink); }
+.digit.on { background: var(--accent); color: #fff; }
+.digit.back { flex: 1.4 0 56px; font-size: 18px; }
+.digit:disabled { cursor: default; opacity: .6; }
 /* «Что разобрать на уроке» — не плашка тарифа (.plan там flex) */
 .plan.lesson-plan { display: block; }
 .plan h3 { font-size: 15px; margin: 14px 0 6px; }
