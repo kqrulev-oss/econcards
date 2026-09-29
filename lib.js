@@ -418,11 +418,28 @@ export function renderCard(card, root, onDone, { imgRoot = './', aiEnabled = !!a
       : k === 'seq' ? (card.any ? 'Цифры без пробелов и запятых, порядок не важен' : 'Цифры по порядку, без пробелов и запятых')
       : k === 'word' ? 'Слово или несколько слов, без пробелов, как в бланке' : 'Ответ, как в бланке';
     const mode = k === 'num' ? 'decimal' : k === 'seq' ? 'numeric' : 'text';
-    body.innerHTML = `
+    // Пронумерованные варианты (соответствие «буквы → цифры», ряды слов) — списком над полем
+    const list = Array.isArray(card.o) ? `<ol class="opts-list">${card.o.map(o => `<li><b>${esc(o.id)}</b> ${text(o.t)}</li>`).join('')}</ol>` : '';
+    // Кнопки-цифры для последовательности: нажал по порядку — ответ собрался, печатать не нужно
+    const digits = k === 'seq' ? Math.min(9, Math.max(2, card.digits || (Array.isArray(card.o) ? card.o.length : 0) || 9)) : 0;
+    const pad = digits ? `<div class="digit-pad">${Array.from({ length: digits }, (_, i) => `<button type="button" class="digit" data-d="${i + 1}">${i + 1}</button>`).join('')}<button type="button" class="digit back" aria-label="Стереть">⌫</button></div>` : '';
+    body.innerHTML = `${list}${pad}
       <div class="num-row"><input class="num-input${k === 'num' || k === 'seq' ? '' : ' wide'}" inputmode="${mode}" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Ответ">
         <button class="btn primary check">Проверить</button></div>
-      <p class="hint">${hint}</p>`;
+      <p class="hint">${digits ? (card.any ? 'Нажимай цифры, порядок не важен' : 'Нажимай цифры по порядку') : hint}</p>`;
     const input = body.querySelector('.num-input');
+    if (digits) {
+      const sync = () => body.querySelectorAll('.digit[data-d]').forEach(b => b.classList.toggle('on', input.value.includes(b.dataset.d)));
+      body.querySelectorAll('.digit').forEach(b => b.onclick = () => {
+        if (input.disabled) return;
+        const d = b.dataset.d;
+        if (!d) input.value = input.value.slice(0, -1);
+        else if (input.value.includes(d)) input.value = input.value.replace(d, '');
+        else input.value += d;
+        sync();
+      });
+      input.oninput = sync;
+    }
     const shown = Array.isArray(card.a) ? card.a[0] : String(card.a).split('|')[0];
     const check = () => {
       const got = input.value.trim();
@@ -430,6 +447,7 @@ export function renderCard(card, root, onDone, { imgRoot = './', aiEnabled = !!a
       const score = k === 'num' ? numScore(got, card.a, card.tol) : k === 'seq' ? seqScore(got, card.a, !!card.any) : sameWord(got, card.a) ? 1 : 0;
       input.disabled = true;
       input.classList.add(score === 1 ? 'ok' : score ? 'mid' : 'bad');
+      body.querySelectorAll('.digit').forEach(b => { b.disabled = true; });
       body.querySelector('.check').remove();
       body.querySelector('.hint').innerHTML = score === 1 ? 'Верно!' : `${score ? 'Одна ошибка — половина балла. ' : ''}Правильный ответ: <b>${esc(shown)}</b>`;
       finish(score);

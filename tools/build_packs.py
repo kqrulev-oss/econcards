@@ -338,6 +338,16 @@ def rus_pack():
                 c['p'] = assign[c['id']]
         print(f'  прототипы: {sum(len(t.get("protos", [])) for t in topics)} в {sum(1 for t in topics if t.get("protos"))} заданиях, '
               f'карточек с прототипом {sum(1 for c in cards if "p" in c)} из {len(cards)}')
+    # Карточки в формате КИМ (tools/build_rus_pack.py): их прототипы — первыми в теме,
+    # бесплатная часть библиотеки (trim_library) — как раз первые два прототипа
+    import build_rus_pack
+    from build_proto_packs import proto_page
+    cat = build_rus_pack.catalog()
+    exam_protos, exam_cards = build_rus_pack.exam_cards(print)
+    for t in topics:
+        if t['n'] in exam_protos:
+            t['protos'] = exam_protos[t['n']] + t.get('protos', [])
+    cards = exam_cards + cards
     lesson_topic = {}
     for e in exam:
         for l in e['lessons']:
@@ -347,10 +357,13 @@ def rus_pack():
         topic = lesson_topic.get(l['id']) or (f'task-{l["tasks"][0]}' if l.get('tasks') else 'task-1')
         theory.append({'id': l['id'], 'topic': topic, 'title': l['title'], 'min': 10,
                        'section': 'Теория', 'html': blocks_to_html(l['blocks'])})
+    for t in topics:
+        if t['n'] in exam_protos:
+            theory.append(proto_page(t['id'], t['n'], [cat[p['id']] for p in exam_protos[t['n']]]))
     add_essay(topics, theory, cards)
     return {
         'id': 'ege-rus', 'title': 'ЕГЭ: русский язык', 'subject': 'Русский язык',
-        'desc': 'Все тестовые задания ЕГЭ с разборами и теорией по Розенталю',
+        'desc': 'Задания 1–26 в формате КИМ: ответ словом или цифрами, как в бланке; плюс упражнения, теория по Розенталю и сочинение',
         'color': '#5B3DF5', 'topics': topics, 'theory': theory, 'cards': cards,
     }
 
